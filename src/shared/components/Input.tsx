@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     TextInput,
@@ -30,11 +30,14 @@ export const Input: React.FC<InputProps> = ({
     secureTextEntry,
     ...props
 }) => {
-    const [isFocused, setIsFocused] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     const isPassword = secureTextEntry;
     const actualSecureTextEntry = isPassword && !isPasswordVisible;
+
+    const togglePasswordVisibility = useCallback(() => {
+        setIsPasswordVisible(prev => !prev);
+    }, []);
 
     return (
         <View style={[styles.container, containerStyle]}>
@@ -43,7 +46,6 @@ export const Input: React.FC<InputProps> = ({
             <View
                 style={[
                     styles.inputContainer,
-                    isFocused && styles.inputContainerFocused,
                     error && styles.inputContainerError,
                 ]}
             >
@@ -57,18 +59,17 @@ export const Input: React.FC<InputProps> = ({
                 )}
 
                 <TextInput
+                    {...props}
                     style={[styles.input, style]}
                     placeholderTextColor={theme.colors.neutral[400]}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
                     secureTextEntry={actualSecureTextEntry}
-                    {...props}
                 />
 
                 {isPassword && (
                     <TouchableOpacity
-                        onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                        onPress={togglePasswordVisibility}
                         style={styles.rightIcon}
+                        activeOpacity={0.7}
                     >
                         <Ionicons
                             name={isPasswordVisible ? 'eye-off' : 'eye'}
@@ -82,6 +83,7 @@ export const Input: React.FC<InputProps> = ({
                     <TouchableOpacity
                         onPress={onRightIconPress}
                         style={styles.rightIcon}
+                        activeOpacity={0.7}
                     >
                         <Ionicons
                             name={rightIcon}
@@ -115,10 +117,6 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         backgroundColor: theme.colors.white,
         paddingHorizontal: theme.spacing.md,
-    },
-    inputContainerFocused: {
-        borderColor: theme.colors.primary[500],
-        ...theme.shadows.sm,
     },
     inputContainerError: {
         borderColor: theme.colors.error.main,

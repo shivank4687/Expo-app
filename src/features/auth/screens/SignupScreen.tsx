@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,8 @@ import {
     Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../context/AuthContext';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { signupThunk } from '@/store/slices/authSlice';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { validation } from '@/shared/utils/validation';
@@ -18,7 +19,8 @@ import { theme } from '@/theme';
 
 export const SignupScreen: React.FC = () => {
     const router = useRouter();
-    const { signup } = useAuth();
+    const dispatch = useAppDispatch();
+    const { isLoading } = useAppSelector((state) => state.auth);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -34,14 +36,10 @@ export const SignupScreen: React.FC = () => {
         confirmPassword?: string;
     }>({});
 
-    const [isLoading, setIsLoading] = useState(false);
-
-    const updateField = (field: keyof typeof formData, value: string) => {
-        setFormData({ ...formData, [field]: value });
-        if (errors[field]) {
-            setErrors({ ...errors, [field]: undefined });
-        }
-    };
+    const updateField = useCallback((field: keyof typeof formData, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        setErrors(prev => ({ ...prev, [field]: undefined }));
+    }, []);
 
     const validateForm = (): boolean => {
         const newErrors: typeof errors = {};
@@ -77,22 +75,24 @@ export const SignupScreen: React.FC = () => {
     const handleSignup = async () => {
         if (!validateForm()) return;
 
-        setIsLoading(true);
         try {
-            await signup({
+            await dispatch(signupThunk({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
-            });
-            // Navigation will be handled by AuthContext/Navigator
-        } catch (error: any) {
+            })).unwrap();
+
+            // Navigate to home after successful signup
+            if (router.canGoBack()) {
+                router.dismissAll();
+            }
+            router.replace('/(drawer)/(tabs)');
+        } catch (err: any) {
             Alert.alert(
                 'Signup Failed',
-                error.response?.data?.message || 'Unable to create account. Please try again.'
+                err || 'Unable to create account. Please try again.'
             );
-        } finally {
-            setIsLoading(false);
         }
     };
 

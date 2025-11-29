@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,8 @@ import {
     Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../context/AuthContext';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { loginThunk } from '@/store/slices/authSlice';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { validation } from '@/shared/utils/validation';
@@ -18,12 +19,26 @@ import { theme } from '@/theme';
 
 export const LoginScreen: React.FC = () => {
     const router = useRouter();
-    const { login } = useAuth();
+    const dispatch = useAppDispatch();
+    const { isLoading, error } = useAppSelector((state) => state.auth);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-    const [isLoading, setIsLoading] = useState(false);
+
+    const handleEmailChange = useCallback((text: string) => {
+        setEmail(text);
+        if (errors.email) {
+            setErrors(prev => ({ ...prev, email: undefined }));
+        }
+    }, [errors.email]);
+
+    const handlePasswordChange = useCallback((text: string) => {
+        setPassword(text);
+        if (errors.password) {
+            setErrors(prev => ({ ...prev, password: undefined }));
+        }
+    }, [errors.password]);
 
     const validateForm = (): boolean => {
         const newErrors: { email?: string; password?: string } = {};
@@ -45,17 +60,18 @@ export const LoginScreen: React.FC = () => {
     const handleLogin = async () => {
         if (!validateForm()) return;
 
-        setIsLoading(true);
         try {
-            await login({ email, password });
-            // Navigation will be handled by AuthContext/Navigator
-        } catch (error: any) {
+            const result = await dispatch(loginThunk({ email, password })).unwrap();
+            // Navigate to home/drawer after successful login
+            if (router.canGoBack()) {
+                router.dismissAll();
+            }
+            router.replace('/(drawer)/(tabs)');
+        } catch (err: any) {
             Alert.alert(
                 'Login Failed',
-                error.response?.data?.message || 'Invalid email or password. Please try again.'
+                err || 'Invalid email or password. Please try again.'
             );
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -82,10 +98,7 @@ export const LoginScreen: React.FC = () => {
                         label="Email"
                         placeholder="Enter your email"
                         value={email}
-                        onChangeText={(text) => {
-                            setEmail(text);
-                            if (errors.email) setErrors({ ...errors, email: undefined });
-                        }}
+                        onChangeText={handleEmailChange}
                         error={errors.email}
                         leftIcon="mail"
                         keyboardType="email-address"
@@ -97,10 +110,7 @@ export const LoginScreen: React.FC = () => {
                         label="Password"
                         placeholder="Enter your password"
                         value={password}
-                        onChangeText={(text) => {
-                            setPassword(text);
-                            if (errors.password) setErrors({ ...errors, password: undefined });
-                        }}
+                        onChangeText={handlePasswordChange}
                         error={errors.password}
                         leftIcon="lock-closed"
                         secureTextEntry

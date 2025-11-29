@@ -12,8 +12,11 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
-    const imageUrl = product.thumbnail || product.images[0]?.url || 'https://via.placeholder.com/200';
+    const imageUrl = product.thumbnail || (product.images && product.images[0]?.url) || 'https://via.placeholder.com/200';
     const hasDiscount = product.special_price && product.special_price < product.price;
+    const productName = product.name || 'Product';
+    const productRating = product.rating || 0;
+    const reviewCount = product.reviews_count || 0;
 
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
@@ -42,16 +45,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                 {/* Product Info */}
                 <View style={styles.info}>
                     <Text style={styles.name} numberOfLines={2}>
-                        {product.name}
+                        {productName}
                     </Text>
 
                     {/* Rating */}
-                    {product.rating && (
+                    {productRating > 0 && (
                         <View style={styles.ratingContainer}>
                             <Ionicons name="star" size={14} color={theme.colors.warning.main} />
-                            <Text style={styles.rating}>{product.rating.toFixed(1)}</Text>
-                            {product.reviews_count && (
-                                <Text style={styles.reviewCount}>({product.reviews_count})</Text>
+                            <Text style={styles.rating}>{productRating.toFixed(1)}</Text>
+                            {reviewCount > 0 && (
+                                <Text style={styles.reviewCount}>({reviewCount})</Text>
                             )}
                         </View>
                     )}

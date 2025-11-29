@@ -30,8 +30,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
             const userData = await secureStorage.getItem(STORAGE_KEYS.USER_DATA);
 
-            if (token && userData) {
-                setUser(JSON.parse(userData));
+            // Validate that we have valid data before parsing
+            if (token && userData && userData !== 'undefined' && userData !== 'null') {
+                try {
+                    const parsedUser = JSON.parse(userData);
+                    if (parsedUser && parsedUser.id) {
+                        console.log('Restored user from storage:', parsedUser);
+                        setUser(parsedUser);
+                    } else {
+                        // Invalid user data, clear it
+                        await secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                        await secureStorage.removeItem(STORAGE_KEYS.USER_DATA);
+                    }
+                } catch (parseError) {
+                    console.error('Failed to parse user data, clearing storage:', parseError);
+                    await secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                    await secureStorage.removeItem(STORAGE_KEYS.USER_DATA);
+                }
             }
         } catch (error) {
             console.error('Error checking auth:', error);
@@ -42,12 +57,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const login = async (credentials: LoginRequest) => {
         try {
+            console.log('Attempting login with:', credentials.email);
             const response: AuthResponse = await authApi.login(credentials);
+            console.log('Login response:', JSON.stringify(response, null, 2));
+
+            if (!response.user && (response as any).data?.user) {
+                console.log('Detected nested user object, adjusting...');
+                response.user = (response as any).data.user;
+                response.token = (response as any).data.token;
+            }
 
             // Store token and user data
             await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.token);
             await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.user));
 
+            console.log('Setting user state:', response.user);
             setUser(response.user);
         } catch (error) {
             console.error('Login error:', error);

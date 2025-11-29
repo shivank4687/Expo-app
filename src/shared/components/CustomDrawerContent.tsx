@@ -3,15 +3,21 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { logoutThunk } from '@/store/slices/authSlice';
 import { useRouter } from 'expo-router';
 
 export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
-    const { user, isAuthenticated, logout } = useAuth();
+    const dispatch = useAppDispatch();
+    const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     const router = useRouter();
 
     const handleLoginPress = () => {
         router.push('/login');
+    };
+
+    const handleLogout = () => {
+        dispatch(logoutThunk());
     };
 
     return (
@@ -19,7 +25,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             {/* User Profile Section */}
             <View style={styles.profileSection}>
                 {isAuthenticated && user ? (
-                    <>
+                    <TouchableOpacity onPress={() => router.push('/account-info')} style={styles.userInfoContainer}>
                         <View style={styles.avatarContainer}>
                             <Image
                                 source={{ uri: user.avatar || 'https://via.placeholder.com/100' }}
@@ -28,7 +34,8 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                         </View>
                         <Text style={styles.userName}>{user.name}</Text>
                         <Text style={styles.userEmail}>{user.email}</Text>
-                    </>
+                        <Text style={styles.viewProfileText}>View Profile</Text>
+                    </TouchableOpacity>
                 ) : (
                     <TouchableOpacity onPress={handleLoginPress} style={styles.loginButton}>
                         <View style={styles.loginIconContainer}>
@@ -47,7 +54,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             {/* Footer Actions */}
             <View style={styles.footer}>
                 {isAuthenticated && (
-                    <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                         <Ionicons name="log-out-outline" size={24} color={theme.colors.error.main} />
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity>
@@ -91,6 +98,16 @@ const styles = StyleSheet.create({
     userEmail: {
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.secondary,
+        marginBottom: 4,
+    },
+    userInfoContainer: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    viewProfileText: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.medium,
     },
     loginButton: {
         alignItems: 'center',

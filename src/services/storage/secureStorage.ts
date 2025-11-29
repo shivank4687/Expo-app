@@ -15,8 +15,12 @@ export const secureStorage = {
         try {
             if (Platform.OS === 'web') {
                 // For web, use localStorage (not secure, but functional)
-                localStorage.setItem(key, value);
+                localStorage.setItem(key, String(value));
             } else {
+                if (typeof value !== 'string') {
+                    console.warn(`SecureStore.setItem received non-string value for key ${key}:`, value);
+                    value = String(value);
+                }
                 await SecureStore.setItemAsync(key, value);
             }
         } catch (error) {

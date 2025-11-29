@@ -33,14 +33,23 @@ export const HomeScreen: React.FC = () => {
     const loadData = async () => {
         try {
             setError(null);
+            console.log('Loading products...');
             const [productsResponse, featured] = await Promise.all([
                 productsApi.getProducts({ per_page: 20 }),
                 productsApi.getFeaturedProducts(),
             ]);
 
-            setProducts(productsResponse.data);
-            setFeaturedProducts(featured);
+            console.log('Products loaded:', productsResponse.data?.length || 0);
+            console.log('Featured products loaded:', featured?.length || 0);
+
+            // Filter out any invalid products
+            const validProducts = (productsResponse.data || []).filter(p => p && typeof p === 'object');
+            const validFeatured = (featured || []).filter(p => p && typeof p === 'object');
+
+            setProducts(validProducts);
+            setFeaturedProducts(validFeatured);
         } catch (err: any) {
+            console.error('Error loading products:', err);
             setError(err.message || 'Failed to load products');
         } finally {
             setIsLoading(false);
@@ -73,7 +82,7 @@ export const HomeScreen: React.FC = () => {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
+            {/* <View style={styles.header}>
                 <View>
                     <Text style={styles.greeting}>Hello!</Text>
                     <Text style={styles.subtitle}>What are you looking for?</Text>
@@ -81,7 +90,7 @@ export const HomeScreen: React.FC = () => {
                 <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
                     <Ionicons name="search" size={24} color={theme.colors.text.primary} />
                 </TouchableOpacity>
-            </View>
+            </View> */}
 
             <FlatList
                 data={products}

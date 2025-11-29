@@ -13,12 +13,17 @@ import { PaginatedResponse } from '@/types/global.types';
 const transformProduct = (data: any): Product => {
     return {
         ...data,
+        name: data.name || data.url_key || 'Product',
+        slug: data.slug || data.url_key || '',
+        description: data.description || '',
         price: typeof data.price === 'string' ? parseFloat(data.price) : data.price,
         special_price: data.special_price && typeof data.special_price === 'string'
             ? parseFloat(data.special_price)
             : data.special_price,
         rating: data.rating ? (typeof data.rating === 'string' ? parseFloat(data.rating) : data.rating) : 0,
         reviews_count: data.reviews ? data.reviews.total : 0,
+        in_stock: data.in_stock !== undefined ? data.in_stock : true,
+        images: data.images || [],
     };
 };
 

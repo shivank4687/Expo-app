@@ -11,7 +11,10 @@ export const authApi = {
      * Login user
      */
     async login(credentials: LoginRequest): Promise<AuthResponse> {
-        return apiClient.post<AuthResponse>(API_ENDPOINTS.LOGIN, credentials);
+        return apiClient.post<AuthResponse>(API_ENDPOINTS.LOGIN, {
+            ...credentials,
+            device_name: credentials.device_name || 'mobile_app',
+        });
     },
 
     /**

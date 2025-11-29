@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import { useAppSelector } from '@/store/hooks';
 
 interface ShopHeaderProps {
     title?: string;
@@ -14,7 +14,7 @@ interface ShopHeaderProps {
 export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true }) => {
     const navigation = useNavigation();
     const router = useRouter();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
 
     const openDrawer = () => {
         navigation.dispatch(DrawerActions.openDrawer());

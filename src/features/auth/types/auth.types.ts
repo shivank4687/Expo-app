@@ -12,6 +12,7 @@ export interface User {
 export interface LoginRequest {
     email: string;
     password: string;
+    device_name?: string;
     remember?: boolean;
 }
 
