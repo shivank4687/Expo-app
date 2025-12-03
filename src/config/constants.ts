@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
     PRODUCT_DETAIL: '/products/:id',
     // Categories
     CATEGORIES: '/categories',
+    CATEGORY_DETAIL: '/categories/:id',
     // Cart
     CART: '/cart',
     ADD_TO_CART: '/cart/add',
@@ -32,6 +33,9 @@ export const API_ENDPOINTS = {
     PROFILE: '/customer/profile',
     UPDATE_PROFILE: '/customer/profile/update',
     ADDRESSES: '/customer/addresses',
+    
+    // Theme Customizations
+    THEME_CUSTOMIZATIONS: '/theme/customizations',
 };
 
 export const PAGINATION = {

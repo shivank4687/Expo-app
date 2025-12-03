@@ -50,14 +50,33 @@ export const loginThunk = createAsyncThunk(
     async (credentials: LoginRequest, { rejectWithValue }) => {
         try {
             const response: AuthResponse = await authApi.login(credentials);
+            console.log('Login Response:', JSON.stringify(response, null, 2));
 
             // Handle nested response structure
             let user = response.user;
             let token = response.token;
 
-            if (!user && (response as any).data?.user) {
-                user = (response as any).data.user;
-                token = (response as any).data.token;
+            // Bagisto API structure: { data: User, token: string, message: string }
+            if (!user && (response as any).data) {
+                // Check if 'data' is the user object itself (has id/email)
+                if ((response as any).data.id || (response as any).data.email) {
+                    user = (response as any).data;
+                }
+                // Or if it's nested in data.user
+                else if ((response as any).data.user) {
+                    user = (response as any).data.user;
+                    token = (response as any).data.token || token;
+                }
+            }
+
+            // Handle double nested data (common in some frameworks)
+            if (!user && (response as any).data?.data?.user) {
+                user = (response as any).data.data.user;
+                token = (response as any).data.data.token || (response as any).data.token || token;
+            }
+
+            if (!user) {
+                console.error('Could not find user in response');
             }
 
             // Store in secure storage if valid
@@ -86,9 +105,17 @@ export const signupThunk = createAsyncThunk(
             let user = response.user;
             let token = response.token;
 
-            if (!user && (response as any).data?.user) {
-                user = (response as any).data.user;
-                token = (response as any).data.token;
+            // Bagisto API structure: { data: User, token: string, message: string }
+            if (!user && (response as any).data) {
+                // Check if 'data' is the user object itself (has id/email)
+                if ((response as any).data.id || (response as any).data.email) {
+                    user = (response as any).data;
+                }
+                // Or if it's nested in data.user
+                else if ((response as any).data.user) {
+                    user = (response as any).data.user;
+                    token = (response as any).data.token || token;
+                }
             }
 
             // Store in secure storage if valid

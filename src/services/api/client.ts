@@ -2,18 +2,27 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 import { config } from '@/config/env';
 import { STORAGE_KEYS } from '@/config/constants';
 import { secureStorage } from '../storage/secureStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * API Client
+ * API Client Types
+ */
+type ApiType = 'rest' | 'shop';
+
+/**
+ * Base API Client
  * Axios instance with interceptors for authentication and error handling
  */
-
 class ApiClient {
     private instance: AxiosInstance;
+    private apiType: ApiType;
 
-    constructor() {
+    constructor(apiType: ApiType = 'rest') {
+        this.apiType = apiType;
+        const baseURL = apiType === 'shop' ? config.shopApiUrl : config.restApiUrl;
+        
         this.instance = axios.create({
-            baseURL: config.apiUrl,
+            baseURL,
             timeout: config.timeout,
             headers: {
                 'Content-Type': 'application/json',
@@ -25,14 +34,34 @@ class ApiClient {
     }
 
     private setupInterceptors() {
-        // Request interceptor - Add auth token
+        // Request interceptor - Add auth token, locale, and currency
         this.instance.interceptors.request.use(
             async (config) => {
+                // Add auth token
                 const token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
+
+                // Get locale and currency from storage
+                const locale = await AsyncStorage.getItem('selected_locale') || 'en';
+                const currency = await AsyncStorage.getItem('selected_currency') || 'USD';
+
+                // Handle locale based on API type
+                if (this.apiType === 'rest') {
+                    // REST API uses X-Locale header
+                    config.headers['X-Locale'] = locale;
+                } else if (this.apiType === 'shop') {
+                    // Shop API uses query parameter
+                    // Add locale to query params if not already present
+                    if (!config.url?.includes('locale=')) {
+                        const separator = config.url?.includes('?') ? '&' : '?';
+                        config.url = `${config.url}${separator}locale=${locale}`;
+                    }
+                }
+
+                // Currency is handled the same way for both
+                config.headers['X-Currency'] = currency;
 
                 return config;
             },
@@ -116,6 +145,14 @@ class ApiClient {
     }
 }
 
-// Export singleton instance
-export const apiClient = new ApiClient();
+// Export singleton instances
+// REST API Client - uses X-Locale header, for /api/v1 endpoints
+export const restApiClient = new ApiClient('rest');
+
+// Shop API Client - uses ?locale= query parameter, for /api endpoints
+export const shopApiClient = new ApiClient('shop');
+
+// Default export for backward compatibility (REST API)
+export const apiClient = restApiClient;
+
 export default apiClient;

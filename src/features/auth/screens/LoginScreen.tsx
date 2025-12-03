@@ -16,11 +16,15 @@ import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { validation } from '@/shared/utils/validation';
 import { theme } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { useToast } from '@/shared/components/Toast';
 
 export const LoginScreen: React.FC = () => {
+    const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { isLoading, error } = useAppSelector((state) => state.auth);
+    const { isLoading } = useAppSelector((state) => state.auth);
+    const { showToast } = useToast();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -44,13 +48,13 @@ export const LoginScreen: React.FC = () => {
         const newErrors: { email?: string; password?: string } = {};
 
         if (!validation.isRequired(email)) {
-            newErrors.email = 'Email is required';
+            newErrors.email = t('auth.emailRequired');
         } else if (!validation.isValidEmail(email)) {
-            newErrors.email = 'Please enter a valid email';
+            newErrors.email = t('auth.emailInvalid');
         }
 
         if (!validation.isRequired(password)) {
-            newErrors.password = 'Password is required';
+            newErrors.password = t('auth.passwordRequired');
         }
 
         setErrors(newErrors);
@@ -62,16 +66,27 @@ export const LoginScreen: React.FC = () => {
 
         try {
             const result = await dispatch(loginThunk({ email, password })).unwrap();
+            
+            // Show success toast
+            showToast({
+                message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
+                type: 'success',
+                duration: 3000,
+            });
+            
             // Navigate to home/drawer after successful login
-            if (router.canGoBack()) {
-                router.dismissAll();
-            }
-            router.replace('/(drawer)/(tabs)');
+            setTimeout(() => {
+                if (router.canGoBack()) {
+                    router.dismissAll();
+                }
+                router.replace('/(drawer)/(tabs)');
+            }, 500);
         } catch (err: any) {
-            Alert.alert(
-                'Login Failed',
-                err || 'Invalid email or password. Please try again.'
-            );
+            showToast({
+                message: err || t('auth.invalidCredentials'),
+                type: 'error',
+                duration: 4000,
+            });
         }
     };
 
@@ -89,14 +104,14 @@ export const LoginScreen: React.FC = () => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.header}>
-                    <Text style={styles.title}>Welcome Back</Text>
-                    <Text style={styles.subtitle}>Sign in to continue shopping</Text>
+                    <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.signInToContinue')}</Text>
                 </View>
 
                 <View style={styles.form}>
                     <Input
-                        label="Email"
-                        placeholder="Enter your email"
+                        label={t('auth.email')}
+                        placeholder={t('auth.enterYourEmail')}
                         value={email}
                         onChangeText={handleEmailChange}
                         error={errors.email}
@@ -107,8 +122,8 @@ export const LoginScreen: React.FC = () => {
                     />
 
                     <Input
-                        label="Password"
-                        placeholder="Enter your password"
+                        label={t('auth.password')}
+                        placeholder={t('auth.enterYourPassword')}
                         value={password}
                         onChangeText={handlePasswordChange}
                         error={errors.password}
@@ -118,11 +133,11 @@ export const LoginScreen: React.FC = () => {
                     />
 
                     <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                        <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
                     </TouchableOpacity>
 
                     <Button
-                        title="Sign In"
+                        title={t('auth.signIn')}
                         onPress={handleLogin}
                         loading={isLoading}
                         fullWidth
@@ -130,9 +145,9 @@ export const LoginScreen: React.FC = () => {
                     />
 
                     <View style={styles.signupContainer}>
-                        <Text style={styles.signupText}>Don't have an account? </Text>
+                        <Text style={styles.signupText}>{t('auth.dontHaveAccount')} </Text>
                         <TouchableOpacity onPress={handleSignupPress}>
-                            <Text style={styles.signupLink}>Sign Up</Text>
+                            <Text style={styles.signupLink}>{t('auth.signup')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

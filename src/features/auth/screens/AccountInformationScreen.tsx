@@ -1,19 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
-import { useAppSelector } from '@/store/hooks';
+import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 
 export const AccountInformationScreen: React.FC = () => {
-    const { user } = useAppSelector((state) => state.auth);
+    const { user, isLoading } = useRequireAuth();
+
+    if (isLoading) {
+        return (
+            <>
+                <Stack.Screen options={{ title: 'Account Information', headerBackTitle: 'Back' }} />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                </View>
+            </>
+        );
+    }
 
     if (!user) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text>Please login to view account information.</Text>
-            </View>
-        );
+        return null;
     }
 
     const InfoItem = ({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string | undefined }) => (
@@ -78,10 +85,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.default,
     },
-    centerContainer: {
+    loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: theme.colors.background.default,
     },
     header: {
         alignItems: 'center',

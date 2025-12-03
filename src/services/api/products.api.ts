@@ -1,10 +1,11 @@
-import { apiClient } from './client';
+import { restApiClient } from './client';
 import { API_ENDPOINTS } from '@/config/constants';
 import { Product, ProductFilters } from '@/features/product/types/product.types';
 import { PaginatedResponse } from '@/types/global.types';
 
 /**
  * Products API Service
+ * Uses REST API v1 endpoints
  */
 
 /**
@@ -32,7 +33,7 @@ export const productsApi = {
      * Get list of products with optional filters
      */
     async getProducts(filters?: ProductFilters): Promise<PaginatedResponse<Product>> {
-        const response = await apiClient.get<PaginatedResponse<any>>(API_ENDPOINTS.PRODUCTS, {
+        const response = await restApiClient.get<PaginatedResponse<any>>(API_ENDPOINTS.PRODUCTS, {
             params: filters,
         });
 
@@ -47,7 +48,7 @@ export const productsApi = {
      */
     async getProductById(id: number): Promise<Product> {
         const url = API_ENDPOINTS.PRODUCT_DETAIL.replace(':id', id.toString());
-        const response = await apiClient.get<{ data: any }>(url);
+        const response = await restApiClient.get<{ data: any }>(url);
         // Handle case where API might return wrapped data or direct object
         const data = (response as any).data || response;
         return transformProduct(data);

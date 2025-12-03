@@ -1,48 +1,99 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
+import { Category } from '@/services/api/categories.api';
+import { useTranslation } from 'react-i18next';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { fetchCategories } from '@/store/slices/categorySlice';
 
-// Mock categories - replace with actual API call
-const MOCK_CATEGORIES = [
-    { id: 1, name: 'Electronics', icon: 'laptop' as const },
-    { id: 2, name: 'Fashion', icon: 'shirt' as const },
-    { id: 3, name: 'Home', icon: 'home' as const },
-    { id: 4, name: 'Beauty', icon: 'sparkles' as const },
-    { id: 5, name: 'Sports', icon: 'football' as const },
-    { id: 6, name: 'Books', icon: 'book' as const },
-];
+const CATEGORY_ICON_SIZE = 24;
 
-interface Category {
-    id: number;
-    name: string;
-    icon: keyof typeof Ionicons.glyphMap;
-}
+/**
+ * CategoryImageComponent
+ * Displays category image or fallback icon on error
+ */
+const CategoryImageComponent: React.FC<{ imageUrl?: string }> = ({ imageUrl }) => {
+    const [imageError, setImageError] = useState(false);
 
+    if (imageUrl && !imageError) {
+        return (
+            <Image 
+                source={{ uri: imageUrl }} 
+                style={styles.categoryImage}
+                resizeMode="cover"
+                onError={() => setImageError(true)}
+            />
+        );
+    }
+
+    return (
+        <Ionicons 
+            name="grid-outline" 
+            size={CATEGORY_ICON_SIZE} 
+            color={theme.colors.primary[500]} 
+        />
+    );
+};
+
+/**
+ * CategoryList Component
+ * Displays a vertical list of categories
+ * Automatically reloads when locale changes
+ */
 export const CategoryList: React.FC = () => {
-    const handleCategoryPress = (categoryId: number) => {
-        // Navigate to category products
-        console.log('Category pressed:', categoryId);
-    };
+    const { t } = useTranslation();
+    const router = useRouter();
+    const dispatch = useAppDispatch();
+    const { selectedLocale } = useAppSelector((state) => state.core);
+    const { categories, isLoading } = useAppSelector((state) => state.category);
 
-    const renderCategory = ({ item }: { item: Category }) => (
+    useEffect(() => {
+        if (selectedLocale?.code) {
+            dispatch(fetchCategories({ locale: selectedLocale.code }));
+        }
+    }, [selectedLocale?.code, dispatch]);
+
+    const handleCategoryPress = useCallback((categoryId: number) => {
+        router.push(`/category/${categoryId}` as any);
+    }, [router]);
+
+    const renderCategory = useCallback(({ item }: { item: Category }) => (
         <TouchableOpacity
             style={styles.categoryItem}
             onPress={() => handleCategoryPress(item.id)}
             activeOpacity={0.7}
         >
             <View style={styles.iconContainer}>
-                <Ionicons name={item.icon} size={24} color={theme.colors.primary[500]} />
+                <CategoryImageComponent imageUrl={item.image} />
             </View>
-            <Text style={styles.categoryName}>{item.name}</Text>
+            <Text style={styles.categoryName} numberOfLines={2}>
+                {item.name}
+            </Text>
         </TouchableOpacity>
-    );
+    ), [handleCategoryPress]);
+
+    if (isLoading) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>{t('category.categories')}</Text>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                </View>
+            </View>
+        );
+    }
+
+    if (categories.length === 0) {
+        return null; // Don't show section if no categories
+    }
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Categories</Text>
+            <Text style={styles.title}>{t('category.categories')}</Text>
             <FlatList
-                data={MOCK_CATEGORIES}
+                data={categories}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.id.toString()}
@@ -69,6 +120,7 @@ const styles = StyleSheet.create({
     categoryItem: {
         alignItems: 'center',
         marginRight: theme.spacing.lg,
+        width: 70,
     },
     iconContainer: {
         width: 60,
@@ -78,11 +130,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: theme.spacing.sm,
+        overflow: 'hidden',
+    },
+    categoryImage: {
+        width: '100%',
+        height: '100%',
     },
     categoryName: {
         fontSize: theme.typography.fontSize.xs,
         color: theme.colors.text.primary,
         fontWeight: theme.typography.fontWeight.medium,
+        textAlign: 'center',
+    },
+    loadingContainer: {
+        height: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 

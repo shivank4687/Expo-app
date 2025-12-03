@@ -2,21 +2,33 @@
 import { Platform } from "react-native";
 //http://127.0.0.1:8000/api/v1'
 //http://192.168.31.102:8000/
+
+const getBaseUrl = () => {
+  return Platform.OS === "android"
+    ? "http://10.0.2.2:8000"
+    : "http://192.168.31.102:8000";
+};
+
 const ENV = {
   development: {
-    // Use 10.0.2.2 for Android emulator, 127.0.0.1 for iOS simulator/web
-    apiUrl:
-      Platform.OS === "android"
-        ? "http://10.0.2.2:8000/api/v1"
-        : "http://192.168.31.102:8000/api/v1",
+    // Base URL without any API prefix
+    baseUrl: getBaseUrl(),
+    // REST API v1 - uses X-Locale header
+    restApiUrl: `${getBaseUrl()}/api/v1`,
+    // Shop API - uses ?locale= query parameter
+    shopApiUrl: `${getBaseUrl()}/api`,
     timeout: 30000,
   },
   staging: {
-    apiUrl: "https://staging.yourdomain.com/api/v1",
+    baseUrl: "https://staging.yourdomain.com",
+    restApiUrl: "https://staging.yourdomain.com/api/v1",
+    shopApiUrl: "https://staging.yourdomain.com/api",
     timeout: 30000,
   },
   production: {
-    apiUrl: "https://api.yourdomain.com/api/v1",
+    baseUrl: "https://api.yourdomain.com",
+    restApiUrl: "https://api.yourdomain.com/api/v1",
+    shopApiUrl: "https://api.yourdomain.com/api",
     timeout: 30000,
   },
 };
@@ -31,5 +43,8 @@ const getEnvVars = () => {
 };
 
 export const config = getEnvVars();
+
+// For backward compatibility
+export const apiUrl = config.restApiUrl;
 
 export default config;

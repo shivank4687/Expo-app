@@ -114,7 +114,7 @@ export const ProductDetailScreen: React.FC = () => {
                                 </Text>
                                 <View style={styles.discountBadge}>
                                     <Text style={styles.discountText}>
-                                        {Math.round(((product.price - product.special_price!) / product.price) * 100)}% OFF
+                                        {Math.round(((product.price - product.special_price!) / product.price) * 100).toString()}% OFF
                                     </Text>
                                 </View>
                             </>

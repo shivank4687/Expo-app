@@ -18,6 +18,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={24} color={color} />
           ),
+          tabBarStyle: { display: 'none' }, // Hides the tab bar
         }}
       />
     </Tabs>

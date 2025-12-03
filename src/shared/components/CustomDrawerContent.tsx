@@ -1,66 +1,173 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutThunk } from '@/store/slices/authSlice';
+import { fetchCoreConfig } from '@/store/slices/coreSlice';
+import { fetchCategories } from '@/store/slices/categorySlice';
 import { useRouter } from 'expo-router';
+import { DrawerSection, DrawerItem } from './DrawerSection';
+import { Category } from '@/services/api/categories.api';
+import { useTranslation } from 'react-i18next';
 
 export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
+    const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+    const { selectedLocale, selectedCurrency } = useAppSelector((state) => state.core);
+    const { categories } = useAppSelector((state) => state.category);
     const router = useRouter();
+
+    useEffect(() => {
+        // Initialize core config (locale, currency) if not loaded
+        dispatch(fetchCoreConfig());
+    }, [dispatch]);
+
+    // Load categories when locale changes
+    useEffect(() => {
+        if (selectedLocale?.code) {
+            dispatch(fetchCategories({ locale: selectedLocale.code }));
+        }
+    }, [selectedLocale?.code, dispatch]);
 
     const handleLoginPress = () => {
         router.push('/login');
     };
 
     const handleLogout = () => {
-        dispatch(logoutThunk());
+        Alert.alert(
+            t('auth.logoutConfirmTitle', 'Confirm Logout'),
+            t('auth.logoutConfirmMessage', 'Are you sure you want to logout?'),
+            [
+                {
+                    text: t('common.cancel', 'Cancel'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('auth.logout', 'Logout'),
+                    style: 'destructive',
+                    onPress: () => {
+                        dispatch(logoutThunk());
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    };
+
+    const navigateTo = (path: string) => {
+        router.push(path as any);
     };
 
     return (
-        <DrawerContentScrollView {...props} contentContainerStyle={styles.container}>
-            {/* User Profile Section */}
-            <View style={styles.profileSection}>
-                {isAuthenticated && user ? (
-                    <TouchableOpacity onPress={() => router.push('/account-info')} style={styles.userInfoContainer}>
-                        <View style={styles.avatarContainer}>
-                            <Image
-                                source={{ uri: user.avatar || 'https://via.placeholder.com/100' }}
-                                style={styles.avatar}
+        <View style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* User Profile Section */}
+                <View style={styles.profileSection}>
+                    {isAuthenticated ? (
+                        <TouchableOpacity onPress={() => navigateTo('/account-info')} style={styles.userInfoContainer}>
+                            <View style={styles.avatarContainer}>
+                                <Image
+                                    source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
+                                    style={styles.avatar}
+                                />
+                            </View>
+                            <Text style={styles.userName}>{user?.name || 'User'}</Text>
+                            <Text style={styles.userEmail}>{user?.email || ''}</Text>
+                            <Text style={styles.viewProfileText}>{t('drawer.viewProfile')}</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity onPress={handleLoginPress} style={styles.loginButton}>
+                            <View style={styles.loginIconContainer}>
+                                <Ionicons name="person-circle-outline" size={40} color={theme.colors.primary[500]} />
+                            </View>
+                            <Text style={styles.loginText}>{t('auth.loginOrSignup')}</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Categories Section */}
+                <DrawerSection title={t('drawer.categories')} icon="grid-outline" defaultExpanded={true}>
+                    {categories.map((category) => (
+                        <React.Fragment key={category.id}>
+                            {/* Parent Category */}
+                            <DrawerItem
+                                label={category.name}
+                                imageUrl={category.image}
+                                onPress={() => navigateTo(`/category/${category.id}`)}
+                                level={0}
                             />
-                        </View>
-                        <Text style={styles.userName}>{user.name}</Text>
-                        <Text style={styles.userEmail}>{user.email}</Text>
-                        <Text style={styles.viewProfileText}>View Profile</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity onPress={handleLoginPress} style={styles.loginButton}>
-                        <View style={styles.loginIconContainer}>
-                            <Ionicons name="person-circle-outline" size={40} color={theme.colors.primary[500]} />
-                        </View>
-                        <Text style={styles.loginText}>Login / Sign Up</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
+                            {/* Child Categories - Commented out as per user request */}
+                            {/* {category.children && category.children.length > 0 && (
+                                <>
+                                    {category.children.map((child) => (
+                                        <DrawerItem
+                                            key={child.id}
+                                            label={child.name}
+                                            imageUrl={child.image}
+                                            onPress={() => navigateTo(`/category/${child.id}`)}
+                                            level={1}
+                                        />
+                                    ))}
+                                </>
+                            )} */}
+                        </React.Fragment>
+                    ))}
+                </DrawerSection>
 
-            {/* Drawer Items */}
-            <View style={styles.drawerItems}>
-                <DrawerItemList {...props} />
-            </View>
-
-            {/* Footer Actions */}
-            <View style={styles.footer}>
+                {/* Your Information Section - Only show when authenticated */}
                 {isAuthenticated && (
+                    <DrawerSection title={t('drawer.yourInformation')} icon="person-outline">
+                        <DrawerItem label={t('drawer.dashboard')} icon="speedometer-outline" onPress={() => navigateTo('/dashboard')} />
+                        <DrawerItem label={t('drawer.orders')} icon="receipt-outline" onPress={() => navigateTo('/orders')} />
+                        <DrawerItem label={t('drawer.reviews')} icon="star-outline" onPress={() => navigateTo('/reviews')} />
+                    </DrawerSection>
+                )}
+
+                {/* Other Section */}
+                <DrawerSection title={t('drawer.other')} icon="information-circle-outline">
+                    <DrawerItem label={t('drawer.aboutUs')} onPress={() => navigateTo('/static/about-us')} />
+                    <DrawerItem label={t('drawer.returnPolicy')} onPress={() => navigateTo('/static/return-policy')} />
+                    <DrawerItem label={t('drawer.termsAndConditions')} onPress={() => navigateTo('/static/terms-conditions')} />
+                    <DrawerItem label={t('drawer.termsOfUse')} onPress={() => navigateTo('/static/terms-of-use')} />
+                    <DrawerItem label={t('drawer.contactUs')} onPress={() => navigateTo('/static/contact-us')} />
+                    <DrawerItem label={t('drawer.customerService')} onPress={() => navigateTo('/static/customer-service')} />
+                    <DrawerItem label={t('drawer.whatsNew')} onPress={() => navigateTo('/static/whats-new')} />
+                    <DrawerItem label={t('drawer.paymentPolicy')} onPress={() => navigateTo('/static/payment-policy')} />
+                    <DrawerItem label={t('drawer.shippingPolicy')} onPress={() => navigateTo('/static/shipping-policy')} />
+                    <DrawerItem label={t('drawer.privacyPolicy')} onPress={() => navigateTo('/static/privacy-policy')} />
+                </DrawerSection>
+
+                {/* Preferences Section */}
+                <DrawerSection title={t('drawer.preferences')} icon="settings-outline">
+                    <DrawerItem 
+                        label={t('drawer.language')} 
+                        icon="language-outline" 
+                        onPress={() => navigateTo('/language-selection')}
+                        rightText={selectedLocale?.name || 'English'}
+                    />
+                    <DrawerItem 
+                        label={t('drawer.currency')} 
+                        icon="cash-outline" 
+                        onPress={() => navigateTo('/currency-selection')}
+                        rightText={selectedCurrency?.code || 'USD'}
+                    />
+                    <DrawerItem label={t('drawer.gdprRequests')} icon="shield-checkmark-outline" onPress={() => navigateTo('/gdpr-requests')} />
+                </DrawerSection>
+            </ScrollView>
+
+            {/* Logout Button at Bottom */}
+            {isAuthenticated && (
+                <View style={styles.footer}>
                     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                         <Ionicons name="log-out-outline" size={24} color={theme.colors.error.main} />
-                        <Text style={styles.logoutText}>Logout</Text>
+                        <Text style={styles.logoutText}>{t('auth.logout')}</Text>
                     </TouchableOpacity>
-                )}
-            </View>
-        </DrawerContentScrollView>
+                </View>
+            )}
+        </View>
     );
 };
 
@@ -120,9 +227,6 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
-    },
-    drawerItems: {
-        flex: 1,
     },
     footer: {
         padding: theme.spacing.lg,

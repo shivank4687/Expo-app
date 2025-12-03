@@ -3,6 +3,8 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import authReducer from './slices/authSlice';
+import coreReducer from './slices/coreSlice';
+import categoryReducer from './slices/categorySlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -35,12 +37,14 @@ const storage = Platform.OS === 'web'
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth'], // Only persist auth
+    whitelist: ['auth', 'core', 'category'], // Persist auth, core, and category
 };
 
 // Root reducer
 const rootReducer = combineReducers({
     auth: authReducer,
+    core: coreReducer,
+    category: categoryReducer,
 });
 
 // Persisted reducer

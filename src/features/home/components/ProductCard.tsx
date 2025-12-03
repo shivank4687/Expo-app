@@ -1,67 +1,112 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/features/product/types/product.types';
 import { Card } from '@/shared/components/Card';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
+import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
 
 interface ProductCardProps {
     product: Product;
     onPress: () => void;
 }
 
+const PLACEHOLDER_ICON_SIZE = 48;
+const RATING_ICON_SIZE = 14;
+
+/**
+ * ProductCard Component
+ * Displays product information with image, name, price, and ratings
+ * Shows placeholder icon if image fails to load
+ */
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
-    const imageUrl = product.thumbnail || (product.images && product.images[0]?.url) || 'https://via.placeholder.com/200';
-    const hasDiscount = product.special_price && product.special_price < product.price;
-    const productName = product.name || 'Product';
-    const productRating = product.rating || 0;
-    const reviewCount = product.reviews_count || 0;
+    const [imageError, setImageError] = useState(false);
+    
+    const productData = useMemo(() => {
+        const rawImageUrl = product.thumbnail || (product.images && product.images[0]?.url);
+        const imageUrl = getAbsoluteImageUrl(rawImageUrl);
+        const hasValidImage = 
+            imageUrl && 
+            typeof imageUrl === 'string' && 
+            imageUrl.trim().length > 0 &&
+            !imageError;
+
+        return {
+            imageUrl,
+            hasValidImage,
+            hasDiscount: product.special_price && product.special_price < product.price,
+            name: product.name || 'Product',
+            rating: product.rating || 0,
+            reviewCount: product.reviews_count || 0,
+            discountPercent: product.special_price && product.price
+                ? Math.round(((product.price - product.special_price) / product.price) * 100)
+                : 0,
+        };
+    }, [product, imageError]);
 
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
             <Card variant="elevated" style={styles.card}>
                 {/* Product Image */}
                 <View style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: imageUrl }}
-                        style={styles.image}
-                        resizeMode="cover"
-                    />
-                    {hasDiscount && (
-                        <View style={styles.discountBadge}>
-                            <Text style={styles.discountText}>
-                                {Math.round(((product.price - product.special_price!) / product.price) * 100)}% OFF
-                            </Text>
+                    {productData.hasValidImage ? (
+                        <Image
+                            source={{ uri: productData.imageUrl }}
+                            style={styles.image}
+                            resizeMode="cover"
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <View style={styles.imagePlaceholder}>
+                            <Ionicons 
+                                name="image-outline" 
+                                size={PLACEHOLDER_ICON_SIZE} 
+                                color={theme.colors.gray[400]} 
+                            />
                         </View>
                     )}
-                    {!product.in_stock && (
+                    {productData.hasDiscount ? (
+                        <View style={styles.discountBadge}>
+                            <Text style={styles.discountText}>
+                                {productData.discountPercent}% OFF
+                            </Text>
+                        </View>
+                    ) : null}
+                    
+                    {!product.in_stock ? (
                         <View style={styles.outOfStockBadge}>
                             <Text style={styles.outOfStockText}>Out of Stock</Text>
                         </View>
-                    )}
+                    ) : null}
                 </View>
 
                 {/* Product Info */}
                 <View style={styles.info}>
                     <Text style={styles.name} numberOfLines={2}>
-                        {productName}
+                        {productData.name}
                     </Text>
 
-                    {/* Rating */}
-                    {productRating > 0 && (
+                    {productData.rating > 0 ? (
                         <View style={styles.ratingContainer}>
-                            <Ionicons name="star" size={14} color={theme.colors.warning.main} />
-                            <Text style={styles.rating}>{productRating.toFixed(1)}</Text>
-                            {reviewCount > 0 && (
-                                <Text style={styles.reviewCount}>({reviewCount})</Text>
-                            )}
+                            <Ionicons 
+                                name="star" 
+                                size={RATING_ICON_SIZE} 
+                                color={theme.colors.warning.main} 
+                            />
+                            <Text style={styles.rating}>
+                                {productData.rating.toFixed(1)}
+                            </Text>
+                            {productData.reviewCount > 0 ? (
+                                <Text style={styles.reviewCount}>
+                                    ({productData.reviewCount})
+                                </Text>
+                            ) : null}
                         </View>
-                    )}
+                    ) : null}
 
-                    {/* Price */}
                     <View style={styles.priceContainer}>
-                        {hasDiscount ? (
+                        {productData.hasDiscount ? (
                             <>
                                 <Text style={styles.specialPrice}>
                                     {formatters.formatPrice(product.special_price!)}
@@ -91,10 +136,18 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 150,
         position: 'relative',
+        backgroundColor: '#F3F4F6',
     },
     image: {
         width: '100%',
         height: '100%',
+    },
+    imagePlaceholder: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#F3F4F6',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     discountBadge: {
         position: 'absolute',

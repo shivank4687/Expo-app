@@ -7,20 +7,23 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableOpacity,
-    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { signupThunk } from '@/store/slices/authSlice';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { validation } from '@/shared/utils/validation';
 import { theme } from '@/theme';
+import { useToast } from '@/shared/components/Toast';
 
 export const SignupScreen: React.FC = () => {
+    const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector((state) => state.auth);
+    const { showToast } = useToast();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -45,27 +48,27 @@ export const SignupScreen: React.FC = () => {
         const newErrors: typeof errors = {};
 
         if (!validation.isRequired(formData.name)) {
-            newErrors.name = 'Name is required';
+            newErrors.name = t('auth.nameRequired');
         } else if (!validation.minLength(formData.name, 2)) {
-            newErrors.name = 'Name must be at least 2 characters';
+            newErrors.name = t('auth.nameMinLength');
         }
 
         if (!validation.isRequired(formData.email)) {
-            newErrors.email = 'Email is required';
+            newErrors.email = t('auth.emailRequired');
         } else if (!validation.isValidEmail(formData.email)) {
-            newErrors.email = 'Please enter a valid email';
+            newErrors.email = t('auth.emailInvalid');
         }
 
         if (!validation.isRequired(formData.password)) {
-            newErrors.password = 'Password is required';
+            newErrors.password = t('auth.passwordRequired');
         } else if (!validation.isValidPassword(formData.password)) {
             newErrors.password = validation.getPasswordStrengthMessage(formData.password);
         }
 
         if (!validation.isRequired(formData.confirmPassword)) {
-            newErrors.confirmPassword = 'Please confirm your password';
+            newErrors.confirmPassword = t('auth.confirmPasswordRequired');
         } else if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
+            newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
         }
 
         setErrors(newErrors);
@@ -83,16 +86,26 @@ export const SignupScreen: React.FC = () => {
                 password_confirmation: formData.confirmPassword,
             })).unwrap();
 
+            // Show success toast
+            showToast({
+                message: t('auth.signupSuccess', 'Account created successfully! Welcome aboard.'),
+                type: 'success',
+                duration: 3000,
+            });
+
             // Navigate to home after successful signup
-            if (router.canGoBack()) {
-                router.dismissAll();
-            }
-            router.replace('/(drawer)/(tabs)');
+            setTimeout(() => {
+                if (router.canGoBack()) {
+                    router.dismissAll();
+                }
+                router.replace('/(drawer)/(tabs)');
+            }, 500);
         } catch (err: any) {
-            Alert.alert(
-                'Signup Failed',
-                err || 'Unable to create account. Please try again.'
-            );
+            showToast({
+                message: err || t('auth.unableToCreateAccount'),
+                type: 'error',
+                duration: 4000,
+            });
         }
     };
 
@@ -110,14 +123,14 @@ export const SignupScreen: React.FC = () => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.header}>
-                    <Text style={styles.title}>Create Account</Text>
-                    <Text style={styles.subtitle}>Sign up to get started</Text>
+                    <Text style={styles.title}>{t('auth.createAccount')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.signUpToGetStarted')}</Text>
                 </View>
 
                 <View style={styles.form}>
                     <Input
-                        label="Full Name"
-                        placeholder="Enter your full name"
+                        label={t('auth.fullName')}
+                        placeholder={t('auth.enterYourFullName')}
                         value={formData.name}
                         onChangeText={(text) => updateField('name', text)}
                         error={errors.name}
@@ -126,8 +139,8 @@ export const SignupScreen: React.FC = () => {
                     />
 
                     <Input
-                        label="Email"
-                        placeholder="Enter your email"
+                        label={t('auth.email')}
+                        placeholder={t('auth.enterYourEmail')}
                         value={formData.email}
                         onChangeText={(text) => updateField('email', text)}
                         error={errors.email}
@@ -138,8 +151,8 @@ export const SignupScreen: React.FC = () => {
                     />
 
                     <Input
-                        label="Password"
-                        placeholder="Create a password"
+                        label={t('auth.password')}
+                        placeholder={t('auth.createAPassword')}
                         value={formData.password}
                         onChangeText={(text) => updateField('password', text)}
                         error={errors.password}
@@ -149,8 +162,8 @@ export const SignupScreen: React.FC = () => {
                     />
 
                     <Input
-                        label="Confirm Password"
-                        placeholder="Confirm your password"
+                        label={t('auth.confirmPassword')}
+                        placeholder={t('auth.confirmYourPassword')}
                         value={formData.confirmPassword}
                         onChangeText={(text) => updateField('confirmPassword', text)}
                         error={errors.confirmPassword}
@@ -160,13 +173,13 @@ export const SignupScreen: React.FC = () => {
                     />
 
                     <Text style={styles.termsText}>
-                        By signing up, you agree to our{' '}
-                        <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-                        <Text style={styles.termsLink}>Privacy Policy</Text>
+                        {t('auth.termsAgreement')}{' '}
+                        <Text style={styles.termsLink}>{t('auth.termsOfService')}</Text> {t('auth.and')}{' '}
+                        <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
                     </Text>
 
                     <Button
-                        title="Sign Up"
+                        title={t('auth.signUp')}
                         onPress={handleSignup}
                         loading={isLoading}
                         fullWidth
@@ -174,9 +187,9 @@ export const SignupScreen: React.FC = () => {
                     />
 
                     <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>Already have an account? </Text>
+                        <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
                         <TouchableOpacity onPress={handleLoginPress}>
-                            <Text style={styles.loginLink}>Sign In</Text>
+                            <Text style={styles.loginLink}>{t('auth.signIn')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

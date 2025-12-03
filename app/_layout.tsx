@@ -6,6 +6,9 @@ import { useEffect } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { checkAuthThunk } from "@/store/slices/authSlice";
 import { ActivityIndicator, View } from "react-native";
+import "@/i18n/config";
+import { LocaleSync } from "@/i18n/LocaleSync";
+import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -15,24 +18,28 @@ function AppContent() {
   }, [dispatch]);
 
   return (
-    <Stack>
-      <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="login"
-        options={{ title: "Login", headerShown: false }}
-      />
-      <Stack.Screen
-        name="signup"
-        options={{ title: "Sign Up", headerShown: false }}
-      />
-      <Stack.Screen
-        name="product/[id]"
-        options={{
-          title: "Product Details",
-          headerBackTitle: "Back",
-        }}
-      />
-    </Stack>
+    <ToastProvider>
+      <LocaleSync />
+      <Stack>
+        <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="login"
+          options={{ title: "Login", headerShown: false }}
+        />
+        <Stack.Screen
+          name="signup"
+          options={{ title: "Sign Up", headerShown: false }}
+        />
+        <Stack.Screen
+          name="product/[id]"
+          options={{
+            title: "Product Details",
+            headerBackTitle: "Back",
+          }}
+        />
+      </Stack>
+      <ToastContainer />
+    </ToastProvider>
   );
 }
 
