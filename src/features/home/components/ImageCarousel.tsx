@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     View,
     ScrollView,
-    Image,
     Dimensions,
     TouchableOpacity,
     StyleSheet,
@@ -10,7 +9,7 @@ import {
 } from 'react-native';
 import { ImageCarouselOptions } from '@/types/theme.types';
 import { theme } from '@/theme';
-import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
+import { BannerImage } from '@/shared/components/LazyImage';
 
 interface ImageCarouselProps {
     options: ImageCarouselOptions;
@@ -73,28 +72,21 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ options }) => {
                 onScroll={handleScroll}
                 scrollEventThrottle={SCROLL_EVENT_THROTTLE}
             >
-                {images.map((image, index) => {
-                    const imageUrl = getAbsoluteImageUrl(image.image);
-                    const imageSource = typeof imageUrl === 'string' 
-                        ? { uri: imageUrl } 
-                        : imageUrl;
-
-                    return (
-                        <TouchableOpacity
-                            key={`carousel-${index}`}
-                            style={[styles.imageContainer, { width: screenWidth }]}
-                            onPress={() => handleImagePress(image.link)}
-                            activeOpacity={image.link ? 0.8 : 1}
-                            disabled={!image.link}
-                        >
-                            <Image
-                                source={imageSource}
-                                style={styles.image}
-                                resizeMode="cover"
-                            />
-                        </TouchableOpacity>
-                    );
-                })}
+                {images.map((image, index) => (
+                    <TouchableOpacity
+                        key={`carousel-${index}`}
+                        style={[styles.imageContainer, { width: screenWidth }]}
+                        onPress={() => handleImagePress(image.link)}
+                        activeOpacity={image.link ? 0.8 : 1}
+                        disabled={!image.link}
+                    >
+                        <BannerImage
+                            imageUrl={image.image}
+                            style={styles.image}
+                            priority={index === 0 ? 'high' : 'normal'}
+                        />
+                    </TouchableOpacity>
+                ))}
             </ScrollView>
 
             {images.length > 1 ? (

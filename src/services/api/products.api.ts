@@ -21,10 +21,18 @@ const transformProduct = (data: any): Product => {
         special_price: data.special_price && typeof data.special_price === 'string'
             ? parseFloat(data.special_price)
             : data.special_price,
-        rating: data.rating ? (typeof data.rating === 'string' ? parseFloat(data.rating) : data.rating) : 0,
-        reviews_count: data.reviews ? data.reviews.total : 0,
+        regular_price: data.regular_price && typeof data.regular_price === 'string'
+            ? parseFloat(data.regular_price)
+            : data.regular_price,
+        rating: data.reviews?.average_rating || 0,
+        reviews_count: data.reviews?.total || 0,
         in_stock: data.in_stock !== undefined ? data.in_stock : true,
         images: data.images || [],
+        thumbnail: data.base_image?.medium_image_url || data.base_image?.original_image_url || (data.images && data.images[0]?.url),
+        // Badge fields
+        new: data.new,
+        is_new: data.is_new,
+        on_sale: data.on_sale,
     };
 };
 

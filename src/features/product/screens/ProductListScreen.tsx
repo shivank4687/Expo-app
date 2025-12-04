@@ -7,12 +7,19 @@ import { ProductCard } from '@/features/home/components/ProductCard';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { theme } from '@/theme';
+import { useAppSelector } from '@/store/hooks';
 
 const PRODUCTS_PER_PAGE = 20;
 
 export const ProductListScreen: React.FC = () => {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const params = useLocalSearchParams<{ 
+        id?: string;
+        title?: string;
+        featured?: string;
+        new?: string;
+    }>();
     const router = useRouter();
+    const { selectedLocale } = useAppSelector((state) => state.core);
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -21,10 +28,8 @@ export const ProductListScreen: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
 
     useEffect(() => {
-        if (id) {
-            loadProducts(1, true);
-        }
-    }, [id]);
+        loadProducts(1, true);
+    }, [params.id, params.featured, params.new, selectedLocale?.code]);
 
     const loadProducts = async (page: number, reset: boolean = false) => {
         try {
@@ -35,10 +40,36 @@ export const ProductListScreen: React.FC = () => {
             }
             setError(null);
 
-            const response = await productsApi.getProductsByCategory(parseInt(id), {
-                page,
-                per_page: PRODUCTS_PER_PAGE,
-            });
+            let response;
+            
+            // Check if ID is a valid number (category ID)
+            const categoryId = params.id ? parseInt(params.id) : NaN;
+            const isCategoryFilter = !isNaN(categoryId);
+            
+            if (isCategoryFilter) {
+                // Get products by category
+                response = await productsApi.getProductsByCategory(categoryId, {
+                    page,
+                    per_page: PRODUCTS_PER_PAGE,
+                    locale: selectedLocale?.code,
+                });
+            } else {
+                // Use filters (featured, new, etc.)
+                const filters: Record<string, any> = {
+                    page,
+                    per_page: PRODUCTS_PER_PAGE,
+                    locale: selectedLocale?.code,
+                };
+
+                if (params.featured === '1') {
+                    filters.featured = 1;
+                }
+                if (params.new === '1') {
+                    filters.new = 1;
+                }
+
+                response = await productsApi.getProducts(filters);
+            }
 
             if (reset) {
                 setProducts(response.data);
@@ -75,9 +106,12 @@ export const ProductListScreen: React.FC = () => {
         return <ErrorMessage message={error} onRetry={() => loadProducts(1, true)} />;
     }
 
+    // Determine the screen title
+    const screenTitle = params.title || 'Products';
+
     return (
         <>
-            <Stack.Screen options={{ title: 'Products', headerBackTitle: 'Back' }} />
+            <Stack.Screen options={{ title: screenTitle, headerBackTitle: 'Back' }} />
             <FlatList
                 style={styles.container}
                 data={products}

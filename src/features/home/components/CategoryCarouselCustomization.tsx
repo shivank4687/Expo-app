@@ -1,66 +1,22 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
     View,
     Text,
     ScrollView,
     TouchableOpacity,
-    Image,
     StyleSheet,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { CategoryCarouselOptions } from '@/types/theme.types';
 import { Category } from '@/services/api/categories.api';
 import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
-import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
+import { CategoryImage } from '@/shared/components/LazyImage';
 
 interface CategoryCarouselCustomizationProps {
     options: CategoryCarouselOptions;
 }
 
-interface CategoryImageProps {
-    category: Category;
-}
-
-const CATEGORY_ICON_SIZE = 32;
-
-/**
- * CategoryImage Component
- * Displays category image or placeholder icon on error
- */
-const CategoryImage: React.FC<CategoryImageProps> = ({ category }) => {
-    const [imageError, setImageError] = useState(false);
-    
-    const rawImageUrl = category.logo?.large_image_url || category.image;
-    const imageUrl = getAbsoluteImageUrl(rawImageUrl);
-    const hasValidImage = 
-        imageUrl && 
-        typeof imageUrl === 'string' && 
-        imageUrl.trim().length > 0 &&
-        !imageError;
-
-    if (hasValidImage) {
-        return (
-            <Image
-                source={{ uri: imageUrl }}
-                style={styles.categoryImage}
-                resizeMode="cover"
-                onError={() => setImageError(true)}
-            />
-        );
-    }
-
-    return (
-        <View style={styles.categoryImagePlaceholder}>
-            <Ionicons 
-                name="grid-outline" 
-                size={CATEGORY_ICON_SIZE} 
-                color={theme.colors.gray[400]} 
-            />
-        </View>
-    );
-};
 
 /**
  * CategoryCarouselCustomization Component
@@ -73,8 +29,8 @@ export const CategoryCarouselCustomization: React.FC<CategoryCarouselCustomizati
     const router = useRouter();
     const { categories, isLoading } = useAppSelector((state) => state.category);
 
-    const handleCategoryPress = useCallback((categoryId: number) => {
-        router.push(`/category/${categoryId}` as any);
+    const handleCategoryPress = useCallback((categoryId: number, categoryName: string) => {
+        router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}` as any);
     }, [router]);
 
     if (isLoading || categories.length === 0) {
@@ -96,11 +52,14 @@ export const CategoryCarouselCustomization: React.FC<CategoryCarouselCustomizati
                     <TouchableOpacity
                         key={category.id}
                         style={styles.categoryItem}
-                        onPress={() => handleCategoryPress(category.id)}
+                        onPress={() => handleCategoryPress(category.id, category.name)}
                         activeOpacity={0.7}
                     >
                         <View style={styles.categoryImageContainer}>
-                            <CategoryImage category={category} />
+                            <CategoryImage 
+                                imageUrl={category.logo_path || category.image}
+                                style={styles.categoryImage}
+                            />
                         </View>
                         <Text style={styles.categoryName} numberOfLines={2}>
                             {category.name}
@@ -143,13 +102,6 @@ const styles = StyleSheet.create({
     categoryImage: {
         width: '100%',
         height: '100%',
-    },
-    categoryImagePlaceholder: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F3F4F6',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     categoryName: {
         fontSize: theme.typography.fontSize.sm,

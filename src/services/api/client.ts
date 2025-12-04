@@ -4,6 +4,12 @@ import { STORAGE_KEYS } from '@/config/constants';
 import { secureStorage } from '../storage/secureStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Global token setter for Redux to update
+let globalToken: string | null = null;
+export const setGlobalToken = (token: string | null) => {
+    globalToken = token;
+};
+
 /**
  * API Client Types
  */
@@ -37,13 +43,34 @@ class ApiClient {
         // Request interceptor - Add auth token, locale, and currency
         this.instance.interceptors.request.use(
             async (config) => {
-                // Add auth token
-                const token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
+                // Add auth token - Try multiple sources
+                try {
+                    // 1. Try global token (set by Redux)
+                    let token = globalToken;
+                    
+                    // 2. Try secure storage
+                    if (!token) {
+                        token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+                    }
+                    
+                    // 3. Try AsyncStorage as fallback
+                    if (!token) {
+                        token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+                    }
+                    
+                    if (token) {
+                        config.headers.Authorization = `Bearer ${token}`;
+                        console.log('✅ Token added to request:', config.url);
+                    } else {
+                        console.log('⚠️ No token found for request:', config.url);
+                    }
+                } catch (tokenError) {
+                    console.error('❌ Error retrieving token:', tokenError);
                 }
 
                 // Get locale and currency from storage
+                // Fallback to 'en' and 'USD' if nothing is stored yet
+                // These will be updated when the app initializes and fetches core config
                 const locale = await AsyncStorage.getItem('selected_locale') || 'en';
                 const currency = await AsyncStorage.getItem('selected_currency') || 'USD';
 

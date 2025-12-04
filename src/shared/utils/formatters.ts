@@ -3,9 +3,22 @@
 export const formatters = {
     /**
      * Format price with currency symbol
+     * Handles both number and string inputs from API
      */
-    formatPrice(price: number, currency: string = '$'): string {
-        return `${currency}${price.toFixed(2)}`;
+    formatPrice(price: number | string | undefined | null, currency: string = '$'): string {
+        if (price === undefined || price === null) {
+            return `${currency}0.00`;
+        }
+        
+        // Convert string to number if needed
+        const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+        
+        // Check if valid number
+        if (isNaN(numPrice)) {
+            return `${currency}0.00`;
+        }
+        
+        return `${currency}${numPrice.toFixed(2)}`;
     },
 
     /**

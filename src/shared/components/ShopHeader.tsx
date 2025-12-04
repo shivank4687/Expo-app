@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { fetchCartThunk } from '@/store/slices/cartSlice';
 
 interface ShopHeaderProps {
     title?: string;
@@ -14,7 +15,23 @@ interface ShopHeaderProps {
 export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true }) => {
     const navigation = useNavigation();
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { cart } = useAppSelector((state) => state.cart);
+
+    // Fetch cart on mount (works for both authenticated and guest users)
+    useEffect(() => {
+        dispatch(fetchCartThunk());
+    }, [dispatch]);
+
+    // Refetch when authentication changes
+    useEffect(() => {
+        if (isAuthenticated) {
+            dispatch(fetchCartThunk());
+        }
+    }, [isAuthenticated, dispatch]);
+
+    const cartItemsCount = cart?.items_count || 0;
 
     const openDrawer = () => {
         navigation.dispatch(DrawerActions.openDrawer());
@@ -29,6 +46,14 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         }
     };
 
+    const handleSearchPress = () => {
+        router.push('/search');
+    };
+
+    const handleCartPress = () => {
+        router.push('/cart');
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.topRow}>
@@ -39,6 +64,11 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                 <Text style={styles.logo}>Shop App</Text>
 
                 <View style={styles.rightActions}>
+                    {showSearch && (
+                        <TouchableOpacity style={styles.iconButton} onPress={handleSearchPress}>
+                            <Ionicons name="search-outline" size={28} color={theme.colors.text.primary} />
+                        </TouchableOpacity>
+                    )}
                     <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
                         <Ionicons
                             name={isAuthenticated ? "person-outline" : "person-circle-outline"}
@@ -46,25 +76,20 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                             color={theme.colors.text.primary}
                         />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                        <Ionicons name="cart-outline" size={28} color={theme.colors.text.primary} />
-                        {/* Badge could go here */}
+                    <TouchableOpacity style={styles.iconButton} onPress={handleCartPress}>
+                        <View>
+                            <Ionicons name="cart-outline" size={28} color={theme.colors.text.primary} />
+                            {cartItemsCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
-
-            {showSearch && (
-                <View style={styles.searchContainer}>
-                    <View style={styles.searchBar}>
-                        <Ionicons name="search-outline" size={20} color={theme.colors.text.secondary} />
-                        <TextInput
-                            placeholder="Search products..."
-                            placeholderTextColor={theme.colors.text.secondary}
-                            style={styles.searchInput}
-                        />
-                    </View>
-                </View>
-            )}
         </View>
     );
 };
@@ -83,7 +108,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: theme.spacing.md,
     },
     logo: {
         fontSize: theme.typography.fontSize.xl,
@@ -97,22 +121,25 @@ const styles = StyleSheet.create({
     iconButton: {
         padding: theme.spacing.xs,
         marginLeft: theme.spacing.xs,
+        position: 'relative',
     },
-    searchContainer: {
-        paddingHorizontal: theme.spacing.xs,
-    },
-    searchBar: {
-        flexDirection: 'row',
+    badge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        backgroundColor: theme.colors.error.main,
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
+        justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: theme.colors.gray[100],
-        borderRadius: theme.borderRadius.full,
-        paddingHorizontal: theme.spacing.md,
-        height: 40,
+        paddingHorizontal: 4,
     },
-    searchInput: {
-        flex: 1,
-        marginLeft: theme.spacing.sm,
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.primary,
+    badgeText: {
+        color: theme.colors.white,
+        fontSize: 10,
+        fontWeight: theme.typography.fontWeight.bold,
     },
 });
+
+export default ShopHeader;

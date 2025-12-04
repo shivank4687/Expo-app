@@ -1,101 +1,150 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { WebView } from 'react-native-webview';
+import { cmsApi, CMSPage } from '@/services/api/cms.api';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { theme } from '@/theme';
 
-const STATIC_PAGES: Record<string, { title: string; content: string }> = {
-    'about-us': {
-        title: 'About Us',
-        content: 'Learn more about our company and mission...',
-    },
-    'return-policy': {
-        title: 'Return Policy',
-        content: 'Our return policy details...',
-    },
-    'terms-conditions': {
-        title: 'Terms & Conditions',
-        content: 'Terms and conditions of use...',
-    },
-    'terms-of-use': {
-        title: 'Terms of Use',
-        content: 'Terms of use for our services...',
-    },
-    'contact-us': {
-        title: 'Contact Us',
-        content: 'Get in touch with us...',
-    },
-    'customer-service': {
-        title: 'Customer Service',
-        content: 'Customer service information...',
-    },
-    'whats-new': {
-        title: "What's New",
-        content: 'Latest updates and features...',
-    },
-    'payment-policy': {
-        title: 'Payment Policy',
-        content: 'Payment policy details...',
-    },
-    'shipping-policy': {
-        title: 'Shipping Policy',
-        content: 'Shipping policy information...',
-    },
-    'privacy-policy': {
-        title: 'Privacy Policy',
-        content: 'Privacy policy details...',
-    },
-};
-
+/**
+ * StaticPageScreen Component
+ * Displays CMS pages dynamically from the backend
+ * Content is fetched based on url_key and respects current locale
+ */
 export const StaticPageScreen: React.FC = () => {
     const { page } = useLocalSearchParams<{ page: string }>();
-    const pageData = page ? STATIC_PAGES[page] : null;
+    const [pageData, setPageData] = useState<CMSPage | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    if (!pageData) {
+    useEffect(() => {
+        if (page) {
+            loadPage();
+        }
+    }, [page]);
+
+    const loadPage = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const data = await cmsApi.getPageByUrlKey(page);
+            setPageData(data);
+        } catch (err: any) {
+            console.error('[StaticPageScreen] Error loading page:', err);
+            setError(err.message || 'Failed to load page');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
         return (
-            <View style={styles.container}>
-                <Text style={styles.errorText}>Page not found</Text>
-            </View>
+            <>
+                <Stack.Screen options={{ title: 'Loading...', headerBackTitle: 'Back' }} />
+                <LoadingSpinner />
+            </>
         );
     }
 
+    if (error || !pageData) {
+        return (
+            <>
+                <Stack.Screen options={{ title: 'Error', headerBackTitle: 'Back' }} />
+                <ErrorMessage message={error || 'Page not found'} onRetry={loadPage} />
+            </>
+        );
+    }
+
+    // Create HTML content with proper styling
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #374151;
+                    padding: 20px;
+                    background-color: #fff;
+                }
+                h1, h2, h3, h4, h5, h6 {
+                    margin-top: 24px;
+                    margin-bottom: 16px;
+                    font-weight: 600;
+                    color: #111827;
+                }
+                h1 { font-size: 28px; }
+                h2 { font-size: 24px; }
+                h3 { font-size: 20px; }
+                p {
+                    margin-bottom: 16px;
+                }
+                ul, ol {
+                    margin-bottom: 16px;
+                    padding-left: 24px;
+                }
+                li {
+                    margin-bottom: 8px;
+                }
+                a {
+                    color: #3B82F6;
+                    text-decoration: none;
+                }
+                img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 8px;
+                    margin: 16px 0;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 16px;
+                }
+                th, td {
+                    border: 1px solid #E5E7EB;
+                    padding: 12px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #F3F4F6;
+                    font-weight: 600;
+                }
+            </style>
+        </head>
+        <body>
+            ${pageData.html_content}
+        </body>
+        </html>
+    `;
+
     return (
         <>
-            <Stack.Screen options={{ title: pageData.title, headerBackTitle: 'Back' }} />
-            <ScrollView style={styles.container}>
-                <View style={styles.content}>
-                    <Text style={styles.title}>{pageData.title}</Text>
-                    <Text style={styles.text}>{pageData.content}</Text>
-                </View>
-            </ScrollView>
+            <Stack.Screen options={{ title: pageData.page_title, headerBackTitle: 'Back' }} />
+            <WebView
+                source={{ html: htmlContent }}
+                style={styles.webview}
+                showsVerticalScrollIndicator={true}
+                scalesPageToFit={true}
+                startInLoadingState={true}
+            />
         </>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    webview: {
         flex: 1,
-        backgroundColor: theme.colors.background.default,
-    },
-    content: {
-        padding: theme.spacing.xl,
         backgroundColor: theme.colors.white,
-    },
-    title: {
-        fontSize: theme.typography.fontSize['2xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.lg,
-    },
-    text: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
-        lineHeight: 24,
-    },
-    errorText: {
-        fontSize: theme.typography.fontSize.lg,
-        color: theme.colors.error.main,
-        textAlign: 'center',
-        marginTop: theme.spacing.xl,
     },
 });
 

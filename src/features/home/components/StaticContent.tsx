@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { StaticContentOptions } from '@/types/theme.types';
 import { theme } from '@/theme';
 import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
+import { LazyImage, BannerImage } from '@/shared/components/LazyImage';
 
 interface StaticContentProps {
     options: StaticContentOptions;
@@ -34,10 +35,12 @@ const CardItem: React.FC<{ card: CardData; cardWidth: number }> = ({ card, cardW
         <View style={[styles.cardWrapper, { width: cardWidth }]}>
             <TouchableOpacity style={styles.cardItem} activeOpacity={0.9}>
                 {hasValidImage ? (
-                    <Image
+                    <LazyImage
                         source={{ uri: card.imageUrl }}
                         style={styles.cardImage}
-                        resizeMode="cover"
+                        contentFit="cover"
+                        priority="low"
+                        placeholderIcon="image-outline"
                     />
                 ) : (
                     <View style={styles.cardImagePlaceholder} />
@@ -151,10 +154,10 @@ export const StaticContent: React.FC<StaticContentProps> = ({ options }) => {
             {/* Render Main Image */}
             {hasMainImage ? (
                 <View style={styles.mainImageContainer}>
-                    <Image
-                        source={{ uri: parsed.mainImage }}
+                    <BannerImage
+                        imageUrl={parsed.mainImage}
                         style={styles.mainImage}
-                        resizeMode="cover"
+                        priority="normal"
                     />
                 </View>
             ) : null}

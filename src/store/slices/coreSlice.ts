@@ -44,15 +44,26 @@ export const fetchCoreConfig = createAsyncThunk(
             const savedLocaleCode = await AsyncStorage.getItem(STORAGE_KEYS.SELECTED_LOCALE);
             const savedCurrencyCode = await AsyncStorage.getItem(STORAGE_KEYS.SELECTED_CURRENCY);
             
-            // Find saved locale or use default
+            // Find saved locale or use default from channel
             const selectedLocale = savedLocaleCode
                 ? config.locales.find(l => l.code === savedLocaleCode) || config.defaultLocale
                 : config.defaultLocale;
             
-            // Find saved currency or use default
+            // Find saved currency or use default from channel
             const selectedCurrency = savedCurrencyCode
                 ? config.currencies.find(c => c.code === savedCurrencyCode) || config.defaultCurrency
                 : config.defaultCurrency;
+
+            // Save defaults to storage if nothing was saved before
+            if (!savedLocaleCode && selectedLocale) {
+                await AsyncStorage.setItem(STORAGE_KEYS.SELECTED_LOCALE, selectedLocale.code);
+                console.log('Saved default locale to storage:', selectedLocale.code);
+            }
+            
+            if (!savedCurrencyCode && selectedCurrency) {
+                await AsyncStorage.setItem(STORAGE_KEYS.SELECTED_CURRENCY, selectedCurrency.code);
+                console.log('Saved default currency to storage:', selectedCurrency.code);
+            }
 
             return {
                 ...config,

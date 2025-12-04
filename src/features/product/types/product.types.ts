@@ -7,8 +7,9 @@ export interface Product {
     description: string;
     short_description?: string;
     sku: string;
-    price: number;
-    special_price?: number;
+    price: number; // Current price (could be special price if on sale)
+    special_price?: number; // Discounted price (when on sale)
+    regular_price?: number; // Original price before discount
     images: ProductImage[];
     thumbnail?: string;
     rating?: number;
@@ -18,6 +19,9 @@ export interface Product {
     variants?: ProductVariant[];
     categories?: Category[];
     created_at?: string;
+    new?: boolean | number; // Product is marked as "new"
+    on_sale?: boolean; // Product is on sale (has special price)
+    is_new?: boolean; // Alternative field name for "new" status
 }
 
 export interface ProductImage {

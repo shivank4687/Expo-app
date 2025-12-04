@@ -1,18 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/features/product/types/product.types';
 import { Card } from '@/shared/components/Card';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
-import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
+import { ProductImage } from '@/shared/components/LazyImage';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { addToCartThunk } from '@/store/slices/cartSlice';
+import { useToast } from '@/shared/components/Toast';
 
 interface ProductCardProps {
     product: Product;
     onPress: () => void;
 }
 
-const PLACEHOLDER_ICON_SIZE = 48;
 const RATING_ICON_SIZE = 14;
 
 /**
@@ -21,59 +23,93 @@ const RATING_ICON_SIZE = 14;
  * Shows placeholder icon if image fails to load
  */
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
-    const [imageError, setImageError] = useState(false);
-    
+    const dispatch = useAppDispatch();
+    const { showToast } = useToast();
+    const { isAddingToCart, lastAddedProductId } = useAppSelector((state) => state.cart);
+    const isAddingThisProduct = isAddingToCart && lastAddedProductId === product.id;
+
     const productData = useMemo(() => {
         const rawImageUrl = product.thumbnail || (product.images && product.images[0]?.url);
-        const imageUrl = getAbsoluteImageUrl(rawImageUrl);
-        const hasValidImage = 
-            imageUrl && 
-            typeof imageUrl === 'string' && 
-            imageUrl.trim().length > 0 &&
-            !imageError;
+        
+        // Check if product has discount based on API fields
+        // When on sale, API returns: price=special_price, regular_price=original
+        const hasDiscount = product.on_sale || (product.regular_price && product.regular_price > product.price);
+        
+        // Check if product is on sale
+        const isOnSale = product.on_sale || hasDiscount;
+        
+        // Check if product is new (using either 'new' or 'is_new' field)
+        const isNew = product.is_new || (product.new === true || product.new === 1);
+
+        // Calculate discount percentage
+        const originalPrice = product.regular_price || product.price;
+        const currentPrice = hasDiscount ? product.price : product.price;
+        const discountPercent = hasDiscount && originalPrice > currentPrice
+            ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+            : 0;
 
         return {
-            imageUrl,
-            hasValidImage,
-            hasDiscount: product.special_price && product.special_price < product.price,
+            imageUrl: rawImageUrl,
+            hasDiscount,
+            isOnSale,
+            isNew,
             name: product.name || 'Product',
             rating: product.rating || 0,
             reviewCount: product.reviews_count || 0,
-            discountPercent: product.special_price && product.price
-                ? Math.round(((product.price - product.special_price) / product.price) * 100)
-                : 0,
+            discountPercent,
+            currentPrice,
+            originalPrice,
         };
-    }, [product, imageError]);
+    }, [product]);
+
+    const handleAddToCart = async (e: any) => {
+        e.stopPropagation();
+        
+        if (!product.in_stock) {
+            showToast({ message: 'Product is out of stock', type: 'error' });
+            return;
+        }
+
+        try {
+            await dispatch(addToCartThunk({
+                product_id: product.id,
+                quantity: 1,
+                product: product, // Pass product data for guest cart
+            })).unwrap();
+            
+            showToast({ message: `${product.name} added to cart!`, type: 'success' });
+        } catch (error: any) {
+            showToast({ message: error || 'Failed to add to cart', type: 'error' });
+        }
+    };
 
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
             <Card variant="elevated" style={styles.card}>
                 {/* Product Image */}
                 <View style={styles.imageContainer}>
-                    {productData.hasValidImage ? (
-                        <Image
-                            source={{ uri: productData.imageUrl }}
-                            style={styles.image}
-                            resizeMode="cover"
-                            onError={() => setImageError(true)}
-                        />
-                    ) : (
-                        <View style={styles.imagePlaceholder}>
-                            <Ionicons 
-                                name="image-outline" 
-                                size={PLACEHOLDER_ICON_SIZE} 
-                                color={theme.colors.gray[400]} 
-                            />
-                        </View>
-                    )}
-                    {productData.hasDiscount ? (
-                        <View style={styles.discountBadge}>
-                            <Text style={styles.discountText}>
-                                {productData.discountPercent}% OFF
-                            </Text>
+                    <ProductImage
+                        imageUrl={productData.imageUrl}
+                        style={styles.image}
+                        recyclingKey={product.id?.toString()}
+                        priority="low"
+                    />
+                    
+                    {/* Sale Badge - Shows when product is on sale */}
+                    {productData.isOnSale && product.in_stock ? (
+                        <View style={styles.saleBadge}>
+                            <Text style={styles.saleText}>SALE</Text>
                         </View>
                     ) : null}
                     
+                    {/* New Badge - Shows when product is new and not on sale */}
+                    {!productData.isOnSale && productData.isNew && product.in_stock ? (
+                        <View style={styles.newBadge}>
+                            <Text style={styles.newText}>NEW</Text>
+                        </View>
+                    ) : null}
+                    
+                    {/* Out of Stock Badge */}
                     {!product.in_stock ? (
                         <View style={styles.outOfStockBadge}>
                             <Text style={styles.outOfStockText}>Out of Stock</Text>
@@ -109,10 +145,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         {productData.hasDiscount ? (
                             <>
                                 <Text style={styles.specialPrice}>
-                                    {formatters.formatPrice(product.special_price!)}
+                                    {formatters.formatPrice(productData.currentPrice)}
                                 </Text>
                                 <Text style={styles.originalPrice}>
-                                    {formatters.formatPrice(product.price)}
+                                    {formatters.formatPrice(productData.originalPrice)}
                                 </Text>
                             </>
                         ) : (
@@ -122,6 +158,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         )}
                     </View>
                 </View>
+
+                {/* Add to Cart Button */}
+                <TouchableOpacity
+                    style={[
+                        styles.addToCartButton,
+                        !product.in_stock && styles.addToCartButtonDisabled
+                    ]}
+                    onPress={handleAddToCart}
+                    disabled={!product.in_stock || isAddingThisProduct}
+                    activeOpacity={0.7}
+                >
+                    {isAddingThisProduct ? (
+                        <ActivityIndicator size="small" color={theme.colors.white} />
+                    ) : (
+                        <>
+                            <Ionicons 
+                                name="cart-outline" 
+                                size={18} 
+                                color={theme.colors.white} 
+                            />
+                            <Text style={styles.addToCartText}>
+                                {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                            </Text>
+                        </>
+                    )}
+                </TouchableOpacity>
             </Card>
         </TouchableOpacity>
     );
@@ -142,26 +204,35 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
-    imagePlaceholder: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F3F4F6',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    discountBadge: {
+    saleBadge: {
         position: 'absolute',
         top: theme.spacing.sm,
-        right: theme.spacing.sm,
-        backgroundColor: theme.colors.error.main,
-        paddingHorizontal: theme.spacing.sm,
+        left: theme.spacing.sm,
+        backgroundColor: '#DC2626', // Red color matching web app (bg-red-600)
+        paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
-        borderRadius: theme.borderRadius.sm,
+        borderRadius: 22, // Rounded pill shape (rounded-[44px])
     },
-    discountText: {
+    saleText: {
         color: theme.colors.white,
         fontSize: theme.typography.fontSize.xs,
-        fontWeight: theme.typography.fontWeight.bold,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        textTransform: 'uppercase',
+    },
+    newBadge: {
+        position: 'absolute',
+        top: theme.spacing.sm,
+        left: theme.spacing.sm,
+        backgroundColor: '#1E3A8A', // Navy blue matching web app (bg-navyBlue)
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: 22, // Rounded pill shape (rounded-[44px])
+    },
+    newText: {
+        color: theme.colors.white,
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        textTransform: 'uppercase',
     },
     outOfStockBadge: {
         position: 'absolute',
@@ -220,8 +291,29 @@ const styles = StyleSheet.create({
     },
     originalPrice: {
         fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.secondary,
+        color: '#9CA3AF', // Gray-400 color matching web app (text-zinc-500)
         textDecorationLine: 'line-through',
+        textDecorationColor: '#9CA3AF',
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    addToCartButton: {
+        backgroundColor: theme.colors.primary[500],
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        gap: theme.spacing.xs,
+        borderBottomLeftRadius: theme.borderRadius.md,
+        borderBottomRightRadius: theme.borderRadius.md,
+    },
+    addToCartButtonDisabled: {
+        backgroundColor: theme.colors.gray[400],
+    },
+    addToCartText: {
+        color: theme.colors.white,
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.semiBold,
     },
 });
 

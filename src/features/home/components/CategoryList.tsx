@@ -55,14 +55,14 @@ export const CategoryList: React.FC = () => {
         }
     }, [selectedLocale?.code, dispatch]);
 
-    const handleCategoryPress = useCallback((categoryId: number) => {
-        router.push(`/category/${categoryId}` as any);
+    const handleCategoryPress = useCallback((categoryId: number, categoryName: string) => {
+        router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}` as any);
     }, [router]);
 
     const renderCategory = useCallback(({ item }: { item: Category }) => (
         <TouchableOpacity
             style={styles.categoryItem}
-            onPress={() => handleCategoryPress(item.id)}
+            onPress={() => handleCategoryPress(item.id, item.name)}
             activeOpacity={0.7}
         >
             <View style={styles.iconContainer}>

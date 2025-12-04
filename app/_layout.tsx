@@ -24,11 +24,17 @@ function AppContent() {
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
         <Stack.Screen
           name="login"
-          options={{ title: "Login", headerShown: false }}
+          options={{ 
+            title: "Login",
+            headerBackTitle: "Back",
+          }}
         />
         <Stack.Screen
           name="signup"
-          options={{ title: "Sign Up", headerShown: false }}
+          options={{ 
+            title: "Sign Up",
+            headerBackTitle: "Back",
+          }}
         />
         <Stack.Screen
           name="product/[id]"

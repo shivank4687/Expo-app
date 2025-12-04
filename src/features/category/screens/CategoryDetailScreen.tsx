@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { categoriesApi, Category } from '@/services/api/categories.api';
 import { productsApi } from '@/services/api/products.api';
@@ -8,17 +8,53 @@ import { ProductCard } from '@/features/home/components/ProductCard';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { Button } from '@/shared/components/Button';
+import { CategoryImage, BannerImage } from '@/shared/components/LazyImage';
 import { theme } from '@/theme';
 
 const PRODUCTS_PER_PAGE = 6;
 
+/**
+ * SubcategoryCard Component
+ * Displays subcategory image with lazy loading
+ */
+interface SubcategoryCardProps {
+    category: Category;
+    onPress: () => void;
+}
+
+const SubcategoryCard: React.FC<SubcategoryCardProps> = ({ category, onPress }) => {
+    const imageUrl = category.logo?.large_image_url || category.image;
+
+    return (
+        <TouchableOpacity
+            style={styles.childCategoryCard}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.childCategoryImageContainer}>
+                <CategoryImage
+                    imageUrl={imageUrl}
+                    style={styles.childCategoryImage}
+                    priority="normal"
+                />
+            </View>
+            <Text style={styles.childCategoryName} numberOfLines={2}>
+                {category.name}
+            </Text>
+        </TouchableOpacity>
+    );
+};
+
 export const CategoryDetailScreen: React.FC = () => {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
     const router = useRouter();
     const [category, setCategory] = useState<Category | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Use the name from params if available, otherwise use loaded category name
+    const displayName = category?.name || name || 'Category';
 
     useEffect(() => {
         if (id) {
@@ -54,8 +90,8 @@ export const CategoryDetailScreen: React.FC = () => {
         router.push(`/product/${productId}`);
     };
 
-    const handleChildCategoryPress = (categoryId: number) => {
-        router.push(`/category/${categoryId}`);
+    const handleChildCategoryPress = (categoryId: number, categoryName: string) => {
+        router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}`);
     };
 
     const handleViewAllProducts = () => {
@@ -63,59 +99,59 @@ export const CategoryDetailScreen: React.FC = () => {
     };
 
     if (isLoading) {
-        return <LoadingSpinner />;
+        return (
+            <>
+                <Stack.Screen options={{ title: displayName, headerBackTitle: 'Back' }} />
+                <LoadingSpinner />
+            </>
+        );
     }
 
     if (error || !category) {
-        return <ErrorMessage message={error || 'Category not found'} onRetry={loadCategoryData} />;
+        return (
+            <>
+                <Stack.Screen options={{ title: displayName, headerBackTitle: 'Back' }} />
+                <ErrorMessage message={error || 'Category not found'} onRetry={loadCategoryData} />
+            </>
+        );
     }
 
     return (
         <>
-            <Stack.Screen options={{ title: category.name, headerBackTitle: 'Back' }} />
+            <Stack.Screen options={{ title: displayName, headerBackTitle: 'Back' }} />
             <FlatList
                 style={styles.container}
                 data={[]}
                 renderItem={null}
                 ListHeaderComponent={
                     <>
-                        {/* Category Header */}
+                        {/* Category Header Image */}
                         {category.image && (
-                            <Image 
-                                source={typeof category.image === 'string' ? { uri: category.image } : category.image} 
-                                style={styles.headerImage} 
+                            <BannerImage 
+                                imageUrl={typeof category.image === 'string' ? category.image : undefined}
+                                style={styles.headerImage}
+                                priority="high"
                             />
                         )}
-                        <View style={styles.header}>
-                            <Text style={styles.title}>{category.name}</Text>
-                        </View>
 
-                        {/* Child Categories Carousel - AT TOP */}
+                        {/* Child Categories Carousel */}
                         {category.children && category.children.length > 0 && (
                             <View style={styles.childCategoriesSection}>
-                                <Text style={styles.sectionTitle}>Subcategories</Text>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionTitle}>Subcategories</Text>
+                                </View>
                                 <FlatList
                                     data={category.children}
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
                                     keyExtractor={(item) => item.id.toString()}
-                                    renderItem={({ item }) => {
-                                        const imageSource = typeof item.image === 'string' 
-                                            ? { uri: item.image } 
-                                            : item.image;
-                                        return (
-                                            <TouchableOpacity
-                                                style={styles.childCategoryCard}
-                                                onPress={() => handleChildCategoryPress(item.id)}
-                                            >
-                                                <Image
-                                                    source={imageSource}
-                                                    style={styles.childCategoryImage}
-                                                />
-                                                <Text style={styles.childCategoryName}>{item.name}</Text>
-                                            </TouchableOpacity>
-                                        );
-                                    }}
+                                    contentContainerStyle={styles.childCategoriesContent}
+                                    renderItem={({ item }) => (
+                                        <SubcategoryCard
+                                            category={item}
+                                            onPress={() => handleChildCategoryPress(item.id, item.name)}
+                                        />
+                                    )}
                                 />
                             </View>
                         )}
@@ -162,25 +198,13 @@ const styles = StyleSheet.create({
         height: 200,
         resizeMode: 'cover',
     },
-    header: {
-        padding: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
-    },
-    title: {
-        fontSize: theme.typography.fontSize['2xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
-    },
-    description: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.secondary,
-        lineHeight: 20,
-    },
     childCategoriesSection: {
-        marginTop: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
+        paddingVertical: theme.spacing.lg,
         backgroundColor: theme.colors.white,
+        marginTop: theme.spacing.sm,
+    },
+    childCategoriesContent: {
+        paddingHorizontal: theme.spacing.md,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -200,30 +224,38 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.semiBold,
     },
     childCategoryCard: {
-        width: 120,
-        marginLeft: theme.spacing.lg,
+        width: 110,
+        marginHorizontal: theme.spacing.sm,
         alignItems: 'center',
     },
-    childCategoryImage: {
+    childCategoryImageContainer: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: theme.colors.gray[200],
         marginBottom: theme.spacing.sm,
+        overflow: 'hidden',
+        ...theme.shadows.sm,
+    },
+    childCategoryImage: {
+        width: '100%',
+        height: '100%',
     },
     childCategoryName: {
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.primary,
         textAlign: 'center',
+        fontWeight: theme.typography.fontWeight.medium,
+        lineHeight: 18,
+        paddingHorizontal: theme.spacing.xs,
     },
     productsSection: {
-        marginTop: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
+        marginTop: theme.spacing.sm,
+        paddingVertical: theme.spacing.lg,
         backgroundColor: theme.colors.white,
     },
     productCarouselItem: {
         width: 180,
-        marginLeft: theme.spacing.lg,
+        marginLeft: theme.spacing.md,
     },
 });
 

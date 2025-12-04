@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity } from 'react-native';
-import { ProductImage } from '../types/product.types';
+import { View, StyleSheet, FlatList, Dimensions } from 'react-native';
+import { ProductImage as ProductImageType } from '../types/product.types';
+import { ProductImage } from '@/shared/components/LazyImage';
 import { theme } from '@/theme';
 
 const { width } = Dimensions.get('window');
 const IMAGE_HEIGHT = 400;
 
 interface ProductGalleryProps {
-    images: ProductImage[];
+    images: ProductImageType[];
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
@@ -32,11 +33,12 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                 showsHorizontalScrollIndicator={false}
                 onScroll={handleScroll}
                 keyExtractor={(item, index) => `image-${index}`}
-                renderItem={({ item }) => (
-                    <Image
-                        source={{ uri: item }}
+                renderItem={({ item, index }) => (
+                    <ProductImage
+                        imageUrl={item}
                         style={styles.image}
-                        resizeMode="cover"
+                        recyclingKey={`product-gallery-${index}`}
+                        priority={index === 0 ? 'high' : 'normal'}
                     />
                 )}
             />

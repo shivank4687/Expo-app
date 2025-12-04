@@ -5,6 +5,8 @@ import { Platform } from 'react-native';
 import authReducer from './slices/authSlice';
 import coreReducer from './slices/coreSlice';
 import categoryReducer from './slices/categorySlice';
+import cmsReducer from './slices/cmsSlice';
+import cartReducer from './slices/cartSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -37,14 +39,16 @@ const storage = Platform.OS === 'web'
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth', 'core', 'category'], // Persist auth, core, and category
+    whitelist: ['auth', 'core', 'category', 'cms'], // Persist auth, core, category, and cms (cart is fetched from server)
 };
 
 // Root reducer
 const rootReducer = combineReducers({
-    auth: authReducer,
-    core: coreReducer,
-    category: categoryReducer,
+  auth: authReducer,
+  core: coreReducer,
+  category: categoryReducer,
+  cms: cmsReducer,
+  cart: cartReducer,
 });
 
 // Persisted reducer

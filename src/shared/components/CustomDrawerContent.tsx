@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutThunk } from '@/store/slices/authSlice';
 import { fetchCoreConfig } from '@/store/slices/coreSlice';
 import { fetchCategories } from '@/store/slices/categorySlice';
+import { fetchCMSPages } from '@/store/slices/cmsSlice';
 import { useRouter } from 'expo-router';
 import { DrawerSection, DrawerItem } from './DrawerSection';
 import { Category } from '@/services/api/categories.api';
@@ -18,6 +19,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     const { selectedLocale, selectedCurrency } = useAppSelector((state) => state.core);
     const { categories } = useAppSelector((state) => state.category);
+    const { pages: cmsPages, isLoading: cmsLoading } = useAppSelector((state) => state.cms);
     const router = useRouter();
 
     useEffect(() => {
@@ -25,10 +27,11 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         dispatch(fetchCoreConfig());
     }, [dispatch]);
 
-    // Load categories when locale changes
+    // Load categories and CMS pages when locale changes
     useEffect(() => {
         if (selectedLocale?.code) {
             dispatch(fetchCategories({ locale: selectedLocale.code }));
+            dispatch(fetchCMSPages({ locale: selectedLocale.code }));
         }
     }, [selectedLocale?.code, dispatch]);
 
@@ -67,23 +70,16 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                 {/* User Profile Section */}
                 <View style={styles.profileSection}>
                     {isAuthenticated ? (
-                        <TouchableOpacity onPress={() => navigateTo('/account-info')} style={styles.userInfoContainer}>
-                            <View style={styles.avatarContainer}>
-                                <Image
-                                    source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
-                                    style={styles.avatar}
-                                />
-                            </View>
-                            <Text style={styles.userName}>{user?.name || 'User'}</Text>
-                            <Text style={styles.userEmail}>{user?.email || ''}</Text>
-                            <Text style={styles.viewProfileText}>{t('drawer.viewProfile')}</Text>
+                        <TouchableOpacity onPress={() => navigateTo('/account-info')} style={styles.cardButton}>
+                            <Ionicons name="person-circle" size={24} color={theme.colors.primary[500]} style={styles.cardIcon} />
+                            <Text style={styles.cardText}>Hello, {user?.name || 'User'}</Text>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.gray[400]} />
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity onPress={handleLoginPress} style={styles.loginButton}>
-                            <View style={styles.loginIconContainer}>
-                                <Ionicons name="person-circle-outline" size={40} color={theme.colors.primary[500]} />
-                            </View>
-                            <Text style={styles.loginText}>{t('auth.loginOrSignup')}</Text>
+                        <TouchableOpacity onPress={handleLoginPress} style={styles.cardButton}>
+                            <Ionicons name="log-in-outline" size={24} color={theme.colors.primary[500]} style={styles.cardIcon} />
+                            <Text style={styles.cardText}>{t('auth.loginOrSignup')}</Text>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.gray[400]} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -96,7 +92,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                             <DrawerItem
                                 label={category.name}
                                 imageUrl={category.image}
-                                onPress={() => navigateTo(`/category/${category.id}`)}
+                                onPress={() => navigateTo(`/category/${category.id}?name=${encodeURIComponent(category.name)}`)}
                                 level={0}
                             />
                             {/* Child Categories - Commented out as per user request */}
@@ -107,7 +103,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                                             key={child.id}
                                             label={child.name}
                                             imageUrl={child.image}
-                                            onPress={() => navigateTo(`/category/${child.id}`)}
+                                            onPress={() => navigateTo(`/category/${child.id}?name=${encodeURIComponent(child.name)}`)}
                                             level={1}
                                         />
                                     ))}
@@ -119,29 +115,33 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
                 {/* Your Information Section - Only show when authenticated */}
                 {isAuthenticated && (
-                    <DrawerSection title={t('drawer.yourInformation')} icon="person-outline">
+                    <DrawerSection title={t('drawer.yourInformation')} icon="person-outline" defaultExpanded={true}>
                         <DrawerItem label={t('drawer.dashboard')} icon="speedometer-outline" onPress={() => navigateTo('/dashboard')} />
                         <DrawerItem label={t('drawer.orders')} icon="receipt-outline" onPress={() => navigateTo('/orders')} />
+                        <DrawerItem label={t('drawer.addresses')} icon="location-outline" onPress={() => navigateTo('/addresses')} />
                         <DrawerItem label={t('drawer.reviews')} icon="star-outline" onPress={() => navigateTo('/reviews')} />
                     </DrawerSection>
                 )}
 
-                {/* Other Section */}
-                <DrawerSection title={t('drawer.other')} icon="information-circle-outline">
-                    <DrawerItem label={t('drawer.aboutUs')} onPress={() => navigateTo('/static/about-us')} />
-                    <DrawerItem label={t('drawer.returnPolicy')} onPress={() => navigateTo('/static/return-policy')} />
-                    <DrawerItem label={t('drawer.termsAndConditions')} onPress={() => navigateTo('/static/terms-conditions')} />
-                    <DrawerItem label={t('drawer.termsOfUse')} onPress={() => navigateTo('/static/terms-of-use')} />
-                    <DrawerItem label={t('drawer.contactUs')} onPress={() => navigateTo('/static/contact-us')} />
-                    <DrawerItem label={t('drawer.customerService')} onPress={() => navigateTo('/static/customer-service')} />
-                    <DrawerItem label={t('drawer.whatsNew')} onPress={() => navigateTo('/static/whats-new')} />
-                    <DrawerItem label={t('drawer.paymentPolicy')} onPress={() => navigateTo('/static/payment-policy')} />
-                    <DrawerItem label={t('drawer.shippingPolicy')} onPress={() => navigateTo('/static/shipping-policy')} />
-                    <DrawerItem label={t('drawer.privacyPolicy')} onPress={() => navigateTo('/static/privacy-policy')} />
+                {/* Other Section - Dynamic CMS Pages */}
+                <DrawerSection title={t('drawer.other')} icon="information-circle-outline" defaultExpanded={true}>
+                    {cmsLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                        </View>
+                    ) : cmsPages.length > 0 ? (
+                        cmsPages.map((page) => (
+                            <DrawerItem
+                                key={page.id}
+                                label={page.page_title}
+                                onPress={() => navigateTo(`/static/${page.url_key}`)}
+                            />
+                        ))
+                    ) : null}
                 </DrawerSection>
 
                 {/* Preferences Section */}
-                <DrawerSection title={t('drawer.preferences')} icon="settings-outline">
+                <DrawerSection title={t('drawer.preferences')} icon="settings-outline" defaultExpanded={true}>
                     <DrawerItem 
                         label={t('drawer.language')} 
                         icon="language-outline" 
@@ -154,7 +154,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                         onPress={() => navigateTo('/currency-selection')}
                         rightText={selectedCurrency?.code || 'USD'}
                     />
-                    <DrawerItem label={t('drawer.gdprRequests')} icon="shield-checkmark-outline" onPress={() => navigateTo('/gdpr-requests')} />
+                    {/* <DrawerItem label={t('drawer.gdprRequests')} icon="shield-checkmark-outline" onPress={() => navigateTo('/gdpr-requests')} /> */}
                 </DrawerSection>
             </ScrollView>
 
@@ -177,56 +177,33 @@ const styles = StyleSheet.create({
     },
     profileSection: {
         padding: theme.spacing.lg,
+        paddingTop: theme.spacing.xl * 2,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
         marginBottom: theme.spacing.md,
+    },
+    cardButton: {
+        flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 150,
-        justifyContent: 'center',
-    },
-    avatarContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: theme.colors.gray[200],
-        marginBottom: theme.spacing.sm,
-        overflow: 'hidden',
-    },
-    avatar: {
-        width: '100%',
-        height: '100%',
-    },
-    userName: {
-        fontSize: theme.typography.fontSize.lg,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: 2,
-    },
-    userEmail: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.secondary,
-        marginBottom: 4,
-    },
-    userInfoContainer: {
-        alignItems: 'center',
-        width: '100%',
-    },
-    viewProfileText: {
-        fontSize: theme.typography.fontSize.xs,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.medium,
-    },
-    loginButton: {
-        alignItems: 'center',
+        backgroundColor: theme.colors.background.paper,
+        borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.gray[200],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
-    loginIconContainer: {
-        marginBottom: theme.spacing.xs,
+    cardIcon: {
+        marginRight: theme.spacing.sm,
     },
-    loginText: {
+    cardText: {
+        flex: 1,
         fontSize: theme.typography.fontSize.md,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.text.primary,
     },
     footer: {
         padding: theme.spacing.lg,
@@ -242,5 +219,11 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.error.main,
         fontWeight: theme.typography.fontWeight.medium,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.colors.background.default,
     },
 });

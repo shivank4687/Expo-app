@@ -2,7 +2,9 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authApi } from '@/services/api/auth.api';
 import { secureStorage } from '@/services/storage/secureStorage';
 import { STORAGE_KEYS } from '@/config/constants';
-import { User, LoginRequest, SignupRequest, AuthResponse } from '@/features/auth/types/auth.types';
+import { User, LoginRequest, SignupRequest, AuthResponse, UpdateProfileRequest } from '@/features/auth/types/auth.types';
+import { resetCart } from './cartSlice';
+import { setGlobalToken } from '@/services/api/client';
 
 interface AuthState {
     user: User | null;
@@ -31,7 +33,9 @@ export const checkAuthThunk = createAsyncThunk(
             if (token && userData && userData !== 'undefined' && userData !== 'null') {
                 const parsedUser = JSON.parse(userData);
                 if (parsedUser && parsedUser.id) {
-                    console.log('Restored user from storage:', parsedUser.name);
+                    console.log('✅ Restored user from storage:', parsedUser.name);
+                    // Set global token for API client
+                    setGlobalToken(token);
                     return { user: parsedUser, token };
                 }
             }
@@ -150,6 +154,41 @@ export const logoutThunk = createAsyncThunk(
     }
 );
 
+export const updateProfileThunk = createAsyncThunk(
+    'auth/updateProfile',
+    async (data: UpdateProfileRequest, { rejectWithValue }) => {
+        try {
+            const response = await authApi.updateProfile(data);
+            console.log('Update Profile Response:', JSON.stringify(response, null, 2));
+            
+            // Handle nested response structure
+            let user = response.data;
+            
+            // Sometimes the response might have data.data structure
+            if (!user && (response as any).data?.data) {
+                user = (response as any).data.data;
+            }
+            
+            // Or the user might be directly in the response
+            if (!user && (response as any).user) {
+                user = (response as any).user;
+            }
+            
+            console.log('Extracted user:', JSON.stringify(user, null, 2));
+            
+            // Store updated user data
+            if (user) {
+                await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+            }
+            
+            return { user, message: response.message || (response as any).message };
+        } catch (error: any) {
+            console.error('Update Profile Error:', error);
+            return rejectWithValue(error.response?.data?.message || 'Profile update failed');
+        }
+    }
+);
+
 // Slice
 const authSlice = createSlice({
     name: 'auth',
@@ -174,6 +213,8 @@ const authSlice = createSlice({
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
                 state.isLoading = false;
+                // Set global token for API client
+                setGlobalToken(action.payload.token);
             })
             .addCase(checkAuthThunk.rejected, (state) => {
                 state.isLoading = false;
@@ -191,6 +232,8 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
                 state.isLoading = false;
                 state.error = null;
+                // Set global token for API client
+                setGlobalToken(action.payload.token);
             })
             .addCase(loginThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -209,6 +252,8 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
                 state.isLoading = false;
                 state.error = null;
+                // Set global token for API client
+                setGlobalToken(action.payload.token);
             })
             .addCase(signupThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -222,6 +267,24 @@ const authSlice = createSlice({
                 state.token = null;
                 state.isAuthenticated = false;
                 state.error = null;
+                // Clear global token
+                setGlobalToken(null);
+            });
+
+        // Update Profile
+        builder
+            .addCase(updateProfileThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(updateProfileThunk.fulfilled, (state, action) => {
+                state.user = action.payload.user;
+                state.isLoading = false;
+                state.error = null;
+            })
+            .addCase(updateProfileThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
             });
     },
 });

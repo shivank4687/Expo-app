@@ -3,9 +3,14 @@
 export interface User {
     id: number;
     name: string;
+    first_name?: string;
+    last_name?: string;
     email: string;
     phone?: string;
     avatar?: string;
+    gender?: string;
+    date_of_birth?: string;
+    subscribed_to_news_letter?: boolean;
     created_at?: string;
 }
 
@@ -21,6 +26,25 @@ export interface SignupRequest {
     email: string;
     password: string;
     password_confirmation: string;
+}
+
+export interface UpdateProfileRequest {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    gender: 'Male' | 'Female' | 'Other';
+    date_of_birth?: string;
+    subscribed_to_news_letter?: boolean;
+    image?: {
+        uri: string;
+        name: string;
+        type: string;
+    };
+}
+
+export interface NewsletterSubscriptionRequest {
+    email: string;
 }
 
 export interface AuthResponse {
