@@ -1,10 +1,10 @@
 /**
  * Checkout API Service
  * Handles all checkout-related API calls
- * Uses Shop API endpoints
+ * Uses REST API v1 endpoints
  */
 
-import { shopApiClient } from './client';
+import { restApiClient } from './client';
 import { Cart } from '@/features/cart/types/cart.types';
 import {
     SaveAddressPayload,
@@ -26,36 +26,29 @@ interface CheckoutResponse<T = any> {
  */
 export const checkoutApi = {
     /**
-     * Get checkout summary (cart details)
-     */
-    getSummary: async (): Promise<Cart> => {
-        try {
-            const response = await shopApiClient.get<Cart>('/checkout/onepage/summary');
-            return response;
-        } catch (error: any) {
-            console.error('Get checkout summary error:', error);
-            throw new Error(error.response?.data?.message || error.message || 'Failed to get checkout summary');
-        }
-    },
-
-    /**
      * Save addresses (billing and shipping)
-     * Returns shipping methods if cart has stockable items, otherwise payment methods
+     * Returns shipping methods (REST API v1 endpoint)
      */
-    saveAddress: async (payload: SaveAddressPayload): Promise<{ shippingMethods?: Record<string, ShippingMethod>, payment_methods?: PaymentMethod[] }> => {
+    saveAddress: async (payload: SaveAddressPayload): Promise<{ rates?: any[], cart?: Cart }> => {
         try {
-            const response = await shopApiClient.post<CheckoutResponse>(
-                '/checkout/onepage/addresses',
+            console.log('[checkout.api] Sending payload to REST API:', JSON.stringify(payload, null, 2));
+            
+            const response = await restApiClient.post<CheckoutResponse>(
+                '/customer/checkout/save-address',
                 payload
             );
 
-            if (response.redirect) {
+            console.log('[checkout.api] Response from REST API:', JSON.stringify(response, null, 2));
+
+            if (response.redirect_url) {
                 throw new Error('Redirect required');
             }
 
-            return response.data;
+            // REST API returns: { data: { rates: [...], cart: {...} }, message: "..." }
+            return response.data || {};
         } catch (error: any) {
-            console.error('Save address error:', error);
+            console.error('[checkout.api] Save address error:', error);
+            console.error('[checkout.api] Error response:', error.response?.data);
             throw new Error(error.response?.data?.message || error.message || 'Failed to save address');
         }
     },
@@ -64,15 +57,26 @@ export const checkoutApi = {
      * Save shipping method
      * Returns available payment methods
      */
-    saveShipping: async (payload: SaveShippingMethodPayload): Promise<{ payment_methods: PaymentMethod[] }> => {
+    saveShipping: async (payload: SaveShippingMethodPayload): Promise<{ methods?: PaymentMethod[], cart?: Cart }> => {
         try {
-            const response = await shopApiClient.post<{ payment_methods: PaymentMethod[] }>(
-                '/checkout/onepage/save-shipping',
+            console.log('[checkout.api] Sending shipping method:', JSON.stringify(payload, null, 2));
+            
+            const response = await restApiClient.post<CheckoutResponse>(
+                '/customer/checkout/save-shipping',
                 payload
             );
-            return response;
+            
+            console.log('[checkout.api] Shipping response:', JSON.stringify(response, null, 2));
+            
+            // REST API returns: { data: { methods: [...], cart: {...} }, message: "..." }
+            return response.data || {};
         } catch (error: any) {
-            console.error('Save shipping error:', error);
+            console.error('[checkout.api] Save shipping error:', error);
+            console.error('[checkout.api] Error details:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
             throw new Error(error.response?.data?.message || error.message || 'Failed to save shipping method');
         }
     },
@@ -81,13 +85,13 @@ export const checkoutApi = {
      * Save payment method
      * Returns updated cart
      */
-    savePayment: async (payload: SavePaymentMethodPayload): Promise<{ cart: Cart }> => {
+    savePayment: async (payload: SavePaymentMethodPayload): Promise<{ cart?: Cart }> => {
         try {
-            const response = await shopApiClient.post<{ cart: Cart }>(
-                '/checkout/onepage/save-payment',
+            const response = await restApiClient.post<CheckoutResponse>(
+                '/customer/checkout/save-payment',
                 payload
             );
-            return response;
+            return response.data || {};
         } catch (error: any) {
             console.error('Save payment error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to save payment method');
@@ -99,10 +103,10 @@ export const checkoutApi = {
      */
     placeOrder: async (): Promise<any> => {
         try {
-            const response = await shopApiClient.post<any>(
-                '/checkout/onepage/save-order'
+            const response = await restApiClient.post<CheckoutResponse>(
+                '/customer/checkout/save-order'
             );
-            return response;
+            return response.data || {};
         } catch (error: any) {
             console.error('Place order error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to place order');
@@ -114,10 +118,10 @@ export const checkoutApi = {
      */
     checkMinimumOrder: async (): Promise<{ status: boolean }> => {
         try {
-            const response = await shopApiClient.post<{ status: boolean }>(
-                '/checkout/onepage/check-minimum-order'
+            const response = await restApiClient.post<CheckoutResponse<{ status: boolean }>>(
+                '/customer/checkout/check-minimum-order'
             );
-            return response;
+            return response.data || { status: false };
         } catch (error: any) {
             console.error('Check minimum order error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to check minimum order');

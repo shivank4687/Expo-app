@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
@@ -28,8 +28,9 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
     isProcessing = false,
 }) => {
     const { t } = useTranslation();
-    const [expandedCarrier, setExpandedCarrier] = useState<string | null>(
-        shippingMethods ? Object.keys(shippingMethods)[0] : null
+    // Expand all carriers by default
+    const [expandedCarriers, setExpandedCarriers] = useState<Set<string>>(
+        new Set(shippingMethods ? Object.keys(shippingMethods) : [])
     );
 
     if (!shippingMethods || Object.keys(shippingMethods).length === 0) {
@@ -45,115 +46,150 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
     }
 
     const toggleCarrier = (carrier: string) => {
-        setExpandedCarrier(expandedCarrier === carrier ? null : carrier);
+        setExpandedCarriers((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(carrier)) {
+                newSet.delete(carrier);
+            } else {
+                newSet.add(carrier);
+            }
+            return newSet;
+        });
     };
 
     const canProceed = selectedMethod !== null;
 
     return (
         <View style={styles.container}>
-            <Text style={styles.sectionTitle}>
-                {t('checkout.selectShippingMethod', 'Select Shipping Method')}
-            </Text>
+            {/* Scrollable Content */}
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={styles.sectionTitle}>
+                    {t('checkout.selectShippingMethod', 'Select Shipping Method')}
+                </Text>
 
-            {/* Shipping Method Carriers */}
-            {Object.entries(shippingMethods).map(([carrierCode, carrier]) => {
-                const isExpanded = expandedCarrier === carrierCode;
+                {/* Shipping Method Carriers */}
+                {Object.entries(shippingMethods).map(([carrierCode, carrier]) => {
+                    const isExpanded = expandedCarriers.has(carrierCode);
 
-                return (
-                    <Card key={carrierCode} style={styles.carrierCard}>
-                        {/* Carrier Header */}
-                        <TouchableOpacity
-                            style={styles.carrierHeader}
-                            onPress={() => toggleCarrier(carrierCode)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.carrierTitleContainer}>
+                    return (
+                        <Card key={carrierCode} style={styles.carrierCard}>
+                            {/* Carrier Header */}
+                            <TouchableOpacity
+                                style={styles.carrierHeader}
+                                onPress={() => toggleCarrier(carrierCode)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.carrierTitleContainer}>
+                                    <Ionicons
+                                        name="cube-outline"
+                                        size={20}
+                                        color={theme.colors.primary[500]}
+                                    />
+                                    <Text style={styles.carrierTitle}>
+                                        {carrier.carrier_title}
+                                    </Text>
+                                </View>
                                 <Ionicons
-                                    name="cube-outline"
-                                    size={20}
-                                    color={theme.colors.primary[500]}
+                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                    size={24}
+                                    color={theme.colors.text.secondary}
                                 />
-                                <Text style={styles.carrierTitle}>
-                                    {carrier.carrier_title}
-                                </Text>
-                            </View>
-                            <Ionicons
-                                name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                size={24}
-                                color={theme.colors.text.secondary}
-                            />
-                        </TouchableOpacity>
+                            </TouchableOpacity>
 
-                        {/* Carrier Rates */}
-                        {isExpanded && (
-                            <View style={styles.ratesContainer}>
-                                {carrier.rates.map((rate) => {
-                                    const methodKey = `${carrierCode}_${rate.method}`;
-                                    const isSelected = selectedMethod === methodKey;
+                            {/* Carrier Rates */}
+                            {isExpanded && (
+                                <View style={styles.ratesContainer}>
+                                    {carrier.rates.map((rate) => {
+                                        const methodKey = `${carrierCode}_${rate.method}`;
+                                        const isSelected = selectedMethod === methodKey;
 
-                                    return (
-                                        <TouchableOpacity
-                                            key={rate.method}
-                                            style={[
-                                                styles.rateItem,
-                                                isSelected && styles.rateItemSelected,
-                                            ]}
-                                            onPress={() => onMethodSelect(methodKey)}
-                                            activeOpacity={0.7}
-                                        >
-                                            {/* Radio Button */}
-                                            <View
+                                        return (
+                                            <TouchableOpacity
+                                                key={rate.method}
                                                 style={[
-                                                    styles.radio,
-                                                    isSelected && styles.radioSelected,
+                                                    styles.rateItem,
+                                                    isSelected && styles.rateItemSelected,
                                                 ]}
+                                                onPress={() => onMethodSelect(methodKey)}
+                                                activeOpacity={0.7}
                                             >
-                                                {isSelected && (
-                                                    <View style={styles.radioInner} />
-                                                )}
-                                            </View>
+                                                {/* Radio Button */}
+                                                <View
+                                                    style={[
+                                                        styles.radio,
+                                                        isSelected && styles.radioSelected,
+                                                    ]}
+                                                >
+                                                    {isSelected && (
+                                                        <View style={styles.radioInner} />
+                                                    )}
+                                                </View>
 
-                                            {/* Method Details */}
-                                            <View style={styles.rateDetails}>
-                                                <Text style={styles.rateTitle}>
-                                                    {rate.method_title}
-                                                </Text>
-                                                {rate.method_description && (
-                                                    <Text style={styles.rateDescription}>
-                                                        {rate.method_description}
+                                                {/* Method Details */}
+                                                <View style={styles.rateDetails}>
+                                                    <Text style={styles.rateTitle}>
+                                                        {rate.method_title}
                                                     </Text>
-                                                )}
-                                            </View>
+                                                    {rate.method_description && (
+                                                        <Text style={styles.rateDescription}>
+                                                            {rate.method_description}
+                                                        </Text>
+                                                    )}
+                                                </View>
 
-                                            {/* Price */}
-                                            <Text style={styles.ratePrice}>
-                                                {rate.formatted_price || rate.base_formatted_price}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                        )}
-                    </Card>
-                );
-            })}
+                                                {/* Price */}
+                                                <Text style={styles.ratePrice}>
+                                                    {rate.formatted_price || rate.base_formatted_price}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            )}
+                        </Card>
+                    );
+                })}
+            </ScrollView>
 
-            {/* Proceed Button */}
-            <Button
-                title={t('checkout.proceedToPayment', 'Proceed to Payment')}
-                onPress={onProceed}
-                disabled={!canProceed || isProcessing}
-                loading={isProcessing}
-                style={styles.proceedButton}
-            />
+            {/* Fixed Button at Bottom */}
+            <View style={styles.buttonContainer}>
+                <Button
+                    title={t('checkout.proceedToPayment', 'Proceed to Payment')}
+                    onPress={onProceed}
+                    disabled={!canProceed || isProcessing}
+                    loading={isProcessing}
+                />
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
         padding: theme.spacing.md,
+        paddingBottom: theme.spacing.xl,
+    },
+    buttonContainer: {
+        padding: theme.spacing.md,
+        paddingTop: theme.spacing.sm,
+        backgroundColor: theme.colors.white,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+        shadowColor: theme.colors.black,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,
@@ -334,9 +370,6 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.text.secondary,
         textAlign: 'center',
-    },
-    proceedButton: {
-        marginTop: theme.spacing.lg,
     },
 });
 

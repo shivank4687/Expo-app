@@ -79,7 +79,7 @@ export const AddAddressScreen: React.FC = () => {
             setCountries(data);
         } catch (error) {
             console.error('[AddAddressScreen] Error loading countries:', error);
-            showToast('Failed to load countries', 'error');
+            showToast({ message: 'Failed to load countries', type: 'error' });
         }
     };
 
@@ -102,23 +102,30 @@ export const AddAddressScreen: React.FC = () => {
         try {
             setIsLoading(true);
             const address = await addressApi.getAddressById(parseInt(id));
+            
+            // API returns 'address' field, but form expects 'address1'
+            const addressLines = address.address || address.address1 || [];
+            const normalizedAddress = Array.isArray(addressLines) 
+                ? addressLines 
+                : [addressLines];
+            
             setFormData({
                 first_name: address.first_name,
                 last_name: address.last_name,
-                email: '', // Email not returned by API
+                email: address.email || '', // Email may not be returned by API
                 phone: address.phone,
                 company_name: address.company_name || '',
-                address1: address.address1,
+                address1: normalizedAddress.length > 0 ? normalizedAddress : [''],
                 vat_id: address.vat_id || '',
                 postcode: address.postcode,
                 country: address.country,
                 state: address.state,
                 city: address.city,
-                default_address: address.default_address || false,
+                default_address: address.default_address || address.is_default || false,
             });
         } catch (error: any) {
             console.error('[AddAddressScreen] Error loading address:', error);
-            showToast(error.message || 'Failed to load address', 'error');
+            showToast({ message: error.message || 'Failed to load address', type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -164,7 +171,7 @@ export const AddAddressScreen: React.FC = () => {
 
     const handleSave = async () => {
         if (!validateForm()) {
-            showToast('Please fix the errors in the form', 'error');
+            showToast({ message: 'Please fix the errors in the form', type: 'error' });
             return;
         }
 
@@ -173,16 +180,16 @@ export const AddAddressScreen: React.FC = () => {
             
             if (isEditMode && id) {
                 await addressApi.updateAddress(parseInt(id), formData);
-                showToast('Address updated successfully', 'success');
+                showToast({ message: 'Address updated successfully', type: 'success' });
             } else {
                 await addressApi.createAddress(formData);
-                showToast('Address added successfully', 'success');
+                showToast({ message: 'Address added successfully', type: 'success' });
             }
             
             router.back();
         } catch (error: any) {
             console.error('[AddAddressScreen] Error saving address:', error);
-            showToast(error.message || 'Failed to save address', 'error');
+            showToast({ message: error.message || 'Failed to save address', type: 'error' });
         } finally {
             setIsSaving(false);
         }

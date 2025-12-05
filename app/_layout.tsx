@@ -5,6 +5,7 @@ import { store, persistor } from "@/store/store";
 import { useEffect } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { checkAuthThunk } from "@/store/slices/authSlice";
+import { fetchCoreConfig } from "@/store/slices/coreSlice";
 import { ActivityIndicator, View } from "react-native";
 import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
@@ -14,6 +15,9 @@ function AppContent() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    // Initialize core config (locale, currency, channels) on app start
+    dispatch(fetchCoreConfig());
+    // Check authentication status
     dispatch(checkAuthThunk());
   }, [dispatch]);
 
@@ -41,6 +45,12 @@ function AppContent() {
           options={{
             title: "Product Details",
             headerBackTitle: "Back",
+          }}
+        />
+        <Stack.Screen
+          name="wishlist"
+          options={{
+            headerShown: false,
           }}
         />
       </Stack>

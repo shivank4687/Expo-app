@@ -23,9 +23,12 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     const router = useRouter();
 
     useEffect(() => {
-        // Initialize core config (locale, currency) if not loaded
-        dispatch(fetchCoreConfig());
-    }, [dispatch]);
+        // Initialize core config only if not already loaded
+        // This handles edge cases where app might not have loaded config yet
+        if (!selectedLocale && !selectedCurrency) {
+            dispatch(fetchCoreConfig());
+        }
+    }, [dispatch, selectedLocale, selectedCurrency]);
 
     // Load categories and CMS pages when locale changes
     useEffect(() => {
@@ -118,6 +121,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                     <DrawerSection title={t('drawer.yourInformation')} icon="person-outline" defaultExpanded={true}>
                         <DrawerItem label={t('drawer.dashboard')} icon="speedometer-outline" onPress={() => navigateTo('/dashboard')} />
                         <DrawerItem label={t('drawer.orders')} icon="receipt-outline" onPress={() => navigateTo('/orders')} />
+                        <DrawerItem label={t('drawer.wishlist')} icon="heart-outline" onPress={() => navigateTo('/wishlist')} />
                         <DrawerItem label={t('drawer.addresses')} icon="location-outline" onPress={() => navigateTo('/addresses')} />
                         <DrawerItem label={t('drawer.reviews')} icon="star-outline" onPress={() => navigateTo('/reviews')} />
                     </DrawerSection>

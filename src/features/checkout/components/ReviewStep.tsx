@@ -228,7 +228,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             </View>
 
             {/* Apply Coupon Section */}
-            <View style={styles.expansionSection}>
+            {/* <View style={styles.expansionSection}>
                 <TouchableOpacity
                     style={styles.expansionHeader}
                     onPress={() => setIsCouponExpanded(!isCouponExpanded)}
@@ -306,7 +306,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                         )}
                     </View>
                 )}
-            </View>
+            </View> */}
 
             {/* Price Details Section */}
             <View style={styles.expansionSection}>

@@ -70,6 +70,7 @@
     "yourInformation": "Your Information",
     "dashboard": "Dashboard",
     "orders": "Orders",
+    "wishlist": "Wishlist",
     "addresses": "Addresses",
     "reviews": "Reviews",
     "other": "Other",
@@ -386,6 +387,26 @@
     "addressUpdated": "Address updated successfully",
     "addressDeleted": "Address deleted successfully",
     "somethingWentWrong": "Something went wrong. Please try again."
+  },
+  "wishlist": {
+    "wishlist": "Wishlist",
+    "myWishlist": "My Wishlist",
+    "emptyWishlist": "Your Wishlist is Empty",
+    "emptyWishlistMessage": "Looks like you haven't added any products to your wishlist yet.",
+    "startShopping": "Start Shopping",
+    "removeFromWishlist": "Remove from Wishlist",
+    "addToCart": "Add to Cart",
+    "removeConfirm": "Are you sure you want to remove \"{{name}}\" from your wishlist?",
+    "removed": "Removed from wishlist",
+    "removeFailed": "Failed to remove from wishlist",
+    "added": "Added to wishlist",
+    "addFailed": "Failed to add to wishlist",
+    "movedToCart": "Moved to cart",
+    "moveToCartFailed": "Failed to move to cart",
+    "loadingWishlist": "Loading wishlist...",
+    "noProducts": "No products in wishlist",
+    "itemsCount": "{{count}} item",
+    "itemsCount_plural": "{{count}} items"
   }
 }
 

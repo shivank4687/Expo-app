@@ -32,7 +32,14 @@ export const addressApi = {
      * Create a new address
      */
     async createAddress(data: AddressFormData): Promise<Address> {
-        const response = await restApiClient.post<{ data: Address }>(API_BASE, data);
+        // Transform address1 to address (API expects 'address' field)
+        const { address1, ...rest } = data;
+        const payload = {
+            ...rest,
+            address: address1,
+        };
+        
+        const response = await restApiClient.post<{ data: Address }>(API_BASE, payload);
         return response.data;
     },
 
@@ -40,7 +47,14 @@ export const addressApi = {
      * Update an existing address
      */
     async updateAddress(id: number, data: AddressFormData): Promise<Address> {
-        const response = await restApiClient.put<{ data: Address }>(`${API_BASE}/${id}`, data);
+        // Transform address1 to address (API expects 'address' field)
+        const { address1, ...rest } = data;
+        const payload = {
+            ...rest,
+            address: address1,
+        };
+        
+        const response = await restApiClient.put<{ data: Address }>(`${API_BASE}/${id}`, payload);
         return response.data;
     },
 

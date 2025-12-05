@@ -180,9 +180,12 @@ export const moveToWishlistThunk = createAsyncThunk(
     'cart/moveToWishlist',
     async (cartItemId: number, { rejectWithValue }) => {
         try {
+            console.log('[cartSlice] Moving item to wishlist:', cartItemId);
             const cart = await cartApi.moveToWishlist(cartItemId);
+            console.log('[cartSlice] Updated cart after move:', cart);
             return cart;
         } catch (error: any) {
+            console.error('[cartSlice] Move to wishlist error:', error);
             return rejectWithValue(error.message || 'Failed to move item to wishlist');
         }
     }
@@ -225,9 +228,11 @@ const cartSlice = createSlice({
 
         // Add to cart
         builder
-            .addCase(addToCartThunk.pending, (state) => {
+            .addCase(addToCartThunk.pending, (state, action) => {
                 state.isAddingToCart = true;
                 state.error = null;
+                // Set lastAddedProductId immediately when pending to show loader on correct product
+                state.lastAddedProductId = action.meta.arg.product_id;
             })
             .addCase(addToCartThunk.fulfilled, (state, action) => {
                 state.isAddingToCart = false;
@@ -237,6 +242,8 @@ const cartSlice = createSlice({
             .addCase(addToCartThunk.rejected, (state, action) => {
                 state.isAddingToCart = false;
                 state.error = action.payload as string;
+                // Clear lastAddedProductId on error
+                state.lastAddedProductId = null;
             });
 
         // Update cart item
@@ -293,6 +300,8 @@ const cartSlice = createSlice({
                 state.error = null;
             })
             .addCase(moveToWishlistThunk.fulfilled, (state, action) => {
+                // Update cart with the payload (can be null if cart is now empty)
+                // Null indicates empty cart after moving last item to wishlist
                 state.cart = action.payload;
             })
             .addCase(moveToWishlistThunk.rejected, (state, action) => {

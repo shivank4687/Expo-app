@@ -70,6 +70,8 @@
     "yourInformation": "Tu información",
     "dashboard": "Panel",
     "orders": "Pedidos",
+    "wishlist": "Lista de Deseos",
+    "addresses": "Direcciones",
     "reviews": "Reseñas",
     "other": "Otros",
     "aboutUs": "Sobre nosotros",
@@ -385,6 +387,26 @@
     "addressUpdated": "Dirección actualizada con éxito",
     "addressDeleted": "Dirección eliminada con éxito",
     "somethingWentWrong": "Algo salió mal. Por favor, inténtalo de nuevo."
+  },
+  "wishlist": {
+    "wishlist": "Lista de Deseos",
+    "myWishlist": "Mi Lista de Deseos",
+    "emptyWishlist": "Tu Lista de Deseos está Vacía",
+    "emptyWishlistMessage": "Parece que aún no has agregado productos a tu lista de deseos.",
+    "startShopping": "Comenzar a Comprar",
+    "removeFromWishlist": "Eliminar de Lista de Deseos",
+    "addToCart": "Agregar al Carrito",
+    "removeConfirm": "¿Estás seguro de que deseas eliminar \"{{name}}\" de tu lista de deseos?",
+    "removed": "Eliminado de la lista de deseos",
+    "removeFailed": "Error al eliminar de la lista de deseos",
+    "added": "Agregado a la lista de deseos",
+    "addFailed": "Error al agregar a la lista de deseos",
+    "movedToCart": "Movido al carrito",
+    "moveToCartFailed": "Error al mover al carrito",
+    "loadingWishlist": "Cargando lista de deseos...",
+    "noProducts": "No hay productos en la lista de deseos",
+    "itemsCount": "{{count}} artículo",
+    "itemsCount_plural": "{{count}} artículos"
   }
 }
 

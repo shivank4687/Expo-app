@@ -4,15 +4,17 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import { Card } from '@/shared/components/Card';
 import { Button } from '@/shared/components/Button';
 import { theme } from '@/theme';
 import { CheckoutAddress } from '../types/checkout.types';
 import { addressApi } from '@/services/api/address.api';
 import { useToast } from '@/shared/components/Toast';
+import { Address } from '@/features/address/types/address.types';
 
 interface AddressStepProps {
     billingAddress: CheckoutAddress | null;
@@ -35,144 +37,70 @@ export const AddressStep: React.FC<AddressStepProps> = ({
 }) => {
     const { t } = useTranslation();
     const { showToast } = useToast();
-    const [showAddressForm, setShowAddressForm] = useState(false);
+    const router = useRouter();
+    const [showAddressListModal, setShowAddressListModal] = useState(false);
     const [addressType, setAddressType] = useState<'billing' | 'shipping'>('billing');
-    const [isSaving, setIsSaving] = useState(false);
-    
-    // Form state
-    const [formData, setFormData] = useState({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        address1: '',
-        address2: '',
-        city: '',
-        state: '',
-        country: '',
-        postcode: '',
-    });
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
-    const handleAddBillingAddress = () => {
-        setAddressType('billing');
-        setFormData({
-            first_name: '',
-            last_name: '',
-            email: '',
-            phone: '',
-            address1: '',
-            address2: '',
-            city: '',
-            state: '',
-            country: '',
-            postcode: '',
-        });
-        setShowAddressForm(true);
+    // Load addresses from API
+    const loadAddresses = async () => {
+        try {
+            setIsLoadingAddresses(true);
+            const data = await addressApi.getAddresses();
+            setAddresses(data);
+        } catch (error: any) {
+            showToast({ message: error.message || t('checkout.addressLoadFailed', 'Failed to load addresses'), type: 'error' });
+        } finally {
+            setIsLoadingAddresses(false);
+        }
     };
 
-    const handleChangeBillingAddress = () => {
-        setAddressType('billing');
-        if (billingAddress) {
-            setFormData({
-                first_name: billingAddress.first_name,
-                last_name: billingAddress.last_name,
-                email: billingAddress.email,
-                phone: billingAddress.phone,
-                address1: billingAddress.address1,
-                address2: billingAddress.address2 || '',
-                city: billingAddress.city,
-                state: billingAddress.state,
-                country: billingAddress.country,
-                postcode: billingAddress.postcode,
-            });
-        }
-        setShowAddressForm(true);
+    // Handle Add button click - navigate to add address screen
+    const handleAddBillingAddress = () => {
+        router.push('/add-address');
     };
 
     const handleAddShippingAddress = () => {
-        setAddressType('shipping');
-        setFormData({
-            first_name: '',
-            last_name: '',
-            email: '',
-            phone: '',
-            address1: '',
-            address2: '',
-            city: '',
-            state: '',
-            country: '',
-            postcode: '',
-        });
-        setShowAddressForm(true);
+        router.push('/add-address');
     };
 
-    const handleChangeShippingAddress = () => {
-        setAddressType('shipping');
-        if (shippingAddress) {
-            setFormData({
-                first_name: shippingAddress.first_name,
-                last_name: shippingAddress.last_name,
-                email: shippingAddress.email,
-                phone: shippingAddress.phone,
-                address1: shippingAddress.address1,
-                address2: shippingAddress.address2 || '',
-                city: shippingAddress.city,
-                state: shippingAddress.state,
-                country: shippingAddress.country,
-                postcode: shippingAddress.postcode,
-            });
-        }
-        setShowAddressForm(true);
+    // Handle Change button click - show address list modal
+    const handleChangeBillingAddress = async () => {
+        setAddressType('billing');
+        await loadAddresses();
+        setShowAddressListModal(true);
     };
 
-    const handleSaveAddress = async () => {
-        // Validate
-        if (!formData.first_name || !formData.last_name || !formData.email || 
-            !formData.phone || !formData.address1 || !formData.city || 
-            !formData.state || !formData.country || !formData.postcode) {
-            showToast({ message: t('checkout.fillAllFields', 'Please fill all required fields'), type: 'error' });
-            return;
-        }
+    const handleChangeShippingAddress = async () => {
+        setAddressType('shipping');
+        await loadAddresses();
+        setShowAddressListModal(true);
+    };
 
-        setIsSaving(true);
-        try {
-            // Save to backend - API expects address1 as array
-            const addressData = {
-                first_name: formData.first_name,
-                last_name: formData.last_name,
-                phone: formData.phone,
-                address1: [formData.address1, formData.address2].filter(Boolean),
-                city: formData.city,
-                state: formData.state,
-                country: formData.country,
-                postcode: formData.postcode,
-            };
+    // Handle address selection from list
+    const handleAddressSelect = (address: Address) => {
+        // Convert Address to CheckoutAddress
+        const addressLines = address.address || address.address1 || [];
+        const addressArray = Array.isArray(addressLines) ? addressLines : [addressLines];
+        
+        const checkoutAddress: CheckoutAddress = {
+            id: address.id,
+            first_name: address.first_name,
+            last_name: address.last_name,
+            email: address.email || '',
+            phone: address.phone,
+            address1: addressArray[0] || '',
+            address2: addressArray[1] || address.address2 || '',
+            city: address.city,
+            state: address.state,
+            country: address.country,
+            postcode: address.postcode,
+        };
 
-            const savedAddress = await addressApi.createAddress(addressData);
-
-            // Convert to CheckoutAddress
-            const checkoutAddress: CheckoutAddress = {
-                id: savedAddress.id,
-                first_name: savedAddress.first_name,
-                last_name: savedAddress.last_name,
-                email: formData.email, // Use form email
-                phone: savedAddress.phone,
-                address1: Array.isArray(savedAddress.address1) ? savedAddress.address1[0] : savedAddress.address1,
-                address2: Array.isArray(savedAddress.address1) && savedAddress.address1[1] ? savedAddress.address1[1] : (savedAddress.address2 || ''),
-                city: savedAddress.city,
-                state: savedAddress.state,
-                country: savedAddress.country,
-                postcode: savedAddress.postcode,
-            };
-
-            onAddressUpdate(addressType, checkoutAddress);
-            setShowAddressForm(false);
-            showToast({ message: t('messages.addressAdded'), type: 'success' });
-        } catch (error: any) {
-            showToast({ message: error.message || t('checkout.addressSaveFailed'), type: 'error' });
-        } finally {
-            setIsSaving(false);
-        }
+        onAddressUpdate(addressType, checkoutAddress);
+        setShowAddressListModal(false);
+        showToast({ message: t('checkout.addressSelected', 'Address selected successfully'), type: 'success' });
     };
 
     const canProceed = billingAddress && (sameAsBilling || shippingAddress);
@@ -210,6 +138,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({
                         <View style={styles.addressActions}>
                             <TouchableOpacity
                                 style={styles.actionButton}
+                                onPress={onAdd}
+                            >
+                                <Ionicons
+                                    name="add-circle-outline"
+                                    size={18}
+                                    color={theme.colors.primary[500]}
+                                />
+                                <Text style={styles.actionButtonText}>
+                                    {t('checkout.addAddress', 'Add')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.actionButton}
                                 onPress={onChange}
                             >
                                 <Ionicons
@@ -244,154 +185,158 @@ export const AddressStep: React.FC<AddressStepProps> = ({
 
     return (
         <View style={styles.container}>
-            {/* Billing Address */}
-            {renderAddressCard(
-                billingAddress,
-                t('address.billingAddress'),
-                handleAddBillingAddress,
-                handleChangeBillingAddress
-            )}
-
-            {/* Same as Billing Checkbox */}
-            <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => onSameAsBillingChange(!sameAsBilling)}
-                activeOpacity={0.7}
+            {/* Scrollable Content */}
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
             >
-                <View
-                    style={[
-                        styles.checkbox,
-                        sameAsBilling && styles.checkboxChecked,
-                    ]}
+                {/* Billing Address */}
+                {renderAddressCard(
+                    billingAddress,
+                    t('address.billingAddress'),
+                    handleAddBillingAddress,
+                    handleChangeBillingAddress
+                )}
+
+                {/* Same as Billing Checkbox */}
+                <TouchableOpacity
+                    style={styles.checkboxContainer}
+                    onPress={() => onSameAsBillingChange(!sameAsBilling)}
+                    activeOpacity={0.7}
                 >
-                    {sameAsBilling && (
-                        <Ionicons
-                            name="checkmark"
-                            size={18}
-                            color={theme.colors.white}
-                        />
-                    )}
-                </View>
-                <Text style={styles.checkboxLabel}>
-                    {t('address.sameAsBilling')}
-                </Text>
-            </TouchableOpacity>
+                    <View
+                        style={[
+                            styles.checkbox,
+                            sameAsBilling && styles.checkboxChecked,
+                        ]}
+                    >
+                        {sameAsBilling && (
+                            <Ionicons
+                                name="checkmark"
+                                size={18}
+                                color={theme.colors.white}
+                            />
+                        )}
+                    </View>
+                    <Text style={styles.checkboxLabel}>
+                        {t('address.sameAsBilling')}
+                    </Text>
+                </TouchableOpacity>
 
-            {/* Shipping Address (if different from billing) */}
-            {!sameAsBilling && (
-                <>
-                    <View style={styles.divider} />
-                    {renderAddressCard(
-                        shippingAddress,
-                        t('address.shippingAddress'),
-                        handleAddShippingAddress,
-                        handleChangeShippingAddress
-                    )}
-                </>
-            )}
+                {/* Shipping Address (if different from billing) */}
+                {!sameAsBilling && (
+                    <>
+                        <View style={styles.divider} />
+                        {renderAddressCard(
+                            shippingAddress,
+                            t('address.shippingAddress'),
+                            handleAddShippingAddress,
+                            handleChangeShippingAddress
+                        )}
+                    </>
+                )}
+            </ScrollView>
 
-            {/* Proceed Button */}
-            <Button
-                title={t('checkout.proceedToShipping', 'Proceed to Shipping')}
-                onPress={onProceed}
-                disabled={!canProceed || isProcessing}
-                loading={isProcessing}
-                style={styles.proceedButton}
-            />
+            {/* Fixed Button at Bottom */}
+            <View style={styles.buttonContainer}>
+                <Button
+                    title={t('checkout.proceedToShipping', 'Proceed to Shipping')}
+                    onPress={onProceed}
+                    disabled={!canProceed || isProcessing}
+                    loading={isProcessing}
+                />
+            </View>
 
-            {/* Add/Edit Address Modal */}
+            {/* Address Selection Modal */}
             <Modal
-                visible={showAddressForm}
+                visible={showAddressListModal}
                 animationType="slide"
                 presentationStyle="pageSheet"
-                onRequestClose={() => setShowAddressForm(false)}
+                onRequestClose={() => setShowAddressListModal(false)}
             >
                 <View style={styles.modalContainer}>
                     {/* Modal Header */}
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>
-                            {addressType === 'billing' 
-                                ? t('address.billingAddress') 
-                                : t('address.shippingAddress')}
+                            {t('checkout.selectAddress', 'Select Address')}
                         </Text>
-                        <TouchableOpacity onPress={() => setShowAddressForm(false)}>
+                        <TouchableOpacity onPress={() => setShowAddressListModal(false)}>
                             <Ionicons name="close" size={28} color={theme.colors.text.primary} />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Address Form */}
-                    <ScrollView style={styles.formScroll} contentContainerStyle={styles.formContainer}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.enterFirstName')}
-                            value={formData.first_name}
-                            onChangeText={(text) => setFormData({ ...formData, first_name: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.enterLastName')}
-                            value={formData.last_name}
-                            onChangeText={(text) => setFormData({ ...formData, last_name: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.enterEmail')}
-                            value={formData.email}
-                            onChangeText={(text) => setFormData({ ...formData, email: text })}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.enterPhone')}
-                            value={formData.phone}
-                            onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                            keyboardType="phone-pad"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.address1')}
-                            value={formData.address1}
-                            onChangeText={(text) => setFormData({ ...formData, address1: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.address2') + ' ' + t('common.optional', '(Optional)')}
-                            value={formData.address2}
-                            onChangeText={(text) => setFormData({ ...formData, address2: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.enterCity')}
-                            value={formData.city}
-                            onChangeText={(text) => setFormData({ ...formData, city: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.state')}
-                            value={formData.state}
-                            onChangeText={(text) => setFormData({ ...formData, state: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.country')}
-                            value={formData.country}
-                            onChangeText={(text) => setFormData({ ...formData, country: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('address.enterZipCode')}
-                            value={formData.postcode}
-                            onChangeText={(text) => setFormData({ ...formData, postcode: text })}
-                        />
+                    {/* Address List */}
+                    <ScrollView style={styles.addressListScroll} contentContainerStyle={styles.addressListContainer}>
+                        {isLoadingAddresses ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                                <Text style={styles.loadingText}>{t('common.loading', 'Loading...')}</Text>
+                            </View>
+                        ) : addresses.length > 0 ? (
+                            addresses.map((address) => {
+                                const addressLines = address.address || address.address1 || [];
+                                const addressArray = Array.isArray(addressLines) ? addressLines : [addressLines];
+                                const currentSelectedId = addressType === 'billing' ? billingAddress?.id : shippingAddress?.id;
+                                const isSelected = currentSelectedId === address.id;
 
-                        <Button
-                            title={t('common.save')}
-                            onPress={handleSaveAddress}
-                            loading={isSaving}
-                            disabled={isSaving}
-                            style={styles.saveButton}
-                        />
+                                return (
+                                    <TouchableOpacity
+                                        key={address.id}
+                                        style={[
+                                            styles.addressListCard,
+                                            isSelected && styles.addressListCardSelected
+                                        ]}
+                                        onPress={() => handleAddressSelect(address)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.addressListCardContent}>
+                                            <View style={styles.addressListCardHeader}>
+                                                <Text style={styles.addressListCardName}>
+                                                    {address.first_name} {address.last_name}
+                                                </Text>
+                                                {isSelected && (
+                                                    <View style={styles.selectedBadge}>
+                                                        <Ionicons name="checkmark-circle" size={20} color={theme.colors.primary[500]} />
+                                                    </View>
+                                                )}
+                                            </View>
+                                            <Text style={styles.addressListCardText}>{addressArray[0]}</Text>
+                                            {addressArray[1] && (
+                                                <Text style={styles.addressListCardText}>{addressArray[1]}</Text>
+                                            )}
+                                            <Text style={styles.addressListCardText}>
+                                                {address.city}, {address.state} {address.postcode}
+                                            </Text>
+                                            <Text style={styles.addressListCardText}>{address.country}</Text>
+                                            <Text style={styles.addressListCardText}>{address.phone}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })
+                        ) : (
+                            <View style={styles.emptyAddressState}>
+                                <Ionicons
+                                    name="location-outline"
+                                    size={64}
+                                    color={theme.colors.gray[400]}
+                                />
+                                <Text style={styles.emptyAddressTitle}>
+                                    {t('checkout.noAddresses', 'No Addresses Found')}
+                                </Text>
+                                <Text style={styles.emptyAddressMessage}>
+                                    {t('checkout.noAddressesMessage', 'Please add an address first')}
+                                </Text>
+                                <Button
+                                    title={t('checkout.addAddress', 'Add Address')}
+                                    onPress={() => {
+                                        setShowAddressListModal(false);
+                                        router.push('/add-address');
+                                    }}
+                                    style={styles.emptyAddressButton}
+                                />
+                            </View>
+                        )}
                     </ScrollView>
                 </View>
             </Modal>
@@ -401,7 +346,26 @@ export const AddressStep: React.FC<AddressStepProps> = ({
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
         padding: theme.spacing.md,
+        paddingBottom: theme.spacing.xl,
+    },
+    buttonContainer: {
+        padding: theme.spacing.md,
+        paddingTop: theme.spacing.sm,
+        backgroundColor: theme.colors.white,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+        shadowColor: theme.colors.black,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
     },
     addressCard: {
         marginBottom: theme.spacing.md,
@@ -500,9 +464,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.gray[200],
         marginVertical: theme.spacing.md,
     },
-    proceedButton: {
-        marginTop: theme.spacing.lg,
-    },
     modalContainer: {
         flex: 1,
         backgroundColor: theme.colors.white,
@@ -520,26 +481,81 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.text.primary,
     },
-    formScroll: {
+    addressListScroll: {
         flex: 1,
     },
-    formContainer: {
+    addressListContainer: {
         padding: theme.spacing.md,
     },
-    input: {
-        height: 48,
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: theme.spacing.xl * 3,
+    },
+    loadingText: {
+        marginTop: theme.spacing.md,
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.text.secondary,
+    },
+    addressListCard: {
         borderWidth: 1,
         borderColor: theme.colors.gray[300],
         borderRadius: theme.borderRadius.md,
-        paddingHorizontal: theme.spacing.md,
-        fontSize: theme.typography.fontSize.md,
-        color: theme.colors.text.primary,
-        backgroundColor: theme.colors.white,
+        padding: theme.spacing.md,
         marginBottom: theme.spacing.md,
+        backgroundColor: theme.colors.white,
     },
-    saveButton: {
+    addressListCardSelected: {
+        borderColor: theme.colors.primary[500],
+        borderWidth: 2,
+        backgroundColor: theme.colors.primary[50],
+    },
+    addressListCardContent: {
+        gap: 4,
+    },
+    addressListCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    addressListCardName: {
+        fontSize: theme.typography.fontSize.md,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.text.primary,
+    },
+    selectedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    addressListCardText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.secondary,
+        lineHeight: 20,
+    },
+    emptyAddressState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: theme.spacing.xl * 3,
+        paddingHorizontal: theme.spacing.xl,
+    },
+    emptyAddressTitle: {
+        fontSize: theme.typography.fontSize.lg,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.text.primary,
         marginTop: theme.spacing.lg,
-        marginBottom: theme.spacing.xl * 2,
+        marginBottom: theme.spacing.sm,
+    },
+    emptyAddressMessage: {
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.text.secondary,
+        textAlign: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    emptyAddressButton: {
+        minWidth: 200,
     },
 });
 

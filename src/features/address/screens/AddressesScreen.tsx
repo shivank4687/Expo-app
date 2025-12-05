@@ -9,6 +9,7 @@ import {
     Alert,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { addressApi } from '@/services/api/address.api';
@@ -28,8 +29,11 @@ export const AddressesScreen: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const loadAddresses = useCallback(async () => {
+    const loadAddresses = useCallback(async (showLoader = true) => {
         try {
+            if (showLoader) {
+                setIsLoading(true);
+            }
             setError(null);
             const data = await addressApi.getAddresses();
             setAddresses(data);
@@ -42,13 +46,22 @@ export const AddressesScreen: React.FC = () => {
         }
     }, []);
 
+    // Load addresses when screen is first mounted
     useEffect(() => {
         loadAddresses();
-    }, [loadAddresses]);
+    }, []);
+
+    // Reload addresses when screen comes into focus (e.g., after adding/editing)
+    useFocusEffect(
+        useCallback(() => {
+            // Don't show loader on focus, just silently reload
+            loadAddresses(false);
+        }, [loadAddresses])
+    );
 
     const handleRefresh = useCallback(() => {
         setIsRefreshing(true);
-        loadAddresses();
+        loadAddresses(false);
     }, [loadAddresses]);
 
     const handleAddNew = useCallback(() => {
@@ -63,7 +76,7 @@ export const AddressesScreen: React.FC = () => {
         try {
             await addressApi.deleteAddress(address.id);
             showToast('Address deleted successfully', 'success');
-            loadAddresses();
+            loadAddresses(false);
         } catch (err: any) {
             console.error('[AddressesScreen] Error deleting address:', err);
             showToast(err.message || 'Failed to delete address', 'error');
@@ -74,7 +87,7 @@ export const AddressesScreen: React.FC = () => {
         try {
             await addressApi.makeDefaultAddress(address.id);
             showToast('Default address updated', 'success');
-            loadAddresses();
+            loadAddresses(false);
         } catch (err: any) {
             console.error('[AddressesScreen] Error setting default address:', err);
             showToast(err.message || 'Failed to set default address', 'error');
@@ -89,7 +102,7 @@ export const AddressesScreen: React.FC = () => {
         return (
             <View style={styles.container}>
                 <Stack.Screen options={{ title: 'Addresses', headerBackTitle: 'Back' }} />
-                <ErrorMessage message={error} onRetry={loadAddresses} />
+                <ErrorMessage message={error} onRetry={() => loadAddresses(true)} />
             </View>
         );
     }

@@ -76,17 +76,17 @@ export const CheckoutScreen: React.FC = () => {
             
             if (defaultAddress) {
                 // Convert to CheckoutAddress format
+                const addressLines = Array.isArray(defaultAddress.address) 
+                    ? defaultAddress.address 
+                    : (defaultAddress.address ? String(defaultAddress.address).split('\n') : []);
+                
                 const checkoutAddress: CheckoutAddress = {
                     id: defaultAddress.id,
                     first_name: defaultAddress.first_name,
                     last_name: defaultAddress.last_name,
-                    email: defaultAddress.email,
-                    address1: Array.isArray(defaultAddress.address) 
-                        ? defaultAddress.address[0] 
-                        : defaultAddress.address?.split('\n')[0] || '',
-                    address2: Array.isArray(defaultAddress.address) 
-                        ? defaultAddress.address[1] 
-                        : defaultAddress.address?.split('\n')[1],
+                    email: defaultAddress.email || '',
+                    address1: addressLines[0] || '',
+                    address2: addressLines[1] || '',
                     city: defaultAddress.city,
                     state: defaultAddress.state,
                     country: defaultAddress.country,
@@ -116,27 +116,50 @@ export const CheckoutScreen: React.FC = () => {
 
         setIsProcessing(true);
         try {
-            const payload = {
-                billing: {
-                    ...billingAddress,
-                    use_for_shipping: sameAsBilling,
-                },
-                ...(sameAsBilling ? {} : { shipping: shippingAddress! }),
+            // Transform address format: backend expects 'address' as array, not address1/address2
+            // Also remove 'id' field as it's not needed for cart addresses (only for customer addresses)
+            const transformAddress = (addr: CheckoutAddress) => {
+                const { id, address1, address2, ...rest } = addr;
+                return {
+                    ...rest,
+                    address: [address1, address2].filter(Boolean), // Convert to array format
+                };
             };
 
-            const response = await checkoutApi.saveAddress(payload);
+            const payload :any= {
+                billing: {
+                    ...transformAddress(billingAddress),
+                    use_for_shipping: sameAsBilling,
+                },
+                ...(sameAsBilling ? {} : { shipping: transformAddress(shippingAddress!) }),
+            };
 
-            // If cart has stockable items, show shipping methods
-            if (response.shippingMethods) {
-                setShippingMethods(response.shippingMethods);
+            console.log('[CheckoutScreen] Sending address payload:', JSON.stringify(payload, null, 2));
+
+            const response = await checkoutApi.saveAddress(payload);
+            console.log('[CheckoutScreen] Response received:', response);
+
+            // REST API returns 'rates' array: [{ carrier_title: "...", rates: [...] }, ...]
+            if (response.rates && response.rates.length > 0) {
+                // Transform rates array to shippingMethods object
+                // Expected format: { "carrier_code": { carrier_title: "...", rates: [...] }, ... }
+                const shippingMethods: Record<string, any> = {};
+                response.rates.forEach((carrierData: any, index: number) => {
+                    // Use index or a sanitized version of carrier_title as key
+                    const carrierKey = `carrier_${index}`;
+                    shippingMethods[carrierKey] = {
+                        carrier_title: carrierData.carrier_title,
+                        rates: carrierData.rates || []
+                    };
+                });
+                
+                console.log('[CheckoutScreen] Transformed shipping methods:', shippingMethods);
+                setShippingMethods(shippingMethods);
                 markStepComplete('address');
                 setCurrentStep('shipping');
-            } else if (response.payment_methods) {
-                // No shipping needed, go directly to payment
-                setPaymentMethods(response.payment_methods);
-                markStepComplete('address');
-                markStepComplete('shipping'); // Skip shipping
-                setCurrentStep('payment');
+            } else {
+                // No shipping rates means either error or virtual products
+                showToast({ message: t('checkout.noShippingMethods', 'No shipping methods available'), type: 'error' });
             }
         } catch (error: any) {
             showToast({ message: error.message || t('checkout.addressSaveFailed'), type: 'error' });
@@ -151,17 +174,32 @@ export const CheckoutScreen: React.FC = () => {
             return;
         }
 
+        console.log('[CheckoutScreen] Selected shipping method (composite key):', selectedShippingMethod);
+
+        // Extract actual method code from composite key (e.g., "carrier_0_flat_flat" -> "flat_flat")
+        // ShippingStep creates keys as: ${carrierCode}_${rate.method}
+        // We need to extract the rate.method part which is after the last underscore
+        const parts = selectedShippingMethod.split('_');
+        // For "carrier_0_flat_flat", we need "flat_flat" (last 2 parts)
+        const actualMethodCode = parts.length >= 2 ? parts.slice(-2).join('_') : selectedShippingMethod;
+        
+        console.log('[CheckoutScreen] Actual method code to send:', actualMethodCode);
+
         setIsProcessing(true);
         try {
             const response = await checkoutApi.saveShipping({
-                shipping_method: selectedShippingMethod,
+                shipping_method: actualMethodCode,
             });
 
-            setPaymentMethods(response.payment_methods);
+            console.log('[CheckoutScreen] Shipping save response:', response);
+
+            // REST API returns 'methods' instead of 'payment_methods'
+            setPaymentMethods(response.methods || []);
             markStepComplete('shipping');
             setCurrentStep('payment');
         } catch (error: any) {
-            showToast({ message: error.message || t('checkout.shippingSaveFailed'), type: 'error' });
+            console.error('[CheckoutScreen] Shipping save error:', error);
+            showToast({ message: error.message || t('checkout.shippingSaveFailed', 'Failed to save shipping method'), type: 'error' });
         } finally {
             setIsProcessing(false);
         }

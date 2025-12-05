@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
@@ -45,85 +45,93 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.sectionTitle}>
-                {t('checkout.selectPaymentMethod', 'Select Payment Method')}
-            </Text>
+            {/* Scrollable Content */}
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={styles.sectionTitle}>
+                    {t('checkout.selectPaymentMethod', 'Select Payment Method')}
+                </Text>
 
-            <Card style={styles.methodsCard}>
-                {paymentMethods.map((method, index) => {
-                    const isSelected = selectedMethod === method.method;
-                    const isLast = index === paymentMethods.length - 1;
+                <Card style={styles.methodsCard}>
+                    {paymentMethods.map((method, index) => {
+                        const isSelected = selectedMethod === method.method;
+                        const isLast = index === paymentMethods.length - 1;
 
-                    return (
-                        <TouchableOpacity
-                            key={method.method}
-                            style={[
-                                styles.methodItem,
-                                isSelected && styles.methodItemSelected,
-                                !isLast && styles.methodItemBorder,
-                            ]}
-                            onPress={() => onMethodSelect(method.method)}
-                            activeOpacity={0.7}
-                        >
-                            {/* Radio Button */}
-                            <View
+                        return (
+                            <TouchableOpacity
+                                key={method.method}
                                 style={[
-                                    styles.radio,
-                                    isSelected && styles.radioSelected,
+                                    styles.methodItem,
+                                    isSelected && styles.methodItemSelected,
+                                    !isLast && styles.methodItemBorder,
                                 ]}
+                                onPress={() => onMethodSelect(method.method)}
+                                activeOpacity={0.7}
                             >
-                                {isSelected && (
-                                    <View style={styles.radioInner} />
-                                )}
-                            </View>
-
-                            {/* Method Icon */}
-                            <View style={styles.methodIconContainer}>
-                                <Ionicons
-                                    name={getPaymentIcon(method.method)}
-                                    size={24}
-                                    color={isSelected ? theme.colors.primary[500] : theme.colors.text.secondary}
-                                />
-                            </View>
-
-                            {/* Method Details */}
-                            <View style={styles.methodDetails}>
-                                <Text
+                                {/* Radio Button */}
+                                <View
                                     style={[
-                                        styles.methodTitle,
-                                        isSelected && styles.methodTitleSelected,
+                                        styles.radio,
+                                        isSelected && styles.radioSelected,
                                     ]}
                                 >
-                                    {method.method_title}
-                                </Text>
-                                {method.description && (
-                                    <Text style={styles.methodDescription}>
-                                        {method.description}
+                                    {isSelected && (
+                                        <View style={styles.radioInner} />
+                                    )}
+                                </View>
+
+                                {/* Method Icon */}
+                                <View style={styles.methodIconContainer}>
+                                    <Ionicons
+                                        name={getPaymentIcon(method.method)}
+                                        size={24}
+                                        color={isSelected ? theme.colors.primary[500] : theme.colors.text.secondary}
+                                    />
+                                </View>
+
+                                {/* Method Details */}
+                                <View style={styles.methodDetails}>
+                                    <Text
+                                        style={[
+                                            styles.methodTitle,
+                                            isSelected && styles.methodTitleSelected,
+                                        ]}
+                                    >
+                                        {method.method_title}
                                     </Text>
+                                    {method.description && (
+                                        <Text style={styles.methodDescription}>
+                                            {method.description}
+                                        </Text>
+                                    )}
+                                </View>
+
+                                {/* Selected Indicator */}
+                                {isSelected && (
+                                    <Ionicons
+                                        name="checkmark-circle"
+                                        size={24}
+                                        color={theme.colors.success.main}
+                                    />
                                 )}
-                            </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </Card>
+            </ScrollView>
 
-                            {/* Selected Indicator */}
-                            {isSelected && (
-                                <Ionicons
-                                    name="checkmark-circle"
-                                    size={24}
-                                    color={theme.colors.success.main}
-                                />
-                            )}
-                        </TouchableOpacity>
-                    );
-                })}
-            </Card>
-
-            {/* Proceed Button */}
-            <Button
-                title={t('checkout.proceedToReview', 'Proceed to Review')}
-                onPress={onProceed}
-                disabled={!canProceed || isProcessing}
-                loading={isProcessing}
-                style={styles.proceedButton}
-            />
+            {/* Fixed Button at Bottom */}
+            <View style={styles.buttonContainer}>
+                <Button
+                    title={t('checkout.proceedToReview', 'Proceed to Review')}
+                    onPress={onProceed}
+                    disabled={!canProceed || isProcessing}
+                    loading={isProcessing}
+                />
+            </View>
         </View>
     );
 };
@@ -143,7 +151,26 @@ const getPaymentIcon = (method: string): any => {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
         padding: theme.spacing.md,
+        paddingBottom: theme.spacing.xl,
+    },
+    buttonContainer: {
+        padding: theme.spacing.md,
+        paddingTop: theme.spacing.sm,
+        backgroundColor: theme.colors.white,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+        shadowColor: theme.colors.black,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,
@@ -215,9 +242,6 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.text.secondary,
         textAlign: 'center',
-    },
-    proceedButton: {
-        marginTop: theme.spacing.lg,
     },
 });
 

@@ -191,6 +191,7 @@ export const CartScreen: React.FC = () => {
                                     <TextInput
                                         style={styles.couponInput}
                                         placeholder={t('cart.enterCouponCode')}
+                                        placeholderTextColor={theme.colors.gray[400]}
                                         value={couponCode}
                                         onChangeText={setCouponCode}
                                         autoCapitalize="characters"

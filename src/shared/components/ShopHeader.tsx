@@ -20,15 +20,15 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     const { cart } = useAppSelector((state) => state.cart);
 
     // Fetch cart on mount (works for both authenticated and guest users)
-    useEffect(() => {
-        dispatch(fetchCartThunk());
-    }, [dispatch]);
+    // useEffect(() => {
+    //     dispatch(fetchCartThunk());
+    // }, [dispatch]);
 
     // Refetch when authentication changes
     useEffect(() => {
-        if (isAuthenticated) {
+       // if (isAuthenticated) {
             dispatch(fetchCartThunk());
-        }
+       // }
     }, [isAuthenticated, dispatch]);
 
     const cartItemsCount = cart?.items_count || 0;

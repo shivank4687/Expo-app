@@ -75,9 +75,16 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
         }
 
         try {
-            await dispatch(moveToWishlistThunk(item.id)).unwrap();
+            console.log('[CartItemCard] Moving item to wishlist:', item.id);
+            const result = await dispatch(moveToWishlistThunk(item.id)).unwrap();
+            console.log('[CartItemCard] Move completed, updated cart:', result);
+            
+            // Cart state is already updated by moveToWishlistThunk which fetches the cart
+            // The header will automatically reflect the new count
+            
             showToast({ message: t('cart.itemMovedToWishlist'), type: 'success' });
         } catch (error: any) {
+            console.error('[CartItemCard] Move to wishlist failed:', error);
             showToast({ message: error || t('cart.failedToMoveWishlist'), type: 'error' });
         }
     };

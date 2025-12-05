@@ -6,7 +6,8 @@ export interface Address {
     company_name?: string;
     first_name: string;
     last_name: string;
-    address1: string[];
+    address1: string[] | string;
+    address?: string[]; // API returns 'address' field instead of 'address1'
     address2?: string;
     country: string;
     country_name?: string;
@@ -15,7 +16,9 @@ export interface Address {
     postcode: string;
     phone: string;
     vat_id?: string;
+    email?: string;
     default_address?: boolean;
+    is_default?: boolean; // API returns 'is_default' field
     additional?: Record<string, any>;
     created_at?: string;
     updated_at?: string;
@@ -25,6 +28,7 @@ export interface AddressFormData {
     company_name?: string;
     first_name: string;
     last_name: string;
+    email?: string;
     address1: string[];
     address2?: string;
     country: string;

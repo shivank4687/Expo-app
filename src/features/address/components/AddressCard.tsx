@@ -37,13 +37,16 @@ export const AddressCard: React.FC<AddressCardProps> = ({
     };
 
     const handleMakeDefault = () => {
-        if (address.default_address) return;
+        const isDefault = address.default_address || address.is_default;
+        if (isDefault) return;
         onMakeDefault?.(address);
     };
 
-    const addressLines = Array.isArray(address.address1)
-        ? address.address1
-        : [address.address1];
+    // API returns 'address' field, but our type expects 'address1'
+    const rawAddress = address.address || address.address1 || [];
+    const addressLines = Array.isArray(rawAddress)
+        ? rawAddress
+        : [rawAddress];
 
     return (
         <Card variant="outlined" style={styles.card}>
@@ -53,7 +56,7 @@ export const AddressCard: React.FC<AddressCardProps> = ({
                     <Text style={styles.name}>
                         {address.first_name} {address.last_name}
                     </Text>
-                    {address.default_address && (
+                    {(address.default_address || address.is_default) && (
                         <View style={styles.defaultBadge}>
                             <Text style={styles.defaultText}>Default</Text>
                         </View>
@@ -93,7 +96,7 @@ export const AddressCard: React.FC<AddressCardProps> = ({
 
             {/* Actions */}
             <View style={styles.actions}>
-                {!address.default_address && (
+                {!(address.default_address || address.is_default) && (
                     <TouchableOpacity
                         style={styles.actionButton}
                         onPress={handleMakeDefault}

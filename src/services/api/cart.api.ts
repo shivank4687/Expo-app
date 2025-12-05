@@ -143,13 +143,46 @@ export const cartApi = {
      */
     moveToWishlist: async (cartItemId: number): Promise<Cart | null> => {
         try {
+            console.log('[cart.api] Moving cart item to wishlist:', cartItemId);
+            
             // REST API expects: POST /customer/cart/move-to-wishlist/{cartItemId}
-            const response = await restApiClient.post<CartResponse>(
+            // Note: Backend only returns message, not cart, so we need to fetch cart separately
+            const moveResponse = await restApiClient.post(
                 `/customer/cart/move-to-wishlist/${cartItemId}`
             );
-            return response?.data || null;
+            
+            console.log('[cart.api] Move response:', moveResponse);
+            
+            // Fetch the updated cart after moving item
+            console.log('[cart.api] Fetching updated cart...');
+            
+            try {
+                const cartResponse = await restApiClient.get<CartResponse>('/customer/cart');
+                console.log('[cart.api] Updated cart fetched:', cartResponse);
+                
+                // If cart response is valid and has data, return it
+                if (cartResponse && cartResponse.data) {
+                    // Check if cart has items
+                    if (cartResponse.data.items && cartResponse.data.items.length > 0) {
+                        console.log('[cart.api] Cart still has items:', cartResponse.data.items.length);
+                        return cartResponse.data;
+                    } else {
+                        console.log('[cart.api] Cart is now empty (no items)');
+                        return null;
+                    }
+                }
+                
+                // Backend returned no data - cart is empty
+                console.log('[cart.api] Cart response has no data - cart is empty');
+                return null;
+            } catch (fetchError: any) {
+                // If fetching cart fails, it might be because cart doesn't exist (empty)
+                console.log('[cart.api] Failed to fetch cart (likely empty):', fetchError.message);
+                return null;
+            }
         } catch (error: any) {
-            console.error('Move to wishlist error:', error);
+            console.error('[cart.api] Move to wishlist error:', error);
+            console.error('[cart.api] Error details:', error.response?.data);
             throw new Error(error.response?.data?.message || error.message || 'Failed to move item to wishlist');
         }
     },
