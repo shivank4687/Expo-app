@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/features/product/types/product.types';
@@ -8,7 +8,9 @@ import { theme } from '@/theme';
 import { ProductImage } from '@/shared/components/LazyImage';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCartThunk } from '@/store/slices/cartSlice';
+import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import { useToast } from '@/shared/components/Toast';
+import { useRouter } from 'expo-router';
 
 interface ProductCardProps {
     product: Product;
@@ -24,9 +26,19 @@ const RATING_ICON_SIZE = 14;
  */
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const { showToast } = useToast();
     const { isAddingToCart, lastAddedProductId } = useAppSelector((state) => state.cart);
+    const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+    
     const isAddingThisProduct = isAddingToCart && lastAddedProductId === product.id;
+    
+    // Check if product is in wishlist
+    const isInWishlist = useMemo(() => {
+        return wishlistItems.some((item) => item.product.id === product.id);
+    }, [wishlistItems, product.id]);
 
     const productData = useMemo(() => {
         const rawImageUrl = product.thumbnail || (product.images && product.images[0]?.url);
@@ -83,6 +95,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         }
     };
 
+    const handleToggleWishlist = async (e: any) => {
+        e.stopPropagation();
+        
+        // Check if user is authenticated
+        if (!isAuthenticated) {
+            showToast({ 
+                message: 'Please login first to add items to wishlist', 
+                type: 'warning' 
+            });
+            return;
+        }
+
+        setIsTogglingWishlist(true);
+        
+        try {
+            await dispatch(toggleWishlistThunk(product.id)).unwrap();
+            
+            // Fetch updated wishlist
+            await dispatch(fetchWishlistThunk()).unwrap();
+            
+            const message = isInWishlist 
+                ? `${product.name} removed from wishlist`
+                : `${product.name} added to wishlist!`;
+            
+            showToast({ message, type: 'success' });
+        } catch (error: any) {
+            showToast({ 
+                message: error || 'Failed to update wishlist', 
+                type: 'error' 
+            });
+        } finally {
+            setIsTogglingWishlist(false);
+        }
+    };
+
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
             <Card variant="elevated" style={styles.card}>
@@ -94,6 +141,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         recyclingKey={product.id?.toString()}
                         priority="low"
                     />
+                    
+                    {/* Wishlist Heart Icon */}
+                    <TouchableOpacity 
+                        style={styles.wishlistButton}
+                        onPress={handleToggleWishlist}
+                        disabled={isTogglingWishlist}
+                        activeOpacity={0.7}
+                    >
+                        {isTogglingWishlist ? (
+                            <ActivityIndicator size="small" color={theme.colors.error.main} />
+                        ) : (
+                            <Ionicons
+                                name={isInWishlist ? 'heart' : 'heart-outline'}
+                                size={24}
+                                color={isInWishlist ? theme.colors.error.main : '#6B7280'}
+                                style={styles.heartIcon}
+                            />
+                        )}
+                    </TouchableOpacity>
                     
                     {/* Sale Badge - Shows when product is on sale */}
                     {productData.isOnSale && product.in_stock ? (
@@ -203,6 +269,25 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
+    },
+    wishlistButton: {
+        position: 'absolute',
+        top: theme.spacing.sm,
+        right: theme.spacing.sm,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    heartIcon: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 3,
     },
     saleBadge: {
         position: 'absolute',

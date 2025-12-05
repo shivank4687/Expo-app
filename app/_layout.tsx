@@ -3,9 +3,10 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "@/store/store";
 import { useEffect } from "react";
-import { useAppDispatch } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { checkAuthThunk } from "@/store/slices/authSlice";
 import { fetchCoreConfig } from "@/store/slices/coreSlice";
+import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
 import { ActivityIndicator, View } from "react-native";
 import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
@@ -13,6 +14,7 @@ import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
 
 function AppContent() {
   const dispatch = useAppDispatch();
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     // Initialize core config (locale, currency, channels) on app start
@@ -20,6 +22,14 @@ function AppContent() {
     // Check authentication status
     dispatch(checkAuthThunk());
   }, [dispatch]);
+
+  // Load wishlist when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      console.log('✅ User authenticated, loading wishlist...');
+      dispatch(fetchWishlistThunk());
+    }
+  }, [isAuthenticated, isLoading, dispatch]);
 
   return (
     <ToastProvider>
