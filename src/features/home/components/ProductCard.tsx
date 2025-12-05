@@ -60,6 +60,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
             ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
             : 0;
 
+        // Get price label based on product type (matching web application)
+        let priceLabel = '';
+        if (product.type === 'configurable') {
+            priceLabel = 'As low as';
+        } else if (product.type === 'grouped') {
+            priceLabel = 'Starting at';
+        }
+        // bundle, simple, and other types don't show a label
+
         return {
             imageUrl: rawImageUrl,
             hasDiscount,
@@ -71,6 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
             discountPercent,
             currentPrice,
             originalPrice,
+            priceLabel,
         };
     }, [product]);
 
@@ -79,6 +89,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         
         if (!product.in_stock) {
             showToast({ message: 'Product is out of stock', type: 'error' });
+            return;
+        }
+
+        // Check if product is configurable - requires option selection
+        if (product.type === 'configurable') {
+            showToast({ 
+                message: 'Please select product options', 
+                type: 'warning' 
+            });
+            // Redirect to product detail page to select options
+            setTimeout(() => {
+                router.push(`/product/${product.id}` as any);
+            }, 500);
             return;
         }
 
@@ -207,21 +230,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         </View>
                     ) : null}
 
-                    <View style={styles.priceContainer}>
-                        {productData.hasDiscount ? (
-                            <>
-                                <Text style={styles.specialPrice}>
-                                    {formatters.formatPrice(productData.currentPrice)}
-                                </Text>
-                                <Text style={styles.originalPrice}>
-                                    {formatters.formatPrice(productData.originalPrice)}
-                                </Text>
-                            </>
-                        ) : (
-                            <Text style={styles.price}>
-                                {formatters.formatPrice(product.price)}
+                    <View style={styles.priceWrapper}>
+                        {/* Price Label for Configurable/Grouped Products */}
+                        {productData.priceLabel ? (
+                            <Text style={styles.priceLabel}>
+                                {productData.priceLabel}
                             </Text>
-                        )}
+                        ) : null}
+                        
+                        <View style={styles.priceContainer}>
+                            {productData.hasDiscount ? (
+                                <>
+                                    <Text style={styles.specialPrice}>
+                                        {formatters.formatPrice(productData.currentPrice)}
+                                    </Text>
+                                    <Text style={styles.originalPrice}>
+                                        {formatters.formatPrice(productData.originalPrice)}
+                                    </Text>
+                                </>
+                            ) : (
+                                <Text style={styles.price}>
+                                    {formatters.formatPrice(product.price)}
+                                </Text>
+                            )}
+                        </View>
                     </View>
                 </View>
 
@@ -358,6 +390,14 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.xs,
         color: theme.colors.text.secondary,
         marginLeft: theme.spacing.xs,
+    },
+    priceWrapper: {
+        gap: 2,
+    },
+    priceLabel: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        marginBottom: 2,
     },
     priceContainer: {
         flexDirection: 'row',

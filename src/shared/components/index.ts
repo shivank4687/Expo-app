@@ -2,4 +2,6 @@
 export { DatePickerModal } from './DatePickerModal';
 export { DatePickerInput } from './DatePickerInput';
 export { CustomDrawerContent } from './CustomDrawerContent';
+export { HTMLContent } from './HTMLContent';
+export { Accordion } from './Accordion';
 

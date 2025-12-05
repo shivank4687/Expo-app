@@ -18,6 +18,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     const dispatch = useAppDispatch();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { cart } = useAppSelector((state) => state.cart);
+    const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
 
     // Fetch cart on mount (works for both authenticated and guest users)
     // useEffect(() => {
@@ -32,6 +33,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     }, [isAuthenticated, dispatch]);
 
     const cartItemsCount = cart?.items_count || 0;
+    const wishlistItemsCount = wishlistItems?.length || 0;
 
     const openDrawer = () => {
         navigation.dispatch(DrawerActions.openDrawer());
@@ -44,6 +46,10 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         } else {
             router.push('/login');
         }
+    };
+
+    const handleWishlistPress = () => {
+        router.push('/wishlist');
     };
 
     const handleSearchPress = () => {
@@ -69,13 +75,35 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                             <Ionicons name="search-outline" size={28} color={theme.colors.text.primary} />
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
-                        <Ionicons
-                            name={isAuthenticated ? "person-outline" : "person-circle-outline"}
-                            size={28}
-                            color={theme.colors.text.primary}
-                        />
-                    </TouchableOpacity>
+                    
+                    {/* Show Wishlist icon if logged in, otherwise show Profile icon */}
+                    {isAuthenticated ? (
+                        <TouchableOpacity style={styles.iconButton} onPress={handleWishlistPress}>
+                            <View>
+                                <Ionicons
+                                    name="heart-outline"
+                                    size={28}
+                                    color={theme.colors.error.main}
+                                />
+                                {wishlistItemsCount > 0 && (
+                                    <View style={styles.badge}>
+                                        <Text style={styles.badgeText}>
+                                            {wishlistItemsCount > 99 ? '99+' : wishlistItemsCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
+                            <Ionicons
+                                name="person-circle-outline"
+                                size={28}
+                                color={theme.colors.text.primary}
+                            />
+                        </TouchableOpacity>
+                    )}
+                    
                     <TouchableOpacity style={styles.iconButton} onPress={handleCartPress}>
                         <View>
                             <Ionicons name="cart-outline" size={28} color={theme.colors.text.primary} />

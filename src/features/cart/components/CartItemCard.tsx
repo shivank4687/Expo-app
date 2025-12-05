@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import { CartItem } from '@/features/cart/types/cart.types';
 import { Card } from '@/shared/components/Card';
 import { ProductImage } from '@/shared/components/LazyImage';
@@ -22,6 +23,7 @@ interface CartItemCardProps {
 
 export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const { showToast } = useToast();
     const { t } = useTranslation();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -29,6 +31,22 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
 
     const imageUrl = item.product?.thumbnail || (item.product?.images && item.product.images[0]?.url);
     const subtotal = item.price * item.quantity;
+
+    const handleProductPress = () => {
+        const productId = item.product_id || item.product?.id;
+        console.log('🎯 Cart item clicked - item.product_id:', item.product_id, 'item.product.id:', item.product?.id);
+        
+        if (productId) {
+            console.log('✅ Navigating to product:', productId);
+            router.push(`/product/${productId}` as any);
+        } else {
+            console.log('❌ No product ID available. Item data:', JSON.stringify({
+                id: item.id,
+                product_id: item.product_id,
+                product: item.product ? { id: item.product.id } : null
+            }));
+        }
+    };
 
     const handleQuantityChange = async (newQuantity: number) => {
         if (newQuantity < 1) return;
@@ -90,104 +108,118 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
     };
 
     return (
-        <Card style={styles.card}>
-            <View style={styles.mainContent}>
-                <View style={styles.topSection}>
-                    {/* Product Image */}
-                    <View style={styles.imageContainer}>
-                        <ProductImage
-                            imageUrl={imageUrl}
-                            style={styles.image}
-                            recyclingKey={item.product_id?.toString()}
-                            priority="normal"
-                        />
-                    </View>
+        <TouchableOpacity onPress={handleProductPress} activeOpacity={0.9}>
+            <Card style={styles.card}>
+                <View style={styles.mainContent}>
+                    <View style={styles.topSection}>
+                        {/* Product Image */}
+                        <View style={styles.imageContainer}>
+                            <ProductImage
+                                imageUrl={imageUrl}
+                                style={styles.image}
+                                recyclingKey={item.product_id?.toString()}
+                                priority="normal"
+                            />
+                        </View>
 
-                    {/* Product Details */}
-                    <View style={styles.detailsContainer}>
-                        <View style={styles.productInfoSection}>
-                            <Text style={styles.productName} numberOfLines={2}>
-                                {item.name}
-                            </Text>
-                            
-                            <View style={styles.priceSection}>
-                                <Text style={styles.price}>
-                                    {formatters.formatPrice(item.price)}
+                        {/* Product Details */}
+                        <View style={styles.detailsContainer}>
+                            <View style={styles.productInfoSection}>
+                                <Text style={styles.productName} numberOfLines={2}>
+                                    {item.name}
                                 </Text>
-                            <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
-                            <Text style={styles.subtotal}>
-                                {formatters.formatPrice(subtotal)}
-                            </Text>
+                                
+                                <View style={styles.priceSection}>
+                                    <Text style={styles.price}>
+                                        {formatters.formatPrice(item.price)}
+                                    </Text>
+                                <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
+                                <Text style={styles.subtotal}>
+                                    {formatters.formatPrice(subtotal)}
+                                </Text>
+                                </View>
                             </View>
+
+                        {/* Quantity Controls */}
+                        <View style={styles.quantityContainer}>
+                            <TouchableOpacity
+                                style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(item.quantity - 1);
+                                }}
+                                disabled={isUpdating || item.quantity <= 1}
+                            >
+                                <Ionicons 
+                                    name="remove" 
+                                    size={20} 
+                                    color={item.quantity <= 1 ? theme.colors.gray[400] : theme.colors.text.primary} 
+                                />
+                            </TouchableOpacity>
+
+                            <View style={styles.quantityDisplay}>
+                                {isUpdating ? (
+                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                ) : (
+                                    <Text style={styles.quantityText}>{item.quantity}</Text>
+                                )}
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.quantityButton}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(item.quantity + 1);
+                                }}
+                                disabled={isUpdating}
+                            >
+                                <Ionicons 
+                                    name="add" 
+                                    size={20} 
+                                    color={theme.colors.text.primary} 
+                                />
+                            </TouchableOpacity>
                         </View>
-
-                    {/* Quantity Controls */}
-                    <View style={styles.quantityContainer}>
-                        <TouchableOpacity
-                            style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
-                            onPress={() => handleQuantityChange(item.quantity - 1)}
-                            disabled={isUpdating || item.quantity <= 1}
-                        >
-                            <Ionicons 
-                                name="remove" 
-                                size={20} 
-                                color={item.quantity <= 1 ? theme.colors.gray[400] : theme.colors.text.primary} 
-                            />
-                        </TouchableOpacity>
-
-                        <View style={styles.quantityDisplay}>
-                            {isUpdating ? (
-                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            ) : (
-                                <Text style={styles.quantityText}>{item.quantity}</Text>
-                            )}
                         </View>
-
-                        <TouchableOpacity
-                            style={styles.quantityButton}
-                            onPress={() => handleQuantityChange(item.quantity + 1)}
-                            disabled={isUpdating}
-                        >
-                            <Ionicons 
-                                name="add" 
-                                size={20} 
-                                color={theme.colors.text.primary} 
-                            />
-                        </TouchableOpacity>
-                    </View>
                     </View>
                 </View>
-            </View>
 
-            {/* Actions - Full Width at Bottom */}
-            <View style={styles.actionsContainer}>
-                <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={handleMoveToWishlist}
-                >
-                    <Ionicons 
-                        name="heart-outline" 
-                        size={18} 
-                        color={theme.colors.text.secondary} 
-                    />
-                            <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
-                        </TouchableOpacity>
+                {/* Actions - Full Width at Bottom */}
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={(e) => {
+                            e?.stopPropagation?.();
+                            handleMoveToWishlist();
+                        }}
+                    >
+                        <Ionicons 
+                            name="heart-outline" 
+                            size={18} 
+                            color={theme.colors.text.secondary} 
+                        />
+                        <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
+                    </TouchableOpacity>
 
-                        <View style={styles.actionDivider} />
+                    <View style={styles.actionDivider} />
 
-                        <TouchableOpacity 
-                            style={styles.actionButton}
-                            onPress={handleRemove}
-                        >
-                            <Ionicons 
-                                name="trash-outline" 
-                                size={18} 
-                                color={theme.colors.error.main} 
-                            />
-                            <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
-                </TouchableOpacity>
-            </View>
-        </Card>
+                    <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={(e) => {
+                            e?.stopPropagation?.();
+                            handleRemove();
+                        }}
+                    >
+                        <Ionicons 
+                            name="trash-outline" 
+                            size={18} 
+                            color={theme.colors.error.main} 
+                        />
+                        <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </Card>
+        </TouchableOpacity>
     );
 };
 
