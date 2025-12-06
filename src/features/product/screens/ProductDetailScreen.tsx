@@ -14,6 +14,7 @@ import { productsApi } from '@/services/api/products.api';
 import { Product } from '../types/product.types';
 import { ProductGallery } from '../components/ProductGallery';
 import { ConfigurableOptions } from '../components/ConfigurableOptions';
+import { ProductReviews } from '../components/ProductReviews';
 import { Button } from '@/shared/components/Button';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
@@ -358,6 +359,13 @@ export const ProductDetailScreen: React.FC = () => {
                             />
                         </Accordion>
                     ) : null}
+
+                    {/* Customer Reviews Accordion */}
+                    <ProductReviews
+                        productId={product.id}
+                        averageRating={product.rating || 0}
+                        totalReviews={product.reviews_count || 0}
+                    />
 
                     {/* SKU */}
                     {/* <View style={styles.section}>

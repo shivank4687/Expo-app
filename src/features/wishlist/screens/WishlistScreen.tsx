@@ -172,38 +172,55 @@ export const WishlistScreen = () => {
                                 )}
                             </View>
 
-                            {/* Action Buttons */}
-                            <View style={styles.actionButtons}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.addToCartButton,
-                                        !product.in_stock && styles.addToCartButtonDisabled
-                                    ]}
-                                    onPress={(e) => handleMoveToCart(item, e)}
-                                    disabled={!product.in_stock}
-                                    activeOpacity={0.7}
-                                >
-                                    <Ionicons 
-                                        name="arrow-forward-circle-outline" 
-                                        size={18} 
-                                        color={theme.colors.white} 
-                                    />
-                                    <Text style={styles.addToCartText}>{t('wishlist.moveToCart', 'Move to Cart')}</Text>
-                                </TouchableOpacity>
-                            </View>
                         </View>
+                    </View>
 
-                        {/* Remove Button - Cross Icon */}
-                        <TouchableOpacity
-                            style={styles.removeButton}
-                            onPress={() => handleRemoveFromWishlist(item)}
+                    {/* Actions - Full Width at Bottom */}
+                    <View style={styles.actionsContainer}>
+                        <TouchableOpacity 
+                            style={styles.actionButton}
+                            onPress={(e) => {
+                                e?.stopPropagation?.();
+                                handleMoveToCart(item, e);
+                            }}
+                            disabled={!product.in_stock}
+                        >
+                            <Ionicons 
+                                name="cart-outline" 
+                                size={18} 
+                                color={product.in_stock ? theme.colors.text.secondary : theme.colors.gray[400]} 
+                            />
+                            <Text style={[
+                                styles.actionText,
+                                !product.in_stock && styles.actionTextDisabled
+                            ]}>
+                                {t('wishlist.moveToCart', 'Move to Cart')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.actionDivider} />
+
+                        <TouchableOpacity 
+                            style={styles.actionButton}
+                            onPress={(e) => {
+                                e?.stopPropagation?.();
+                                handleRemoveFromWishlist(item);
+                            }}
                             disabled={isRemovingThis}
-                            activeOpacity={0.7}
                         >
                             {isRemovingThis ? (
                                 <ActivityIndicator size="small" color={theme.colors.error.main} />
                             ) : (
-                                <Ionicons name="close-circle" size={28} color={theme.colors.error.main} />
+                                <>
+                                    <Ionicons 
+                                        name="trash-outline" 
+                                        size={18} 
+                                        color={theme.colors.error.main} 
+                                    />
+                                    <Text style={[styles.actionText, styles.removeText]}>
+                                        {t('wishlist.remove', 'Remove')}
+                                    </Text>
+                                </>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -398,34 +415,34 @@ const styles = StyleSheet.create({
         textDecorationLine: 'line-through',
         fontWeight: theme.typography.fontWeight.medium,
     },
-    actionButtons: {
+    actionsContainer: {
         flexDirection: 'row',
-        gap: theme.spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border.light,
+        backgroundColor: theme.colors.background.paper,
     },
-    addToCartButton: {
+    actionButton: {
         flex: 1,
-        backgroundColor: theme.colors.primary[500],
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.md,
-        borderRadius: theme.borderRadius.md,
+        paddingVertical: theme.spacing.md,
         gap: theme.spacing.xs,
     },
-    addToCartButtonDisabled: {
-        backgroundColor: theme.colors.gray[400],
+    actionDivider: {
+        width: 1,
+        backgroundColor: theme.colors.border.light,
     },
-    addToCartText: {
-        color: theme.colors.white,
+    actionText: {
         fontSize: theme.typography.fontSize.sm,
-        fontWeight: theme.typography.fontWeight.semiBold,
+        fontWeight: theme.typography.fontWeight.medium,
+        color: theme.colors.text.secondary,
     },
-    removeButton: {
-        position: 'absolute',
-        top: theme.spacing.sm,
-        right: theme.spacing.sm,
-        padding: theme.spacing.xs,
+    actionTextDisabled: {
+        color: theme.colors.gray[400],
+    },
+    removeText: {
+        color: theme.colors.error.main,
     },
     emptyContainer: {
         flex: 1,

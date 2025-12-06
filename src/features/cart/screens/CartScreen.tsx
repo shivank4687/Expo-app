@@ -113,7 +113,49 @@ export const CartScreen: React.FC = () => {
         return <EmptyCart />;
     }
 
-    const hasDiscount = cart.discount_amount > 0;
+    const hasDiscount = (cart.discount_amount || 0) > 0;
+    
+    // Debug: Log cart structure
+    console.log('🛒 Cart object keys:', Object.keys(cart));
+    console.log('🛒 Cart values:', {
+        sub_total: cart.sub_total,
+        base_sub_total: cart.base_sub_total,
+        discount_amount: cart.discount_amount,
+        tax_total: cart.tax_total,
+        grand_total: cart.grand_total,
+        shipping_amount: cart.shipping_amount,
+        formatted_sub_total: cart.formatted_sub_total,
+        formatted_grand_total: cart.formatted_grand_total,
+    });
+    
+    // Calculate amount to pay WITHOUT shipping
+    // Use || 0 to handle undefined values
+    const subtotal = Number(cart.sub_total || cart.base_sub_total || 0);
+    const discount = Number(cart.discount_amount || cart.base_discount_amount || 0);
+    const tax = Number(cart.tax_total || cart.base_tax_total || 0);
+    const grandTotal = Number(cart.grand_total || cart.base_grand_total || 0);
+    
+    console.log('💰 Parsed values:', { subtotal, discount, tax, grandTotal });
+    
+    // Calculate: Subtotal - Discount + Tax
+    let amountToPay = subtotal - discount + tax;
+    
+    // If calculated amount is 0 or invalid, use grand_total minus shipping if available
+    if (amountToPay <= 0 && grandTotal > 0) {
+        const shipping = Number(cart.shipping_amount || cart.base_shipping_amount || 0);
+        amountToPay = grandTotal - shipping;
+        console.log('⚠️ Using grand_total minus shipping:', grandTotal, '-', shipping, '=', amountToPay);
+    }
+    
+    // Final fallback: if still 0, use grand_total
+    if (amountToPay <= 0 && grandTotal > 0) {
+        amountToPay = grandTotal;
+        console.log('⚠️ Final fallback to grand_total:', amountToPay);
+    }
+    
+    console.log('✅ Final amount to pay:', amountToPay);
+    
+    const formattedAmountToPay = formatters.formatPrice(amountToPay);
 
     return (
         <View style={styles.container}>
@@ -272,17 +314,6 @@ export const CartScreen: React.FC = () => {
                                     {cart.formatted_tax_total || formatters.formatPrice(cart.tax_total)}
                                 </Text>
                             </View>
-
-                            {/* Divider */}
-                            <View style={styles.divider} />
-
-                            {/* Grand Total */}
-                            <View style={styles.priceRow}>
-                                <Text style={styles.totalLabel}>{t('cart.grandTotal')}</Text>
-                                <Text style={styles.totalValue}>
-                                    {cart.formatted_grand_total || formatters.formatPrice(cart.grand_total)}
-                                </Text>
-                            </View>
                         </View>
                     )}
                 </View>
@@ -295,9 +326,14 @@ export const CartScreen: React.FC = () => {
             <View style={styles.footer}>
                 <View style={styles.footerContent}>
                     <View style={styles.totalSection}>
-                        <Text style={styles.footerLabel}>{t('cart.amountToPay')}</Text>
+                        <Text style={styles.footerLabel}>
+                            {t('cart.amountToPay')}
+                        </Text>
                         <Text style={styles.footerAmount}>
-                            {cart.formatted_grand_total || formatters.formatPrice(cart.grand_total)}
+                            {formattedAmountToPay}
+                        </Text>
+                        <Text style={styles.footerNote}>
+                            {t('cart.shippingCalculatedAtCheckout', 'Shipping will be calculated at checkout')}
                         </Text>
                     </View>
                     <Button
@@ -442,21 +478,6 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         textTransform: 'uppercase',
     },
-    divider: {
-        height: 1,
-        backgroundColor: theme.colors.gray[200],
-        marginVertical: theme.spacing.sm,
-    },
-    totalLabel: {
-        fontSize: theme.typography.fontSize.lg,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-    },
-    totalValue: {
-        fontSize: theme.typography.fontSize.lg,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.primary[500],
-    },
     bottomSpacing: {
         height: 120, // Space for fixed footer
     },
@@ -488,6 +509,12 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.xl,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
+        marginBottom: theme.spacing.xs,
+    },
+    footerNote: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        fontStyle: 'italic',
     },
     checkoutButton: {
         marginLeft: theme.spacing.md,

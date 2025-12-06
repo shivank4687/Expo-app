@@ -101,10 +101,14 @@ export interface Cart {
     base_discount_amount: number;
     tax_total: number;
     base_tax_total: number;
+    shipping_amount?: number;
+    base_shipping_amount?: number;
     formatted_sub_total: string;
     formatted_grand_total: string;
     formatted_discount_amount: string;
     formatted_tax_total: string;
+    formatted_shipping_amount?: string;
+    formatted_base_shipping_amount?: string;
 }
 
 export interface AddToCartPayload {

@@ -92,14 +92,28 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
     // Get selected shipping method details
     const getShippingMethodDetails = () => {
-        if (!selectedShippingMethod || !shippingMethods) return null;
+        console.log('🔍 Finding shipping method - selected:', selectedShippingMethod);
+        console.log('🔍 Available shipping methods:', shippingMethods ? Object.keys(shippingMethods) : 'none');
         
-        for (const carrier of Object.values(shippingMethods)) {
-            const rate = carrier.rates.find(r => 
-                `${r.carrier}_${r.method}` === selectedShippingMethod
-            );
-            if (rate) return rate;
+        if (!selectedShippingMethod || !shippingMethods) {
+            console.log('❌ No selected method or no shipping methods available');
+            return null;
         }
+        
+        for (const [carrierCode, carrier] of Object.entries(shippingMethods)) {
+            console.log(`🔍 Checking carrier: ${carrierCode}, rates:`, carrier.rates?.length);
+            const rate = carrier.rates?.find(r => {
+                const methodKey = `${r.carrier}_${r.method}`;
+                console.log(`  - Checking rate: ${methodKey} === ${selectedShippingMethod}`);
+                return methodKey === selectedShippingMethod;
+            });
+            if (rate) {
+                console.log('✅ Found shipping rate:', rate);
+                return rate;
+            }
+        }
+        
+        console.log('❌ No matching shipping rate found');
         return null;
     };
 
@@ -112,6 +126,15 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     const shippingMethodDetails = getShippingMethodDetails();
     const paymentMethodDetails = getPaymentMethodDetails();
     const hasDiscount = cart.discount_amount > 0;
+    
+    // Debug shipping details
+    console.log('🚚 Shipping method details:', JSON.stringify(shippingMethodDetails, null, 2));
+    console.log('🛒 Cart shipping data:', {
+        selected_shipping_rate: cart.selected_shipping_rate,
+        shipping_amount: cart.shipping_amount,
+        formatted_shipping_amount: cart.formatted_shipping_amount,
+        base_shipping_amount: cart.base_shipping_amount,
+    });
 
     const renderAddress = (address: CheckoutAddress | null, title: string) => {
         if (!address) return null;
@@ -356,11 +379,16 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                         )}
 
                         {/* Shipping */}
-                        {shippingMethodDetails && (
+                        {(shippingMethodDetails || cart.selected_shipping_rate || selectedShippingMethod) && (
                             <View style={styles.priceRow}>
                                 <Text style={styles.priceLabel}>{t('cart.shipping')}</Text>
                                 <Text style={styles.priceValue}>
-                                    {shippingMethodDetails.formatted_price}
+                                    {shippingMethodDetails?.formatted_price || 
+                                     shippingMethodDetails?.base_formatted_price || 
+                                     cart.selected_shipping_rate?.formatted_price ||
+                                     cart.formatted_shipping_amount ||
+                                     (cart.shipping_amount !== undefined ? formatters.formatPrice(cart.shipping_amount) : null) ||
+                                     (shippingMethodDetails?.price !== undefined ? formatters.formatPrice(shippingMethodDetails.price) : '$0.00')}
                                 </Text>
                             </View>
                         )}
@@ -405,7 +433,7 @@ const styles = StyleSheet.create({
     },
     container: {
         padding: theme.spacing.md,
-        paddingBottom: theme.spacing.xxl,
+        paddingBottom: theme.spacing.xl * 2,
     },
     section: {
         marginBottom: theme.spacing.lg,
