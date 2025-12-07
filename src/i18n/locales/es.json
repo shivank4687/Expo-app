@@ -373,7 +373,36 @@
     "orderFailed": "Error al realizar el pedido",
     "comingSoon": "¡Esta función estará disponible pronto!",
     "qty": "Cant",
-    "fillAllFields": "Por favor completa todos los campos requeridos"
+    "fillAllFields": "Por favor completa todos los campos requeridos",
+    "orderSuccess": {
+      "title": "Pedido Realizado",
+      "thankYou": "¡Gracias por Tu Pedido!",
+      "orderNumber": "Tu Número de Pedido es",
+      "emailConfirmation": "Te enviaremos por correo electrónico una confirmación del pedido con detalles e información de seguimiento.",
+      "continueShopping": "Continuar Comprando",
+      "viewOrder": "Ver Pedido",
+      "checkEmail": "Revisa tu correo para obtener detalles del pedido",
+      "processingTime": "Tu pedido está siendo procesado"
+    }
+  },
+  "orders": {
+    "title": "Mis Pedidos",
+    "empty": "Aún no hay pedidos",
+    "emptySubtext": "Comienza a comprar para ver tus pedidos aquí",
+    "loadError": "Error al cargar los pedidos",
+    "retry": "Toca para reintentar",
+    "viewDetails": "Ver Detalles",
+    "quantity": "{{count}} artículos",
+    "quantity_one": "{{count}} artículo",
+    "quantity_other": "{{count}} artículos",
+    "orderNumber": "Pedido #",
+    "status": "Estado",
+    "date": "Fecha",
+    "total": "Total",
+    "items": "Artículos",
+    "orderDetails": "Detalles del Pedido",
+    "orderDetailsComingSoon": "¡La página de detalles del pedido estará disponible pronto!",
+    "loadingMore": "Cargando más pedidos..."
   },
   "messages": {
     "addedToCart": "Agregado al carrito",

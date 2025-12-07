@@ -373,7 +373,36 @@
     "orderFailed": "Failed to place order",
     "comingSoon": "This feature is coming soon!",
     "qty": "Qty",
-    "fillAllFields": "Please fill all required fields"
+    "fillAllFields": "Please fill all required fields",
+    "orderSuccess": {
+      "title": "Order Placed",
+      "thankYou": "Thank You for Your Order!",
+      "orderNumber": "Your Order Number is",
+      "emailConfirmation": "We will email you an order confirmation with details and tracking info.",
+      "continueShopping": "Continue Shopping",
+      "viewOrder": "View Order",
+      "checkEmail": "Check your email for order details",
+      "processingTime": "Your order is being processed"
+    }
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "No orders yet",
+    "emptySubtext": "Start shopping to see your orders here",
+    "loadError": "Failed to load orders",
+    "retry": "Tap to retry",
+    "viewDetails": "View Details",
+    "quantity": "{{count}} items",
+    "quantity_one": "{{count}} item",
+    "quantity_other": "{{count}} items",
+    "orderNumber": "Order #",
+    "status": "Status",
+    "date": "Date",
+    "total": "Total",
+    "items": "Items",
+    "orderDetails": "Order Details",
+    "orderDetailsComingSoon": "Order details page coming soon!",
+    "loadingMore": "Loading more orders..."
   },
   "messages": {
     "addedToCart": "Added to cart",

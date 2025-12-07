@@ -63,6 +63,13 @@ export const CheckoutScreen: React.FC = () => {
         loadCheckoutData();
     }, [isAuthenticated]);
 
+    // Redirect to cart if empty
+    useEffect(() => {
+        if (!isLoading && cart && cart.items.length === 0) {
+            router.replace('/cart');
+        }
+    }, [cart, isLoading, router]);
+
     const loadCheckoutData = async () => {
         try {
             // Load cart
@@ -231,26 +238,36 @@ export const CheckoutScreen: React.FC = () => {
         }
     };
 
-    const handlePlaceOrder = () => {
-        Alert.alert(
-            t('checkout.placeOrder'),
-            t('checkout.comingSoon', 'This feature is coming soon!'),
-            [{ text: t('common.ok'), style: 'default' }]
-        );
-
-        /* 
-        // Actual implementation:
+    const handlePlaceOrder = async () => {
         setIsProcessing(true);
         try {
             const response = await checkoutApi.placeOrder();
-            showToast({ message: t('checkout.orderPlaced', 'Order placed successfully!'), type: 'success' });
-            router.push(`/order-success/${response.order.id}`);
+            
+            // Clear cart and show success message
+            await dispatch(fetchCartThunk()).unwrap();
+            
+            showToast({ 
+                message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                type: 'success',
+                duration: 3000,
+            });
+            
+            // Navigate to success page
+            if (response.order?.id) {
+                router.replace(`/order-success/${response.order.id}`);
+            } else {
+                // Fallback: navigate to orders page if no order ID
+                router.replace('/orders');
+            }
         } catch (error: any) {
-            showToast({ message: error.message || t('checkout.orderFailed'), type: 'error' });
+            showToast({ 
+                message: error.message || t('checkout.orderFailed', 'Failed to place order'), 
+                type: 'error',
+                duration: 4000,
+            });
         } finally {
             setIsProcessing(false);
         }
-        */
     };
 
     const markStepComplete = (step: CheckoutStep) => {
@@ -259,13 +276,8 @@ export const CheckoutScreen: React.FC = () => {
         }
     };
 
-    if (isLoading) {
+    if (isLoading || !cart || cart.items.length === 0) {
         return <LoadingSpinner />;
-    }
-
-    if (!cart || cart.items.length === 0) {
-        router.replace('/cart');
-        return null;
     }
 
     return (
