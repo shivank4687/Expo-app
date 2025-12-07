@@ -45,6 +45,14 @@ const transformProduct = (data: any): Product => {
         grouped_products: data.grouped_products,
         bundle_options: data.bundle_options,
         downloadable_links: data.downloadable_links,
+        // B2B Marketplace supplier information
+        supplier: data.supplier ? {
+            id: data.supplier.id,
+            company_name: data.supplier.company_name,
+            url: data.supplier.url,
+            rating: data.supplier.rating ? parseFloat(data.supplier.rating.toString()) : 0,
+            total_reviews: data.supplier.total_reviews || 0,
+        } : undefined,
     };
 };
 

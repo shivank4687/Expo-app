@@ -15,6 +15,7 @@ import { Product } from '../types/product.types';
 import { ProductGallery } from '../components/ProductGallery';
 import { ConfigurableOptions } from '../components/ConfigurableOptions';
 import { ProductReviews } from '../components/ProductReviews';
+import { MessageSupplierModal } from '../components/MessageSupplierModal';
 import { Button } from '@/shared/components/Button';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
@@ -44,6 +45,7 @@ export const ProductDetailScreen: React.FC = () => {
     const [variantImages, setVariantImages] = useState<any[] | null>(null);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+    const [isMessageModalVisible, setIsMessageModalVisible] = useState(false);
 
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
@@ -360,6 +362,124 @@ export const ProductDetailScreen: React.FC = () => {
                         </Accordion>
                     ) : null}
 
+                    {/* Sold By Accordion */}
+                    {product.supplier ? (
+                        <Accordion 
+                            title="Sold By" 
+                            defaultExpanded={false}
+                            style={styles.accordion}
+                        >
+                            <View style={styles.supplierContainer}>
+                                {/* Supplier Company Name */}
+                                <TouchableOpacity 
+                                    style={styles.supplierNameContainer}
+                                    onPress={() => {
+                                        // Navigate to supplier shop page
+                                        // router.push(`/supplier/${product.supplier!.url}`);
+                                        showToast({ 
+                                            message: `Navigate to ${product.supplier!.company_name} shop`, 
+                                            type: 'info' 
+                                        });
+                                    }}
+                                >
+                                    <Text style={styles.supplierName}>
+                                        {product.supplier.company_name}
+                                    </Text>
+                                    <Ionicons 
+                                        name="chevron-forward" 
+                                        size={20} 
+                                        color={theme.colors.text.secondary} 
+                                    />
+                                </TouchableOpacity>
+
+                                {/* Supplier Rating */}
+                                {product.supplier.rating && product.supplier.rating > 0 ? (
+                                    <View style={styles.supplierRatingContainer}>
+                                        <View style={styles.supplierStars}>
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Ionicons
+                                                    key={star}
+                                                    name={star <= Math.round(product.supplier!.rating!) ? 'star' : 'star-outline'}
+                                                    size={16}
+                                                    color={theme.colors.warning.main}
+                                                />
+                                            ))}
+                                        </View>
+                                        <Text style={styles.supplierRatingText}>
+                                            {product.supplier.rating.toFixed(1)} 
+                                            {product.supplier.total_reviews 
+                                                ? ` (${product.supplier.total_reviews} ${product.supplier.total_reviews === 1 ? 'review' : 'reviews'})`
+                                                : ''
+                                            }
+                                        </Text>
+                                    </View>
+                                ) : null}
+
+                                {/* View Supplier Shop Button */}
+                                <TouchableOpacity 
+                                    style={styles.viewSupplierButton}
+                                    onPress={() => {
+                                        // Navigate to supplier shop page
+                                        // router.push(`/supplier/${product.supplier!.url}`);
+                                        showToast({ 
+                                            message: `View ${product.supplier!.company_name} shop`, 
+                                            type: 'info' 
+                                        });
+                                    }}
+                                >
+                                    <Text style={styles.viewSupplierButtonText}>
+                                        View Supplier Shop
+                                    </Text>
+                                    <Ionicons 
+                                        name="storefront-outline" 
+                                        size={18} 
+                                        color={theme.colors.primary[500]} 
+                                    />
+                                </TouchableOpacity>
+
+                                {/* Message Supplier Button */}
+                                <TouchableOpacity 
+                                    style={styles.messageSupplierButton}
+                                    onPress={() => {
+                                        if (!isAuthenticated) {
+                                            showToast({ 
+                                                message: 'Please login to message supplier', 
+                                                type: 'warning' 
+                                            });
+                                            return;
+                                        }
+                                        setIsMessageModalVisible(true);
+                                    }}
+                                >
+                                    <Ionicons 
+                                        name="chatbubble-outline" 
+                                        size={18} 
+                                        color={theme.colors.primary[500]} 
+                                    />
+                                    <Text style={styles.messageSupplierButtonText}>
+                                        Message Supplier
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Accordion>
+                    ) : null}
+
+                    {/* Message Supplier Modal */}
+                    {product.supplier && (
+                        <MessageSupplierModal
+                            visible={isMessageModalVisible}
+                            supplierId={product.supplier.id}
+                            supplierCompanyName={product.supplier.company_name}
+                            onClose={() => setIsMessageModalVisible(false)}
+                            onSuccess={() => {
+                                showToast({ 
+                                    message: 'Message sent successfully!', 
+                                    type: 'success' 
+                                });
+                            }}
+                        />
+                    )}
+
                     {/* Customer Reviews Accordion */}
                     <ProductReviews
                         productId={product.id}
@@ -564,6 +684,69 @@ const styles = StyleSheet.create({
     },
     addToCartButton: {
         flex: 1,
+    },
+    supplierContainer: {
+        paddingVertical: theme.spacing.xs,
+    },
+    supplierNameContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+    },
+    supplierName: {
+        fontSize: theme.typography.fontSize.lg,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.text.primary,
+        flex: 1,
+    },
+    supplierRatingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    supplierStars: {
+        flexDirection: 'row',
+        marginRight: theme.spacing.sm,
+    },
+    supplierRatingText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.secondary,
+    },
+    viewSupplierButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        backgroundColor: theme.colors.primary.light || theme.colors.primary[50],
+        borderRadius: theme.borderRadius.md,
+        marginTop: theme.spacing.sm,
+        gap: theme.spacing.sm,
+    },
+    viewSupplierButtonText: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
+    },
+    messageSupplierButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        backgroundColor: theme.colors.white,
+        borderRadius: theme.borderRadius.md,
+        marginTop: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[500],
+        gap: theme.spacing.sm,
+    },
+    messageSupplierButtonText: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
     },
 });
 

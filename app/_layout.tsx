@@ -63,6 +63,18 @@ function AppContent() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="messages"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="chat/[threadId]"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
       <ToastContainer />
     </ToastProvider>

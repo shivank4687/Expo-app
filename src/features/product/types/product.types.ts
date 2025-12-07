@@ -41,6 +41,17 @@ export interface Product {
     
     // For downloadable products
     downloadable_links?: DownloadableLink[];
+    
+    // B2B Marketplace supplier information
+    supplier?: SupplierInfo;
+}
+
+export interface SupplierInfo {
+    id: number;
+    company_name: string;
+    url: string;
+    rating?: number;
+    total_reviews?: number;
 }
 
 export interface ProductImage {

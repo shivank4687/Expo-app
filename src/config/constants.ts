@@ -35,6 +35,9 @@ export const API_ENDPOINTS = {
     ADDRESSES: '/customer/addresses',
     NEWSLETTER_SUBSCRIPTION: '/customer/subscription',
     
+    // B2B Marketplace - Supplier Messages
+    MESSAGE_SUPPLIER: '/supplier/message',
+    
     // Theme Customizations
     THEME_CUSTOMIZATIONS: '/theme/customizations',
 };
