@@ -1,5 +1,7 @@
 import { restApiClient } from './client';
 import { API_ENDPOINTS } from '@/config/constants';
+import { Product } from '@/features/product/types/product.types';
+import { PaginatedResponse } from '@/types/global.types';
 
 /**
  * B2B Marketplace Suppliers API Service
@@ -105,7 +107,433 @@ export const suppliersApi = {
         
         return response;
     },
+
+    /**
+     * Get supplier profile/shop details by URL
+     * Public endpoint - no authentication required
+     */
+    async getSupplierProfile(url: string): Promise<SupplierProfile> {
+        const endpoint = API_ENDPOINTS.SUPPLIER_PROFILE.replace(':url', url);
+        const response = await restApiClient.get<{ data: SupplierProfile }>(endpoint);
+        return response.data;
+    },
+
+    /**
+     * Get supplier products
+     * Public endpoint - no authentication required
+     */
+    async getSupplierProducts(url: string, page: number = 1, perPage: number = 20): Promise<PaginatedResponse<Product>> {
+        const endpoint = API_ENDPOINTS.SUPPLIER_PRODUCTS.replace(':url', url);
+        const response = await restApiClient.get<{
+            data: Product[];
+            meta: {
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+                from: number;
+                to: number;
+            };
+            links: {
+                first: string | null;
+                last: string | null;
+                prev: string | null;
+                next: string | null;
+            };
+        }>(endpoint, {
+            params: { page, per_page: perPage },
+        });
+        
+        return {
+            data: response.data,
+            meta: response.meta,
+            links: response.links,
+        };
+    },
+
+    /**
+     * Search supplier products for RFQ
+     * Requires authentication
+     */
+    async searchRFQProducts(query: string, supplierId: number): Promise<Array<{
+        id: number;
+        sku: string;
+        name: string;
+        price: number;
+        formated_price: string;
+        base_image: string | null;
+        parent_id: number | null;
+        is_config: number;
+    }>> {
+        const response = await restApiClient.post<Array<{
+            id: number;
+            sku: string;
+            name: string;
+            price: number;
+            formated_price: string;
+            base_image: string | null;
+            parent_id: number | null;
+            is_config: number;
+        }>>(
+            API_ENDPOINTS.RFQ_SEARCH_PRODUCTS,
+            {
+                query: query,
+                supplier_id: supplierId,
+            }
+        );
+        return response;
+    },
+
+    /**
+     * Submit Request for Quote (RFQ)
+     * Requires authentication
+     */
+    async submitRFQ(payload: RFQPayload, images?: string[], files?: string[] | Array<{ uri: string; name: string }>): Promise<RFQResponse> {
+        const formData = new FormData();
+        
+        // Add basic fields
+        formData.append('supplier_id', payload.supplier_id.toString());
+        formData.append('quote_title', payload.quote_title);
+        formData.append('quote_brief', payload.quote_brief);
+        formData.append('name', payload.name);
+        formData.append('company_name', payload.company_name);
+        formData.append('address', payload.address);
+        formData.append('contact_number', payload.contact_number);
+
+        // Add products as array - Laravel expects array format (products are optional)
+        if (payload.products && payload.products.length > 0) {
+            payload.products.forEach((product, index) => {
+                if (product.product_id) {
+                    formData.append(`products[${index}][product_id]`, product.product_id.toString());
+                }
+                formData.append(`products[${index}][product_name]`, product.product_name);
+                formData.append(`products[${index}][quantity]`, product.quantity.toString());
+                if (product.description) {
+                    formData.append(`products[${index}][description]`, product.description);
+                }
+                if (product.price_per_quantity !== null && product.price_per_quantity !== undefined) {
+                    formData.append(`products[${index}][price_per_quantity]`, product.price_per_quantity.toString());
+                }
+                formData.append(`products[${index}][is_sample]`, product.is_sample ? '1' : '0');
+                if (product.category_id) {
+                    const categoryIds = Array.isArray(product.category_id) 
+                        ? product.category_id 
+                        : [product.category_id];
+                    categoryIds.forEach((catId, catIndex) => {
+                        formData.append(`products[${index}][category_id][${catIndex}]`, catId.toString());
+                    });
+                }
+            });
+        }
+
+        // Add images if provided
+        if (images && images.length > 0) {
+            images.forEach((imageUri, index) => {
+                // Detect file extension and mime type
+                const extension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+                const mimeType = extension === 'png' ? 'image/png' 
+                    : extension === 'gif' ? 'image/gif'
+                    : extension === 'webp' ? 'image/webp'
+                    : extension === 'mp4' ? 'video/mp4'
+                    : extension === 'mov' ? 'video/quicktime'
+                    : 'image/jpeg';
+                
+                formData.append(`images[${index}]`, {
+                    uri: imageUri,
+                    type: mimeType,
+                    name: `image_${index}.${extension}`,
+                } as any);
+            });
+        }
+
+        // Add file attachments if provided
+        if (files && files.length > 0) {
+            files.forEach((file, index) => {
+                // Handle both string URI and object with uri and name
+                const fileUri = typeof file === 'string' ? file : file.uri;
+                const fileName = typeof file === 'string' 
+                    ? file.split('/').pop() || `file_${index}`
+                    : file.name || `file_${index}`;
+                
+                // Try to detect file extension from URI or filename
+                const extension = fileName.split('.').pop()?.toLowerCase() || fileUri.split('.').pop()?.toLowerCase() || 'bin';
+                const mimeType = extension === 'pdf' ? 'application/pdf'
+                    : extension === 'doc' ? 'application/msword'
+                    : extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    : extension === 'xls' ? 'application/vnd.ms-excel'
+                    : extension === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    : extension === 'txt' ? 'text/plain'
+                    : 'application/octet-stream';
+                
+                formData.append(`files[${index}]`, {
+                    uri: fileUri,
+                    type: mimeType,
+                    name: fileName,
+                } as any);
+            });
+        }
+
+        const response = await restApiClient.post<RFQResponse>(
+            API_ENDPOINTS.RFQ_STORE,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }
+        );
+        
+        return response;
+    },
+
+    /**
+     * Get customer quotes (requested quotes)
+     * Requires authentication
+     */
+    async getCustomerQuotes(page: number = 1, perPage: number = 15): Promise<PaginatedResponse<CustomerQuote>> {
+        const endpoint = API_ENDPOINTS.CUSTOMER_QUOTES;
+        const response = await restApiClient.get<{
+            data: CustomerQuote[];
+            meta: {
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+                from: number;
+                to: number;
+            };
+            links: {
+                first: string;
+                last: string;
+                prev: string | null;
+                next: string | null;
+            };
+        }>(endpoint, {
+            params: { page, per_page: perPage },
+        });
+        return {
+            data: response.data,
+            meta: response.meta,
+            links: response.links,
+        };
+    },
+
+    /**
+     * Get quote detail with status counts
+     * Requires authentication
+     */
+    async getQuoteDetail(quoteId: number): Promise<QuoteDetail> {
+        const endpoint = API_ENDPOINTS.CUSTOMER_QUOTE_DETAIL.replace(':quoteId', quoteId.toString());
+        const response = await restApiClient.get<{ data: QuoteDetail }>(endpoint);
+        return response.data;
+    },
+
+    /**
+     * Get quote responses by status
+     * Requires authentication
+     */
+    async getQuoteByStatus(quoteId: number, status: string, page: number = 1, perPage: number = 15): Promise<PaginatedResponse<QuoteResponse>> {
+        const endpoint = API_ENDPOINTS.CUSTOMER_QUOTE_STATUS.replace(':quoteId', quoteId.toString()).replace(':status', status);
+        const response = await restApiClient.get<{
+            data: QuoteResponse[];
+            meta: {
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+                from: number;
+                to: number;
+            };
+            links: {
+                first: string;
+                last: string;
+                prev: string | null;
+                next: string | null;
+            };
+        }>(endpoint, {
+            params: { page, per_page: perPage },
+        });
+        return {
+            data: response.data,
+            meta: response.meta,
+            links: response.links,
+        };
+    },
+
+    /**
+     * Submit a supplier review (requires authentication)
+     */
+    async submitSupplierReview(supplierUrl: string, payload: {
+        rating: number;
+        title: string;
+        comment: string;
+    }): Promise<{ success: boolean; message: string }> {
+        const endpoint = API_ENDPOINTS.SUPPLIER_REVIEW_STORE.replace(':url', supplierUrl);
+        const response = await restApiClient.post<{ success: boolean; message: string }>(endpoint, payload);
+        return response;
+    },
+
+    /**
+     * Search products for quick order (requires authentication)
+     */
+    async searchQuickOrderProducts(query: string, supplierId: number): Promise<Array<{
+        id: number;
+        sku: string;
+        name: string;
+        price: number;
+        formated_price: string;
+        base_image: string | null;
+        parent_id: number | null;
+        is_config: boolean;
+    }>> {
+        const response = await restApiClient.post<Array<{
+            id: number;
+            sku: string;
+            name: string;
+            price: number;
+            formated_price: string;
+            base_image: string | null;
+            parent_id: number | null;
+            is_config: boolean;
+        }>>(API_ENDPOINTS.QUICK_ORDER_SEARCH, {
+            query,
+            supplier_id: supplierId,
+        });
+        return response;
+    },
+
+    /**
+     * Add product to cart via quick order (requires authentication)
+     */
+    async addQuickOrderToCart(payload: {
+        product: number;
+        quantity: number;
+    }): Promise<{ success: boolean; message: string; data?: any }> {
+        const response = await restApiClient.post<{ success: boolean; message: string; data?: any }>(
+            API_ENDPOINTS.QUICK_ORDER_STORE,
+            payload
+        );
+        return response;
+    },
 };
+
+export interface RFQProduct {
+    product_id?: number | null;
+    product_name: string;
+    quantity: number;
+    description?: string;
+    price_per_quantity?: number | null;
+    is_sample?: boolean;
+    category_id?: number | number[];
+}
+
+export interface RFQPayload {
+    supplier_id: number;
+    quote_title: string;
+    quote_brief: string;
+    name: string;
+    company_name: string;
+    address: string;
+    contact_number: string;
+    products: RFQProduct[];
+}
+
+export interface RFQResponse {
+    success: boolean;
+    message: string;
+    data?: {
+        quote_id: number;
+    };
+}
+
+export interface SupplierProfile {
+    id: number;
+    url: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    company_name: string;
+    is_verified: boolean;
+    is_approved: boolean;
+    created_at: string;
+    banner_url: string | null;
+    logo_url: string | null;
+    address1: string | null;
+    address2: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    postcode: string | null;
+    phone: string | null;
+    corporate_phone: string | null;
+    response_time: string | null;
+    company_overview: string | null;
+    shipping_policy: string | null;
+    return_policy: string | null;
+    privacy_policy: string | null;
+    rating: number;
+    total_reviews: number;
+    percentage_ratings: { [key: number]: number };
+    recent_reviews: SupplierReview[];
+    total_products: number;
+}
+
+export interface SupplierReview {
+    id: number;
+    title: string;
+    comment: string;
+    rating: number;
+    customer_name: string;
+    created_at: string;
+}
+
+export interface CustomerQuote {
+    id: number;
+    quote_title: string;
+    name: string;
+    created_at: string;
+    quantity: number;
+    quote_status: 'pending' | 'processing' | 'completed';
+    product_id: number;
+}
+
+export interface QuoteDetail {
+    id: number;
+    quote_title: string;
+    quote_brief: string;
+    name: string;
+    company_name: string;
+    address: string;
+    phone: string;
+    created_at: string;
+    status_counts: {
+        new: number;
+        pending: number;
+        answered: number;
+        approved: number;
+        rejected: number;
+    };
+    product_id: number | null;
+}
+
+export interface QuoteResponse {
+    customer_quote_item_id: number;
+    product_id: number;
+    requested_quantity: number;
+    customer_description: string | null;
+    requested_price: number | null;
+    is_sample: number;
+    quote_status: string;
+    supplier_quote_item_id: number | null;
+    supplier_id: number | null;
+    quoted_quantity: number | null;
+    quoted_price: number | null;
+    supplier_status: string | null;
+    supplier_name: string | null;
+    supplier_url: string | null;
+    product_name: string | null;
+    product_sku: string | null;
+}
 
 export default suppliersApi;
 

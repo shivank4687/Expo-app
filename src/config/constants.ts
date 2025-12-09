@@ -37,6 +37,27 @@ export const API_ENDPOINTS = {
     
     // B2B Marketplace - Supplier Messages
     MESSAGE_SUPPLIER: '/supplier/message',
+    SUPPLIER_MESSAGE_THREADS: '/supplier/messages',
+    
+    // B2B Marketplace - Supplier Shop
+    SUPPLIER_PROFILE: '/supplier/:url',
+    SUPPLIER_PRODUCTS: '/supplier/:url/products',
+    
+    // B2B Marketplace - RFQ
+    RFQ_STORE: '/supplier/rfq',
+    RFQ_SEARCH_PRODUCTS: '/supplier/rfq/search-products',
+    
+    // B2B Marketplace - Customer Quotes
+    CUSTOMER_QUOTES: '/customer/quotes',
+    CUSTOMER_QUOTE_DETAIL: '/customer/quotes/:quoteId',
+    CUSTOMER_QUOTE_STATUS: '/customer/quotes/:quoteId/status/:status',
+    
+    // B2B Marketplace - Supplier Reviews
+    SUPPLIER_REVIEW_STORE: '/supplier/:url/reviews',
+    
+    // B2B Marketplace - Quick Order
+    QUICK_ORDER_SEARCH: '/supplier/quick-order/search',
+    QUICK_ORDER_STORE: '/supplier/quick-order',
     
     // Theme Customizations
     THEME_CUSTOMIZATIONS: '/theme/customizations',

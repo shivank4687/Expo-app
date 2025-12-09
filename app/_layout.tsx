@@ -75,6 +75,30 @@ function AppContent() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="supplier/[url]"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="rfq/[supplierId]"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="quotes"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="quotes/[quoteId]"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
       <ToastContainer />
     </ToastProvider>

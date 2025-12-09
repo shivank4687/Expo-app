@@ -123,6 +123,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                         <DrawerItem label={t('drawer.orders')} icon="receipt-outline" onPress={() => navigateTo('/orders')} />
                         <DrawerItem label={t('drawer.wishlist')} icon="heart-outline" onPress={() => navigateTo('/wishlist')} />
                         <DrawerItem label={t('drawer.messages', 'Messages')} icon="chatbubbles-outline" onPress={() => navigateTo('/messages')} />
+                        <DrawerItem label={t('drawer.requestedQuotes', 'My Requested Quotes')} icon="document-text-outline" onPress={() => navigateTo('/quotes')} />
                         <DrawerItem label={t('drawer.addresses')} icon="location-outline" onPress={() => navigateTo('/addresses')} />
                         <DrawerItem label={t('drawer.reviews')} icon="star-outline" onPress={() => navigateTo('/reviews')} />
                     </DrawerSection>

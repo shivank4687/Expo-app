@@ -419,12 +419,14 @@ export const ProductDetailScreen: React.FC = () => {
                                 <TouchableOpacity 
                                     style={styles.viewSupplierButton}
                                     onPress={() => {
-                                        // Navigate to supplier shop page
-                                        // router.push(`/supplier/${product.supplier!.url}`);
-                                        showToast({ 
-                                            message: `View ${product.supplier!.company_name} shop`, 
-                                            type: 'info' 
-                                        });
+                                        if (product.supplier?.url) {
+                                            router.push(`/supplier/${product.supplier.url}`);
+                                        } else {
+                                            showToast({ 
+                                                message: 'Supplier shop URL not available', 
+                                                type: 'warning' 
+                                            });
+                                        }
                                     }}
                                 >
                                     <Text style={styles.viewSupplierButtonText}>
