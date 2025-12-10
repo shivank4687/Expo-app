@@ -718,12 +718,18 @@ export const RFQScreen: React.FC = () => {
                                                 <Input
                                                     label={t('rfq.quantity', 'Quantity')}
                                                     placeholder="1"
-                                                    value={product.quantity?.toString() || '1'}
+                                                    value={product.quantity?.toString() || ''}
                                                     onChangeText={(text) => {
+                                                        // Only allow numeric input
+                                                        const numericText = text.replace(/[^0-9]/g, '');
+                                                        
+                                                        // Allow empty string during typing, but parse to number when there's a value
+                                                        const quantity = numericText === '' ? null : parseInt(numericText, 10);
+                                                        
                                                         handleProductChange(
                                                             index,
                                                             'quantity',
-                                                            parseInt(text) || 1
+                                                            quantity !== null && !isNaN(quantity) ? quantity : null
                                                         );
                                                         if (errors[`product_${index}_quantity`]) {
                                                             const newErrors = { ...errors };

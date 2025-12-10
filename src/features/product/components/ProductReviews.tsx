@@ -167,7 +167,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
         <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={64} color={theme.colors.gray[400]} />
             <Text style={styles.emptyText}>No reviews yet</Text>
-            {isAuthenticated && (
+            {/* {isAuthenticated && (
                 <TouchableOpacity 
                     style={styles.writeReviewButton}
                     onPress={handleWriteReview}
@@ -175,7 +175,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                     <Ionicons name="create-outline" size={20} color="#1E3A8A" />
                     <Text style={styles.writeReviewText}>Write a Review</Text>
                 </TouchableOpacity>
-            )}
+            )} */}
         </View>
     );
 

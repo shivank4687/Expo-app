@@ -371,7 +371,7 @@ export const ProductDetailScreen: React.FC = () => {
                         >
                             <View style={styles.supplierContainer}>
                                 {/* Supplier Company Name */}
-                                <TouchableOpacity 
+                                {/* <TouchableOpacity 
                                     style={styles.supplierNameContainer}
                                     onPress={() => {
                                         // Navigate to supplier shop page
@@ -381,16 +381,16 @@ export const ProductDetailScreen: React.FC = () => {
                                             type: 'info' 
                                         });
                                     }}
-                                >
+                                > */}
                                     <Text style={styles.supplierName}>
                                         {product.supplier.company_name}
                                     </Text>
-                                    <Ionicons 
+                                    {/* <Ionicons 
                                         name="chevron-forward" 
                                         size={20} 
                                         color={theme.colors.text.secondary} 
                                     />
-                                </TouchableOpacity>
+                                </TouchableOpacity> */}
 
                                 {/* Supplier Rating */}
                                 {product.supplier.rating && product.supplier.rating > 0 ? (

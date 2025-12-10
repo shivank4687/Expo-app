@@ -30,9 +30,17 @@ export const reviewsApi = {
         formData.append('rating', payload.rating.toString());
         
         // Add attachments if any
+        // In React Native, attachments are objects with { uri, type, name }
         if (payload.attachments && payload.attachments.length > 0) {
             payload.attachments.forEach((file, index) => {
-                formData.append(`attachments[${index}]`, file);
+                // Handle both React Native format { uri, type, name } and standard File objects
+                if (file && typeof file === 'object' && 'uri' in file) {
+                    // React Native format
+                    formData.append(`attachments[${index}]`, file as any);
+                } else {
+                    // Standard File object
+                    formData.append(`attachments[${index}]`, file as any);
+                }
             });
         }
         

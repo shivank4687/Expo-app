@@ -409,11 +409,28 @@ export const suppliersApi = {
         product: number;
         quantity: number;
     }): Promise<{ success: boolean; message: string; data?: any }> {
-        const response = await restApiClient.post<{ success: boolean; message: string; data?: any }>(
-            API_ENDPOINTS.QUICK_ORDER_STORE,
-            payload
-        );
-        return response;
+        try {
+            const response = await restApiClient.post<{ success: boolean; message: string; data?: any }>(
+                API_ENDPOINTS.QUICK_ORDER_STORE,
+                payload
+            );
+            return response;
+        } catch (error: any) {
+            // Handle API errors - extract message from error response
+            // API returns 400 with { success: false, message: "..." } in error.response.data
+            if (error.response?.data) {
+                // If the error response has the expected structure, return it
+                if (typeof error.response.data === 'object' && 'message' in error.response.data) {
+                    return {
+                        success: false,
+                        message: error.response.data.message || 'Failed to add product to cart',
+                        data: error.response.data.data,
+                    };
+                }
+            }
+            // If error doesn't have expected structure, throw it
+            throw error;
+        }
     },
 
     /**

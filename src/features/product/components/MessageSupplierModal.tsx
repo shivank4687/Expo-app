@@ -92,6 +92,7 @@ export const MessageSupplierModal: React.FC<MessageSupplierModalProps> = ({
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.container}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <TouchableOpacity
                     style={styles.overlay}
@@ -101,6 +102,7 @@ export const MessageSupplierModal: React.FC<MessageSupplierModalProps> = ({
                     <TouchableOpacity
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
+                        style={styles.modalWrapper}
                     >
                         <View style={styles.modalContent}>
                             {/* Header */}
@@ -129,8 +131,10 @@ export const MessageSupplierModal: React.FC<MessageSupplierModalProps> = ({
                             {/* Content */}
                             <ScrollView
                                 style={styles.content}
+                                contentContainerStyle={styles.contentContainer}
                                 keyboardShouldPersistTaps="handled"
                                 showsVerticalScrollIndicator={false}
+                                nestedScrollEnabled={true}
                             >
                                 {/* Message Input */}
                                 <View style={styles.inputContainer}>
@@ -186,12 +190,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
     },
+    modalWrapper: {
+        width: '100%',
+        height: '95%',
+    },
     modalContent: {
+        flex: 1,
         backgroundColor: theme.colors.white,
         borderTopLeftRadius: theme.borderRadius.xl,
         borderTopRightRadius: theme.borderRadius.xl,
-        maxHeight: '90%',
-        minHeight: '50%',
     },
     header: {
         flexDirection: 'row',
@@ -220,7 +227,10 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+    },
+    contentContainer: {
         padding: theme.spacing.lg,
+        paddingBottom: theme.spacing.xl,
     },
     inputContainer: {
         marginBottom: theme.spacing.md,

@@ -142,16 +142,37 @@ export const ReportSupplierModal: React.FC<ReportSupplierModalProps> = ({
                 onSuccess();
             }
         } catch (err: any) {
-            // Handle validation errors
-            if (err.response?.status === 422 && err.response?.data?.errors) {
-                const validationErrors: { [key: string]: string } = {};
-                Object.keys(err.response.data.errors).forEach((key) => {
-                    validationErrors[key] = err.response.data.errors[key][0];
-                });
-                setErrors(validationErrors);
-            } else {
-                setErrors({ general: err.message || 'Failed to report supplier. Please try again.' });
+            // Extract error message from API response
+            // API returns 422 with { message: "...", success: false } in error.response.data
+            let errorMessage = 'Failed to report supplier. Please try again.';
+            
+            if (err.response?.data) {
+                // Check for direct message field
+                if (err.response.data.message) {
+                    errorMessage = err.response.data.message;
+                } 
+                // Check for validation errors object (Laravel style)
+                else if (err.response.data.errors && typeof err.response.data.errors === 'object') {
+                    const validationErrors: { [key: string]: string } = {};
+                    Object.keys(err.response.data.errors).forEach((key) => {
+                        if (Array.isArray(err.response.data.errors[key])) {
+                            validationErrors[key] = err.response.data.errors[key][0];
+                        } else {
+                            validationErrors[key] = err.response.data.errors[key];
+                        }
+                    });
+                    setErrors(validationErrors);
+                    return; // Return early if we set validation errors
+                }
+                // Check for error field
+                else if (err.response.data.error) {
+                    errorMessage = err.response.data.error;
+                }
+            } else if (err.message) {
+                errorMessage = err.message;
             }
+            
+            setErrors({ general: errorMessage });
         } finally {
             setIsSubmitting(false);
         }

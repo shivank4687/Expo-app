@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -88,6 +88,10 @@ export const SupplierShopScreen: React.FC = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLoadingCart, setIsLoadingCart] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
+    
+    // Refs to manage search timeout and prevent search on product selection
+    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isSelectingProductRef = useRef(false);
     
     // Use Redux cart state instead of local state
     const cart = reduxCart;
@@ -179,11 +183,28 @@ export const SupplierShopScreen: React.FC = () => {
 
     // Search products for quick order
     useEffect(() => {
+        // Clear any existing timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+            searchTimeoutRef.current = null;
+        }
+
+        // Don't trigger search if we're setting search text from product selection
+        if (isSelectingProductRef.current) {
+            isSelectingProductRef.current = false;
+            return;
+        }
+
         if (quickOrderSearch.length > 2 && supplier) {
-            const timeoutId = setTimeout(() => {
+            searchTimeoutRef.current = setTimeout(() => {
                 searchQuickOrderProducts();
             }, 300);
-            return () => clearTimeout(timeoutId);
+            return () => {
+                if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                    searchTimeoutRef.current = null;
+                }
+            };
         } else {
             setQuickOrderResults([]);
             setIsDropdownOpen(false);
@@ -219,20 +240,34 @@ export const SupplierShopScreen: React.FC = () => {
         parent_id: number | null;
         is_config: boolean;
     }) => {
+        // Clear any pending search timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+            searchTimeoutRef.current = null;
+        }
+
+        // Set flag to prevent search from triggering when we set search text
+        isSelectingProductRef.current = true;
+
+        // Close dropdown and clear results first
+        setIsDropdownOpen(false);
+        setQuickOrderResults([]);
+        setIsSearching(false);
+
+        // Then set the selected product and search text
         setSelectedProduct(product);
         setQuickOrderSearch(product.name);
-        setQuickOrderResults([]);
-        setIsDropdownOpen(false);
     };
 
     const handleAddToCart = async () => {
         if (!supplier || !selectedProduct) return;
 
-        const quantity = parseInt(quickOrderQuantity, 10) || 1;
+        // Parse quantity and validate it's greater than 0
+        const quantity = parseInt(quickOrderQuantity, 10);
         
-        if (quantity < 1) {
+        if (!quickOrderQuantity || quickOrderQuantity.trim() === '' || isNaN(quantity) || quantity <= 0) {
             showToast({
-                message: t('supplier.quickOrder.invalidQuantity', 'Please enter a valid quantity'),
+                message: t('supplier.quickOrder.invalidQuantity', 'Please enter a valid quantity greater than 0'),
                 type: 'error',
             });
             return;
@@ -267,8 +302,16 @@ export const SupplierShopScreen: React.FC = () => {
                 });
             }
         } catch (error: any) {
+            // Extract error message from API response
+            // API returns 400 with { success: false, message: "..." } in error.response.data
+            const errorMessage = 
+                error.response?.data?.message || 
+                error.response?.data?.error || 
+                error.message || 
+                t('supplier.quickOrder.addError', 'Failed to add product to cart');
+            
             showToast({
-                message: error.message || t('supplier.quickOrder.addError', 'Failed to add product to cart'),
+                message: errorMessage,
                 type: 'error',
             });
         } finally {
@@ -708,61 +751,7 @@ export const SupplierShopScreen: React.FC = () => {
         return (
             <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
                 <View style={styles.quickOrderContainer}>
-                    {/* Cart Items - Show by default at the top */}
-                    <View style={styles.quickOrderCartContainer}>
-                        <Text style={styles.quickOrderSectionTitle}>
-                            {t('supplier.quickOrder.cartItems', 'Cart Items')}
-                        </Text>
-                        
-                        {isLoadingCart ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            </View>
-                        ) : supplierCartItems.length > 0 ? (
-                            <View style={styles.cartItemsList}>
-                                {supplierCartItems.map((item) => (
-                                    <View key={item.id} style={styles.cartItem}>
-                                        {item.product?.images && item.product.images.length > 0 && (
-                                            <ProductImage
-                                                imageUrl={item.product.images[0].url}
-                                                style={styles.cartItemImage}
-                                            />
-                                        )}
-                                        <View style={styles.cartItemContent}>
-                                            <Text style={styles.cartItemName} numberOfLines={2}>
-                                                {item.name}
-                                            </Text>
-                                            <View style={styles.cartItemDetails}>
-                                                <Text style={styles.cartItemQuantity}>
-                                                    {t('supplier.quickOrder.quantity', 'Qty')}: {item.quantity}
-                                                </Text>
-                                                <Text style={styles.cartItemSubtotal}>
-                                                    {formatters.formatPrice(item.total)}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <TouchableOpacity
-                                            style={styles.removeButton}
-                                            onPress={() => handleRemoveCartItem(item.id)}
-                                        >
-                                            <Ionicons 
-                                                name="trash-outline" 
-                                                size={20} 
-                                                color={theme.colors.error.main} 
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </View>
-                        ) : (
-                            <View style={styles.emptyState}>
-                                <Ionicons name="cart-outline" size={64} color={theme.colors.gray[400]} />
-                                <Text style={styles.emptyText}>
-                                    {t('supplier.quickOrder.noItems', 'No items in cart')}
-                                </Text>
-                            </View>
-                        )}
-                    </View>
+                    
 
                     {/* Product Search */}
                     <View style={styles.quickOrderSearchContainer}>
@@ -848,14 +837,41 @@ export const SupplierShopScreen: React.FC = () => {
 
                     {/* Action Buttons */}
                     <View style={styles.quickOrderActionsContainer}>
-                        <Button
-                            title={t('supplier.quickOrder.addToCart', 'Add to Cart')}
+                        <TouchableOpacity
+                            style={[
+                                styles.addToCartButton,
+                                (!selectedProduct || 
+                                isAddingToCart || 
+                                !quickOrderQuantity || 
+                                quickOrderQuantity.trim() === '' || 
+                                isNaN(parseInt(quickOrderQuantity, 10)) || 
+                                parseInt(quickOrderQuantity, 10) <= 0) && styles.addToCartButtonDisabled
+                            ]}
                             onPress={handleAddToCart}
-                            disabled={!selectedProduct || isAddingToCart}
-                            loading={isAddingToCart}
-                            variant="secondary"
-                            style={styles.addToCartButton}
-                        />
+                            disabled={
+                                !selectedProduct || 
+                                isAddingToCart || 
+                                !quickOrderQuantity || 
+                                quickOrderQuantity.trim() === '' || 
+                                isNaN(parseInt(quickOrderQuantity, 10)) || 
+                                parseInt(quickOrderQuantity, 10) <= 0
+                            }
+                        >
+                            {isAddingToCart ? (
+                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                            ) : (
+                                <>
+                                    <Ionicons 
+                                        name="cart-outline" 
+                                        size={18} 
+                                        color={theme.colors.primary[500]} 
+                                    />
+                                    <Text style={styles.addToCartButtonText}>
+                                        {t('supplier.quickOrder.addToCart', 'Add to Cart')}
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
                         <Button
                             title={t('supplier.quickOrder.proceedToBuy', 'Proceed to Buy')}
                             onPress={handleProceedToBuy}
@@ -863,6 +879,61 @@ export const SupplierShopScreen: React.FC = () => {
                             variant="primary"
                             style={styles.proceedToBuyButton}
                         />
+                    </View>
+                    {/* Cart Items - Show by default at the top */}
+                    <View style={styles.quickOrderCartContainer}>
+                        <Text style={styles.quickOrderSectionTitle}>
+                            {t('supplier.quickOrder.cartItems', 'Cart Items')}
+                        </Text>
+                        
+                        {isLoadingCart ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                            </View>
+                        ) : supplierCartItems.length > 0 ? (
+                            <View style={styles.cartItemsList}>
+                                {supplierCartItems.map((item) => (
+                                    <View key={item.id} style={styles.cartItem}>
+                                        {item.product?.images && item.product.images.length > 0 && (
+                                            <ProductImage
+                                                imageUrl={item.product.images[0].url}
+                                                style={styles.cartItemImage}
+                                            />
+                                        )}
+                                        <View style={styles.cartItemContent}>
+                                            <Text style={styles.cartItemName} numberOfLines={2}>
+                                                {item.name}
+                                            </Text>
+                                            <View style={styles.cartItemDetails}>
+                                                <Text style={styles.cartItemQuantity}>
+                                                    {t('supplier.quickOrder.quantity', 'Qty')}: {item.quantity}
+                                                </Text>
+                                                <Text style={styles.cartItemSubtotal}>
+                                                    {formatters.formatPrice(item.total)}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.removeButton}
+                                            onPress={() => handleRemoveCartItem(item.id)}
+                                        >
+                                            <Ionicons 
+                                                name="trash-outline" 
+                                                size={20} 
+                                                color={theme.colors.error.main} 
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <Ionicons name="cart-outline" size={64} color={theme.colors.gray[400]} />
+                                <Text style={styles.emptyText}>
+                                    {t('supplier.quickOrder.noItems', 'No items in cart')}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
             </ScrollView>
@@ -877,31 +948,35 @@ export const SupplierShopScreen: React.FC = () => {
                 <View style={styles.contactContainer}>
                     {/* Action Buttons */}
                     <View style={styles.contactActionsContainer}>
-                        <Button
-                            title={t('supplier.contactSupplier', 'Contact Supplier')}
-                            onPress={() => setIsContactModalVisible(true)}
-                            icon={<Ionicons name="mail-outline" size={18} color={theme.colors.white} />}
-                            fullWidth
+                        <TouchableOpacity
                             style={styles.contactActionButton}
-                        />
+                            onPress={() => setIsContactModalVisible(true)}
+                        >
+                            <Ionicons name="mail-outline" size={18} color={theme.colors.primary[500]} />
+                            <Text style={styles.contactActionButtonText}>
+                                {t('supplier.contactSupplier', 'Contact Supplier')}
+                            </Text>
+                        </TouchableOpacity>
                         {isAuthenticated && (
                             <>
-                                <Button
-                                    title={t('supplier.messageSupplier', 'Message Supplier')}
+                                <TouchableOpacity
+                                    style={styles.contactActionButton}
                                     onPress={() => setIsMessageModalVisible(true)}
-                                    icon={<Ionicons name="chatbubble-outline" size={18} color={theme.colors.white} />}
-                                    fullWidth
-                                    variant="secondary"
+                                >
+                                    <Ionicons name="chatbubble-outline" size={18} color={theme.colors.primary[500]} />
+                                    <Text style={styles.contactActionButtonText}>
+                                        {t('supplier.messageSupplier', 'Message Supplier')}
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
                                     style={styles.contactActionButton}
-                                />
-                                <Button
-                                    title={t('supplier.reportSupplier', 'Report Supplier')}
                                     onPress={() => setIsReportModalVisible(true)}
-                                    icon={<Ionicons name="flag-outline" size={18} color={theme.colors.white} />}
-                                    fullWidth
-                                    variant="secondary"
-                                    style={styles.contactActionButton}
-                                />
+                                >
+                                    <Ionicons name="flag-outline" size={18} color={theme.colors.primary[500]} />
+                                    <Text style={styles.contactActionButtonText}>
+                                        {t('supplier.reportSupplier', 'Report Supplier')}
+                                    </Text>
+                                </TouchableOpacity>
                             </>
                         )}
                     </View>
@@ -1475,7 +1550,22 @@ const styles = StyleSheet.create({
         gap: theme.spacing.md,
     },
     contactActionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        backgroundColor: theme.colors.white,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[500],
+        gap: theme.spacing.sm,
         marginBottom: 0,
+    },
+    contactActionButtonText: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
     },
     contactInfoSection: {
         marginTop: theme.spacing.lg,
@@ -1598,6 +1688,24 @@ const styles = StyleSheet.create({
     },
     addToCartButton: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        backgroundColor: theme.colors.white,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[500],
+        gap: theme.spacing.sm,
+    },
+    addToCartButtonDisabled: {
+        opacity: 0.5,
+    },
+    addToCartButtonText: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
     },
     proceedToBuyButton: {
         flex: 1,

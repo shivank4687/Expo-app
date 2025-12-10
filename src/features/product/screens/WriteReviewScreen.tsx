@@ -7,9 +7,12 @@ import {
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { theme } from '@/theme';
 import { reviewsApi } from '@/services/api/reviews.api';
 import { Button } from '@/shared/components/Button';
@@ -24,6 +27,73 @@ export const WriteReviewScreen: React.FC = () => {
     const [title, setTitle] = useState('');
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [attachments, setAttachments] = useState<string[]>([]); // Image/video URIs
+
+    const handlePickAttachments = async () => {
+        try {
+            // Request permissions
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permissionResult.granted) {
+                showToast({
+                    message: 'Permission to access media library is required',
+                    type: 'error',
+                });
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                allowsMultipleSelection: true,
+                quality: 0.8,
+                exif: false,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+                const validAttachments: string[] = [];
+                const invalidFiles: string[] = [];
+
+                for (const asset of result.assets) {
+                    // Check file size (fileSize is in bytes)
+                    if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
+                        const fileName = asset.fileName || 'file';
+                        const fileSizeMB = (asset.fileSize / (1024 * 1024)).toFixed(2);
+                        invalidFiles.push(`${fileName} (${fileSizeMB}MB)`);
+                    } else {
+                        validAttachments.push(asset.uri);
+                    }
+                }
+
+                // Show error for files that are too large
+                if (invalidFiles.length > 0) {
+                    showToast({
+                        message: `The following files exceed the 2MB limit: ${invalidFiles.join(', ')}. Please compress or resize them.`,
+                        type: 'error',
+                    });
+                }
+
+                // Add only valid attachments
+                if (validAttachments.length > 0) {
+                    setAttachments([...attachments, ...validAttachments]);
+                    if (invalidFiles.length === 0) {
+                        showToast({
+                            message: `${validAttachments.length} file(s) added successfully`,
+                            type: 'success',
+                        });
+                    }
+                }
+            }
+        } catch (error: any) {
+            showToast({
+                message: error.message || 'Failed to pick files',
+                type: 'error',
+            });
+        }
+    };
+
+    const handleRemoveAttachment = (index: number) => {
+        setAttachments(attachments.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async () => {
         // Validation
@@ -37,19 +107,66 @@ export const WriteReviewScreen: React.FC = () => {
             return;
         }
 
+        // Validate file sizes before submitting
+        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+        
+        try {
+            // Check attachment file sizes
+            for (let i = 0; i < attachments.length; i++) {
+                const attachmentUri = attachments[i];
+                const fileInfo = await FileSystem.getInfoAsync(attachmentUri);
+                if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_FILE_SIZE) {
+                    const fileSizeMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+                    showToast({
+                        message: `Attachment ${i + 1} (${fileSizeMB}MB) exceeds the 2MB limit. Please remove or compress it before submitting.`,
+                        type: 'error',
+                    });
+                    return;
+                }
+            }
+        } catch (error: any) {
+            // If file size check fails, continue (server will validate anyway)
+        }
+
         setIsSubmitting(true);
         
         try {
+            // Convert attachment URIs to file objects for FormData
+            const attachmentFiles = attachments.map((uri, index) => {
+                // Detect file extension and mime type
+                const extension = uri.split('.').pop()?.toLowerCase() || 'jpg';
+                const mimeType = extension === 'png' ? 'image/png' 
+                    : extension === 'gif' ? 'image/gif'
+                    : extension === 'webp' ? 'image/webp'
+                    : extension === 'mp4' ? 'video/mp4'
+                    : extension === 'mov' ? 'video/quicktime'
+                    : extension === 'avi' ? 'video/x-msvideo'
+                    : 'image/jpeg';
+                
+                return {
+                    uri,
+                    type: mimeType,
+                    name: `attachment_${index}.${extension}`,
+                } as any;
+            });
+
             await reviewsApi.submitReview(Number(id), {
                 title: title.trim(),
                 comment: comment.trim(),
                 rating,
+                attachments: attachmentFiles.length > 0 ? attachmentFiles : undefined,
             });
             
             showToast({ 
                 message: 'Review submitted successfully! It will be visible after approval.', 
                 type: 'success' 
             });
+            
+            // Reset form
+            setRating(5);
+            setTitle('');
+            setComment('');
+            setAttachments([]);
             
             // Navigate back to product detail
             router.back();
@@ -127,6 +244,40 @@ export const WriteReviewScreen: React.FC = () => {
                             textAlignVertical="top"
                         />
                         <Text style={styles.charCount}>{comment.length} characters</Text>
+                    </View>
+
+                    {/* Image/Video Upload Section */}
+                    <View style={styles.section}>
+                        <Text style={styles.label}>
+                            Images / Videos (Optional)
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.uploadButton}
+                            onPress={handlePickAttachments}
+                            disabled={isSubmitting}
+                        >
+                            <Ionicons name="image-outline" size={20} color={theme.colors.primary[500]} />
+                            <Text style={styles.uploadButtonText}>
+                                Select Images or Videos
+                            </Text>
+                        </TouchableOpacity>
+
+                        {attachments.length > 0 && (
+                            <View style={styles.attachmentsGrid}>
+                                {attachments.map((uri, index) => (
+                                    <View key={index} style={styles.attachmentItem}>
+                                        <Image source={{ uri }} style={styles.attachmentPreview} />
+                                        <TouchableOpacity
+                                            style={styles.removeAttachmentButton}
+                                            onPress={() => handleRemoveAttachment(index)}
+                                            disabled={isSubmitting}
+                                        >
+                                            <Ionicons name="close-circle" size={20} color={theme.colors.error.main} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
 
                     {/* Submit Button */}
@@ -217,6 +368,52 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
         fontWeight: theme.typography.fontWeight.medium,
         color: theme.colors.text.secondary,
+    },
+    uploadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[500],
+        borderStyle: 'dashed',
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.white,
+        marginTop: theme.spacing.xs,
+    },
+    uploadButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.medium,
+        marginLeft: theme.spacing.xs,
+    },
+    attachmentsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+    attachmentItem: {
+        width: 80,
+        height: 80,
+        borderRadius: theme.borderRadius.md,
+        overflow: 'hidden',
+        position: 'relative',
+        borderWidth: 1,
+        borderColor: theme.colors.gray[200],
+    },
+    attachmentPreview: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    removeAttachmentButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        backgroundColor: theme.colors.white,
+        borderRadius: 10,
     },
 });
 
