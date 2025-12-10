@@ -17,6 +17,7 @@ interface InputProps extends TextInputProps {
     rightIcon?: keyof typeof Ionicons.glyphMap;
     onRightIconPress?: () => void;
     containerStyle?: any;
+    leftPrefix?: React.ReactNode;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -28,6 +29,7 @@ export const Input: React.FC<InputProps> = ({
     containerStyle,
     style,
     secureTextEntry,
+    leftPrefix,
     ...props
 }) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -49,14 +51,16 @@ export const Input: React.FC<InputProps> = ({
                     error && styles.inputContainerError,
                 ]}
             >
-                {leftIcon && (
+                {leftPrefix ? (
+                    leftPrefix
+                ) : leftIcon ? (
                     <Ionicons
                         name={leftIcon}
                         size={20}
                         color={theme.colors.neutral[400]}
                         style={styles.leftIcon}
                     />
-                )}
+                ) : null}
 
                 <TextInput
                     {...props}

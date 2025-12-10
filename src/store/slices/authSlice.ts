@@ -53,7 +53,18 @@ export const loginThunk = createAsyncThunk(
     'auth/login',
     async (credentials: LoginRequest, { rejectWithValue }) => {
         try {
-            const response: AuthResponse = await authApi.login(credentials);
+            // Ensure email_or_phone is sent to the API
+            const loginPayload: any = {
+                email_or_phone: credentials.email_or_phone,
+                password: credentials.password,
+                device_name: credentials.device_name || 'mobile_app',
+            };
+            
+            // Add phone_country_id if provided
+            if (credentials.phone_country_id) {
+                loginPayload.phone_country_id = credentials.phone_country_id;
+            }
+            const response: AuthResponse = await authApi.login(loginPayload);
             console.log('Login Response:', JSON.stringify(response, null, 2));
 
             // Handle nested response structure

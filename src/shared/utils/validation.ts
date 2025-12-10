@@ -70,6 +70,19 @@ export const validation = {
         const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
         return phoneRegex.test(phone);
     },
+
+    /**
+     * Validate email or phone number (10 digits for phone, matching backend validation)
+     */
+    isValidEmailOrPhone(value: string): boolean {
+        // Check if it's a valid email
+        if (this.isValidEmail(value)) {
+            return true;
+        }
+        // Check if it's a valid phone (10 digits, matching backend regex: /^[0-9]{10}$/)
+        const phoneRegex = /^[0-9]{10}$/;
+        return phoneRegex.test(value);
+    },
 };
 
 export default validation;

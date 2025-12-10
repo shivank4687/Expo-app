@@ -43,6 +43,8 @@ export interface Country {
     id: string;
     code: string;
     name: string;
+    dial_code?: string;
+    flag?: string;
 }
 
 export interface State {

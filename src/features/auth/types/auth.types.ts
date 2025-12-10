@@ -15,10 +15,11 @@ export interface User {
 }
 
 export interface LoginRequest {
-    email: string;
+    email_or_phone: string;
     password: string;
     device_name?: string;
     remember?: boolean;
+    phone_country_id?: string;
 }
 
 export interface SignupRequest {
