@@ -59,6 +59,12 @@ export const API_ENDPOINTS = {
     QUICK_ORDER_SEARCH: '/supplier/quick-order/search',
     QUICK_ORDER_STORE: '/supplier/quick-order',
     
+    // B2B Marketplace - Contact Supplier
+    CONTACT_SUPPLIER: '/supplier/:url/contact',
+    
+    // B2B Marketplace - Report Supplier
+    REPORT_SUPPLIER: '/supplier/flag',
+    
     // Theme Customizations
     THEME_CUSTOMIZATIONS: '/theme/customizations',
 };

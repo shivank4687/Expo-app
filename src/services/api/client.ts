@@ -102,8 +102,9 @@ class ApiClient {
             (response) => response,
             async (error: AxiosError) => {
                 if (error.response) {
+                    const status = error.response.status;
                     // Handle specific error codes
-                    switch (error.response.status) {
+                    switch (status) {
                         case 401:
                             // Unauthorized - Clear auth and redirect to login
                             await this.handleUnauthorized();
@@ -116,18 +117,24 @@ class ApiClient {
                             // Not found
                             console.error('Resource not found');
                             break;
+                        case 422:
+                            // Validation error
+                            console.error('Validation error:', error.response.data);
+                            break;
                         case 500:
                             // Server error
                             console.error('Server error');
                             break;
                         default:
-                            console.error('API Error:', error.response.status);
+                            console.error('API Error:', status, error.response.data);
                     }
                 } else if (error.request) {
                     // Network error
                     console.error('Network error - no response received');
                 } else {
-                    console.error('Request setup error:', error.message);
+                    // Request setup error
+                    const message = error.message || 'Unknown error';
+                    console.error('Request setup error:', message);
                 }
 
                 return Promise.reject(error);

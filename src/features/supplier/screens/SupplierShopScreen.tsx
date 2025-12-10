@@ -28,6 +28,9 @@ import { useToast } from '@/shared/components/Toast';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { Button } from '@/shared/components/Button';
 import { WriteReviewModal } from '@/features/supplier/components/WriteReviewModal';
+import { ContactSupplierModal } from '@/features/supplier/components/ContactSupplierModal';
+import { ReportSupplierModal } from '@/features/supplier/components/ReportSupplierModal';
+import { MessageSupplierModal } from '@/features/product/components/MessageSupplierModal';
 import { cartApi } from '@/services/api/cart.api';
 import { Cart } from '@/features/cart/types/cart.types';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
@@ -54,6 +57,9 @@ export const SupplierShopScreen: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [aboutSection, setAboutSection] = useState<'about-us' | 'shipping' | 'return' | 'privacy'>('about-us');
     const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
+    const [isContactModalVisible, setIsContactModalVisible] = useState(false);
+    const [isMessageModalVisible, setIsMessageModalVisible] = useState(false);
+    const [isReportModalVisible, setIsReportModalVisible] = useState(false);
     
     // Quick Order state
     const [quickOrderSearch, setQuickOrderSearch] = useState('');
@@ -869,68 +875,106 @@ export const SupplierShopScreen: React.FC = () => {
         return (
             <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
                 <View style={styles.contactContainer}>
-                    <View style={styles.contactItem}>
-                        <Ionicons name="person-outline" size={20} color={theme.colors.text.secondary} />
-                        <Text style={styles.contactLabel}>{t('supplier.name', 'Name')}:</Text>
-                        <Text style={styles.contactValue}>{supplier.first_name} {supplier.last_name}</Text>
+                    {/* Action Buttons */}
+                    <View style={styles.contactActionsContainer}>
+                        <Button
+                            title={t('supplier.contactSupplier', 'Contact Supplier')}
+                            onPress={() => setIsContactModalVisible(true)}
+                            icon={<Ionicons name="mail-outline" size={18} color={theme.colors.white} />}
+                            fullWidth
+                            style={styles.contactActionButton}
+                        />
+                        {isAuthenticated && (
+                            <>
+                                <Button
+                                    title={t('supplier.messageSupplier', 'Message Supplier')}
+                                    onPress={() => setIsMessageModalVisible(true)}
+                                    icon={<Ionicons name="chatbubble-outline" size={18} color={theme.colors.white} />}
+                                    fullWidth
+                                    variant="secondary"
+                                    style={styles.contactActionButton}
+                                />
+                                <Button
+                                    title={t('supplier.reportSupplier', 'Report Supplier')}
+                                    onPress={() => setIsReportModalVisible(true)}
+                                    icon={<Ionicons name="flag-outline" size={18} color={theme.colors.white} />}
+                                    fullWidth
+                                    variant="secondary"
+                                    style={styles.contactActionButton}
+                                />
+                            </>
+                        )}
                     </View>
-                    <View style={styles.contactItem}>
-                        <Ionicons name="mail-outline" size={20} color={theme.colors.text.secondary} />
-                        <Text style={styles.contactLabel}>{t('supplier.email', 'Email')}:</Text>
-                        <Text style={styles.contactValue}>{supplier.email}</Text>
-                    </View>
-                    {supplier.phone && (
+
+                    {/* Contact Information */}
+                    <View style={styles.contactInfoSection}>
+                        <Text style={styles.contactInfoTitle}>
+                            {t('supplier.contactInformation', 'Contact Information')}
+                        </Text>
+                        
                         <View style={styles.contactItem}>
-                            <Ionicons name="call-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.phone', 'Phone')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.phone}</Text>
+                            <Ionicons name="person-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.name', 'Name')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.first_name} {supplier.last_name}</Text>
                         </View>
-                    )}
-                    {supplier.corporate_phone && (
-                        <View style={styles.contactItem}>
-                            <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.corporatePhone', 'Corporate Phone')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.corporate_phone}</Text>
-                        </View>
-                    )}
-                    {supplier.address1 && (
-                        <View style={styles.contactItem}>
-                            <Ionicons name="location-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.address', 'Address')}:</Text>
-                            <Text style={styles.contactValue}>
-                                {supplier.address1}
-                                {supplier.address2 ? `, ${supplier.address2}` : ''}
-                            </Text>
-                        </View>
-                    )}
-                    {supplier.city && (
-                        <View style={styles.contactItem}>
-                            <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.city', 'City')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.city}</Text>
-                        </View>
-                    )}
-                    {supplier.state && (
-                        <View style={styles.contactItem}>
-                            <Ionicons name="map-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.state', 'State')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.state}</Text>
-                        </View>
-                    )}
-                    {supplier.postcode && (
                         <View style={styles.contactItem}>
                             <Ionicons name="mail-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.postcode', 'Post Code')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.postcode}</Text>
+                            <Text style={styles.contactLabel}>{t('supplier.email', 'Email')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.email}</Text>
                         </View>
-                    )}
-                    {supplier.country && (
-                        <View style={styles.contactItem}>
-                            <Ionicons name="globe-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.country', 'Country')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.country}</Text>
-                        </View>
-                    )}
+                        {supplier.phone && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="call-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.phone', 'Phone')}:</Text>
+                                <Text style={styles.contactValue}>{supplier.phone}</Text>
+                            </View>
+                        )}
+                        {supplier.corporate_phone && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.corporatePhone', 'Corporate Phone')}:</Text>
+                                <Text style={styles.contactValue}>{supplier.corporate_phone}</Text>
+                            </View>
+                        )}
+                        {supplier.address1 && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="location-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.address', 'Address')}:</Text>
+                                <Text style={styles.contactValue}>
+                                    {supplier.address1}
+                                    {supplier.address2 ? `, ${supplier.address2}` : ''}
+                                </Text>
+                            </View>
+                        )}
+                        {supplier.city && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.city', 'City')}:</Text>
+                                <Text style={styles.contactValue}>{supplier.city}</Text>
+                            </View>
+                        )}
+                        {supplier.state && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="map-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.state', 'State')}:</Text>
+                                <Text style={styles.contactValue}>{supplier.state}</Text>
+                            </View>
+                        )}
+                        {supplier.postcode && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="mail-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.postcode', 'Post Code')}:</Text>
+                                <Text style={styles.contactValue}>{supplier.postcode}</Text>
+                            </View>
+                        )}
+                        {supplier.country && (
+                            <View style={styles.contactItem}>
+                                <Ionicons name="globe-outline" size={20} color={theme.colors.text.secondary} />
+                                <Text style={styles.contactLabel}>{t('supplier.country', 'Country')}:</Text>
+                                <Text style={styles.contactValue}>{supplier.country}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
         );
@@ -1018,6 +1062,54 @@ export const SupplierShopScreen: React.FC = () => {
                     onSuccess={() => {
                         // Refresh supplier profile to get updated reviews
                         loadSupplierProfile();
+                    }}
+                />
+            )}
+
+            {/* Contact Supplier Modal */}
+            {supplier && url && (
+                <ContactSupplierModal
+                    visible={isContactModalVisible}
+                    supplierUrl={url}
+                    supplierCompanyName={supplier.company_name}
+                    onClose={() => setIsContactModalVisible(false)}
+                    onSuccess={() => {
+                        showToast({
+                            message: t('supplier.contactSuccess', 'Your message has been sent successfully'),
+                            type: 'success',
+                        });
+                    }}
+                />
+            )}
+
+            {/* Message Supplier Modal */}
+            {supplier && isAuthenticated && (
+                <MessageSupplierModal
+                    visible={isMessageModalVisible}
+                    supplierId={supplier.id}
+                    supplierCompanyName={supplier.company_name}
+                    onClose={() => setIsMessageModalVisible(false)}
+                    onSuccess={() => {
+                        showToast({
+                            message: t('supplier.messageSuccess', 'Your message has been sent successfully'),
+                            type: 'success',
+                        });
+                    }}
+                />
+            )}
+
+            {/* Report Supplier Modal */}
+            {supplier && isAuthenticated && (
+                <ReportSupplierModal
+                    visible={isReportModalVisible}
+                    supplierId={supplier.id}
+                    supplierCompanyName={supplier.company_name}
+                    onClose={() => setIsReportModalVisible(false)}
+                    onSuccess={() => {
+                        showToast({
+                            message: t('supplier.reportSuccess', 'Your report has been submitted successfully'),
+                            type: 'success',
+                        });
                     }}
                 />
             )}
@@ -1377,6 +1469,22 @@ const styles = StyleSheet.create({
     },
     contactContainer: {
         padding: theme.spacing.lg,
+    },
+    contactActionsContainer: {
+        marginBottom: theme.spacing.xl,
+        gap: theme.spacing.md,
+    },
+    contactActionButton: {
+        marginBottom: 0,
+    },
+    contactInfoSection: {
+        marginTop: theme.spacing.lg,
+    },
+    contactInfoTitle: {
+        fontSize: theme.typography.fontSize.xl,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.text.primary,
+        marginBottom: theme.spacing.lg,
     },
     contactItem: {
         flexDirection: 'row',

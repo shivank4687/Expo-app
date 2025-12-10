@@ -415,6 +415,42 @@ export const suppliersApi = {
         );
         return response;
     },
+
+    /**
+     * Contact supplier (send query email to supplier)
+     * Requires authentication
+     */
+    async contactSupplier(supplierUrl: string, payload: {
+        name: string;
+        email: string;
+        subject: string;
+        query: string;
+    }): Promise<{ success: boolean; message: string }> {
+        const endpoint = API_ENDPOINTS.CONTACT_SUPPLIER.replace(':url', supplierUrl);
+        const response = await restApiClient.post<{ success: boolean; message: string }>(
+            endpoint,
+            payload
+        );
+        return response;
+    },
+
+    /**
+     * Report supplier (flag supplier)
+     * Requires authentication
+     */
+    async reportSupplier(payload: {
+        supplier_id: number;
+        name: string;
+        email: string;
+        selected_reason?: string;
+        reason?: string;
+    }): Promise<{ success: boolean; message: string }> {
+        const response = await restApiClient.post<{ success: boolean; message: string }>(
+            API_ENDPOINTS.REPORT_SUPPLIER,
+            payload
+        );
+        return response;
+    },
 };
 
 export interface RFQProduct {
