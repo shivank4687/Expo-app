@@ -269,31 +269,54 @@ export const ProductDetailScreen: React.FC = () => {
 
                     {/* Price */}
                     <View style={styles.priceSection}>
-                        {priceLabel ? (
-                            <Text style={styles.priceLabel}>{priceLabel}</Text>
-                        ) : null}
-                        
-                        <View style={styles.priceContainer}>
-                            {hasDiscount ? (
-                                <>
-                                    <Text style={styles.specialPrice}>
+                        <View style={styles.priceLeftContainer}>
+                            {priceLabel ? (
+                                <Text style={styles.priceLabel}>{priceLabel}</Text>
+                            ) : null}
+                            
+                            <View style={styles.priceContainer}>
+                                {hasDiscount ? (
+                                    <>
+                                        <Text style={styles.specialPrice}>
+                                            {formatters.formatPrice(displayPrice)}
+                                        </Text>
+                                        <Text style={styles.originalPrice}>
+                                            {formatters.formatPrice(displayRegularPrice!)}
+                                        </Text>
+                                        <View style={styles.discountBadge}>
+                                            <Text style={styles.discountText}>
+                                                {Math.round(((displayRegularPrice! - displayPrice) / displayRegularPrice!) * 100)}% OFF
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : (
+                                    <Text style={styles.price}>
                                         {formatters.formatPrice(displayPrice)}
                                     </Text>
-                                    <Text style={styles.originalPrice}>
-                                        {formatters.formatPrice(displayRegularPrice!)}
-                                    </Text>
-                                    <View style={styles.discountBadge}>
-                                        <Text style={styles.discountText}>
-                                            {Math.round(((displayRegularPrice! - displayPrice) / displayRegularPrice!) * 100)}% OFF
-                                        </Text>
-                                    </View>
-                                </>
-                            ) : (
-                                <Text style={styles.price}>
-                                    {formatters.formatPrice(displayPrice)}
-                                </Text>
-                            )}
+                                )}
+                            </View>
                         </View>
+
+                        {/* Quantity Selector */}
+                        {canAddToCart && showQuantityBox ? (
+                            <View style={styles.quantityContainer}>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => handleQuantityChange(-1)}
+                                    disabled={quantity <= 1}
+                                >
+                                    <Ionicons name="remove" size={18} color={theme.colors.text.primary} />
+                                </TouchableOpacity>
+                                <Text style={styles.quantityText}>{quantity}</Text>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => handleQuantityChange(1)}
+                                    disabled={quantity >= 99}
+                                >
+                                    <Ionicons name="add" size={18} color={theme.colors.text.primary} />
+                                </TouchableOpacity>
+                            </View>
+                        ) : null}
                     </View>
 
                     {/* Stock Status */}
@@ -501,34 +524,34 @@ export const ProductDetailScreen: React.FC = () => {
             {/* Bottom Bar */}
             {canAddToCart ? (
                 <View style={styles.bottomBar}>
-                    {/* Quantity Selector */}
-                    {showQuantityBox ? (
-                        <View style={styles.quantityContainer}>
+                    {/* Action Buttons Container */}
+                    <View style={styles.actionButtonsContainer}>
+                        {/* RFQ Button */}
+                        {product?.supplier?.id && isAuthenticated && (
                             <TouchableOpacity
-                                style={styles.quantityButton}
-                                onPress={() => handleQuantityChange(-1)}
-                                disabled={quantity <= 1}
+                                style={styles.rfqButton}
+                                onPress={() => {
+                                    router.push(`/rfq/${product.supplier!.id}`);
+                                }}
                             >
-                                <Ionicons name="remove" size={20} color={theme.colors.text.primary} />
+                                <Ionicons name="document-text-outline" size={18} color={theme.colors.primary[500]} />
+                                <Text style={styles.rfqButtonText}>
+                                    Request for Quote
+                                </Text>
                             </TouchableOpacity>
-                            <Text style={styles.quantityText}>{quantity}</Text>
-                            <TouchableOpacity
-                                style={styles.quantityButton}
-                                onPress={() => handleQuantityChange(1)}
-                                disabled={quantity >= 99}
-                            >
-                                <Ionicons name="add" size={20} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    ) : null}
+                        )}
 
-                    {/* Add to Cart Button */}
-                    <Button
-                        title={isAddingToCart ? 'Adding...' : 'Add to Cart'}
-                        onPress={handleAddToCart}
-                        style={styles.addToCartButton}
-                        disabled={isAddingToCart}
-                    />
+                        {/* Add to Cart Button */}
+                        <Button
+                            title={isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                            onPress={handleAddToCart}
+                            style={[
+                                styles.addToCartButton,
+                                (product?.supplier?.id && isAuthenticated) ? styles.addToCartButtonWithRFQ : undefined
+                            ]}
+                            disabled={isAddingToCart}
+                        />
+                    </View>
                 </View>
             ) : null}
         </View>
@@ -582,7 +605,13 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
     },
     priceSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
         marginBottom: theme.spacing.md,
+    },
+    priceLeftContainer: {
+        flex: 1,
     },
     priceLabel: {
         fontSize: theme.typography.fontSize.sm,
@@ -592,6 +621,7 @@ const styles = StyleSheet.create({
     priceContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexWrap: 'wrap',
     },
     price: {
         fontSize: theme.typography.fontSize['3xl'],
@@ -611,7 +641,7 @@ const styles = StyleSheet.create({
         marginRight: theme.spacing.md,
     },
     discountBadge: {
-        backgroundColor: theme.colors.error.light,
+        backgroundColor: theme.colors.error.light || '#FEE2E2',
         paddingHorizontal: theme.spacing.sm,
         paddingVertical: theme.spacing.xs,
         borderRadius: theme.borderRadius.sm,
@@ -672,19 +702,47 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: theme.colors.border.main,
         borderRadius: theme.borderRadius.md,
+        marginLeft: theme.spacing.md,
+        alignSelf: 'flex-start',
     },
     quantityButton: {
-        padding: theme.spacing.sm,
+        padding: theme.spacing.xs,
     },
     quantityText: {
-        fontSize: theme.typography.fontSize.lg,
+        fontSize: theme.typography.fontSize.base,
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.text.primary,
-        paddingHorizontal: theme.spacing.md,
-        minWidth: 40,
+        paddingHorizontal: theme.spacing.sm,
+        minWidth: 35,
         textAlign: 'center',
     },
+    actionButtonsContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        gap: theme.spacing.md,
+    },
+    rfqButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        backgroundColor: theme.colors.white,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[500],
+        gap: theme.spacing.xs,
+        flexShrink: 1,
+    },
+    rfqButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
+    },
     addToCartButton: {
+        flex: 1,
+    },
+    addToCartButtonWithRFQ: {
         flex: 1,
     },
     supplierContainer: {
@@ -722,7 +780,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg,
-        backgroundColor: theme.colors.primary.light || theme.colors.primary[50],
+        backgroundColor: theme.colors.primary[50] || theme.colors.primary[100] || '#E0E7FF',
         borderRadius: theme.borderRadius.md,
         marginTop: theme.spacing.sm,
         gap: theme.spacing.sm,

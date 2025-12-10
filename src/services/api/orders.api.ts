@@ -6,6 +6,23 @@
 
 import { restApiClient } from './client';
 
+export interface OrderAddress {
+    id?: number;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    address1?: string[];
+    address?: string[];
+    city?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+    country_name?: string;
+    company_name?: string;
+    address2?: string;
+}
+
 export interface Order {
     id: number;
     increment_id: string;
@@ -17,10 +34,34 @@ export interface Order {
     total_qty_ordered: number;
     total_item_count: number;
     items?: OrderItem[];
-    shipping_address?: any;
-    billing_address?: any;
+    shipping_address?: OrderAddress;
+    billing_address?: OrderAddress;
     payment_title?: string;
     shipping_title?: string;
+    // Order totals
+    sub_total?: number;
+    formatted_sub_total?: string;
+    sub_total_incl_tax?: number;
+    formatted_sub_total_incl_tax?: string;
+    shipping_amount?: number;
+    formatted_shipping_amount?: string;
+    shipping_amount_incl_tax?: number;
+    formatted_shipping_amount_incl_tax?: string;
+    tax_amount?: number;
+    formatted_tax_amount?: string;
+    discount_amount?: number;
+    formatted_discount_amount?: string;
+    coupon_code?: string;
+    grand_total_invoiced?: number;
+    formatted_grand_total_invoiced?: string;
+    grand_total_refunded?: number;
+    formatted_grand_total_refunded?: string;
+    total_due?: number;
+    formatted_total_due?: string;
+    // Additional fields
+    can_cancel?: boolean;
+    can_reorder?: boolean;
+    order_currency_code?: string;
 }
 
 export interface OrderItem {
@@ -28,11 +69,33 @@ export interface OrderItem {
     name: string;
     sku: string;
     qty_ordered: number;
+    qty_invoiced?: number;
+    qty_shipped?: number;
+    qty_refunded?: number;
+    qty_canceled?: number;
     price: number;
     formatted_price: string;
+    price_incl_tax?: number;
+    formatted_price_incl_tax?: string;
     total: number;
     formatted_total: string;
+    total_incl_tax?: number;
+    formatted_total_incl_tax?: string;
     product_id: number;
+    product_image?: string;
+    base_image?: {
+        small_image_url?: string;
+        medium_image_url?: string;
+        large_image_url?: string;
+    };
+    additional?: {
+        attributes?: Array<{
+            attribute_name: string;
+            option_label: string;
+        }>;
+    };
+    tax_percent?: number;
+    tax_amount?: number;
 }
 
 interface OrdersResponse {
