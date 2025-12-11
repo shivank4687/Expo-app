@@ -329,7 +329,7 @@ export const OtpVerificationScreen: React.FC = () => {
                         )}
                     </View>
 
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => router.back()}
                         disabled={isLoading}
@@ -340,7 +340,7 @@ export const OtpVerificationScreen: React.FC = () => {
                         ]}>
                             {t('auth.backToSignup', 'Back to Sign Up')}
                         </Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>

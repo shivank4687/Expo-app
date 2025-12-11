@@ -435,7 +435,7 @@ export const SignupScreen: React.FC = () => {
                     </View>
 
                     <Input
-                        label={`${t('auth.email')} (${t('common.optional')})`}
+                        label={`${t('auth.email')} ${t('common.optional')}`}
                         placeholder={t('auth.enterYourEmail')}
                         value={formData.email}
                         onChangeText={(text) => updateField('email', text)}
@@ -470,11 +470,11 @@ export const SignupScreen: React.FC = () => {
                         autoComplete="password-new"
                     />
 
-                    <Text style={styles.termsText}>
+                    {/* <Text style={styles.termsText}>
                         {t('auth.termsAgreement')}{' '}
                         <Text style={styles.termsLink}>{t('auth.termsOfService')}</Text> {t('auth.and')}{' '}
                         <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
-                    </Text>
+                    </Text> */}
 
                     <Button
                         title={t('auth.signUp')}

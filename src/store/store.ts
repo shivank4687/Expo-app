@@ -3,6 +3,7 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import authReducer from './slices/authSlice';
+import supplierAuthReducer from './slices/supplierAuthSlice';
 import coreReducer from './slices/coreSlice';
 import categoryReducer from './slices/categorySlice';
 import cmsReducer from './slices/cmsSlice';
@@ -40,12 +41,13 @@ const storage = Platform.OS === 'web'
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth', 'core', 'category', 'cms'], // Persist auth, core, category, and cms (cart is fetched from server)
+    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms'], // Persist auth, supplierAuth, core, category, and cms (cart is fetched from server)
 };
 
 // Root reducer
 const rootReducer = combineReducers({
   auth: authReducer,
+  supplierAuth: supplierAuthReducer,
   core: coreReducer,
   category: categoryReducer,
   cms: cmsReducer,

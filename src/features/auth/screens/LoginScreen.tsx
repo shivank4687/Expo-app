@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginThunk } from '@/store/slices/authSlice';
+import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { CountryCodeDropdown } from '@/shared/components/CountryCodeDropdown';
@@ -25,14 +26,17 @@ export const LoginScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { isLoading } = useAppSelector((state) => state.auth);
+    const { isLoading: authIsLoading } = useAppSelector((state) => state.auth);
+    const { isLoading: supplierAuthIsLoading } = useAppSelector((state) => state.supplierAuth);
     const { showToast } = useToast();
 
+    const [userType, setUserType] = useState<'customer' | 'supplier'>('customer');
     const [emailOrPhone, setEmailOrPhone] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ emailOrPhone?: string; password?: string }>({});
     const [isPhoneInput, setIsPhoneInput] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     const handleEmailOrPhoneChange = useCallback((text: string) => {
         setEmailOrPhone(text);
@@ -75,6 +79,7 @@ export const LoginScreen: React.FC = () => {
     const handleLogin = async () => {
         if (!validateForm()) return;
 
+        setIsLoggingIn(true);
         try {
             const loginPayload: any = {
                 email_or_phone: emailOrPhone,
@@ -86,28 +91,49 @@ export const LoginScreen: React.FC = () => {
                 loginPayload.phone_country_id = selectedCountry.id;
             }
             
-            const result = await dispatch(loginThunk(loginPayload)).unwrap();
-            
-            // Show success toast
-            showToast({
-                message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
-                type: 'success',
-                duration: 3000,
-            });
-            
-            // Navigate to home/drawer after successful login
-            setTimeout(() => {
-                if (router.canGoBack()) {
-                    router.dismissAll();
-                }
-                router.replace('/(drawer)/(tabs)');
-            }, 500);
+            if (userType === 'supplier') {
+                // Supplier login
+                await dispatch(supplierLoginThunk(loginPayload)).unwrap();
+                
+                showToast({
+                    message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
+                    type: 'success',
+                    duration: 3000,
+                });
+                
+                // Navigate to supplier dashboard
+                setTimeout(() => {
+                    if (router.canGoBack()) {
+                        router.dismissAll();
+                    }
+                    router.replace('/(supplier-drawer)/(supplier-tabs)');
+                }, 500);
+            } else {
+                // Customer login
+                await dispatch(loginThunk(loginPayload)).unwrap();
+                
+                showToast({
+                    message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
+                    type: 'success',
+                    duration: 3000,
+                });
+                
+                // Navigate to customer home/drawer
+                setTimeout(() => {
+                    if (router.canGoBack()) {
+                        router.dismissAll();
+                    }
+                    router.replace('/(drawer)/(tabs)');
+                }, 500);
+            }
         } catch (err: any) {
             showToast({
                 message: err || t('auth.invalidCredentials'),
                 type: 'error',
                 duration: 4000,
             });
+        } finally {
+            setIsLoggingIn(false);
         }
     };
 
@@ -127,6 +153,42 @@ export const LoginScreen: React.FC = () => {
                 <View style={styles.header}>
                     <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
                     <Text style={styles.subtitle}>{t('auth.signInToContinue')}</Text>
+                </View>
+
+                {/* User Type Toggle */}
+                <View style={styles.toggleContainer}>
+                    <TouchableOpacity
+                        style={[
+                            styles.toggleButton,
+                            userType === 'customer' && styles.toggleButtonActive,
+                        ]}
+                        onPress={() => setUserType('customer')}
+                    >
+                        <Text
+                            style={[
+                                styles.toggleButtonText,
+                                userType === 'customer' && styles.toggleButtonTextActive,
+                            ]}
+                        >
+                            {t('auth.customer', 'Customer')}
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.toggleButton,
+                            userType === 'supplier' && styles.toggleButtonActive,
+                        ]}
+                        onPress={() => setUserType('supplier')}
+                    >
+                        <Text
+                            style={[
+                                styles.toggleButtonText,
+                                userType === 'supplier' && styles.toggleButtonTextActive,
+                            ]}
+                        >
+                            {t('auth.supplier', 'Supplier')}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.form}>
@@ -170,7 +232,7 @@ export const LoginScreen: React.FC = () => {
                     <Button
                         title={t('auth.signIn')}
                         onPress={handleLogin}
-                        loading={isLoading}
+                        loading={isLoggingIn}
                         fullWidth
                         size="large"
                     />
@@ -198,8 +260,37 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     header: {
-        marginBottom: theme.spacing['3xl'],
+        marginBottom: theme.spacing.xl,
         alignItems: 'center',
+    },
+    toggleContainer: {
+        flexDirection: 'row',
+        backgroundColor: theme.colors.background.paper,
+        borderRadius: theme.borderRadius.md,
+        padding: 4,
+        marginBottom: theme.spacing.xl,
+        borderWidth: 1,
+        borderColor: theme.colors.border.light,
+    },
+    toggleButton: {
+        flex: 1,
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: theme.borderRadius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    toggleButtonActive: {
+        backgroundColor: theme.colors.primary[500],
+    },
+    toggleButtonText: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.medium,
+        color: theme.colors.text.secondary,
+    },
+    toggleButtonTextActive: {
+        color: theme.colors.white,
+        fontWeight: theme.typography.fontWeight.semiBold,
     },
     title: {
         fontSize: theme.typography.fontSize['3xl'],

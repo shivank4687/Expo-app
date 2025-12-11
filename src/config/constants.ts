@@ -7,15 +7,22 @@ export const STORAGE_KEYS = {
     USER_DATA: 'user_data',
     CART_DATA: 'cart_data',
     LANGUAGE: 'language',
+    SUPPLIER_AUTH_TOKEN: 'supplier_auth_token',
+    SUPPLIER_DATA: 'supplier_data',
 };
 
 export const API_ENDPOINTS = {
+    // Customer Auth
     LOGIN: '/customer/login',
     REGISTER: '/customer/register-mobile',
     CHECK_DUPLICATE: '/customer/check-duplicate',
     VERIFY_OTP: '/customer/verify-otp',
     RESEND_OTP: '/customer/resend-otp',
     LOGOUT: '/customer/logout',
+    // Supplier App Auth
+    SUPPLIER_LOGIN: '/supplier-app/login',
+    SUPPLIER_LOGOUT: '/supplier-app/logout',
+    SUPPLIER_GET: '/supplier-app/get',
     // Products
     PRODUCTS: '/products',
     PRODUCT_DETAIL: '/products/:id',
