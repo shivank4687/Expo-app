@@ -23,10 +23,15 @@ export interface LoginRequest {
 }
 
 export interface SignupRequest {
-    name: string;
-    email: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    phone_country_id?: string;
+    dial_code?: string;
     password: string;
     password_confirmation: string;
+    is_subscribed?: boolean;
 }
 
 export interface UpdateProfileRequest {
@@ -52,6 +57,43 @@ export interface AuthResponse {
     token: string;
     user: User;
     expires_in?: number;
+}
+
+export interface OtpVerificationRequest {
+    verification_token: string;
+    otp: string;
+    type?: 'customer' | 'supplier';
+    device_name: string;
+}
+
+export interface OtpVerificationResponse extends AuthResponse {
+    // Same as AuthResponse (user + token)
+}
+
+export interface ResendOtpRequest {
+    verification_token: string;
+    type?: 'customer' | 'supplier';
+}
+
+export interface ResendOtpResponse {
+    message: string;
+    otp_expiry: string;
+    resend_available_at: string;
+}
+
+export interface SignupResponse {
+    // OTP verification required
+    requires_otp_verification?: boolean;
+    verification_token?: string;
+    type?: 'customer' | 'supplier';
+    phone?: string;
+    otp_expiry?: string;
+    resend_available_at?: string;
+    message?: string;
+    // OR direct registration (no OTP)
+    data?: User;
+    token?: string;
+    user?: User;
 }
 
 export interface AuthContextType {

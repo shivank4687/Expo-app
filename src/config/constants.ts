@@ -11,7 +11,10 @@ export const STORAGE_KEYS = {
 
 export const API_ENDPOINTS = {
     LOGIN: '/customer/login',
-    REGISTER: '/customer/register',
+    REGISTER: '/customer/register-mobile',
+    CHECK_DUPLICATE: '/customer/check-duplicate',
+    VERIFY_OTP: '/customer/verify-otp',
+    RESEND_OTP: '/customer/resend-otp',
     LOGOUT: '/customer/logout',
     // Products
     PRODUCTS: '/products',

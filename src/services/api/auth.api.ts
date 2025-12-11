@@ -1,6 +1,18 @@
 import { restApiClient } from './client';
 import { API_ENDPOINTS } from '@/config/constants';
-import { LoginRequest, SignupRequest, AuthResponse, UpdateProfileRequest, NewsletterSubscriptionRequest, User } from '@/features/auth/types/auth.types';
+import { 
+    LoginRequest, 
+    SignupRequest, 
+    AuthResponse, 
+    UpdateProfileRequest, 
+    NewsletterSubscriptionRequest, 
+    User,
+    SignupResponse,
+    OtpVerificationRequest,
+    OtpVerificationResponse,
+    ResendOtpRequest,
+    ResendOtpResponse,
+} from '@/features/auth/types/auth.types';
 
 /**
  * Authentication API Service
@@ -20,9 +32,33 @@ export const authApi = {
 
     /**
      * Register new user
+     * Returns either OTP verification required response or direct registration response
      */
-    async register(data: SignupRequest): Promise<AuthResponse> {
-        return restApiClient.post<AuthResponse>(API_ENDPOINTS.REGISTER, data);
+    async register(data: SignupRequest): Promise<SignupResponse> {
+        return restApiClient.post<SignupResponse>(API_ENDPOINTS.REGISTER, {
+            ...data,
+            device_name: 'mobile_app', // Required for API token generation
+        });
+    },
+
+    /**
+     * Verify OTP and complete registration
+     */
+    async verifyOtp(data: OtpVerificationRequest): Promise<OtpVerificationResponse> {
+        return restApiClient.post<OtpVerificationResponse>(API_ENDPOINTS.VERIFY_OTP, {
+            ...data,
+            type: data.type || 'customer',
+        });
+    },
+
+    /**
+     * Resend OTP
+     */
+    async resendOtp(data: ResendOtpRequest): Promise<ResendOtpResponse> {
+        return restApiClient.post<ResendOtpResponse>(API_ENDPOINTS.RESEND_OTP, {
+            ...data,
+            type: data.type || 'customer',
+        });
     },
 
     /**
@@ -87,6 +123,17 @@ export const authApi = {
         // Remove image field to prevent it from being sent as undefined
         const { image, ...dataWithoutImage } = data;
         return restApiClient.put(API_ENDPOINTS.UPDATE_PROFILE, dataWithoutImage);
+    },
+
+    /**
+     * Check if email or phone already exists
+     */
+    async checkDuplicate(data: {
+        type: 'email' | 'phone';
+        value: string;
+        phone_country_id?: number;
+    }): Promise<{ available: boolean; message?: string }> {
+        return restApiClient.post(API_ENDPOINTS.CHECK_DUPLICATE, data);
     },
 
     /**

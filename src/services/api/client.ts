@@ -123,7 +123,8 @@ class ApiClient {
                             break;
                         case 500:
                             // Server error
-                            console.error('Server error');
+                            console.error('Server error:', error.response?.data);
+                            console.error('Error details:', JSON.stringify(error.response?.data, null, 2));
                             break;
                         default:
                             console.error('API Error:', status, error.response.data);

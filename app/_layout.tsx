@@ -51,6 +51,13 @@ function AppContent() {
           }}
         />
         <Stack.Screen
+          name="otp-verification"
+          options={{ 
+            title: "Verify OTP",
+            headerBackTitle: "Back",
+          }}
+        />
+        <Stack.Screen
           name="product/[id]"
           options={{
             title: "Product Details",
