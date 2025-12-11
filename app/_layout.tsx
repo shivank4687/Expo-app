@@ -1,10 +1,11 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "@/store/store";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { checkAuthThunk } from "@/store/slices/authSlice";
+import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
 import { fetchCoreConfig } from "@/store/slices/coreSlice";
 import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
 import { ActivityIndicator, View } from "react-native";
@@ -14,28 +15,61 @@ import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
 
 function AppContent() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const router = useRouter();
+  const segments = useSegments();
+  const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
 
   useEffect(() => {
     // Initialize core config (locale, currency, channels) on app start
     dispatch(fetchCoreConfig());
-    // Check authentication status
+    // Check both customer and supplier authentication status
     dispatch(checkAuthThunk());
+    dispatch(checkSupplierAuthThunk());
   }, [dispatch]);
 
-  // Load wishlist when user is authenticated
+  // Load wishlist when customer is authenticated
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      console.log('✅ User authenticated, loading wishlist...');
+    if (isCustomerAuthenticated && !isCustomerLoading) {
+      console.log('✅ Customer authenticated, loading wishlist...');
       dispatch(fetchWishlistThunk());
     }
-  }, [isAuthenticated, isLoading, dispatch]);
+  }, [isCustomerAuthenticated, isCustomerLoading, dispatch]);
+
+  // Handle navigation based on authentication state (for route protection)
+  useEffect(() => {
+    const isLoading = isCustomerLoading || isSupplierLoading;
+    if (isLoading) return;
+
+    const isAuthScreen = segments[0] === 'login' || segments[0] === 'signup' || segments[0] === 'otp-verification' || segments[0] === 'index';
+    const isOnSupplierDashboard = segments[0] === '(supplier-drawer)';
+    const isOnCustomerDashboard = segments[0] === '(drawer)';
+
+    // If supplier is authenticated but on customer dashboard, redirect
+    if (isSupplierAuthenticated && isOnCustomerDashboard) {
+      console.log('✅ Supplier authenticated, redirecting from customer to supplier dashboard...');
+      router.replace('/(supplier-drawer)/(supplier-tabs)');
+    }
+    // If customer is authenticated but on supplier dashboard, redirect
+    else if (isCustomerAuthenticated && !isSupplierAuthenticated && isOnSupplierDashboard) {
+      console.log('✅ Customer authenticated, redirecting from supplier to customer dashboard...');
+      router.replace('/(drawer)/(tabs)');
+    }
+    // If neither is authenticated and on supplier dashboard, redirect to shop home
+    else if (!isCustomerAuthenticated && !isSupplierAuthenticated && isOnSupplierDashboard) {
+      console.log('❌ Not authenticated, redirecting to shop home...');
+      router.replace('/(drawer)/(tabs)');
+    }
+    // Customer dashboard (shop) is accessible without authentication, so no redirect needed
+  }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, segments, router]);
 
   return (
     <ToastProvider>
       <LocaleSync />
       <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+        <Stack.Screen name="(supplier-drawer)" options={{ headerShown: false }} />
         <Stack.Screen
           name="login"
           options={{ 

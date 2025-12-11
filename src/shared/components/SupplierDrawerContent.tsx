@@ -28,7 +28,8 @@ export const SupplierDrawerContent = (props: DrawerContentComponentProps) => {
                     style: 'destructive',
                     onPress: async () => {
                         await dispatch(supplierLogoutThunk());
-                        router.replace('/login');
+                        // Navigate to shop home screen after logout
+                        router.replace('/(drawer)/(tabs)');
                     },
                 },
             ],
