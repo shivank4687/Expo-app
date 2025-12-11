@@ -354,21 +354,23 @@ export const OrderDetailScreen: React.FC = () => {
                         <Text style={styles.sectionTitle}>
                             {t('orders.paymentShipping', 'Payment & Shipping')}
                         </Text>
-                        {order.payment_title && (
-                            <View style={styles.methodRow}>
-                                <Ionicons 
-                                    name="card-outline" 
-                                    size={20} 
-                                    color={theme.colors.text.secondary} 
-                                />
-                                <View style={styles.methodInfo}>
-                                    <Text style={styles.methodLabel}>
-                                        {t('orders.paymentMethod', 'Payment Method')}
-                                    </Text>
-                                    <Text style={styles.methodValue}>{order.payment_title}</Text>
-                                </View>
+                        {/* Always show payment method section */}
+                        <View style={styles.methodRow}>
+                            <Ionicons 
+                                name="card-outline" 
+                                size={20} 
+                                color={theme.colors.text.secondary} 
+                            />
+                            <View style={styles.methodInfo}>
+                                <Text style={styles.methodLabel}>
+                                    {t('orders.paymentMethod', 'Payment Method')}
+                                </Text>
+                                <Text style={styles.methodValue}>
+                                    {order.payment_title || t('orders.notAvailable', 'Not available')}
+                                </Text>
                             </View>
-                        )}
+                        </View>
+                        {/* Always show shipping method section */}
                         {order.shipping_title && (
                             <View style={styles.methodRow}>
                                 <Ionicons 
