@@ -103,12 +103,29 @@ export const checkoutApi = {
      */
     placeOrder: async (): Promise<any> => {
         try {
-            const response = await restApiClient.post<CheckoutResponse>(
+            console.log('[checkout.api] Placing order...');
+            const response = await restApiClient.post<any>(
                 '/customer/checkout/save-order'
             );
-            return response.data || {};
+            
+            console.log('[checkout.api] Place order response:', JSON.stringify(response, null, 2));
+            console.log('[checkout.api] Response structure:', {
+                hasData: !!response.data,
+                hasRedirectUrl: !!response.redirect_url,
+                hasOrder: !!(response.data?.order || response.order),
+                fullResponse: response
+            });
+            
+            // Return full response to preserve redirect_url and other top-level fields
+            // Backend returns: { redirect_url?: '...', data?: { order: {...} }, message?: '...' }
+            return response || {};
         } catch (error: any) {
-            console.error('Place order error:', error);
+            console.error('[checkout.api] Place order error:', error);
+            console.error('[checkout.api] Error response:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
             throw new Error(error.response?.data?.message || error.message || 'Failed to place order');
         }
     },

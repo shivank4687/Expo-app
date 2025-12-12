@@ -139,6 +139,24 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                             {rate.method_description}
                                                         </Text>
                                                     )}
+                                                    {/* Store-wise Shipping Breakdown */}
+                                                    {rate.supplier_breakdown && rate.supplier_breakdown.length > 0 && (
+                                                        <View style={styles.breakdownContainer}>
+                                                            <Text style={styles.breakdownTitle}>
+                                                                {t('checkout.storewiseShipping', 'Storewise Shipping:')}
+                                                            </Text>
+                                                            {rate.supplier_breakdown.map((breakdown, idx) => (
+                                                                <View key={idx} style={styles.breakdownItem}>
+                                                                    <Text style={styles.breakdownStoreName}>
+                                                                        {breakdown.store_name}
+                                                                    </Text>
+                                                                    <Text style={styles.breakdownPrice}>
+                                                                        {breakdown.formatted_price}
+                                                                    </Text>
+                                                                </View>
+                                                            ))}
+                                                        </View>
+                                                    )}
                                                 </View>
 
                                                 {/* Price */}
@@ -370,6 +388,35 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.text.secondary,
         textAlign: 'center',
+    },
+    breakdownContainer: {
+        marginTop: theme.spacing.sm,
+        paddingTop: theme.spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+    },
+    breakdownTitle: {
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.text.primary,
+        marginBottom: theme.spacing.xs,
+    },
+    breakdownItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: theme.spacing.xs,
+    },
+    breakdownStoreName: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        flex: 1,
+    },
+    breakdownPrice: {
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.medium,
+        color: theme.colors.text.primary,
+        marginLeft: theme.spacing.sm,
     },
 });
 

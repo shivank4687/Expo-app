@@ -62,6 +62,19 @@ export interface Order {
     can_cancel?: boolean;
     can_reorder?: boolean;
     order_currency_code?: string;
+    // Payment data
+    payment?: {
+        method?: string;
+        method_title?: string;
+        additional?: {
+            voucher_url?: string;
+            payment_intent_id?: string;
+            voucher_number?: string;
+            order_reference?: string;
+            voucher_expires_at?: string;
+            status?: string;
+        };
+    };
 }
 
 export interface OrderItem {
@@ -198,6 +211,21 @@ export const ordersApi = {
         } catch (error: any) {
             console.error('Reorder error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to reorder');
+        }
+    },
+
+    /**
+     * Renew OXXO voucher for an order
+     */
+    renewVoucher: async (id: number): Promise<{ success: boolean; data: { voucher: any }; message: string }> => {
+        try {
+            const response = await restApiClient.post<{ success: boolean; data: { voucher: any }; message: string }>(
+                `/customer/orders/${id}/renew-voucher`
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error('Renew voucher error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to renew voucher');
         }
     },
 };

@@ -7,6 +7,12 @@ import { CartAddress } from '@/features/cart/types/cart.types';
 
 export type CheckoutStep = 'address' | 'shipping' | 'payment' | 'review';
 
+export interface SupplierBreakdown {
+    store_name: string;
+    formatted_price: string;
+    base_amount: number;
+}
+
 export interface ShippingRate {
     id?: number;
     carrier: string;
@@ -18,6 +24,7 @@ export interface ShippingRate {
     base_price: number;
     formatted_price: string;
     base_formatted_price: string;
+    supplier_breakdown?: SupplierBreakdown[];
 }
 
 export interface ShippingMethod {

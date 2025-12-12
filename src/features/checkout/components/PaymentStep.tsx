@@ -143,6 +143,7 @@ const getPaymentIcon = (method: string): any => {
         moneytransfer: 'arrow-forward-circle-outline',
         paypal: 'logo-paypal',
         stripe: 'card-outline',
+        stripeconnect: 'card-outline',
         razorpay: 'card-outline',
     };
 

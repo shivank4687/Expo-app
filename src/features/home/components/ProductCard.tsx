@@ -232,11 +232,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
                     <View style={styles.priceWrapper}>
                         {/* Price Label for Configurable/Grouped Products */}
-                        {productData.priceLabel ? (
-                            <Text style={styles.priceLabel}>
-                                {productData.priceLabel}
-                            </Text>
-                        ) : null}
+                        {/* Always reserve space for price label to maintain consistent card height */}
+                        <View style={styles.priceLabelContainer}>
+                            {productData.priceLabel ? (
+                                <Text style={styles.priceLabel}>
+                                    {productData.priceLabel}
+                                </Text>
+                            ) : null}
+                        </View>
                         
                         <View style={styles.priceContainer}>
                             {productData.hasDiscount ? (
@@ -393,11 +396,16 @@ const styles = StyleSheet.create({
     },
     priceWrapper: {
         gap: 2,
+        minHeight: 40, // Fixed minimum height to ensure consistent card heights
+    },
+    priceLabelContainer: {
+        height: 16, // Fixed height for price label area to maintain consistent card heights
+        justifyContent: 'flex-start',
     },
     priceLabel: {
         fontSize: theme.typography.fontSize.xs,
         color: theme.colors.text.secondary,
-        marginBottom: 2,
+        lineHeight: 16,
     },
     priceContainer: {
         flexDirection: 'row',

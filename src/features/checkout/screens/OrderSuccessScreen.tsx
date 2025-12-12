@@ -3,24 +3,46 @@
  * Displays order confirmation after successful checkout
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { ordersApi, Order } from '@/services/api/orders.api';
+import { formatters } from '@/shared/utils/formatters';
 
 export const OrderSuccessScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
+    const [order, setOrder] = useState<Order | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // Redirect to home if no order ID
         if (!id) {
             router.replace('/(drawer)/(tabs)');
+            return;
         }
+        
+        // Fetch order details to get voucher information
+        loadOrder();
     }, [id, router]);
+
+    const loadOrder = useCallback(async () => {
+        if (!id) return;
+        
+        try {
+            setIsLoading(true);
+            const response = await ordersApi.getOrder(parseInt(id));
+            setOrder(response.data);
+        } catch (error) {
+            console.error('[OrderSuccessScreen] Error loading order:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [id]);
 
     const handleContinueShopping = () => {
         // Navigate to home and clear the navigation stack
@@ -29,11 +51,43 @@ export const OrderSuccessScreen: React.FC = () => {
     };
 
     const handleViewOrder = () => {
-        router.push('/orders');
+        if (id) {
+            router.push(`/orders/${id}`);
+        } else {
+            router.push('/orders');
+        }
+    };
+
+    const handleViewVoucher = () => {
+        const voucherUrl = order?.payment?.additional?.voucher_url;
+        if (voucherUrl) {
+            Linking.openURL(voucherUrl);
+        }
     };
 
     if (!id) {
         return null;
+    }
+
+    const isOxxoPayment = order?.payment?.method === 'stripeoxxo';
+    const oxxoVoucher = order?.payment?.additional;
+    const isLoadingOrder = isLoading;
+
+    if (isLoadingOrder) {
+        return (
+            <>
+                <Stack.Screen 
+                    options={{ 
+                        title: t('checkout.orderSuccess.title', 'Order Placed'),
+                        headerBackVisible: false,
+                        headerLeft: () => null,
+                    }} 
+                />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                </View>
+            </>
+        );
     }
 
     return (
@@ -49,7 +103,7 @@ export const OrderSuccessScreen: React.FC = () => {
                 {/* Success Icon */}
                 <View style={styles.iconContainer}>
                     <View style={styles.iconCircle}>
-                        <Ionicons name="checkmark" size={60} color={theme.colors.white} />
+                        <Ionicons name="checkmark" size={40} color={theme.colors.white} />
                     </View>
                 </View>
 
@@ -63,13 +117,57 @@ export const OrderSuccessScreen: React.FC = () => {
                     <Text style={styles.orderIdLabel}>
                         {t('checkout.orderSuccess.orderNumber', 'Your Order Number is')}
                     </Text>
-                    <Text style={styles.orderId}>#{id}</Text>
+                    <Text style={styles.orderId}>#{order?.increment_id || id}</Text>
                 </View>
 
+                {/* OXXO Voucher Section */}
+                {isOxxoPayment && oxxoVoucher && (
+                    <View style={styles.voucherContainer}>
+                        <Text style={styles.voucherTitle}>
+                            {t('checkout.oxxo.paymentInstruction', 'Complete Your Payment')}
+                        </Text>
+                        
+                        <View style={styles.voucherNumberContainer}>
+                            <Text style={styles.voucherNumberLabel}>
+                                {t('checkout.oxxo.refNumber', 'Reference Number')}
+                            </Text>
+                            <Text style={styles.voucherNumber}>
+                                {oxxoVoucher.voucher_number}
+                            </Text>
+                        </View>
+
+                        {oxxoVoucher.voucher_expires_at && (
+                            <Text style={styles.voucherExpiry}>
+                                <Text style={styles.voucherExpiryLabel}>
+                                    {t('checkout.oxxo.expireOn', 'Expires on')}:{' '}
+                                </Text>
+                                {formatters.formatDate(oxxoVoucher.voucher_expires_at, 'long')}
+                            </Text>
+                        )}
+
+                        <TouchableOpacity 
+                            style={styles.voucherButton}
+                            onPress={handleViewVoucher}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="receipt-outline" size={20} color={theme.colors.white} />
+                            <Text style={styles.voucherButtonText}>
+                                {t('checkout.oxxo.viewVoucher', 'View Voucher')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <Text style={styles.voucherInstruction}>
+                            {t('checkout.oxxo.successInstruction', 'Please complete your payment at any OXXO store using the reference number above. Your order will be processed once payment is confirmed.')}
+                        </Text>
+                    </View>
+                )}
+
                 {/* Information Message */}
-                <Text style={styles.infoText}>
-                    {t('checkout.orderSuccess.emailConfirmation', 'We will email you an order confirmation with details and tracking info.')}
-                </Text>
+                {!isOxxoPayment && (
+                    <Text style={styles.infoText}>
+                        {t('checkout.orderSuccess.emailConfirmation', 'We will email you an order confirmation with details and tracking info.')}
+                    </Text>
+                )}
 
                 {/* Action Buttons */}
                 <View style={styles.buttonContainer}>
@@ -121,20 +219,21 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         alignItems: 'center',
-        paddingVertical: theme.spacing.xl * 2,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.xl * 2,
         paddingHorizontal: theme.spacing.lg,
     },
     iconContainer: {
-        marginBottom: theme.spacing.xl,
+        marginBottom: theme.spacing.lg,
     },
     iconCircle: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: theme.colors.success,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: theme.colors.success.main,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: theme.colors.success,
+        shadowColor: theme.colors.success.main,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -145,12 +244,12 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: theme.colors.text.primary,
         textAlign: 'center',
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xl,
         textTransform: 'uppercase',
     },
     orderIdContainer: {
         alignItems: 'center',
-        marginBottom: theme.spacing.xl,
+        marginBottom: theme.spacing.lg,
         paddingVertical: theme.spacing.lg,
         paddingHorizontal: theme.spacing.xl,
         backgroundColor: theme.colors.gray[50],
@@ -232,6 +331,77 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: theme.colors.text.secondary,
         lineHeight: 20,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.colors.white,
+    },
+    voucherContainer: {
+        width: '100%',
+        marginBottom: theme.spacing.xl,
+        padding: theme.spacing.lg,
+        backgroundColor: '#FFF7ED',
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 2,
+        borderColor: '#FDBA74',
+    },
+    voucherTitle: {
+        fontSize: theme.typography.fontSize.lg,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: '#C2410C',
+        textAlign: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    voucherNumberContainer: {
+        backgroundColor: theme.colors.white,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+        marginBottom: theme.spacing.md,
+        alignItems: 'center',
+    },
+    voucherNumberLabel: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.xs,
+    },
+    voucherNumber: {
+        fontSize: theme.typography.fontSize.xl,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.text.primary,
+        letterSpacing: 2,
+    },
+    voucherExpiry: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.secondary,
+        textAlign: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    voucherExpiryLabel: {
+        fontWeight: theme.typography.fontWeight.semiBold,
+    },
+    voucherButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: theme.spacing.sm,
+        backgroundColor: theme.colors.primary[500],
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: theme.borderRadius.md,
+        marginBottom: theme.spacing.md,
+    },
+    voucherButtonText: {
+        color: theme.colors.white,
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.semiBold,
+    },
+    voucherInstruction: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 18,
     },
 });
 

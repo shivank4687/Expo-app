@@ -12,7 +12,8 @@ import {
     ActivityIndicator, 
     RefreshControl,
     TouchableOpacity,
-    Alert
+    Alert,
+    Linking
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +76,17 @@ export const OrderDetailScreen: React.FC = () => {
             }
             setError(null);
             const response = await ordersApi.getOrder(parseInt(id));
-            setOrder(response.data);
+            const orderData = response.data;
+            
+            // Debug: Log payment data to see what we're receiving
+            console.log('[OrderDetailScreen] Order payment data:', {
+                payment: orderData.payment,
+                payment_method: orderData.payment?.method,
+                payment_additional: orderData.payment?.additional,
+                total_due: orderData.total_due,
+            });
+            
+            setOrder(orderData);
         } catch (err: any) {
             console.error('[OrderDetailScreen] Error loading order:', err);
             setError(err.message || 'Failed to load order details');
@@ -368,6 +379,18 @@ export const OrderDetailScreen: React.FC = () => {
                                 <Text style={styles.methodValue}>
                                     {order.payment_title || t('orders.notAvailable', 'Not available')}
                                 </Text>
+                                
+                                {/* OXXO Voucher Details */}
+                                {order.payment?.method === 'stripeoxxo' && 
+                                 order.payment?.additional && 
+                                 typeof order.payment.additional === 'object' &&
+                                 (order.payment.additional.voucher_number || order.payment.additional.voucher_url) && (
+                                    <OxxoVoucherSection 
+                                        order={order}
+                                        voucher={order.payment.additional}
+                                        onVoucherUpdated={loadOrder}
+                                    />
+                                )}
                             </View>
                         </View>
                         {/* Always show shipping method section */}
@@ -554,6 +577,209 @@ const styles = StyleSheet.create({
     },
     bottomSpacing: {
         height: theme.spacing.xl,
+    },
+});
+
+/**
+ * OXXO Voucher Section Component
+ * Displays OXXO voucher details with view/renew functionality
+ */
+interface OxxoVoucherSectionProps {
+    order: Order;
+    voucher: {
+        voucher_url?: string;
+        payment_intent_id?: string;
+        voucher_number?: string;
+        order_reference?: string;
+        voucher_expires_at?: string;
+        status?: string;
+    };
+    onVoucherUpdated?: () => void;
+}
+
+const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({ 
+    order, 
+    voucher, 
+    onVoucherUpdated 
+}) => {
+    const { t } = useTranslation();
+    const { showToast } = useToast();
+    const [isRenewing, setIsRenewing] = useState(false);
+    
+    const isExpired = voucher.voucher_expires_at 
+        ? new Date(voucher.voucher_expires_at) < new Date()
+        : false;
+    
+    const expiryDate = voucher.voucher_expires_at 
+        ? formatters.formatDate(voucher.voucher_expires_at, 'long')
+        : null;
+    
+    const handleViewVoucher = () => {
+        if (voucher.voucher_url) {
+            Linking.openURL(voucher.voucher_url);
+        }
+    };
+    
+    const handleRenewVoucher = async () => {
+        if (isRenewing) return;
+        
+        Alert.alert(
+            t('orders.oxxo.renewVoucher', 'Renew Voucher'),
+            t('orders.oxxo.renewConfirm', 'Are you sure you want to generate a new voucher?'),
+            [
+                {
+                    text: t('common.cancel', 'Cancel'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('orders.oxxo.generate', 'Generate'),
+                    onPress: async () => {
+                        try {
+                            setIsRenewing(true);
+                            const response = await ordersApi.renewVoucher(order.id);
+                            
+                            if (response.success) {
+                                showToast({
+                                    message: response.message || t('orders.oxxo.renewSuccess', 'Voucher renewed successfully'),
+                                    type: 'success',
+                                });
+                                
+                                // Reload order to get updated voucher data
+                                if (onVoucherUpdated) {
+                                    onVoucherUpdated();
+                                }
+                            } else {
+                                showToast({
+                                    message: response.message || t('orders.oxxo.renewFailed', 'Failed to renew voucher'),
+                                    type: 'error',
+                                });
+                            }
+                        } catch (error: any) {
+                            showToast({
+                                message: error.message || t('orders.oxxo.renewFailed', 'Failed to renew voucher'),
+                                type: 'error',
+                            });
+                        } finally {
+                            setIsRenewing(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+    
+    return (
+        <View style={voucherStyles.container}>
+            <Text style={voucherStyles.refNumberLabel}>
+                {t('orders.oxxo.refNumber', 'Reference Number')}: {voucher.voucher_number}
+            </Text>
+            
+            {expiryDate && (
+                <Text style={voucherStyles.expiryText}>
+                    {t('orders.oxxo.expireOn', 'Expires on')}: {expiryDate}
+                </Text>
+            )}
+            
+            {isExpired ? (
+                <View style={voucherStyles.expiredContainer}>
+                    <Text style={voucherStyles.expiredText}>
+                        {t('orders.oxxo.expired', 'Expired')}
+                    </Text>
+                    <TouchableOpacity
+                        style={[voucherStyles.actionButton, voucherStyles.renewButton]}
+                        onPress={handleRenewVoucher}
+                        disabled={isRenewing}
+                        activeOpacity={0.7}
+                    >
+                        {isRenewing ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                        ) : (
+                            <>
+                                <Ionicons 
+                                    name="refresh-outline" 
+                                    size={16} 
+                                    color={theme.colors.primary[500]} 
+                                />
+                                <Text style={voucherStyles.renewButtonText}>
+                                    {t('orders.oxxo.generate', 'Generate New Voucher')}
+                                </Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={[voucherStyles.actionButton, voucherStyles.viewButton]}
+                    onPress={handleViewVoucher}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons 
+                        name="receipt-outline" 
+                        size={16} 
+                        color={theme.colors.primary[500]} 
+                    />
+                    <Text style={voucherStyles.viewButtonText}>
+                        {t('orders.oxxo.viewVoucher', 'View Voucher')}
+                    </Text>
+                </TouchableOpacity>
+            )}
+        </View>
+    );
+};
+
+const voucherStyles = StyleSheet.create({
+    container: {
+        marginTop: theme.spacing.sm,
+        paddingTop: theme.spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+    },
+    refNumberLabel: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.primary,
+        marginBottom: theme.spacing.xs,
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    expiryText: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.sm,
+    },
+    expiredContainer: {
+        marginTop: theme.spacing.xs,
+    },
+    expiredText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.error.main,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        marginBottom: theme.spacing.xs,
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+        paddingVertical: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.sm,
+        borderRadius: theme.borderRadius.sm,
+        alignSelf: 'flex-start',
+    },
+    viewButton: {
+        backgroundColor: theme.colors.primary[50],
+    },
+    viewButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    renewButton: {
+        backgroundColor: theme.colors.white,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[500],
+    },
+    renewButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.medium,
     },
 });
 

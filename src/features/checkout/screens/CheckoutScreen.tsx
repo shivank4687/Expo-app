@@ -19,6 +19,7 @@ import { AddressStep } from '../components/AddressStep';
 import { ShippingStep } from '../components/ShippingStep';
 import { PaymentStep } from '../components/PaymentStep';
 import { ReviewStep } from '../components/ReviewStep';
+import { StripeConnectWebView } from '../components/StripeConnectWebView';
 import {
     CheckoutStep,
     CheckoutAddress,
@@ -50,6 +51,10 @@ export const CheckoutScreen: React.FC = () => {
     // Payment state
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+    
+    // Stripe Connect WebView state
+    const [showStripeWebView, setShowStripeWebView] = useState(false);
+    const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState<string | null>(null);
 
     useEffect(() => {
         // Redirect if not authenticated
@@ -241,25 +246,88 @@ export const CheckoutScreen: React.FC = () => {
     const handlePlaceOrder = async () => {
         setIsProcessing(true);
         try {
+            console.log('[CheckoutScreen] Starting place order...');
             const response = await checkoutApi.placeOrder();
             
-            // Clear cart and show success message
-            await dispatch(fetchCartThunk()).unwrap();
-            
-            showToast({ 
-                message: t('checkout.orderPlaced', 'Order placed successfully!'), 
-                type: 'success',
-                duration: 3000,
+            console.log('[CheckoutScreen] Place order response received:', JSON.stringify(response, null, 2));
+            console.log('[CheckoutScreen] Response analysis:', {
+                hasRedirectUrl: !!response.redirect_url,
+                redirectUrl: response.redirect_url,
+                hasData: !!response.data,
+                hasOrder: !!(response.data?.order || response.order),
+                orderId: response.data?.order?.id || response.order?.id
             });
             
-            // Navigate to success page
-            if (response.order?.id) {
-                router.replace(`/order-success/${response.order.id}`);
+            // Handle redirect URL (for payment methods that require external payment)
+            if (response.redirect_url) {
+                console.log('[CheckoutScreen] Redirect URL detected:', response.redirect_url);
+                // Check if it's Stripe Connect (checkout.stripe.com URL)
+                const isStripeConnect = response.redirect_url.includes('checkout.stripe.com') || 
+                                       response.redirect_url.includes('stripe.com');
+                
+                if (isStripeConnect) {
+                    // For Stripe Connect, show WebView to complete payment
+                    setStripeCheckoutUrl(response.redirect_url);
+                    setShowStripeWebView(true);
+                    setIsProcessing(false);
+                    return;
+                }
+                
+                // For other payment methods like OXXO, order is created during redirect
+                // Check if order is in response.data.order
+                const order = response.data?.order || response.order;
+                console.log('[CheckoutScreen] OXXO/Other redirect - Order:', order);
+                if (order?.id) {
+                    console.log('[CheckoutScreen] Navigating to order success:', order.id);
+                    // Clear cart
+                    await dispatch(fetchCartThunk()).unwrap();
+                    showToast({ 
+                        message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                        type: 'success',
+                        duration: 3000,
+                    });
+                    router.replace(`/order-success/${order.id}`);
+                } else {
+                    console.warn('[CheckoutScreen] No order ID in redirect response, navigating to orders list');
+                    // If no order ID, navigate to orders page
+                    router.replace('/orders');
+                }
             } else {
-                // Fallback: navigate to orders page if no order ID
-                router.replace('/orders');
+                // Normal flow - order is in response
+                const order = response.data?.order || response.order;
+                console.log('[CheckoutScreen] Normal flow - Order:', order);
+                if (order?.id) {
+                    console.log('[CheckoutScreen] Navigating to order success:', order.id);
+                    // Clear cart and show success message
+                    await dispatch(fetchCartThunk()).unwrap();
+                    showToast({ 
+                        message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                        type: 'success',
+                        duration: 3000,
+                    });
+                    router.replace(`/order-success/${order.id}`);
+                } else {
+                    console.error('[CheckoutScreen] No order ID found in response!', {
+                        response,
+                        dataOrder: response.data?.order,
+                        order: response.order
+                    });
+                    // Fallback: navigate to orders page if no order ID
+                    showToast({ 
+                        message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                        type: 'info',
+                        duration: 3000,
+                    });
+                    router.replace('/orders');
+                }
             }
         } catch (error: any) {
+            console.error('[CheckoutScreen] Place order error:', error);
+            console.error('[CheckoutScreen] Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                stack: error.stack
+            });
             showToast({ 
                 message: error.message || t('checkout.orderFailed', 'Failed to place order'), 
                 type: 'error',
@@ -268,6 +336,31 @@ export const CheckoutScreen: React.FC = () => {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const handleStripeSuccess = async (orderId: number) => {
+        // Close WebView
+        setShowStripeWebView(false);
+        setStripeCheckoutUrl(null);
+        
+        // Clear cart
+        await dispatch(fetchCartThunk()).unwrap();
+        
+        // Navigate to order success screen
+        router.replace(`/order-success/${orderId}`);
+    };
+
+    const handleStripeCancel = () => {
+        setShowStripeWebView(false);
+        setStripeCheckoutUrl(null);
+        setIsProcessing(false);
+    };
+
+    const handleStripeError = (error: string) => {
+        setShowStripeWebView(false);
+        setStripeCheckoutUrl(null);
+        setIsProcessing(false);
+        // Error toast is already shown in WebView component
     };
 
     const markStepComplete = (step: CheckoutStep) => {
@@ -343,6 +436,17 @@ export const CheckoutScreen: React.FC = () => {
                     />
                 )}
             </View>
+            
+            {/* Stripe Connect WebView Modal */}
+            {stripeCheckoutUrl && (
+                <StripeConnectWebView
+                    visible={showStripeWebView}
+                    checkoutUrl={stripeCheckoutUrl}
+                    onSuccess={handleStripeSuccess}
+                    onCancel={handleStripeCancel}
+                    onError={handleStripeError}
+                />
+            )}
         </View>
     );
 };
