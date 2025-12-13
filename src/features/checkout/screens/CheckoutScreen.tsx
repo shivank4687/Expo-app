@@ -20,6 +20,7 @@ import { ShippingStep } from '../components/ShippingStep';
 import { PaymentStep } from '../components/PaymentStep';
 import { ReviewStep } from '../components/ReviewStep';
 import { StripeConnectWebView } from '../components/StripeConnectWebView';
+import { PaypalSmartButtonWebView } from '../components/PaypalSmartButtonWebView';
 import {
     CheckoutStep,
     CheckoutAddress,
@@ -55,6 +56,11 @@ export const CheckoutScreen: React.FC = () => {
     // Stripe Connect WebView state
     const [showStripeWebView, setShowStripeWebView] = useState(false);
     const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState<string | null>(null);
+    
+    // PayPal Smart Button WebView state
+    const [showPaypalWebView, setShowPaypalWebView] = useState(false);
+    const [paypalApprovalUrl, setPaypalApprovalUrl] = useState<string | null>(null);
+    const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
 
     useEffect(() => {
         // Redirect if not authenticated
@@ -261,6 +267,20 @@ export const CheckoutScreen: React.FC = () => {
             // Handle redirect URL (for payment methods that require external payment)
             if (response.redirect_url) {
                 console.log('[CheckoutScreen] Redirect URL detected:', response.redirect_url);
+                
+                // Check if it's PayPal Smart Button (paypal.com URL)
+                const isPaypalSmartButton = response.redirect_url.includes('paypal.com') && 
+                                           response.paypal_order_id;
+                
+                if (isPaypalSmartButton) {
+                    // For PayPal Smart Button, show WebView to complete payment
+                    setPaypalApprovalUrl(response.redirect_url);
+                    setPaypalOrderId(response.paypal_order_id);
+                    setShowPaypalWebView(true);
+                    setIsProcessing(false);
+                    return;
+                }
+                
                 // Check if it's Stripe Connect (checkout.stripe.com URL)
                 const isStripeConnect = response.redirect_url.includes('checkout.stripe.com') || 
                                        response.redirect_url.includes('stripe.com');
@@ -363,6 +383,34 @@ export const CheckoutScreen: React.FC = () => {
         // Error toast is already shown in WebView component
     };
 
+    const handlePaypalSuccess = async (orderId: number) => {
+        // Close WebView
+        setShowPaypalWebView(false);
+        setPaypalApprovalUrl(null);
+        setPaypalOrderId(null);
+        
+        // Clear cart
+        await dispatch(fetchCartThunk()).unwrap();
+        
+        // Navigate to order success screen
+        router.replace(`/order-success/${orderId}`);
+    };
+
+    const handlePaypalCancel = () => {
+        setShowPaypalWebView(false);
+        setPaypalApprovalUrl(null);
+        setPaypalOrderId(null);
+        setIsProcessing(false);
+    };
+
+    const handlePaypalError = (error: string) => {
+        setShowPaypalWebView(false);
+        setPaypalApprovalUrl(null);
+        setPaypalOrderId(null);
+        setIsProcessing(false);
+        // Error toast is already shown in WebView component
+    };
+
     const markStepComplete = (step: CheckoutStep) => {
         if (!completedSteps.includes(step)) {
             setCompletedSteps([...completedSteps, step]);
@@ -445,6 +493,18 @@ export const CheckoutScreen: React.FC = () => {
                     onSuccess={handleStripeSuccess}
                     onCancel={handleStripeCancel}
                     onError={handleStripeError}
+                />
+            )}
+            
+            {/* PayPal Smart Button WebView Modal */}
+            {paypalApprovalUrl && paypalOrderId && (
+                <PaypalSmartButtonWebView
+                    visible={showPaypalWebView}
+                    approvalUrl={paypalApprovalUrl}
+                    paypalOrderId={paypalOrderId}
+                    onSuccess={handlePaypalSuccess}
+                    onCancel={handlePaypalCancel}
+                    onError={handlePaypalError}
                 />
             )}
         </View>

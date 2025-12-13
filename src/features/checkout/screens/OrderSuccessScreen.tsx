@@ -4,13 +4,14 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { ordersApi, Order } from '@/services/api/orders.api';
 import { formatters } from '@/shared/utils/formatters';
+import { OxxoVoucherWebView } from '../components/OxxoVoucherWebView';
 
 export const OrderSuccessScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -18,6 +19,7 @@ export const OrderSuccessScreen: React.FC = () => {
     const { id } = useLocalSearchParams<{ id: string }>();
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showVoucherWebView, setShowVoucherWebView] = useState(false);
 
     useEffect(() => {
         // Redirect to home if no order ID
@@ -61,7 +63,7 @@ export const OrderSuccessScreen: React.FC = () => {
     const handleViewVoucher = () => {
         const voucherUrl = order?.payment?.additional?.voucher_url;
         if (voucherUrl) {
-            Linking.openURL(voucherUrl);
+            setShowVoucherWebView(true);
         }
     };
 
@@ -208,6 +210,15 @@ export const OrderSuccessScreen: React.FC = () => {
                     </View>
                 </View>
             </ScrollView>
+            
+            {/* OXXO Voucher WebView Modal */}
+            {order?.payment?.additional?.voucher_url && (
+                <OxxoVoucherWebView
+                    visible={showVoucherWebView}
+                    voucherUrl={order.payment.additional.voucher_url}
+                    onClose={() => setShowVoucherWebView(false)}
+                />
+            )}
         </>
     );
 };

@@ -13,7 +13,6 @@ import {
     RefreshControl,
     TouchableOpacity,
     Alert,
-    Linking
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +25,7 @@ import { useToast } from '@/shared/components/Toast';
 import { OrderItemCard } from '../components/OrderItemCard';
 import { OrderSummaryCard } from '../components/OrderSummaryCard';
 import { OrderAddressCard } from '../components/OrderAddressCard';
+import { OxxoVoucherWebView } from '@/features/checkout/components/OxxoVoucherWebView';
 
 /**
  * Get status color based on order status
@@ -605,6 +605,7 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
     const { t } = useTranslation();
     const { showToast } = useToast();
     const [isRenewing, setIsRenewing] = useState(false);
+    const [showVoucherWebView, setShowVoucherWebView] = useState(false);
     
     const isExpired = voucher.voucher_expires_at 
         ? new Date(voucher.voucher_expires_at) < new Date()
@@ -616,7 +617,7 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
     
     const handleViewVoucher = () => {
         if (voucher.voucher_url) {
-            Linking.openURL(voucher.voucher_url);
+            setShowVoucherWebView(true);
         }
     };
     
@@ -722,6 +723,15 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
                         {t('orders.oxxo.viewVoucher', 'View Voucher')}
                     </Text>
                 </TouchableOpacity>
+            )}
+            
+            {/* OXXO Voucher WebView Modal */}
+            {voucher.voucher_url && (
+                <OxxoVoucherWebView
+                    visible={showVoucherWebView}
+                    voucherUrl={voucher.voucher_url}
+                    onClose={() => setShowVoucherWebView(false)}
+                />
             )}
         </View>
     );
