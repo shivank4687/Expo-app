@@ -21,6 +21,7 @@ function AppContent() {
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
 
   useEffect(() => {
+    console.log('Initializing core config...');
     // Initialize core config (locale, currency, channels) on app start
     dispatch(fetchCoreConfig());
     // Check both customer and supplier authentication status

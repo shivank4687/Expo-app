@@ -40,6 +40,7 @@ export const checkAuthThunk = createAsyncThunk(
     'auth/checkAuth',
     async (_, { rejectWithValue }) => {
         try {
+            console.log('Checking auth...');
             const token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
             const userData = await secureStorage.getItem(STORAGE_KEYS.USER_DATA);
 

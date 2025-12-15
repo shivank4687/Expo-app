@@ -60,7 +60,7 @@ export const SupplierShopScreen: React.FC = () => {
     const [isContactModalVisible, setIsContactModalVisible] = useState(false);
     const [isMessageModalVisible, setIsMessageModalVisible] = useState(false);
     const [isReportModalVisible, setIsReportModalVisible] = useState(false);
-    
+
     // Quick Order state
     const [quickOrderSearch, setQuickOrderSearch] = useState('');
     const [quickOrderQuantity, setQuickOrderQuantity] = useState('1');
@@ -88,11 +88,11 @@ export const SupplierShopScreen: React.FC = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLoadingCart, setIsLoadingCart] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
-    
+
     // Refs to manage search timeout and prevent search on product selection
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isSelectingProductRef = useRef(false);
-    
+
     // Use Redux cart state instead of local state
     const cart = reduxCart;
 
@@ -118,7 +118,7 @@ export const SupplierShopScreen: React.FC = () => {
         setIsLoadingProducts(true);
         try {
             const response = await suppliersApi.getSupplierProducts(url, page, 20);
-            
+
             if (append) {
                 setProducts((prev) => [...prev, ...response.data]);
             } else {
@@ -136,7 +136,7 @@ export const SupplierShopScreen: React.FC = () => {
 
     const loadCart = useCallback(async () => {
         if (!isAuthenticated) return;
-        
+
         setIsLoadingCart(true);
         try {
             // Dispatch Redux action to update global cart state
@@ -264,7 +264,7 @@ export const SupplierShopScreen: React.FC = () => {
 
         // Parse quantity and validate it's greater than 0
         const quantity = parseInt(quickOrderQuantity, 10);
-        
+
         if (!quickOrderQuantity || quickOrderQuantity.trim() === '' || isNaN(quantity) || quantity <= 0) {
             showToast({
                 message: t('supplier.quickOrder.invalidQuantity', 'Please enter a valid quantity greater than 0'),
@@ -304,12 +304,12 @@ export const SupplierShopScreen: React.FC = () => {
         } catch (error: any) {
             // Extract error message from API response
             // API returns 400 with { success: false, message: "..." } in error.response.data
-            const errorMessage = 
-                error.response?.data?.message || 
-                error.response?.data?.error || 
-                error.message || 
+            const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message ||
                 t('supplier.quickOrder.addError', 'Failed to add product to cart');
-            
+
             showToast({
                 message: errorMessage,
                 type: 'error',
@@ -326,7 +326,7 @@ export const SupplierShopScreen: React.FC = () => {
     const handleRemoveCartItem = async (cartItemId: number) => {
         try {
             await cartApi.removeFromCart(cartItemId);
-            
+
             showToast({
                 message: t('supplier.quickOrder.removed', 'Item removed from cart'),
                 type: 'success',
@@ -396,7 +396,7 @@ export const SupplierShopScreen: React.FC = () => {
                             </View>
                         )}
                     </View>
-                    
+
                     {supplier.address1 && (
                         <Text style={styles.address}>
                             {supplier.address1}
@@ -581,7 +581,7 @@ export const SupplierShopScreen: React.FC = () => {
                                 <Text style={styles.aboutSectionHeading}>
                                     {currentSection.label}
                                 </Text>
-                                
+
                                 {/* Section Content */}
                                 <View style={styles.aboutSectionContent}>
                                     {currentSection.key === 'about-us' && currentSection.content ? (
@@ -615,19 +615,19 @@ export const SupplierShopScreen: React.FC = () => {
 
     const getInitials = (name: string | undefined | null): string => {
         if (!name || typeof name !== 'string') return '?';
-        
+
         const trimmedName = name.trim();
         if (!trimmedName) return '?';
-        
+
         const nameParts = trimmedName.split(' ').filter(part => part.length > 0);
         if (nameParts.length === 0) return '?';
-        
+
         // Get first character of first name
         const firstInitial = nameParts[0].charAt(0).toUpperCase();
-        
+
         // Get first character of last name if available
         const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0).toUpperCase() : '';
-        
+
         return firstInitial + lastInitial;
     };
 
@@ -698,9 +698,9 @@ export const SupplierShopScreen: React.FC = () => {
                                                             ))}
                                                         </View>
                                                     </View>
-                                                    
+
                                                     <Text style={styles.reviewComment}>{review.comment}</Text>
-                                                    
+
                                                     <Text style={styles.reviewAuthor}>
                                                         {review.customer_name ? (
                                                             <>
@@ -751,7 +751,7 @@ export const SupplierShopScreen: React.FC = () => {
         return (
             <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
                 <View style={styles.quickOrderContainer}>
-                    
+
 
                     {/* Product Search */}
                     <View style={styles.quickOrderSearchContainer}>
@@ -759,9 +759,9 @@ export const SupplierShopScreen: React.FC = () => {
                             {t('supplier.quickOrder.productName', 'Product Name')}
                         </Text>
                         <View style={styles.quickOrderSearchWrapper}>
-                            <Ionicons 
-                                name="search-outline" 
-                                size={20} 
+                            <Ionicons
+                                name="search-outline"
+                                size={20}
                                 color={theme.colors.text.secondary}
                                 style={styles.searchIcon}
                             />
@@ -805,10 +805,10 @@ export const SupplierShopScreen: React.FC = () => {
                                                 {item.formated_price}
                                             </Text>
                                         </View>
-                                        <Ionicons 
-                                            name="chevron-forward-outline" 
-                                            size={20} 
-                                            color={theme.colors.text.secondary} 
+                                        <Ionicons
+                                            name="chevron-forward-outline"
+                                            size={20}
+                                            color={theme.colors.text.secondary}
                                         />
                                     </TouchableOpacity>
                                 ))}
@@ -840,20 +840,20 @@ export const SupplierShopScreen: React.FC = () => {
                         <TouchableOpacity
                             style={[
                                 styles.addToCartButton,
-                                (!selectedProduct || 
-                                isAddingToCart || 
-                                !quickOrderQuantity || 
-                                quickOrderQuantity.trim() === '' || 
-                                isNaN(parseInt(quickOrderQuantity, 10)) || 
-                                parseInt(quickOrderQuantity, 10) <= 0) && styles.addToCartButtonDisabled
+                                (!selectedProduct ||
+                                    isAddingToCart ||
+                                    !quickOrderQuantity ||
+                                    quickOrderQuantity.trim() === '' ||
+                                    isNaN(parseInt(quickOrderQuantity, 10)) ||
+                                    parseInt(quickOrderQuantity, 10) <= 0) && styles.addToCartButtonDisabled
                             ]}
                             onPress={handleAddToCart}
                             disabled={
-                                !selectedProduct || 
-                                isAddingToCart || 
-                                !quickOrderQuantity || 
-                                quickOrderQuantity.trim() === '' || 
-                                isNaN(parseInt(quickOrderQuantity, 10)) || 
+                                !selectedProduct ||
+                                isAddingToCart ||
+                                !quickOrderQuantity ||
+                                quickOrderQuantity.trim() === '' ||
+                                isNaN(parseInt(quickOrderQuantity, 10)) ||
                                 parseInt(quickOrderQuantity, 10) <= 0
                             }
                         >
@@ -861,10 +861,10 @@ export const SupplierShopScreen: React.FC = () => {
                                 <ActivityIndicator size="small" color={theme.colors.primary[500]} />
                             ) : (
                                 <>
-                                    <Ionicons 
-                                        name="cart-outline" 
-                                        size={18} 
-                                        color={theme.colors.primary[500]} 
+                                    <Ionicons
+                                        name="cart-outline"
+                                        size={18}
+                                        color={theme.colors.primary[500]}
                                     />
                                     <Text style={styles.addToCartButtonText}>
                                         {t('supplier.quickOrder.addToCart', 'Add to Cart')}
@@ -885,7 +885,7 @@ export const SupplierShopScreen: React.FC = () => {
                         <Text style={styles.quickOrderSectionTitle}>
                             {t('supplier.quickOrder.cartItems', 'Cart Items')}
                         </Text>
-                        
+
                         {isLoadingCart ? (
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator size="small" color={theme.colors.primary[500]} />
@@ -917,10 +917,10 @@ export const SupplierShopScreen: React.FC = () => {
                                             style={styles.removeButton}
                                             onPress={() => handleRemoveCartItem(item.id)}
                                         >
-                                            <Ionicons 
-                                                name="trash-outline" 
-                                                size={20} 
-                                                color={theme.colors.error.main} 
+                                            <Ionicons
+                                                name="trash-outline"
+                                                size={20}
+                                                color={theme.colors.error.main}
                                             />
                                         </TouchableOpacity>
                                     </View>
@@ -986,7 +986,7 @@ export const SupplierShopScreen: React.FC = () => {
                         <Text style={styles.contactInfoTitle}>
                             {t('supplier.contactInformation', 'Contact Information')}
                         </Text>
-                        
+
                         <View style={styles.contactItem}>
                             <Ionicons name="person-outline" size={20} color={theme.colors.text.secondary} />
                             <Text style={styles.contactLabel}>{t('supplier.name', 'Name')}:</Text>
@@ -1126,7 +1126,7 @@ export const SupplierShopScreen: React.FC = () => {
                 </View>
             </View>
             {renderContent()}
-            
+
             {/* Write Review Modal */}
             {supplier && (
                 <WriteReviewModal

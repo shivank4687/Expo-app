@@ -26,9 +26,9 @@ interface ContentData {
  */
 const CardItem: React.FC<{ card: CardData; cardWidth: number }> = ({ card, cardWidth }) => {
     const cardText = card.text.trim();
-    const hasValidImage = 
-        card.imageUrl && 
-        card.imageUrl.trim().length > 0 && 
+    const hasValidImage =
+        card.imageUrl &&
+        card.imageUrl.trim().length > 0 &&
         !isPlaceholderUrl(card.imageUrl);
 
     return (
@@ -71,13 +71,13 @@ const ContentSection: React.FC<{ content: ContentData }> = ({ content }) => {
                     {content.heading.trim()}
                 </Text>
             ) : null}
-            
+
             {validParagraphs.map((paragraph, index) => (
                 <Text key={`para-${index}`} style={styles.contentText}>
                     {paragraph.trim()}
                 </Text>
             ))}
-            
+
             {hasButton ? (
                 <TouchableOpacity style={styles.button} activeOpacity={0.8}>
                     <Text style={styles.buttonText}>
@@ -116,19 +116,19 @@ export const StaticContent: React.FC<StaticContentProps> = ({ options }) => {
     }
 
     // Detect if this is a home offer banner (title only, no other content)
-    const isOfferBanner = 
-        hasTitle && 
-        !hasCards && 
-        !hasMainImage && 
+    const isOfferBanner =
+        hasTitle &&
+        !hasCards &&
+        !hasMainImage &&
         !hasContent &&
-        (options.html.includes('home-offer') || 
-         parsed.title.toLowerCase().includes('off') ||
-         parsed.title.toLowerCase().includes('shop now'));
+        (options.html.includes('home-offer') ||
+            parsed.title.toLowerCase().includes('off') ||
+            parsed.title.toLowerCase().includes('shop now'));
 
     return (
         <View style={isOfferBanner ? styles.offerOnlyContainer : styles.container}>
             {/* Render Title (as banner if it's an offer) */}
-            {hasTitle ? (
+            {!hasMainImage && hasTitle ? (
                 isOfferBanner ? (
                     <View style={styles.offerBannerContainer}>
                         <Text style={styles.offerBannerText}>{parsed.title.trim()}</Text>
@@ -163,7 +163,7 @@ export const StaticContent: React.FC<StaticContentProps> = ({ options }) => {
             ) : null}
 
             {/* Render Content Section */}
-            {hasContent && parsed.content ? (
+            {!hasCards && hasContent && parsed.content ? (
                 <ContentSection content={parsed.content} />
             ) : null}
         </View>
@@ -202,7 +202,7 @@ function parseHTMLContent(html: string): {
 function extractTitle(html: string): string {
     const titleMatch = html.match(/<h[1-3][^>]*>(.*?)<\/h[1-3]>/i);
     if (!titleMatch) return '';
-    
+
     const title = stripHtml(titleMatch[1]);
     return isValidText(title) ? title : '';
 }
@@ -219,11 +219,11 @@ function extractCards(html: string): CardData[] {
     while ((cardMatch = cardPattern.exec(html)) !== null) {
         const rawImageUrl = cardMatch[1];
         if (isPlaceholderUrl(rawImageUrl)) continue;
-        
+
         const processedUrl = getAbsoluteImageUrl(rawImageUrl);
         const imageUrl = typeof processedUrl === 'string' ? processedUrl : '';
         const text = stripHtml(cardMatch[2]);
-        
+
         if (isValidText(text)) {
             cards.push({ imageUrl, text });
         }
@@ -232,18 +232,18 @@ function extractCards(html: string): CardData[] {
     // Extract cards with img tags
     const cardDivPattern = /<div[^>]*class="[^"]*(?:card|collection|category-item)[^"]*"[^>]*>(.*?)<\/div>/gi;
     const cardDivMatches = [...html.matchAll(cardDivPattern)];
-    
+
     for (const match of cardDivMatches) {
         if (cards.length >= 6) break;
-        
+
         const cardHtml = match[1];
         const imgMatch = cardHtml.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i);
         const text = stripHtml(cardHtml);
-        
+
         if (imgMatch && isValidText(text)) {
             const rawImageUrl = imgMatch[1];
             if (isPlaceholderUrl(rawImageUrl)) continue;
-            
+
             const processedUrl = getAbsoluteImageUrl(rawImageUrl);
             const imageUrl = typeof processedUrl === 'string' ? processedUrl : '';
             cards.push({ imageUrl, text });
@@ -259,23 +259,23 @@ function extractCards(html: string): CardData[] {
 function extractMainImage(html: string, existingCardsCount: number): string {
     const imgPattern = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
     const imgMatches = html.match(imgPattern);
-    
+
     if (!imgMatches || imgMatches.length <= existingCardsCount) return '';
-    
+
     for (let i = existingCardsCount; i < imgMatches.length; i++) {
         const srcMatch = imgMatches[i].match(/src=["']([^"']+)["']/i);
         if (!srcMatch) continue;
-        
+
         const rawImageUrl = srcMatch[1];
         if (isPlaceholderUrl(rawImageUrl)) continue;
-        
+
         const processedUrl = getAbsoluteImageUrl(rawImageUrl);
         const imageUrl = typeof processedUrl === 'string' ? processedUrl : '';
         if (imageUrl && imageUrl.trim()) {
             return imageUrl;
         }
     }
-    
+
     return '';
 }
 
@@ -286,24 +286,24 @@ function extractContent(html: string): ContentData | null {
     // Try to extract structured content sections
     const contentSectionPattern = /<(?:div|section)[^>]*>([\s\S]*?)<\/(?:div|section)>/gi;
     const contentMatches = [...html.matchAll(contentSectionPattern)];
-    
+
     for (const match of contentMatches) {
         const sectionHtml = match[1];
         const hasHeading = /<h[2-6]/i.test(sectionHtml);
         const hasParagraph = /<p/i.test(sectionHtml);
-        
+
         if (hasHeading && hasParagraph) {
             const headingMatch = sectionHtml.match(/<h[2-6][^>]*>(.*?)<\/h[2-6]>/i);
             const heading = headingMatch ? stripHtml(headingMatch[1]).trim() : '';
-            
+
             const paragraphMatches = sectionHtml.match(/<p[^>]*>(.*?)<\/p>/gi);
             const paragraphs = paragraphMatches
                 ? paragraphMatches.map(p => stripHtml(p)).filter(p => isValidText(p))
                 : [];
-            
+
             const buttonMatch = sectionHtml.match(/<(?:a|button)[^>]*>(.*?)<\/(?:a|button)>/i);
             const buttonText = buttonMatch ? stripHtml(buttonMatch[1]).trim() : '';
-            
+
             if (isValidText(heading) || paragraphs.length > 0) {
                 return { heading, paragraphs, buttonText };
             }
@@ -314,15 +314,15 @@ function extractContent(html: string): ContentData | null {
     if (html.toLowerCase().includes('collection')) {
         const allText = stripHtml(html);
         if (!isValidText(allText) || allText.length <= 10) return null;
-        
+
         const lines = allText.split(/[.!?]\s+/).map(l => l.trim()).filter(isValidText);
         const heading = lines[0] || '';
         const paragraphs = lines.slice(1).filter(line => line.length > 20);
-        
+
         const buttonPattern = /\b(view|shop|explore|discover|learn more|get started|buy now|order now|see more)\b[^.!?]*/i;
         const buttonMatch = allText.match(buttonPattern);
         const buttonText = buttonMatch ? buttonMatch[0].trim() : '';
-        
+
         if (isValidText(heading) || paragraphs.length > 0) {
             return { heading, paragraphs, buttonText };
         }
@@ -354,7 +354,7 @@ function isPlaceholderUrl(url: string): boolean {
  */
 function stripHtml(html: string): string {
     if (!html || typeof html !== 'string') return '';
-    
+
     let result = html
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -375,12 +375,12 @@ function stripHtml(html: string): string {
         .replace(/^\.\s*/g, '')
         .replace(/\s*\.\s*$/g, '')
         .trim();
-    
+
     // Return empty string if only punctuation/whitespace
     if (/^[.,;:!?\s]+$/.test(result)) {
         return '';
     }
-    
+
     return result;
 }
 
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     offerOnlyContainer: {
         marginBottom: theme.spacing.lg,
     },
-    
+
     // Offer Banner (e.g., "Get UPTO 40% OFF")
     offerBannerContainer: {
         width: '100%',
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
         lineHeight: 24,
     },
-    
+
     // Main Title (for section headers)
     mainTitle: {
         fontSize: 24,
@@ -419,16 +419,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.md,
         letterSpacing: 0.3,
     },
-    
+
     // Cards Grid Container (uses flexbox without gap)
     cardsGridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         paddingHorizontal: theme.spacing.md,
         marginBottom: theme.spacing.lg,
+        justifyContent: 'space-between',
     },
     cardWrapper: {
-        paddingRight: theme.spacing.md,
         paddingBottom: theme.spacing.md,
     },
     cardItem: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 18,
     },
-    
+
     // Main Image
     mainImageContainer: {
         marginHorizontal: theme.spacing.md,
@@ -476,10 +476,10 @@ const styles = StyleSheet.create({
     },
     mainImage: {
         width: '100%',
-        height: 200,
+        height: 300,
         backgroundColor: theme.colors.gray[100],
     },
-    
+
     // Content Section
     contentSection: {
         paddingHorizontal: theme.spacing.lg,
