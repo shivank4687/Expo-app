@@ -7,9 +7,11 @@ import {
     StaticContentOptions,
     CategoryCarouselOptions,
     ProductCarouselOptions,
+    ServicesContentOptions,
 } from '@/types/theme.types';
 import { ImageCarousel } from './ImageCarousel';
 import { StaticContent } from './StaticContent';
+import { ServicesContent } from './ServicesContent';
 import { CategoryCarouselCustomization } from './CategoryCarouselCustomization';
 import { ProductCarouselCustomization } from './ProductCarouselCustomization';
 
@@ -54,9 +56,15 @@ export const ThemeCustomization: React.FC<ThemeCustomizationProps> = ({
                 />
             );
 
-        // FOOTER_LINKS and SERVICES_CONTENT are typically not used on mobile home screen
-        case CustomizationType.FOOTER_LINKS:
         case CustomizationType.SERVICES_CONTENT:
+            return (
+                <ServicesContent
+                    options={customization.options as ServicesContentOptions}
+                />
+            );
+
+        // FOOTER_LINKS are typically not used on mobile home screen
+        case CustomizationType.FOOTER_LINKS:
             return null;
 
         default:
@@ -64,4 +72,3 @@ export const ThemeCustomization: React.FC<ThemeCustomizationProps> = ({
             return null;
     }
 };
-

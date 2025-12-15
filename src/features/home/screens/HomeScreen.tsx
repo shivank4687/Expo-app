@@ -62,6 +62,15 @@ export const HomeScreen: React.FC = () => {
         );
     }
 
+    const mainCustomizations = customizations.filter(
+        c => c.type !== 'services_content' as any
+    );
+
+    // Find services content to render at the bottom
+    const servicesCustomization = customizations.find(
+        c => c.type === 'services_content' as any
+    );
+
     return (
         <ScrollView
             style={styles.container}
@@ -70,12 +79,20 @@ export const HomeScreen: React.FC = () => {
                 <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
             }
         >
-            {customizations.map((customization) => (
+            {mainCustomizations.map((customization) => (
                 <ThemeCustomization
                     key={customization.id}
                     customization={customization}
                 />
             ))}
+
+            {/* Render Services Content at the bottom */}
+            {servicesCustomization && (
+                <ThemeCustomization
+                    key={servicesCustomization.id}
+                    customization={servicesCustomization}
+                />
+            )}
         </ScrollView>
     );
 };

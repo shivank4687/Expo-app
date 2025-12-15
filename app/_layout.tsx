@@ -13,6 +13,9 @@ import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
 import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
 
+// Track if app has been initialized (outside component to persist across all instances)
+let appInitialized = false;
+
 function AppContent() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -20,14 +23,19 @@ function AppContent() {
   const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
 
-  useEffect(() => {
-    console.log('Initializing core config...');
-    // Initialize core config (locale, currency, channels) on app start
-    dispatch(fetchCoreConfig());
-    // Check both customer and supplier authentication status
-    dispatch(checkAuthThunk());
-    dispatch(checkSupplierAuthThunk());
-  }, [dispatch]);
+
+
+
+
+  // useEffect(() => {
+
+
+  //   // Initialize core config (locale, currency, channels) on app start
+  //   dispatch(fetchCoreConfig());
+  //   // Check both customer and supplier authentication status
+  //   dispatch(checkAuthThunk());
+  //   dispatch(checkSupplierAuthThunk());
+  // }, [dispatch]);
 
   // Load wishlist when customer is authenticated
   useEffect(() => {
@@ -73,21 +81,21 @@ function AppContent() {
         <Stack.Screen name="(supplier-drawer)" options={{ headerShown: false }} />
         <Stack.Screen
           name="login"
-          options={{ 
+          options={{
             title: "Login",
             headerBackTitle: "Back",
           }}
         />
         <Stack.Screen
           name="signup"
-          options={{ 
+          options={{
             title: "Sign Up",
             headerBackTitle: "Back",
           }}
         />
         <Stack.Screen
           name="otp-verification"
-          options={{ 
+          options={{
             title: "Verify OTP",
             headerBackTitle: "Back",
           }}
@@ -148,6 +156,20 @@ function AppContent() {
 }
 
 export default function RootLayout() {
+  // Initialize app once after persistor rehydrates
+  const handleBeforeLift = () => {
+    if (!appInitialized) {
+      console.log('✨ Initializing app after rehydration...');
+      appInitialized = true;
+
+      // Initialize core config (locale, currency, channels) on app start
+      store.dispatch(fetchCoreConfig());
+      // Check both customer and supplier authentication status
+      store.dispatch(checkAuthThunk());
+      store.dispatch(checkSupplierAuthThunk());
+    }
+  };
+
   return (
     <Provider store={store}>
       <PersistGate
@@ -159,6 +181,7 @@ export default function RootLayout() {
           </View>
         }
         persistor={persistor}
+        onBeforeLift={handleBeforeLift}
       >
         <AppContent />
       </PersistGate>

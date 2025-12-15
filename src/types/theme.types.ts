@@ -37,6 +37,16 @@ export interface ProductCarouselOptions {
     filters?: Record<string, any>;
 }
 
+export interface ServiceItem {
+    title: string;
+    description: string;
+    service_icon: string;
+}
+
+export interface ServicesContentOptions {
+    services?: ServiceItem[];
+}
+
 export interface ThemeCustomization {
     id: number;
     type: ThemeCustomizationType;
@@ -45,7 +55,7 @@ export interface ThemeCustomization {
     status: number;
     channel_id: number;
     theme_code: string;
-    options: ImageCarouselOptions | StaticContentOptions | CategoryCarouselOptions | ProductCarouselOptions;
+    options: ImageCarouselOptions | StaticContentOptions | CategoryCarouselOptions | ProductCarouselOptions | ServicesContentOptions;
     created_at?: string;
     updated_at?: string;
 }

@@ -447,7 +447,23 @@ export const SupplierShopScreen: React.FC = () => {
     };
 
     const renderRFQButton = () => {
-        if (!supplier || !isAuthenticated) return null;
+        if (!supplier) return null;
+
+        if (!isAuthenticated) {
+            return (
+                <View style={styles.rfqButtonContainer}>
+                    <Button
+                        title={t('supplier.loginForRFQ', 'Login for RFQ')}
+                        onPress={() => {
+                            router.push('/login');
+                        }}
+                        icon={<Ionicons name="log-in-outline" size={18} color={theme.colors.white} />}
+                        fullWidth
+                        style={styles.rfqButton}
+                    />
+                </View>
+            );
+        }
 
         return (
             <View style={styles.rfqButtonContainer}>
@@ -739,6 +755,11 @@ export const SupplierShopScreen: React.FC = () => {
                         <Text style={styles.emptyText}>
                             {t('supplier.quickOrder.loginRequired', 'Please login to use Quick Order')}
                         </Text>
+                        <Button
+                            title={t('auth.login', 'Login')}
+                            onPress={() => router.push('/login')}
+                            style={{ marginTop: theme.spacing.md, minWidth: 120 }}
+                        />
                     </View>
                 </View>
             );

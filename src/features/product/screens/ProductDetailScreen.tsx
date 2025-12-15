@@ -67,7 +67,7 @@ export const ProductDetailScreen: React.FC = () => {
             setError(null);
             const data = await productsApi.getProductById(Number(id));
             setProduct(data);
-            
+
             // If configurable product, fetch configuration data
             if (data.type === 'configurable') {
                 try {
@@ -91,28 +91,28 @@ export const ProductDetailScreen: React.FC = () => {
 
         // Check if user is authenticated
         if (!isAuthenticated) {
-            showToast({ 
-                message: 'Please login first to add items to wishlist', 
-                type: 'warning' 
+            showToast({
+                message: 'Please login first to add items to wishlist',
+                type: 'warning'
             });
             return;
         }
 
         setIsTogglingWishlist(true);
-        
+
         try {
             await dispatch(toggleWishlistThunk(product.id)).unwrap();
             await dispatch(fetchWishlistThunk()).unwrap();
-            
-            const message = isInWishlist 
+
+            const message = isInWishlist
                 ? `${product.name} removed from wishlist`
                 : `${product.name} added to wishlist!`;
-            
+
             showToast({ message, type: 'success' });
         } catch (error: any) {
-            showToast({ 
-                message: error || 'Failed to update wishlist', 
-                type: 'error' 
+            showToast({
+                message: error || 'Failed to update wishlist',
+                type: 'error'
             });
         } finally {
             setIsTogglingWishlist(false);
@@ -146,15 +146,15 @@ export const ProductDetailScreen: React.FC = () => {
             }
 
             await dispatch(addToCartThunk(cartData)).unwrap();
-            
-            showToast({ 
-                message: `${product.name} added to cart!`, 
-                type: 'success' 
+
+            showToast({
+                message: `${product.name} added to cart!`,
+                type: 'success'
             });
         } catch (error: any) {
-            showToast({ 
-                message: error || 'Failed to add to cart', 
-                type: 'error' 
+            showToast({
+                message: error || 'Failed to add to cart',
+                type: 'error'
             });
         } finally {
             setIsAddingToCart(false);
@@ -185,9 +185,9 @@ export const ProductDetailScreen: React.FC = () => {
     const displayPrice = selectedVariantPrice ?? product.price;
     const displayRegularPrice = selectedVariantRegularPrice ?? product.regular_price;
     const hasDiscount = product.on_sale || (displayRegularPrice && displayRegularPrice > displayPrice);
-    
+
     console.log('💵 Display price:', displayPrice, 'selectedVariantPrice:', selectedVariantPrice, 'product.price:', product.price);
-    
+
     const showQuantityBox = product.type !== 'grouped' && product.type !== 'bundle';
     const canAddToCart = product.is_saleable !== false && product.in_stock;
 
@@ -198,24 +198,24 @@ export const ProductDetailScreen: React.FC = () => {
     } else if (product.type === 'grouped') {
         priceLabel = 'Starting at';
     }
-    
+
     // Use variant images if available, otherwise use product images
     const displayImages = variantImages && variantImages.length > 0 ? variantImages : product.images;
-    
+
     console.log('🖼️ Display images count:', displayImages?.length, 'variantImages:', variantImages?.length, 'product.images:', product.images?.length);
 
     return (
         <View style={styles.container}>
-            <Stack.Screen 
-                options={{ 
+            <Stack.Screen
+                options={{
                     title: product.name,
                     headerBackTitle: 'Back',
-                }} 
+                }}
             />
-            
+
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Image Gallery */}
-                <ProductGallery 
+                <ProductGallery
                     images={displayImages}
                     isOnSale={!!(product.on_sale || hasDiscount)}
                     isNew={!!(product.is_new || product.new === true || product.new === 1)}
@@ -229,7 +229,7 @@ export const ProductDetailScreen: React.FC = () => {
                         <View style={styles.titleContainer}>
                             <Text style={styles.name}>{product.name}</Text>
                         </View>
-                        
+
                         {/* Wishlist Button */}
                         <TouchableOpacity
                             style={styles.wishlistButton}
@@ -273,7 +273,7 @@ export const ProductDetailScreen: React.FC = () => {
                             {priceLabel ? (
                                 <Text style={styles.priceLabel}>{priceLabel}</Text>
                             ) : null}
-                            
+
                             <View style={styles.priceContainer}>
                                 {hasDiscount ? (
                                     <>
@@ -339,8 +339,8 @@ export const ProductDetailScreen: React.FC = () => {
                     {/* Short Description */}
                     {product.short_description ? (
                         <View style={styles.shortDescriptionContainer}>
-                            <HTMLContent 
-                                html={product.short_description} 
+                            <HTMLContent
+                                html={product.short_description}
                                 baseStyle={styles.htmlContent}
                             />
                         </View>
@@ -373,13 +373,13 @@ export const ProductDetailScreen: React.FC = () => {
 
                     {/* Description Accordion */}
                     {product.description ? (
-                        <Accordion 
-                            title="Description" 
+                        <Accordion
+                            title="Description"
                             defaultExpanded={false}
                             style={styles.accordion}
                         >
-                            <HTMLContent 
-                                html={product.description} 
+                            <HTMLContent
+                                html={product.description}
                                 baseStyle={styles.htmlContent}
                             />
                         </Accordion>
@@ -387,8 +387,8 @@ export const ProductDetailScreen: React.FC = () => {
 
                     {/* Sold By Accordion */}
                     {product.supplier ? (
-                        <Accordion 
-                            title="Sold By" 
+                        <Accordion
+                            title="Sold By"
                             defaultExpanded={false}
                             style={styles.accordion}
                         >
@@ -405,10 +405,10 @@ export const ProductDetailScreen: React.FC = () => {
                                         });
                                     }}
                                 > */}
-                                    <Text style={styles.supplierName}>
-                                        {product.supplier.company_name}
-                                    </Text>
-                                    {/* <Ionicons 
+                                <Text style={styles.supplierName}>
+                                    {product.supplier.company_name}
+                                </Text>
+                                {/* <Ionicons 
                                         name="chevron-forward" 
                                         size={20} 
                                         color={theme.colors.text.secondary} 
@@ -429,8 +429,8 @@ export const ProductDetailScreen: React.FC = () => {
                                             ))}
                                         </View>
                                         <Text style={styles.supplierRatingText}>
-                                            {product.supplier.rating.toFixed(1)} 
-                                            {product.supplier.total_reviews 
+                                            {product.supplier.rating.toFixed(1)}
+                                            {product.supplier.total_reviews
                                                 ? ` (${product.supplier.total_reviews} ${product.supplier.total_reviews === 1 ? 'review' : 'reviews'})`
                                                 : ''
                                             }
@@ -439,15 +439,15 @@ export const ProductDetailScreen: React.FC = () => {
                                 ) : null}
 
                                 {/* View Supplier Shop Button */}
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.viewSupplierButton}
                                     onPress={() => {
                                         if (product.supplier?.url) {
                                             router.push(`/supplier/${product.supplier.url}`);
                                         } else {
-                                            showToast({ 
-                                                message: 'Supplier shop URL not available', 
-                                                type: 'warning' 
+                                            showToast({
+                                                message: 'Supplier shop URL not available',
+                                                type: 'warning'
                                             });
                                         }
                                     }}
@@ -455,31 +455,31 @@ export const ProductDetailScreen: React.FC = () => {
                                     <Text style={styles.viewSupplierButtonText}>
                                         View Supplier Shop
                                     </Text>
-                                    <Ionicons 
-                                        name="storefront-outline" 
-                                        size={18} 
-                                        color={theme.colors.primary[500]} 
+                                    <Ionicons
+                                        name="storefront-outline"
+                                        size={18}
+                                        color={theme.colors.primary[500]}
                                     />
                                 </TouchableOpacity>
 
                                 {/* Message Supplier Button */}
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.messageSupplierButton}
                                     onPress={() => {
                                         if (!isAuthenticated) {
-                                            showToast({ 
-                                                message: 'Please login to message supplier', 
-                                                type: 'warning' 
+                                            showToast({
+                                                message: 'Please login to message supplier',
+                                                type: 'warning'
                                             });
                                             return;
                                         }
                                         setIsMessageModalVisible(true);
                                     }}
                                 >
-                                    <Ionicons 
-                                        name="chatbubble-outline" 
-                                        size={18} 
-                                        color={theme.colors.primary[500]} 
+                                    <Ionicons
+                                        name="chatbubble-outline"
+                                        size={18}
+                                        color={theme.colors.primary[500]}
                                     />
                                     <Text style={styles.messageSupplierButtonText}>
                                         Message Supplier
@@ -497,9 +497,9 @@ export const ProductDetailScreen: React.FC = () => {
                             supplierCompanyName={product.supplier.company_name}
                             onClose={() => setIsMessageModalVisible(false)}
                             onSuccess={() => {
-                                showToast({ 
-                                    message: 'Message sent successfully!', 
-                                    type: 'success' 
+                                showToast({
+                                    message: 'Message sent successfully!',
+                                    type: 'success'
                                 });
                             }}
                         />
@@ -527,18 +527,33 @@ export const ProductDetailScreen: React.FC = () => {
                     {/* Action Buttons Container */}
                     <View style={styles.actionButtonsContainer}>
                         {/* RFQ Button */}
-                        {product?.supplier?.id && isAuthenticated && (
-                            <TouchableOpacity
-                                style={styles.rfqButton}
-                                onPress={() => {
-                                    router.push(`/rfq/${product.supplier!.id}`);
-                                }}
-                            >
-                                <Ionicons name="document-text-outline" size={18} color={theme.colors.primary[500]} />
-                                <Text style={styles.rfqButtonText}>
-                                    Request for Quote
-                                </Text>
-                            </TouchableOpacity>
+                        {/* RFQ Button */}
+                        {product?.supplier?.id && (
+                            isAuthenticated ? (
+                                <TouchableOpacity
+                                    style={styles.rfqButton}
+                                    onPress={() => {
+                                        router.push(`/rfq/${product.supplier!.id}`);
+                                    }}
+                                >
+                                    <Ionicons name="document-text-outline" size={18} color={theme.colors.primary[500]} />
+                                    <Text style={styles.rfqButtonText}>
+                                        Request for Quote
+                                    </Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.rfqButton}
+                                    onPress={() => {
+                                        router.push('/login');
+                                    }}
+                                >
+                                    <Ionicons name="log-in-outline" size={18} color={theme.colors.primary[500]} />
+                                    <Text style={styles.rfqButtonText}>
+                                        Login for RFQ
+                                    </Text>
+                                </TouchableOpacity>
+                            )
                         )}
 
                         {/* Add to Cart Button */}
