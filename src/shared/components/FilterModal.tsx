@@ -29,20 +29,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
 
-    useEffect(() => {
-        // Only load filters once when modal first becomes visible
-        // Don't reload on subsequent opens unless categoryId changes
-        if (visible && !hasLoaded) {
-            loadFilters();
-        }
-    }, [visible, hasLoaded]);
-
-    // Reset hasLoaded when categoryId changes to reload filters for new category
-    useEffect(() => {
-        setHasLoaded(false);
-    }, [categoryId]);
-
-    const loadFilters = async () => {
+    const loadFilters = React.useCallback(async () => {
         try {
             setIsLoading(true);
             const [filtersData, maxPriceData] = await Promise.all([
@@ -57,7 +44,20 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [categoryId]);
+
+    useEffect(() => {
+        // Only load filters once when modal first becomes visible
+        // Don't reload on subsequent opens unless categoryId changes
+        if (visible && !hasLoaded) {
+            loadFilters();
+        }
+    }, [visible, hasLoaded, loadFilters]);
+
+    // Reset hasLoaded when categoryId changes to reload filters for new category
+    useEffect(() => {
+        setHasLoaded(false);
+    }, [categoryId]);
 
     const handlePriceChange = (min: number, max: number) => {
         setFilters({
