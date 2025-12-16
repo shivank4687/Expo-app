@@ -27,21 +27,21 @@ export interface Product {
     on_sale?: boolean; // Product is on sale (has special price)
     is_new?: boolean; // Alternative field name for "new" status
     categories?: Category[];
-    
+
     // For configurable products
     variants?: ProductVariant[];
     configurable_attributes?: ConfigurableAttribute[];
     super_attributes?: ConfigurableAttribute[]; // Alternative field name from API
-    
+
     // For grouped products
     grouped_products?: GroupedProduct[];
-    
+
     // For bundle products
     bundle_options?: BundleOption[];
-    
+
     // For downloadable products
     downloadable_links?: DownloadableLink[];
-    
+
     // B2B Marketplace supplier information
     supplier?: SupplierInfo;
 }
@@ -154,8 +154,14 @@ export interface ProductFilters {
     search?: string;
     name?: string;
     featured?: number;
+    new?: number;
     sort_by?: 'price' | 'name' | 'created_at';
     sort_order?: 'asc' | 'desc';
+    sort?: string; // Combined sort parameter (e.g., 'price-asc', 'name-desc')
     page?: number;
     per_page?: number;
+    locale?: string;
+    price?: string; // Price range filter in "min,max" format
+    // Dynamic attribute filters (e.g., color, brand, size)
+    [key: string]: any; // Allow dynamic filter keys from API
 }

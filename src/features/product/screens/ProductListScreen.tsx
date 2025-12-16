@@ -6,8 +6,13 @@ import { Product } from '@/features/product/types/product.types';
 import { ProductCard } from '@/features/home/components/ProductCard';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
+import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
+import { SortModal } from '@/shared/components/SortModal';
+import { FilterModal } from '@/shared/components/FilterModal';
 import { theme } from '@/theme';
 import { useAppSelector } from '@/store/hooks';
+import { FilterState } from '@/types/filters.types';
+import { SORT_OPTIONS } from '@/constants/sortOptions';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -28,13 +33,22 @@ export const ProductListScreen: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
 
+    // Filter and sort state
+    const [sortBy, setSortBy] = useState<string>('');
+    const [filters, setFilters] = useState<FilterState>({
+        price: null,
+        attributes: {},
+    });
+    const [isSortModalVisible, setIsSortModalVisible] = useState(false);
+    const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+
     // Use refs to track loading state to prevent duplicate requests
     const isLoadingRef = useRef(false);
     const isLoadingMoreRef = useRef(false);
 
     useEffect(() => {
         loadProducts(1, true);
-    }, [params.id, params.featured, params.new, selectedLocale?.code]);
+    }, [params.id, params.featured, params.new, selectedLocale?.code, sortBy, filters]);
 
     const loadProducts = async (page: number, reset: boolean = false, isRefresh: boolean = false) => {
         // Prevent duplicate requests
@@ -59,29 +73,47 @@ export const ProductListScreen: React.FC = () => {
             const categoryId = params.id ? parseInt(params.id) : NaN;
             const isCategoryFilter = !isNaN(categoryId);
 
-            const options = {
+            const options: Record<string, any> = {
                 page,
                 per_page: PRODUCTS_PER_PAGE,
                 locale: selectedLocale?.code,
             };
+
+            // Add sort parameter
+            if (sortBy) {
+                options.sort = sortBy;
+            }
+
+            // Add price filter
+            if (filters.price) {
+                options.price = filters.price;
+            }
+
+            // Add attribute filters
+            Object.keys(filters.attributes).forEach((key) => {
+                const values = filters.attributes[key];
+                if (values && values.length > 0) {
+                    options[key] = values.join(',');
+                }
+            });
 
             if (isCategoryFilter) {
                 // Get products by category
                 response = await productsApi.getProductsByCategory(categoryId, options);
             } else {
                 // Use filters (featured, new, etc.)
-                const filters: Record<string, any> = {
+                const productFilters: Record<string, any> = {
                     ...options,
                 };
 
                 if (params.featured === '1') {
-                    filters.featured = 1;
+                    productFilters.featured = 1;
                 }
                 if (params.new === '1') {
-                    filters.new = 1;
+                    productFilters.new = 1;
                 }
 
-                response = await productsApi.getProducts(filters);
+                response = await productsApi.getProducts(productFilters);
             }
 
             const newProducts = response.data || [];
@@ -143,6 +175,24 @@ export const ProductListScreen: React.FC = () => {
         router.push(`/product/${productId}`);
     };
 
+    const handleSortSelect = (value: string) => {
+        setSortBy(value);
+    };
+
+    const handleFilterApply = (newFilters: FilterState) => {
+        setFilters(newFilters);
+    };
+
+    const getActiveFilterCount = (): number => {
+        let count = 0;
+        if (filters.price) count++;
+        count += Object.keys(filters.attributes).length;
+        return count;
+    };
+
+    // Get category ID for filter modal
+    const categoryId = params.id ? parseInt(params.id) : undefined;
+
     if (isLoading) {
         return <LoadingSpinner />;
     }
@@ -196,6 +246,31 @@ export const ProductListScreen: React.FC = () => {
                     </View>
                 }
             />
+
+            {/* Filter Bar */}
+            <ProductFilterBar
+                onSortPress={() => setIsSortModalVisible(true)}
+                onFilterPress={() => setIsFilterModalVisible(true)}
+                filterCount={getActiveFilterCount()}
+            />
+
+            {/* Sort Modal */}
+            <SortModal
+                visible={isSortModalVisible}
+                onClose={() => setIsSortModalVisible(false)}
+                options={SORT_OPTIONS}
+                selectedValue={sortBy}
+                onSelect={handleSortSelect}
+            />
+
+            {/* Filter Modal */}
+            <FilterModal
+                visible={isFilterModalVisible}
+                onClose={() => setIsFilterModalVisible(false)}
+                categoryId={categoryId}
+                currentFilters={filters}
+                onApply={handleFilterApply}
+            />
         </>
     );
 };
@@ -207,6 +282,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: theme.spacing.md,
+        paddingBottom: 80, // Add padding for fixed filter bar
     },
     row: {
         justifyContent: 'space-between',

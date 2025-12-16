@@ -9,7 +9,12 @@ import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { Button } from '@/shared/components/Button';
 import { CategoryImage, BannerImage } from '@/shared/components/LazyImage';
+import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
+import { SortModal } from '@/shared/components/SortModal';
+import { FilterModal } from '@/shared/components/FilterModal';
 import { theme } from '@/theme';
+import { FilterState } from '@/types/filters.types';
+import { SORT_OPTIONS } from '@/constants/sortOptions';
 
 const PRODUCTS_PER_PAGE = 12; // Increased for grid view
 
@@ -59,6 +64,15 @@ export const CategoryDetailScreen: React.FC = () => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    // Filter and sort state
+    const [sortBy, setSortBy] = useState<string>('');
+    const [filters, setFilters] = useState<FilterState>({
+        price: null,
+        attributes: {},
+    });
+    const [isSortModalVisible, setIsSortModalVisible] = useState(false);
+    const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+
     // Use the name from params if available, otherwise use loaded category name
     const displayName = category?.name || name || 'Category';
 
@@ -66,15 +80,40 @@ export const CategoryDetailScreen: React.FC = () => {
         if (id) {
             loadCategoryData();
         }
-    }, [id]);
+    }, [id, sortBy, filters]);
 
     const loadCategoryData = async () => {
         try {
             setIsLoading(true);
             setError(null);
+
+            // Build filter options
+            const options: Record<string, any> = {
+                per_page: PRODUCTS_PER_PAGE,
+                page: 1,
+            };
+
+            // Add sort parameter
+            if (sortBy) {
+                options.sort = sortBy;
+            }
+
+            // Add price filter
+            if (filters.price) {
+                options.price = filters.price;
+            }
+
+            // Add attribute filters
+            Object.keys(filters.attributes).forEach((key) => {
+                const values = filters.attributes[key];
+                if (values && values.length > 0) {
+                    options[key] = values.join(',');
+                }
+            });
+
             const [categoryData, productsData] = await Promise.all([
                 categoriesApi.getCategoryById(parseInt(id)),
-                productsApi.getProductsByCategory(parseInt(id), { per_page: PRODUCTS_PER_PAGE, page: 1 }),
+                productsApi.getProductsByCategory(parseInt(id), options),
             ]);
             setCategory(categoryData);
             setProducts(productsData.data);
@@ -102,10 +141,32 @@ export const CategoryDetailScreen: React.FC = () => {
         setIsLoadingMore(true);
         try {
             const nextPage = currentPage + 1;
-            const productsData = await productsApi.getProductsByCategory(parseInt(id), {
+
+            // Build filter options
+            const options: Record<string, any> = {
                 per_page: PRODUCTS_PER_PAGE,
                 page: nextPage,
+            };
+
+            // Add sort parameter
+            if (sortBy) {
+                options.sort = sortBy;
+            }
+
+            // Add price filter
+            if (filters.price) {
+                options.price = filters.price;
+            }
+
+            // Add attribute filters
+            Object.keys(filters.attributes).forEach((key) => {
+                const values = filters.attributes[key];
+                if (values && values.length > 0) {
+                    options[key] = values.join(',');
+                }
             });
+
+            const productsData = await productsApi.getProductsByCategory(parseInt(id), options);
             setProducts([...products, ...productsData.data]);
             setCurrentPage(productsData.current_page || nextPage);
             setTotalPages(productsData.last_page || totalPages);
@@ -149,6 +210,21 @@ export const CategoryDetailScreen: React.FC = () => {
         if (!isLoadingMore && currentPage < totalPages) {
             loadMoreProducts();
         }
+    };
+
+    const handleSortSelect = (value: string) => {
+        setSortBy(value);
+    };
+
+    const handleFilterApply = (newFilters: FilterState) => {
+        setFilters(newFilters);
+    };
+
+    const getActiveFilterCount = (): number => {
+        let count = 0;
+        if (filters.price) count++;
+        count += Object.keys(filters.attributes).length;
+        return count;
     };
 
     // Check if category has no children (leaf category)
@@ -288,6 +364,35 @@ export const CategoryDetailScreen: React.FC = () => {
                     ) : null
                 }
             />
+
+            {/* Filter Bar - Only show for leaf categories */}
+            {hasNoChildren && (
+                <>
+                    <ProductFilterBar
+                        onSortPress={() => setIsSortModalVisible(true)}
+                        onFilterPress={() => setIsFilterModalVisible(true)}
+                        filterCount={getActiveFilterCount()}
+                    />
+
+                    {/* Sort Modal */}
+                    <SortModal
+                        visible={isSortModalVisible}
+                        onClose={() => setIsSortModalVisible(false)}
+                        options={SORT_OPTIONS}
+                        selectedValue={sortBy}
+                        onSelect={handleSortSelect}
+                    />
+
+                    {/* Filter Modal */}
+                    <FilterModal
+                        visible={isFilterModalVisible}
+                        onClose={() => setIsFilterModalVisible(false)}
+                        categoryId={parseInt(id)}
+                        currentFilters={filters}
+                        onApply={handleFilterApply}
+                    />
+                </>
+            )}
         </>
     );
 };
@@ -370,7 +475,7 @@ const styles = StyleSheet.create({
     },
     gridContent: {
         paddingHorizontal: theme.spacing.sm,
-        paddingBottom: theme.spacing.lg,
+        paddingBottom: 80, // Add padding for fixed filter bar
     },
     row: {
         justifyContent: 'space-between',

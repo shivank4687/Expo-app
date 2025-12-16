@@ -18,7 +18,12 @@ import { productsApi } from '@/services/api/products.api';
 import { categoriesApi, Category } from '@/services/api/categories.api';
 import { Product } from '@/features/product/types/product.types';
 import { ProductCard } from '@/features/home/components/ProductCard';
+import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
+import { SortModal } from '@/shared/components/SortModal';
+import { FilterModal } from '@/shared/components/FilterModal';
 import { theme } from '@/theme';
+import { FilterState } from '@/types/filters.types';
+import { SORT_OPTIONS } from '@/constants/sortOptions';
 
 /**
  * SearchScreen Component
@@ -48,6 +53,15 @@ export const SearchScreen: React.FC = () => {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+
+    // Filter and sort state
+    const [sortBy, setSortBy] = useState<string>('');
+    const [filters, setFilters] = useState<FilterState>({
+        price: null,
+        attributes: {},
+    });
+    const [isSortModalVisible, setIsSortModalVisible] = useState(false);
+    const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
     // Refs for safe async handling
     const isLoadingRef = useRef(false);
@@ -106,10 +120,31 @@ export const SearchScreen: React.FC = () => {
             // Keep query ref in sync
             searchQueryRef.current = trimmedQuery;
 
-            const response = await productsApi.searchProducts(trimmedQuery, {
+            // Build filter options
+            const options: Record<string, any> = {
                 page,
                 per_page: PRODUCTS_PER_PAGE,
+            };
+
+            // Add sort parameter
+            if (sortBy) {
+                options.sort = sortBy;
+            }
+
+            // Add price filter
+            if (filters.price) {
+                options.price = filters.price;
+            }
+
+            // Add attribute filters
+            Object.keys(filters.attributes).forEach((key) => {
+                const values = filters.attributes[key];
+                if (values && values.length > 0) {
+                    options[key] = values.join(',');
+                }
             });
+
+            const response = await productsApi.searchProducts(trimmedQuery, options);
 
             const newProducts = response.data || [];
 
@@ -151,7 +186,7 @@ export const SearchScreen: React.FC = () => {
             isLoadingRef.current = false;
             isLoadingMoreRef.current = false;
         }
-    }, []);
+    }, [sortBy, filters]); // Add filters and sortBy to dependencies
 
     /**
      * Handle search submission (new search)
@@ -207,6 +242,33 @@ export const SearchScreen: React.FC = () => {
     const handleProductPress = useCallback((product: Product) => {
         router.push(`/product/${product.id}`);
     }, [router]);
+
+    const handleSortSelect = (value: string) => {
+        setSortBy(value);
+        // Re-trigger search with new sort
+        if (searchQuery.trim()) {
+            setCurrentPage(1);
+            setHasMore(true);
+            performSearch(searchQuery, 1, false);
+        }
+    };
+
+    const handleFilterApply = (newFilters: FilterState) => {
+        setFilters(newFilters);
+        // Re-trigger search with new filters
+        if (searchQuery.trim()) {
+            setCurrentPage(1);
+            setHasMore(true);
+            performSearch(searchQuery, 1, false);
+        }
+    };
+
+    const getActiveFilterCount = (): number => {
+        let count = 0;
+        if (filters.price) count++;
+        count += Object.keys(filters.attributes).length;
+        return count;
+    };
 
     /**
      * Render product item in grid
@@ -455,6 +517,34 @@ export const SearchScreen: React.FC = () => {
                 onEndReached={handleLoadMore}
                 onEndReachedThreshold={0.5}
             />
+
+            {/* Filter Bar - Only show when there are search results */}
+            {hasSearched && products.length > 0 && (
+                <>
+                    <ProductFilterBar
+                        onSortPress={() => setIsSortModalVisible(true)}
+                        onFilterPress={() => setIsFilterModalVisible(true)}
+                        filterCount={getActiveFilterCount()}
+                    />
+
+                    {/* Sort Modal */}
+                    <SortModal
+                        visible={isSortModalVisible}
+                        onClose={() => setIsSortModalVisible(false)}
+                        options={SORT_OPTIONS}
+                        selectedValue={sortBy}
+                        onSelect={handleSortSelect}
+                    />
+
+                    {/* Filter Modal */}
+                    <FilterModal
+                        visible={isFilterModalVisible}
+                        onClose={() => setIsFilterModalVisible(false)}
+                        currentFilters={filters}
+                        onApply={handleFilterApply}
+                    />
+                </>
+            )}
         </View>
     );
 };
@@ -541,7 +631,7 @@ const styles = StyleSheet.create({
     },
     productList: {
         padding: theme.spacing.sm,
-        paddingBottom: theme.spacing.xl * 2,
+        paddingBottom: 100, // Add padding for fixed filter bar
     },
     productItem: {
         width: '50%',
