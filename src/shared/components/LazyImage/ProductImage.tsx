@@ -36,7 +36,7 @@ export const ProductImage: React.FC<ProductImageProps> = ({
         <LazyImage
             source={absoluteUrl}
             style={style}
-            contentFit="cover"
+            contentFit="contain"
             transition={{ duration: 200 }}
             cachePolicy="memory-disk"
             priority={priority}

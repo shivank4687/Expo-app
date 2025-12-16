@@ -101,6 +101,13 @@ function AppContent() {
           }}
         />
         <Stack.Screen
+          name="contact-us"
+          options={{
+            title: "Contact Us",
+            headerBackTitle: "Back",
+          }}
+        />
+        <Stack.Screen
           name="product/[id]"
           options={{
             title: "Product Details",

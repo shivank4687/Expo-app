@@ -52,7 +52,8 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
         } finally {
             setIsLoading(false);
         }
-    }, [selectedLocale?.code, options.filters]);
+    }, [options.filters]);
+    //selectedLocale?.code,
 
     useEffect(() => {
         loadProducts();
@@ -65,11 +66,11 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
     const handleViewAll = useCallback(() => {
         // Build the query params based on the filters
         const queryParams = new URLSearchParams();
-        
+
         if (options.title) {
             queryParams.append('title', options.title);
         }
-        
+
         if (options.filters) {
             Object.entries(options.filters).forEach(([key, value]) => {
                 if (key !== 'per_page' && key !== 'locale' && value !== undefined) {
@@ -77,7 +78,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
                 }
             });
         }
-        
+
         router.push(`/product-list/all?${queryParams.toString()}` as any);
     }, [router, options.title, options.filters]);
 
@@ -100,23 +101,23 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
                 ) : (
                     <View />
                 )}
-                
+
                 {products.length >= PRODUCTS_PER_PAGE && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={handleViewAll}
                         style={styles.viewAllButton}
                         activeOpacity={0.7}
                     >
                         <Text style={styles.viewAllText}>View All</Text>
-                        <Ionicons 
-                            name="arrow-forward" 
-                            size={16} 
-                            color={theme.colors.primary[500]} 
+                        <Ionicons
+                            name="arrow-forward"
+                            size={16}
+                            color={theme.colors.primary[500]}
                         />
                     </TouchableOpacity>
                 )}
             </View>
-            
+
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

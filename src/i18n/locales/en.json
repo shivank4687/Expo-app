@@ -481,6 +481,42 @@
     "noProducts": "No products in wishlist",
     "itemsCount": "{{count}} item",
     "itemsCount_plural": "{{count}} items"
+  },
+  "contact": {
+    "contactUs": "Contact Us",
+    "title": "Contact Us",
+    "subtitle": "Have a question or just want to say hi? We'd love to hear from you.",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "phoneNumber": "Phone Number",
+    "message": "Message",
+    "subject": "Subject",
+    "query": "Query",
+    "enterName": "Enter your name",
+    "enterEmail": "Enter your email",
+    "enterPhone": "Enter your phone number",
+    "enterMessage": "Enter your message",
+    "enterSubject": "Enter subject",
+    "enterQuery": "Enter your message/query",
+    "nameRequired": "Name is required",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "messageRequired": "Message is required",
+    "subjectRequired": "Subject is required",
+    "queryRequired": "Query is required",
+    "sendMessage": "Send Message",
+    "sending": "Sending...",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "successMessage": "Your message has been sent successfully.",
+    "errorMessage": "Failed to send message. Please try again."
+  },
+  "supplier": {
+    "contactSupplier": "Contact Supplier",
+    "contactSupplierTitle": "Contact Supplier",
+    "sendInquiry": "Send Inquiry",
+    "inquirySuccess": "Your inquiry has been sent successfully.",
+    "inquiryFailed": "Failed to send inquiry. Please try again."
   }
 }
-

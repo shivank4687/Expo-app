@@ -32,9 +32,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
-    
+
     const isAddingThisProduct = isAddingToCart && lastAddedProductId === product.id;
-    
+
     // Check if product is in wishlist
     const isInWishlist = useMemo(() => {
         return wishlistItems.some((item) => item.product.id === product.id);
@@ -42,14 +42,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
     const productData = useMemo(() => {
         const rawImageUrl = product.thumbnail || (product.images && product.images[0]?.url);
-        
+
         // Check if product has discount based on API fields
         // When on sale, API returns: price=special_price, regular_price=original
         const hasDiscount = product.on_sale || (product.regular_price && product.regular_price > product.price);
-        
+
         // Check if product is on sale
         const isOnSale = product.on_sale || hasDiscount;
-        
+
         // Check if product is new (using either 'new' or 'is_new' field)
         const isNew = product.is_new || (product.new === true || product.new === 1);
 
@@ -86,7 +86,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
     const handleAddToCart = async (e: any) => {
         e.stopPropagation();
-        
+
         if (!product.in_stock) {
             showToast({ message: 'Product is out of stock', type: 'error' });
             return;
@@ -94,9 +94,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
         // Check if product is configurable - requires option selection
         if (product.type === 'configurable') {
-            showToast({ 
-                message: 'Please select product options', 
-                type: 'warning' 
+            showToast({
+                message: 'Please select product options',
+                type: 'warning'
             });
             // Redirect to product detail page to select options
             setTimeout(() => {
@@ -111,7 +111,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                 quantity: 1,
                 product: product, // Pass product data for guest cart
             })).unwrap();
-            
+
             showToast({ message: `${product.name} added to cart!`, type: 'success' });
         } catch (error: any) {
             showToast({ message: error || 'Failed to add to cart', type: 'error' });
@@ -120,36 +120,61 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
     const handleToggleWishlist = async (e: any) => {
         e.stopPropagation();
-        
+
         // Check if user is authenticated
         if (!isAuthenticated) {
-            showToast({ 
-                message: 'Please login first to add items to wishlist', 
-                type: 'warning' 
+            showToast({
+                message: 'Please login first to add items to wishlist',
+                type: 'warning'
             });
             return;
         }
 
         setIsTogglingWishlist(true);
-        
+
         try {
             await dispatch(toggleWishlistThunk(product.id)).unwrap();
-            
+
             // Fetch updated wishlist
             await dispatch(fetchWishlistThunk()).unwrap();
-            
-            const message = isInWishlist 
+
+            const message = isInWishlist
                 ? `${product.name} removed from wishlist`
                 : `${product.name} added to wishlist!`;
-            
+
             showToast({ message, type: 'success' });
         } catch (error: any) {
-            showToast({ 
-                message: error || 'Failed to update wishlist', 
-                type: 'error' 
+            showToast({
+                message: error || 'Failed to update wishlist',
+                type: 'error'
             });
         } finally {
             setIsTogglingWishlist(false);
+        }
+    };
+
+    const handleRFQPress = (e: any) => {
+        e.stopPropagation();
+
+        // Check if user is authenticated
+        if (!isAuthenticated) {
+            showToast({
+                message: 'Please login to request a quote',
+                type: 'warning'
+            });
+            router.push('/login');
+            return;
+        }
+
+        // Navigate to RFQ screen with product info
+        if (product.supplier?.id) {
+            router.push({
+                pathname: `/rfq/${product.supplier.id}` as any,
+                params: {
+                    productId: product.id.toString(),
+                    productName: product.name,
+                }
+            });
         }
     };
 
@@ -164,9 +189,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         recyclingKey={product.id?.toString()}
                         priority="low"
                     />
-                    
+
                     {/* Wishlist Heart Icon */}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.wishlistButton}
                         onPress={handleToggleWishlist}
                         disabled={isTogglingWishlist}
@@ -183,21 +208,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             />
                         )}
                     </TouchableOpacity>
-                    
+
                     {/* Sale Badge - Shows when product is on sale */}
                     {productData.isOnSale && product.in_stock ? (
                         <View style={styles.saleBadge}>
                             <Text style={styles.saleText}>SALE</Text>
                         </View>
                     ) : null}
-                    
+
                     {/* New Badge - Shows when product is new and not on sale */}
                     {!productData.isOnSale && productData.isNew && product.in_stock ? (
                         <View style={styles.newBadge}>
                             <Text style={styles.newText}>NEW</Text>
                         </View>
                     ) : null}
-                    
+
                     {/* Out of Stock Badge */}
                     {!product.in_stock ? (
                         <View style={styles.outOfStockBadge}>
@@ -214,10 +239,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
                     {productData.rating > 0 ? (
                         <View style={styles.ratingContainer}>
-                            <Ionicons 
-                                name="star" 
-                                size={RATING_ICON_SIZE} 
-                                color={theme.colors.warning.main} 
+                            <Ionicons
+                                name="star"
+                                size={RATING_ICON_SIZE}
+                                color={theme.colors.warning.main}
                             />
                             <Text style={styles.rating}>
                                 {productData.rating.toFixed(1)}
@@ -240,22 +265,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                 </Text>
                             ) : null}
                         </View>
-                        
-                        <View style={styles.priceContainer}>
-                            {productData.hasDiscount ? (
-                                <>
-                                    <Text style={styles.specialPrice}>
-                                        {formatters.formatPrice(productData.currentPrice)}
+
+                        <View style={styles.priceRow}>
+                            <View style={styles.priceContainer}>
+                                {productData.hasDiscount ? (
+                                    <>
+                                        <Text style={styles.specialPrice}>
+                                            {formatters.formatPrice(productData.currentPrice)}
+                                        </Text>
+                                        <Text style={styles.originalPrice}>
+                                            {formatters.formatPrice(productData.originalPrice)}
+                                        </Text>
+                                    </>
+                                ) : (
+                                    <Text style={styles.price}>
+                                        {formatters.formatPrice(product.price)}
                                     </Text>
-                                    <Text style={styles.originalPrice}>
-                                        {formatters.formatPrice(productData.originalPrice)}
-                                    </Text>
-                                </>
-                            ) : (
-                                <Text style={styles.price}>
-                                    {formatters.formatPrice(product.price)}
-                                </Text>
-                            )}
+                                )}
+                            </View>
+
+                            {/* RFQ Button - Only show if product has supplier and user is authenticated */}
+                            {product.supplier?.id && isAuthenticated ? (
+                                <TouchableOpacity
+                                    style={styles.rfqButton}
+                                    onPress={handleRFQPress}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons
+                                        name="document-text-outline"
+                                        size={16}
+                                        color={theme.colors.primary[500]}
+                                    />
+                                </TouchableOpacity>
+                            ) : null}
                         </View>
                     </View>
                 </View>
@@ -274,10 +316,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         <ActivityIndicator size="small" color={theme.colors.white} />
                     ) : (
                         <>
-                            <Ionicons 
-                                name="cart-outline" 
-                                size={18} 
-                                color={theme.colors.white} 
+                            <Ionicons
+                                name="cart-outline"
+                                size={18}
+                                color={theme.colors.white}
                             />
                             <Text style={styles.addToCartText}>
                                 {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
@@ -286,7 +328,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                     )}
                 </TouchableOpacity>
             </Card>
-        </TouchableOpacity>
+        </TouchableOpacity >
     );
 };
 
@@ -407,9 +449,25 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
         lineHeight: 16,
     },
+    priceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 32, // Fixed height to match RFQ button height, ensures consistent card heights
+    },
     priceContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
+    },
+    rfqButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: theme.colors.primary[50] || '#EEF2FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: theme.spacing.xs,
     },
     price: {
         fontSize: theme.typography.fontSize.lg,

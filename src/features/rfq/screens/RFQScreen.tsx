@@ -32,7 +32,11 @@ export const RFQScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const { showToast } = useToast();
-    const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
+    const { supplierId, productId, productName } = useLocalSearchParams<{
+        supplierId: string;
+        productId?: string;
+        productName?: string;
+    }>();
     const { user, isAuthenticated } = useRequireAuth();
 
     // Quote Info
@@ -48,7 +52,7 @@ export const RFQScreen: React.FC = () => {
     // Products
     const [products, setProducts] = useState<RFQProduct[]>([]);
     const [isAddingProduct, setIsAddingProduct] = useState(false);
-    
+
     // Product search state
     const [productSearchResults, setProductSearchResults] = useState<Array<{
         id: number;
@@ -92,6 +96,20 @@ export const RFQScreen: React.FC = () => {
             }
         }
     }, [user]);
+
+    // Pre-populate product if productId and productName are provided
+    useEffect(() => {
+        if (productId && productName && products.length === 0) {
+            setProducts([{
+                product_id: parseInt(productId),
+                product_name: productName,
+                quantity: 1,
+                description: '',
+                price_per_quantity: null,
+                is_sample: false,
+            }]);
+        }
+    }, [productId, productName]);
 
     const validateForm = (): boolean => {
         const newErrors: { [key: string]: string } = {};
@@ -167,7 +185,7 @@ export const RFQScreen: React.FC = () => {
             [field]: value,
         };
         setProducts(updatedProducts);
-        
+
         // If product name is being changed, trigger search
         if (field === 'product_name' && value && value.length >= 2) {
             handleProductSearch(value, index);
@@ -229,7 +247,7 @@ export const RFQScreen: React.FC = () => {
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const asset = result.assets[0];
                 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-                
+
                 // Check file size
                 if (asset.size && asset.size > MAX_FILE_SIZE) {
                     const fileSizeMB = (asset.size / (1024 * 1024)).toFixed(2);
@@ -247,7 +265,7 @@ export const RFQScreen: React.FC = () => {
                     uri: asset.uri,
                     name: asset.name || 'attachment',
                 });
-                
+
                 showToast({
                     message: t('rfq.attachmentAdded', 'Attachment added successfully'),
                     type: 'success',
@@ -355,7 +373,7 @@ export const RFQScreen: React.FC = () => {
 
         // Validate file sizes before submitting
         const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-        
+
         try {
             // Check product images
             for (let i = 0; i < productImages.length; i++) {
@@ -670,7 +688,7 @@ export const RFQScreen: React.FC = () => {
                                             />
                                             {activeSearchIndex === index && productSearchResults.length > 0 && (
                                                 <View style={styles.searchResultsContainer}>
-                                                    <ScrollView 
+                                                    <ScrollView
                                                         style={styles.searchResultsList}
                                                         keyboardShouldPersistTaps="handled"
                                                         nestedScrollEnabled
@@ -722,10 +740,10 @@ export const RFQScreen: React.FC = () => {
                                                     onChangeText={(text) => {
                                                         // Only allow numeric input
                                                         const numericText = text.replace(/[^0-9]/g, '');
-                                                        
+
                                                         // Allow empty string during typing, but parse to number when there's a value
                                                         const quantity = numericText === '' ? null : parseInt(numericText, 10);
-                                                        
+
                                                         handleProductChange(
                                                             index,
                                                             'quantity',

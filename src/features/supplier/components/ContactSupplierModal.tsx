@@ -16,6 +16,7 @@ import { theme } from '@/theme';
 import { Button } from '@/shared/components/Button';
 import { suppliersApi } from '@/services/api/suppliers.api';
 import { useAppSelector } from '@/store/hooks';
+import { useTranslation } from 'react-i18next';
 
 interface ContactSupplierModalProps {
     visible: boolean;
@@ -33,7 +34,8 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
     onSuccess,
 }) => {
     const { user } = useAppSelector((state) => state.auth);
-    
+    const { t } = useTranslation();
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');
@@ -59,21 +61,21 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
         const newErrors: { [key: string]: string } = {};
 
         if (!name.trim()) {
-            newErrors.name = 'Name is required';
+            newErrors.name = t('contact.nameRequired');
         }
 
         if (!email.trim()) {
-            newErrors.email = 'Email is required';
+            newErrors.email = t('contact.emailRequired');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            newErrors.email = 'Please enter a valid email address';
+            newErrors.email = t('contact.emailInvalid');
         }
 
         if (!subject.trim()) {
-            newErrors.subject = 'Subject is required';
+            newErrors.subject = t('contact.subjectRequired');
         }
 
         if (!query.trim()) {
-            newErrors.query = 'Query is required';
+            newErrors.query = t('contact.queryRequired');
         }
 
         setErrors(newErrors);
@@ -102,7 +104,7 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
             setSubject('');
             setQuery('');
             setErrors({});
-            
+
             // Close modal and call success callback
             onClose();
             if (onSuccess) {
@@ -117,7 +119,7 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                 });
                 setErrors(validationErrors);
             } else {
-                setErrors({ general: err.message || 'Failed to send message. Please try again.' });
+                setErrors({ general: err.message || t('contact.errorMessage') });
             }
         } finally {
             setIsSubmitting(false);
@@ -157,7 +159,7 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                             <View style={styles.header}>
                                 <View style={styles.headerTitleContainer}>
                                     <Text style={styles.headerTitle}>
-                                        Contact Supplier
+                                        {t('supplier.contactSupplier')}
                                     </Text>
                                     <Text style={styles.headerSubtitle} numberOfLines={1}>
                                         {supplierCompanyName}
@@ -192,14 +194,14 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                                 {/* Name Input */}
                                 <View style={styles.inputContainer}>
                                     <Text style={styles.label}>
-                                        Name <Text style={styles.required}>*</Text>
+                                        {t('contact.name')} <Text style={styles.required}>*</Text>
                                     </Text>
                                     <TextInput
                                         style={[
                                             styles.textInput,
                                             errors.name && styles.textInputError,
                                         ]}
-                                        placeholder="Enter your name"
+                                        placeholder={t('contact.enterName')}
                                         placeholderTextColor={theme.colors.text.secondary}
                                         value={name}
                                         onChangeText={(text) => {
@@ -218,14 +220,14 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                                 {/* Email Input */}
                                 <View style={styles.inputContainer}>
                                     <Text style={styles.label}>
-                                        Email <Text style={styles.required}>*</Text>
+                                        {t('contact.email')} <Text style={styles.required}>*</Text>
                                     </Text>
                                     <TextInput
                                         style={[
                                             styles.textInput,
                                             errors.email && styles.textInputError,
                                         ]}
-                                        placeholder="Enter your email"
+                                        placeholder={t('contact.enterEmail')}
                                         placeholderTextColor={theme.colors.text.secondary}
                                         value={email}
                                         onChangeText={(text) => {
@@ -246,14 +248,14 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                                 {/* Subject Input */}
                                 <View style={styles.inputContainer}>
                                     <Text style={styles.label}>
-                                        Subject <Text style={styles.required}>*</Text>
+                                        {t('contact.subject')} <Text style={styles.required}>*</Text>
                                     </Text>
                                     <TextInput
                                         style={[
                                             styles.textInput,
                                             errors.subject && styles.textInputError,
                                         ]}
-                                        placeholder="Enter subject"
+                                        placeholder={t('contact.enterSubject')}
                                         placeholderTextColor={theme.colors.text.secondary}
                                         value={subject}
                                         onChangeText={(text) => {
@@ -272,14 +274,14 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                                 {/* Query Input */}
                                 <View style={styles.inputContainer}>
                                     <Text style={styles.label}>
-                                        Query <Text style={styles.required}>*</Text>
+                                        {t('contact.query')} <Text style={styles.required}>*</Text>
                                     </Text>
                                     <TextInput
                                         style={[
                                             styles.textArea,
                                             errors.query && styles.textInputError,
                                         ]}
-                                        placeholder="Enter your message/query"
+                                        placeholder={t('contact.enterQuery')}
                                         placeholderTextColor={theme.colors.text.secondary}
                                         multiline
                                         numberOfLines={6}
@@ -302,7 +304,7 @@ export const ContactSupplierModal: React.FC<ContactSupplierModalProps> = ({
                             {/* Footer - Fixed at bottom */}
                             <View style={styles.footer}>
                                 <Button
-                                    title={isSubmitting ? 'Submitting...' : 'Submit'}
+                                    title={isSubmitting ? t('contact.submitting') : t('contact.submit')}
                                     onPress={handleSubmit}
                                     disabled={isSubmitting || !name.trim() || !email.trim() || !subject.trim() || !query.trim()}
                                     loading={isSubmitting}

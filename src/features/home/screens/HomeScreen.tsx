@@ -13,6 +13,8 @@ import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { theme } from '@/theme';
 import { useAppSelector } from '@/store/hooks';
 
+import { NewsletterSubscription } from '../components/NewsletterSubscription';
+
 /**
  * HomeScreen Component
  * Displays theme customizations (carousels, static content, etc.)
@@ -29,6 +31,7 @@ export const HomeScreen: React.FC = () => {
         if (!selectedLocale?.code) return;
 
         try {
+            //setIsLoading(true);
             setError(null);
             const customizationsData = await themeApi.getCustomizations();
             setCustomizations(customizationsData);
@@ -85,6 +88,8 @@ export const HomeScreen: React.FC = () => {
                     customization={customization}
                 />
             ))}
+
+            <NewsletterSubscription />
 
             {/* Render Services Content at the bottom */}
             {servicesCustomization && (

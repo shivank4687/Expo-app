@@ -481,6 +481,42 @@
     "noProducts": "No hay productos en la lista de deseos",
     "itemsCount": "{{count}} artículo",
     "itemsCount_plural": "{{count}} artículos"
+  },
+  "contact": {
+    "contactUs": "Contáctanos",
+    "title": "Contáctanos",
+    "subtitle": "¿Tienes alguna pregunta o simplemente quieres saludar? Nos encantaría saber de ti.",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "phone": "Número de Teléfono",
+    "phoneNumber": "Número de Teléfono",
+    "message": "Mensaje",
+    "subject": "Asunto",
+    "query": "Consulta",
+    "enterName": "Ingresa tu nombre",
+    "enterEmail": "Ingresa tu correo electrónico",
+    "enterPhone": "Ingresa tu número de teléfono",
+    "enterMessage": "Ingresa tu mensaje",
+    "enterSubject": "Ingresa el asunto",
+    "enterQuery": "Ingresa tu mensaje/consulta",
+    "nameRequired": "El nombre es obligatorio",
+    "emailRequired": "El correo electrónico es obligatorio",
+    "emailInvalid": "Por favor, ingresa un correo electrónico válido",
+    "messageRequired": "El mensaje es obligatorio",
+    "subjectRequired": "El asunto es obligatorio",
+    "queryRequired": "La consulta es obligatoria",
+    "sendMessage": "Enviar Mensaje",
+    "sending": "Enviando...",
+    "submit": "Enviar",
+    "submitting": "Enviando...",
+    "successMessage": "Tu mensaje ha sido enviado exitosamente.",
+    "errorMessage": "Error al enviar el mensaje. Por favor, inténtalo de nuevo."
+  },
+  "supplier": {
+    "contactSupplier": "Contactar Proveedor",
+    "contactSupplierTitle": "Contactar Proveedor",
+    "sendInquiry": "Enviar Consulta",
+    "inquirySuccess": "Tu consulta ha sido enviada exitosamente.",
+    "inquiryFailed": "Error al enviar la consulta. Por favor, inténtalo de nuevo."
   }
 }
-

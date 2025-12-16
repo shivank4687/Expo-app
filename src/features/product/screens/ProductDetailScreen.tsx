@@ -533,7 +533,13 @@ export const ProductDetailScreen: React.FC = () => {
                                 <TouchableOpacity
                                     style={styles.rfqButton}
                                     onPress={() => {
-                                        router.push(`/rfq/${product.supplier!.id}`);
+                                        router.push({
+                                            pathname: `/rfq/${product.supplier!.id}` as any,
+                                            params: {
+                                                productId: product.id.toString(),
+                                                productName: product.name,
+                                            }
+                                        });
                                     }}
                                 >
                                     <Ionicons name="document-text-outline" size={18} color={theme.colors.primary[500]} />

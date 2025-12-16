@@ -143,20 +143,26 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                                 onPress={() => navigateTo(`/static/${page.url_key}`)}
                             />
                         ))
+
                     ) : null}
+                    {!cmsLoading && <DrawerItem
+                        key={t('drawer.contactUs')}
+                        label={t('drawer.contactUs')}
+                        onPress={() => navigateTo(`/contact-us`)}
+                    />}
                 </DrawerSection>
 
                 {/* Preferences Section */}
                 <DrawerSection title={t('drawer.preferences')} icon="settings-outline" defaultExpanded={true}>
-                    <DrawerItem 
-                        label={t('drawer.language')} 
-                        icon="language-outline" 
+                    <DrawerItem
+                        label={t('drawer.language')}
+                        icon="language-outline"
                         onPress={() => navigateTo('/language-selection')}
                         rightText={selectedLocale?.name || 'English'}
                     />
-                    <DrawerItem 
-                        label={t('drawer.currency')} 
-                        icon="cash-outline" 
+                    <DrawerItem
+                        label={t('drawer.currency')}
+                        icon="cash-outline"
                         onPress={() => navigateTo('/currency-selection')}
                         rightText={selectedCurrency?.code || 'USD'}
                     />

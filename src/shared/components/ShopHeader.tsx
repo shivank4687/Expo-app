@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
-
+import { APP_NAME } from '@/config/constants';
 interface ShopHeaderProps {
     title?: string;
     showSearch?: boolean;
@@ -27,9 +27,9 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
 
     // Refetch when authentication changes
     useEffect(() => {
-       // if (isAuthenticated) {
-            dispatch(fetchCartThunk());
-       // }
+        // if (isAuthenticated) {
+        dispatch(fetchCartThunk());
+        // }
     }, [isAuthenticated, dispatch]);
 
     const cartItemsCount = cart?.items_count || 0;
@@ -67,7 +67,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                     <Ionicons name="menu-outline" size={28} color={theme.colors.text.primary} />
                 </TouchableOpacity>
 
-                <Text style={styles.logo}>Shop App</Text>
+                <Text style={styles.logo}>{APP_NAME}</Text>
 
                 <View style={styles.rightActions}>
                     {showSearch && (
@@ -75,7 +75,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                             <Ionicons name="search-outline" size={28} color={theme.colors.text.primary} />
                         </TouchableOpacity>
                     )}
-                    
+
                     {/* Show Wishlist icon if logged in, otherwise show Profile icon */}
                     {isAuthenticated ? (
                         <TouchableOpacity style={styles.iconButton} onPress={handleWishlistPress}>
@@ -103,7 +103,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                             />
                         </TouchableOpacity>
                     )}
-                    
+
                     <TouchableOpacity style={styles.iconButton} onPress={handleCartPress}>
                         <View>
                             <Ionicons name="cart-outline" size={28} color={theme.colors.text.primary} />
