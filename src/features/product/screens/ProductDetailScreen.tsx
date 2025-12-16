@@ -169,7 +169,12 @@ export const ProductDetailScreen: React.FC = () => {
     };
 
     if (isLoading) {
-        return <LoadingSpinner />;
+        return (
+            <>
+                <Stack.Screen options={{ title: 'Product Details', headerBackTitle: 'Back' }} />
+                <LoadingSpinner />
+            </>
+        );
     }
 
     if (error || !product) {

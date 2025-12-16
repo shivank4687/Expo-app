@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput,
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '@/shared/components/Card';
 import { Button } from '@/shared/components/Button';
 import { theme } from '@/theme';
@@ -38,6 +39,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({
     const { t } = useTranslation();
     const { showToast } = useToast();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [showAddressListModal, setShowAddressListModal] = useState(false);
     const [addressType, setAddressType] = useState<'billing' | 'shipping'>('billing');
     const [addresses, setAddresses] = useState<Address[]>([]);
@@ -83,7 +85,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({
         // Convert Address to CheckoutAddress
         const addressLines = address.address || address.address1 || [];
         const addressArray = Array.isArray(addressLines) ? addressLines : [addressLines];
-        
+
         const checkoutAddress: CheckoutAddress = {
             id: address.id,
             first_name: address.first_name,
@@ -186,7 +188,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({
     return (
         <View style={styles.container}>
             {/* Scrollable Content */}
-            <ScrollView 
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -239,7 +241,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({
             </ScrollView>
 
             {/* Fixed Button at Bottom */}
-            <View style={styles.buttonContainer}>
+            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                 <Button
                     title={t('checkout.proceedToShipping', 'Proceed to Shipping')}
                     onPress={onProceed}

@@ -11,6 +11,7 @@ import { Card } from '@/shared/components/Card';
 import { Button } from '@/shared/components/Button';
 import { theme } from '@/theme';
 import { PaymentMethod } from '../types/checkout.types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PaymentStepProps {
     paymentMethods: PaymentMethod[] | null;
@@ -28,7 +29,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     isProcessing = false,
 }) => {
     const { t } = useTranslation();
-
+    const insets = useSafeAreaInsets();
     if (!paymentMethods || paymentMethods.length === 0) {
         return (
             <View style={styles.container}>
@@ -46,7 +47,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     return (
         <View style={styles.container}>
             {/* Scrollable Content */}
-            <ScrollView 
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -124,7 +125,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
             </ScrollView>
 
             {/* Fixed Button at Bottom */}
-            <View style={styles.buttonContainer}>
+            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                 <Button
                     title={t('checkout.proceedToReview', 'Proceed to Review')}
                     onPress={onProceed}

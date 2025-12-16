@@ -8,7 +8,9 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/shared/components/Button';
+
 import { theme } from '@/theme';
 import { ShippingMethod } from '../types/checkout.types';
 
@@ -28,6 +30,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
     isProcessing = false,
 }) => {
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
     // Expand all carriers by default
     const [expandedCarriers, setExpandedCarriers] = useState<Set<string>>(
         new Set(shippingMethods ? Object.keys(shippingMethods) : [])
@@ -62,7 +65,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
     return (
         <View style={styles.container}>
             {/* Scrollable Content */}
-            <ScrollView 
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -174,7 +177,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
             </ScrollView>
 
             {/* Fixed Button at Bottom */}
-            <View style={styles.buttonContainer}>
+            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                 <Button
                     title={t('checkout.proceedToPayment', 'Proceed to Payment')}
                     onPress={onProceed}

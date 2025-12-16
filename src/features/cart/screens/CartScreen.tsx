@@ -4,25 +4,26 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    ScrollView, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
     TextInput,
     TouchableOpacity,
     ActivityIndicator,
-    RefreshControl 
+    RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { 
-    fetchCartThunk, 
-    applyCouponThunk, 
-    removeCouponThunk 
+import {
+    fetchCartThunk,
+    applyCouponThunk,
+    removeCouponThunk
 } from '@/store/slices/cartSlice';
 import { EmptyCart } from '../components/EmptyCart';
 import { CartItemCard } from '../components/CartItemCard';
@@ -46,6 +47,7 @@ export const CartScreen: React.FC = () => {
     const [isPriceDetailsExpanded, setIsPriceDetailsExpanded] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         loadCart();
@@ -114,7 +116,7 @@ export const CartScreen: React.FC = () => {
     }
 
     const hasDiscount = (cart.discount_amount || 0) > 0;
-    
+
     // Debug: Log cart structure
     console.log('🛒 Cart object keys:', Object.keys(cart));
     console.log('🛒 Cart values:', {
@@ -127,34 +129,34 @@ export const CartScreen: React.FC = () => {
         formatted_sub_total: cart.formatted_sub_total,
         formatted_grand_total: cart.formatted_grand_total,
     });
-    
+
     // Calculate amount to pay WITHOUT shipping
     // Use || 0 to handle undefined values
     const subtotal = Number(cart.sub_total || cart.base_sub_total || 0);
     const discount = Number(cart.discount_amount || cart.base_discount_amount || 0);
     const tax = Number(cart.tax_total || cart.base_tax_total || 0);
     const grandTotal = Number(cart.grand_total || cart.base_grand_total || 0);
-    
+
     console.log('💰 Parsed values:', { subtotal, discount, tax, grandTotal });
-    
+
     // Calculate: Subtotal - Discount + Tax
     let amountToPay = subtotal - discount + tax;
-    
+
     // If calculated amount is 0 or invalid, use grand_total minus shipping if available
     if (amountToPay <= 0 && grandTotal > 0) {
         const shipping = Number(cart.shipping_amount || cart.base_shipping_amount || 0);
         amountToPay = grandTotal - shipping;
         console.log('⚠️ Using grand_total minus shipping:', grandTotal, '-', shipping, '=', amountToPay);
     }
-    
+
     // Final fallback: if still 0, use grand_total
     if (amountToPay <= 0 && grandTotal > 0) {
         amountToPay = grandTotal;
         console.log('⚠️ Final fallback to grand_total:', amountToPay);
     }
-    
+
     console.log('✅ Final amount to pay:', amountToPay);
-    
+
     const formattedAmountToPay = formatters.formatPrice(amountToPay);
 
     return (
@@ -178,86 +180,86 @@ export const CartScreen: React.FC = () => {
 
                 {/* Apply Coupon Section - Only for authenticated users */}
                 {isAuthenticated && (
-                <View style={styles.section}>
-                    <TouchableOpacity
-                        style={styles.expansionHeader}
-                        onPress={() => setIsCouponExpanded(!isCouponExpanded)}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.expansionTitleContainer}>
-                            <Ionicons 
-                                name="pricetag-outline" 
-                                size={20} 
-                                color={theme.colors.primary[500]} 
+                    <View style={styles.section}>
+                        <TouchableOpacity
+                            style={styles.expansionHeader}
+                            onPress={() => setIsCouponExpanded(!isCouponExpanded)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.expansionTitleContainer}>
+                                <Ionicons
+                                    name="pricetag-outline"
+                                    size={20}
+                                    color={theme.colors.primary[500]}
+                                />
+                                <Text style={styles.expansionTitle}>{t('cart.applyCoupon')}</Text>
+                            </View>
+                            <Ionicons
+                                name={isCouponExpanded ? 'chevron-up' : 'chevron-down'}
+                                size={24}
+                                color={theme.colors.text.secondary}
                             />
-                            <Text style={styles.expansionTitle}>{t('cart.applyCoupon')}</Text>
-                        </View>
-                        <Ionicons
-                            name={isCouponExpanded ? 'chevron-up' : 'chevron-down'}
-                            size={24}
-                            color={theme.colors.text.secondary}
-                        />
-                    </TouchableOpacity>
+                        </TouchableOpacity>
 
-                    {isCouponExpanded && (
-                        <View style={styles.expansionContent}>
-                            {cart.coupon_code ? (
-                                <View style={styles.appliedCouponContainer}>
-                                    <View style={styles.appliedCouponInfo}>
-                                        <Ionicons 
-                                            name="checkmark-circle" 
-                                            size={20} 
-                                            color={theme.colors.success.main} 
-                                        />
-                                        <Text style={styles.appliedCouponText}>
-                                            {cart.coupon_code}
-                                        </Text>
-                                    </View>
-                                    <TouchableOpacity
-                                        onPress={handleRemoveCoupon}
-                                        disabled={isRemovingCoupon}
-                                    >
-                                        {isRemovingCoupon ? (
-                                            <ActivityIndicator size="small" color={theme.colors.error.main} />
-                                        ) : (
-                                            <Ionicons 
-                                                name="close-circle" 
-                                                size={24} 
-                                                color={theme.colors.error.main} 
+                        {isCouponExpanded && (
+                            <View style={styles.expansionContent}>
+                                {cart.coupon_code ? (
+                                    <View style={styles.appliedCouponContainer}>
+                                        <View style={styles.appliedCouponInfo}>
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={20}
+                                                color={theme.colors.success.main}
                                             />
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            ) : (
-                                <View style={styles.couponInputContainer}>
-                                    <TextInput
-                                        style={styles.couponInput}
-                                        placeholder={t('cart.enterCouponCode')}
-                                        placeholderTextColor={theme.colors.gray[400]}
-                                        value={couponCode}
-                                        onChangeText={setCouponCode}
-                                        autoCapitalize="characters"
-                                        editable={!isApplyingCoupon}
-                                    />
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.applyButton,
-                                            isApplyingCoupon && styles.applyButtonDisabled
-                                        ]}
-                                        onPress={handleApplyCoupon}
-                                        disabled={isApplyingCoupon}
-                                    >
-                                        {isApplyingCoupon ? (
-                                            <ActivityIndicator size="small" color={theme.colors.white} />
-                                        ) : (
-                                            <Text style={styles.applyButtonText}>{t('cart.apply')}</Text>
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        </View>
-                    )}
-                </View>
+                                            <Text style={styles.appliedCouponText}>
+                                                {cart.coupon_code}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            onPress={handleRemoveCoupon}
+                                            disabled={isRemovingCoupon}
+                                        >
+                                            {isRemovingCoupon ? (
+                                                <ActivityIndicator size="small" color={theme.colors.error.main} />
+                                            ) : (
+                                                <Ionicons
+                                                    name="close-circle"
+                                                    size={24}
+                                                    color={theme.colors.error.main}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <View style={styles.couponInputContainer}>
+                                        <TextInput
+                                            style={styles.couponInput}
+                                            placeholder={t('cart.enterCouponCode')}
+                                            placeholderTextColor={theme.colors.gray[400]}
+                                            value={couponCode}
+                                            onChangeText={setCouponCode}
+                                            autoCapitalize="characters"
+                                            editable={!isApplyingCoupon}
+                                        />
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.applyButton,
+                                                isApplyingCoupon && styles.applyButtonDisabled
+                                            ]}
+                                            onPress={handleApplyCoupon}
+                                            disabled={isApplyingCoupon}
+                                        >
+                                            {isApplyingCoupon ? (
+                                                <ActivityIndicator size="small" color={theme.colors.white} />
+                                            ) : (
+                                                <Text style={styles.applyButtonText}>{t('cart.apply')}</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        )}
+                    </View>
                 )}
 
                 {/* Price Details Section */}
@@ -268,10 +270,10 @@ export const CartScreen: React.FC = () => {
                         activeOpacity={0.7}
                     >
                         <View style={styles.expansionTitleContainer}>
-                            <Ionicons 
-                                name="receipt-outline" 
-                                size={20} 
-                                color={theme.colors.primary[500]} 
+                            <Ionicons
+                                name="receipt-outline"
+                                size={20}
+                                color={theme.colors.primary[500]}
                             />
                             <Text style={styles.expansionTitle}>{t('cart.priceDetails')}</Text>
                         </View>
@@ -323,7 +325,7 @@ export const CartScreen: React.FC = () => {
             </ScrollView>
 
             {/* Fixed Bottom Footer */}
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                 <View style={styles.footerContent}>
                     <View style={styles.totalSection}>
                         <Text style={styles.footerLabel}>
@@ -345,7 +347,7 @@ export const CartScreen: React.FC = () => {
             </View>
 
             {/* Checkout Auth Modal */}
-            <CheckoutAuthModal 
+            <CheckoutAuthModal
                 visible={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
             />

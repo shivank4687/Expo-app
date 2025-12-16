@@ -193,16 +193,26 @@ export const ProductListScreen: React.FC = () => {
     // Get category ID for filter modal
     const categoryId = params.id ? parseInt(params.id) : undefined;
 
-    if (isLoading) {
-        return <LoadingSpinner />;
+    // Determine the screen title early to avoid flickering
+    const screenTitle = params.title || 'Products';
+
+    if (isLoading && products.length === 0) {
+        return (
+            <>
+                <Stack.Screen options={{ title: screenTitle, headerBackTitle: 'Back' }} />
+                <LoadingSpinner />
+            </>
+        );
     }
 
     if (error && products.length === 0) {
-        return <ErrorMessage message={error} onRetry={() => loadProducts(1, true)} />;
+        return (
+            <>
+                <Stack.Screen options={{ title: screenTitle, headerBackTitle: 'Back' }} />
+                <ErrorMessage message={error} onRetry={() => loadProducts(1, true)} />
+            </>
+        );
     }
-
-    // Determine the screen title
-    const screenTitle = params.title || 'Products';
 
     return (
         <>
