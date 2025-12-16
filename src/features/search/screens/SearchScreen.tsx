@@ -32,14 +32,27 @@ export const SearchScreen: React.FC = () => {
     const router = useRouter();
     const { t } = useTranslation();
     const searchInputRef = useRef<TextInput>(null);
-    
+
+    // Pagination constants
+    const PRODUCTS_PER_PAGE = 20;
+
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
     const [hasSearched, setHasSearched] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+
+    // Refs for safe async handling
+    const isLoadingRef = useRef(false);
+    const isLoadingMoreRef = useRef(false);
+    const searchQueryRef = useRef('');
 
     /**
      * Load parent categories on mount
@@ -63,38 +76,101 @@ export const SearchScreen: React.FC = () => {
     }, []);
 
     /**
-     * Perform search API call
+     * Perform search API call with pagination
      */
-    const performSearch = useCallback(async (query: string) => {
-        if (!query.trim()) {
+    const performSearch = useCallback(async (query: string, page: number = 1, append: boolean = false) => {
+        const trimmedQuery = query.trim();
+
+        if (!trimmedQuery) {
             setProducts([]);
             setHasSearched(false);
             return;
         }
 
-        setIsLoading(true);
-        setError(null);
-        setHasSearched(true);
+        // Prevent duplicate requests
+        if (append && isLoadingMoreRef.current) return;
+        if (!append && isLoadingRef.current) return;
 
         try {
-            const response = await productsApi.searchProducts(query.trim());
-            setProducts(response.data);
+            if (append) {
+                setIsLoadingMore(true);
+                isLoadingMoreRef.current = true;
+            } else {
+                setIsLoading(true);
+                isLoadingRef.current = true;
+                setHasSearched(true);
+            }
+
+            setError(null);
+
+            // Keep query ref in sync
+            searchQueryRef.current = trimmedQuery;
+
+            const response = await productsApi.searchProducts(trimmedQuery, {
+                page,
+                per_page: PRODUCTS_PER_PAGE,
+            });
+
+            const newProducts = response.data || [];
+
+            if (append) {
+                setProducts(prev => [...prev, ...newProducts]);
+            } else {
+                setProducts(newProducts);
+            }
+
+            // Update pagination state
+            if (response.current_page && response.last_page) {
+                const newCurrentPage = response.current_page;
+                const newTotalPages = response.last_page;
+
+                setCurrentPage(newCurrentPage);
+                setHasMore(newCurrentPage < newTotalPages);
+            } else {
+                // Fallback / legacy meta check
+                const meta = (response as any).meta;
+                if (meta) {
+                    setCurrentPage(meta.current_page);
+                    setHasMore(meta.current_page < meta.last_page);
+                } else {
+                    // Primitive fallback
+                    setHasMore(newProducts.length === PRODUCTS_PER_PAGE);
+                    setCurrentPage(page);
+                }
+            }
+
         } catch (err: any) {
             console.error('[SearchScreen] Search error:', err);
-            setError(err.message || 'Failed to search products');
-            setProducts([]);
+            if (!append) {
+                setError(err.message || 'Failed to search products');
+                setProducts([]);
+            }
         } finally {
             setIsLoading(false);
+            setIsLoadingMore(false);
+            isLoadingRef.current = false;
+            isLoadingMoreRef.current = false;
         }
     }, []);
 
     /**
-     * Handle search submission
+     * Handle search submission (new search)
      */
     const handleSearch = useCallback(() => {
         Keyboard.dismiss();
-        performSearch(searchQuery);
+        setCurrentPage(1);
+        setHasMore(true);
+        performSearch(searchQuery, 1, false);
     }, [searchQuery, performSearch]);
+
+    /**
+     * Handle load more (infinite scroll)
+     */
+    const handleLoadMore = useCallback(() => {
+        if (!isLoadingMore && hasMore && !isLoading && searchQueryRef.current) {
+            performSearch(searchQueryRef.current, currentPage + 1, true);
+        }
+    }, [isLoadingMore, hasMore, isLoading, currentPage, performSearch]);
 
     /**
      * Handle category chip press - navigate to category detail
@@ -109,7 +185,6 @@ export const SearchScreen: React.FC = () => {
     const handleVoiceSearch = useCallback(() => {
         // TODO: Implement voice search functionality
         console.log('Voice search pressed');
-        // You can integrate with expo-speech or react-native-voice
     }, []);
 
     /**
@@ -117,9 +192,12 @@ export const SearchScreen: React.FC = () => {
      */
     const handleClearSearch = useCallback(() => {
         setSearchQuery('');
+        searchQueryRef.current = '';
         setProducts([]);
         setHasSearched(false);
         setError(null);
+        setCurrentPage(1);
+        setHasMore(true);
         searchInputRef.current?.focus();
     }, []);
 
@@ -153,16 +231,16 @@ export const SearchScreen: React.FC = () => {
         if (error) {
             return (
                 <View style={styles.emptyContainer}>
-                    <Ionicons 
-                        name="alert-circle-outline" 
-                        size={64} 
-                        color={theme.colors.error.main} 
+                    <Ionicons
+                        name="alert-circle-outline"
+                        size={64}
+                        color={theme.colors.error.main}
                     />
                     <Text style={styles.emptyTitle}>{t('search.oopsSomethingWrong')}</Text>
                     <Text style={styles.emptyMessage}>{error}</Text>
-                    <TouchableOpacity 
-                        style={styles.retryButton} 
-                        onPress={() => performSearch(searchQuery)}
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={handleSearch}
                     >
                         <Text style={styles.retryButtonText}>{t('search.tryAgain')}</Text>
                     </TouchableOpacity>
@@ -173,10 +251,10 @@ export const SearchScreen: React.FC = () => {
         if (!hasSearched) {
             return (
                 <View style={styles.emptyContainer}>
-                    <Ionicons 
-                        name="search-outline" 
-                        size={64} 
-                        color={theme.colors.gray[400]} 
+                    <Ionicons
+                        name="search-outline"
+                        size={64}
+                        color={theme.colors.gray[400]}
                     />
                     <Text style={styles.emptyTitle}>{t('search.searchForProducts')}</Text>
                     <Text style={styles.emptyMessage}>
@@ -189,10 +267,10 @@ export const SearchScreen: React.FC = () => {
         if (hasSearched && products.length === 0) {
             return (
                 <View style={styles.emptyContainer}>
-                    <Ionicons 
-                        name="file-tray-outline" 
-                        size={64} 
-                        color={theme.colors.gray[400]} 
+                    <Ionicons
+                        name="file-tray-outline"
+                        size={64}
+                        color={theme.colors.gray[400]}
                     />
                     <Text style={styles.emptyTitle}>{t('search.noProductsFound')}</Text>
                     <Text style={styles.emptyMessage}>
@@ -201,8 +279,8 @@ export const SearchScreen: React.FC = () => {
                     <Text style={styles.emptySubMessage}>
                         {t('search.tryDifferentKeywords')}
                     </Text>
-                    <TouchableOpacity 
-                        style={styles.clearButton} 
+                    <TouchableOpacity
+                        style={styles.clearButton}
                         onPress={handleClearSearch}
                     >
                         <Text style={styles.clearButtonText}>{t('search.clearSearch')}</Text>
@@ -218,14 +296,25 @@ export const SearchScreen: React.FC = () => {
      * Render loading indicator
      */
     const renderFooter = () => {
-        if (!isLoading) return null;
-        
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-                <Text style={styles.loadingText}>{t('search.searching')}</Text>
-            </View>
-        );
+        if (isLoadingMore) {
+            return (
+                <View style={[styles.loadingContainer, { paddingVertical: theme.spacing.lg }]}>
+                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                    <Text style={styles.loadingText}>{t('search.loadingMore')}</Text>
+                </View>
+            );
+        }
+
+        if (isLoading) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                    <Text style={styles.loadingText}>{t('search.searching')}</Text>
+                </View>
+            );
+        }
+
+        return null;
     };
 
     /**
@@ -251,8 +340,8 @@ export const SearchScreen: React.FC = () => {
 
         return (
             <View style={styles.categoriesContainer}>
-                <ScrollView 
-                    horizontal 
+                <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.categoriesScrollContent}
                 >
@@ -263,7 +352,7 @@ export const SearchScreen: React.FC = () => {
                             onPress={() => handleCategoryPress(category.id, category.name)}
                             activeOpacity={0.7}
                         >
-                            <Text 
+                            <Text
                                 style={styles.categoryChipText}
                                 numberOfLines={1}
                             >
@@ -288,6 +377,7 @@ export const SearchScreen: React.FC = () => {
             <View style={styles.resultsHeader}>
                 <Text style={styles.resultsText}>
                     {t('search.foundProducts', { count: products.length })}
+                    {/* Ideally API returns total count for accurate "Found X products", currently usually just getting local count or page meta total */}
                 </Text>
             </View>
         );
@@ -297,18 +387,18 @@ export const SearchScreen: React.FC = () => {
         <View style={styles.container}>
             {/* Custom Search Header */}
             <View style={styles.header}>
-                <TouchableOpacity 
-                    onPress={() => router.back()} 
+                <TouchableOpacity
+                    onPress={() => router.back()}
                     style={styles.backButton}
                 >
                     <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
                 </TouchableOpacity>
 
                 <View style={styles.searchInputContainer}>
-                    <Ionicons 
-                        name="search-outline" 
-                        size={20} 
-                        color={theme.colors.text.secondary} 
+                    <Ionicons
+                        name="search-outline"
+                        size={20}
+                        color={theme.colors.text.secondary}
                     />
                     <TextInput
                         ref={searchInputRef}
@@ -324,21 +414,21 @@ export const SearchScreen: React.FC = () => {
                         autoCapitalize="none"
                     />
                     {searchQuery.length > 0 && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={handleClearSearch}
                             style={styles.clearIcon}
                         >
-                            <Ionicons 
-                                name="close-circle" 
-                                size={20} 
-                                color={theme.colors.text.secondary} 
+                            <Ionicons
+                                name="close-circle"
+                                size={20}
+                                color={theme.colors.text.secondary}
                             />
                         </TouchableOpacity>
                     )}
                 </View>
 
-                <TouchableOpacity 
-                    onPress={handleVoiceSearch} 
+                <TouchableOpacity
+                    onPress={handleVoiceSearch}
                     style={styles.micButton}
                 >
                     <Ionicons name="mic-outline" size={24} color={theme.colors.text.primary} />
@@ -362,6 +452,8 @@ export const SearchScreen: React.FC = () => {
                 ListEmptyComponent={renderEmptyState}
                 ListFooterComponent={renderFooter}
                 keyboardShouldPersistTaps="handled"
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
             />
         </View>
     );
