@@ -11,6 +11,7 @@ import { addToCartThunk } from '@/store/slices/cartSlice';
 import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import { useToast } from '@/shared/components/Toast';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCardProps {
     product: Product;
@@ -28,6 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
     const dispatch = useAppDispatch();
     const router = useRouter();
     const { showToast } = useToast();
+    const { t } = useTranslation();
     const { isAddingToCart, lastAddedProductId } = useAppSelector((state) => state.cart);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -63,9 +65,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         // Get price label based on product type (matching web application)
         let priceLabel = '';
         if (product.type === 'configurable') {
-            priceLabel = 'As low as';
+            priceLabel = t('product.asLowAs');
         } else if (product.type === 'grouped') {
-            priceLabel = 'Starting at';
+            priceLabel = t('product.startingAt');
         }
         // bundle, simple, and other types don't show a label
 
@@ -88,14 +90,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         e.stopPropagation();
 
         if (!product.in_stock) {
-            showToast({ message: 'Product is out of stock', type: 'error' });
+            showToast({ message: t('product.productOutOfStock'), type: 'error' });
             return;
         }
 
         // Check if product is configurable - requires option selection
         if (product.type === 'configurable') {
             showToast({
-                message: 'Please select product options',
+                message: t('product.selectProductOptions'),
                 type: 'warning'
             });
             // Redirect to product detail page to select options
@@ -112,9 +114,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                 product: product, // Pass product data for guest cart
             })).unwrap();
 
-            showToast({ message: `${product.name} added to cart!`, type: 'success' });
+            showToast({ message: t('product.addedToCart', { name: product.name }), type: 'success' });
         } catch (error: any) {
-            showToast({ message: error || 'Failed to add to cart', type: 'error' });
+            showToast({ message: error || t('product.failedToAddToCart'), type: 'error' });
         }
     };
 
@@ -124,7 +126,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         // Check if user is authenticated
         if (!isAuthenticated) {
             showToast({
-                message: 'Please login first to add items to wishlist',
+                message: t('product.loginToAddWishlist'),
                 type: 'warning'
             });
             return;
@@ -139,13 +141,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
             await dispatch(fetchWishlistThunk()).unwrap();
 
             const message = isInWishlist
-                ? `${product.name} removed from wishlist`
-                : `${product.name} added to wishlist!`;
+                ? t('product.removedFromWishlist', { name: product.name })
+                : t('product.addedToWishlist', { name: product.name });
 
             showToast({ message, type: 'success' });
         } catch (error: any) {
             showToast({
-                message: error || 'Failed to update wishlist',
+                message: error || t('product.failedToUpdateWishlist'),
                 type: 'error'
             });
         } finally {
@@ -159,7 +161,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         // Check if user is authenticated
         if (!isAuthenticated) {
             showToast({
-                message: 'Please login to request a quote',
+                message: t('product.loginToRequestQuote'),
                 type: 'warning'
             });
             router.push('/login');
@@ -212,21 +214,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                     {/* Sale Badge - Shows when product is on sale */}
                     {productData.isOnSale && product.in_stock ? (
                         <View style={styles.saleBadge}>
-                            <Text style={styles.saleText}>SALE</Text>
+                            <Text style={styles.saleText}>{t('product.sale')}</Text>
                         </View>
                     ) : null}
 
                     {/* New Badge - Shows when product is new and not on sale */}
                     {!productData.isOnSale && productData.isNew && product.in_stock ? (
                         <View style={styles.newBadge}>
-                            <Text style={styles.newText}>NEW</Text>
+                            <Text style={styles.newText}>{t('product.new')}</Text>
                         </View>
                     ) : null}
 
                     {/* Out of Stock Badge */}
                     {!product.in_stock ? (
                         <View style={styles.outOfStockBadge}>
-                            <Text style={styles.outOfStockText}>Out of Stock</Text>
+                            <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
                         </View>
                     ) : null}
                 </View>
@@ -322,7 +324,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                 color={theme.colors.white}
                             />
                             <Text style={styles.addToCartText}>
-                                {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                                {product.in_stock ? t('product.addToCart') : t('product.outOfStock')}
                             </Text>
                         </>
                     )}

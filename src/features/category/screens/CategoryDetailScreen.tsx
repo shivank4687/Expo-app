@@ -15,7 +15,7 @@ import { FilterModal } from '@/shared/components/FilterModal';
 import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
 import { SORT_OPTIONS } from '@/constants/sortOptions';
-
+import { useTranslation } from 'react-i18next';
 const PRODUCTS_PER_PAGE = 12; // Increased for grid view
 
 /**
@@ -53,6 +53,7 @@ const SubcategoryCard: React.FC<SubcategoryCardProps> = ({ category, onPress }) 
 export const CategoryDetailScreen: React.FC = () => {
     const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
     const router = useRouter();
+    const { t } = useTranslation();
     const [category, setCategory] = useState<Category | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -319,7 +320,7 @@ export const CategoryDetailScreen: React.FC = () => {
                                     <Text style={styles.sectionTitle}>Products</Text>
                                     {products.length >= PRODUCTS_PER_PAGE && (
                                         <TouchableOpacity onPress={handleViewAllProducts}>
-                                            <Text style={styles.viewAllText}>View All</Text>
+                                            <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>

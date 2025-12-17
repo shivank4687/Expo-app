@@ -105,7 +105,7 @@ export const SupplierShopScreen: React.FC = () => {
             const data = await suppliersApi.getSupplierProfile(url);
             setSupplier(data);
         } catch (err: any) {
-            setError(err.message || 'Failed to load supplier profile');
+            setError(err.message || t('supplier.loadProfileError'));
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -128,7 +128,7 @@ export const SupplierShopScreen: React.FC = () => {
             setCurrentPage(page);
             setHasMore(response.meta.current_page < response.meta.last_page);
         } catch (err: any) {
-            setError(err.message || 'Failed to load products');
+            setError(err.message || t('supplier.loadProductsError'));
         } finally {
             setIsLoadingProducts(false);
         }
@@ -436,7 +436,7 @@ export const SupplierShopScreen: React.FC = () => {
                                     ))}
                                 </View>
                                 <Text style={styles.ratingText}>
-                                    {supplier.rating.toFixed(1)} ({supplier.total_reviews} {supplier.total_reviews === 1 ? 'review' : 'reviews'})
+                                    {supplier.rating.toFixed(1)} ({supplier.total_reviews} {supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')})
                                 </Text>
                             </>
                         )}
@@ -683,7 +683,7 @@ export const SupplierShopScreen: React.FC = () => {
                                     ))}
                                 </View>
                                 <Text style={styles.reviewsCount}>
-                                    {supplier.total_reviews} {supplier.total_reviews === 1 ? 'review' : 'reviews'}
+                                    {supplier.total_reviews} {supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')}
                                 </Text>
                             </View>
 

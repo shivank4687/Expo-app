@@ -27,11 +27,13 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCartThunk } from '@/store/slices/cartSlice';
 import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import { useToast } from '@/shared/components/Toast';
+import { useTranslation } from 'react-i18next';
 
 export const ProductDetailScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
+    const { t } = useTranslation();
     const { id } = useLocalSearchParams<{ id: string }>();
 
     const [product, setProduct] = useState<Product | null>(null);
@@ -80,7 +82,7 @@ export const ProductDetailScreen: React.FC = () => {
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to load product');
+            setError(err.message || t('product.failedToLoadProduct'));
         } finally {
             setIsLoading(false);
         }
@@ -92,7 +94,7 @@ export const ProductDetailScreen: React.FC = () => {
         // Check if user is authenticated
         if (!isAuthenticated) {
             showToast({
-                message: 'Please login first to add items to wishlist',
+                message: t('product.loginToAddWishlist'),
                 type: 'warning'
             });
             return;
@@ -105,13 +107,13 @@ export const ProductDetailScreen: React.FC = () => {
             await dispatch(fetchWishlistThunk()).unwrap();
 
             const message = isInWishlist
-                ? `${product.name} removed from wishlist`
-                : `${product.name} added to wishlist!`;
+                ? t('product.removedFromWishlist', { name: product.name })
+                : t('product.addedToWishlist', { name: product.name });
 
             showToast({ message, type: 'success' });
         } catch (error: any) {
             showToast({
-                message: error || 'Failed to update wishlist',
+                message: error || t('product.failedToUpdateWishlist'),
                 type: 'error'
             });
         } finally {
@@ -125,7 +127,7 @@ export const ProductDetailScreen: React.FC = () => {
         // Validation for configurable products
         if (product.type === 'configurable' && !selectedVariantId) {
             showToast({
-                message: 'Please select product options',
+                message: t('product.selectProductOptions'),
                 type: 'warning',
             });
             return;
@@ -148,12 +150,12 @@ export const ProductDetailScreen: React.FC = () => {
             await dispatch(addToCartThunk(cartData)).unwrap();
 
             showToast({
-                message: `${product.name} added to cart!`,
+                message: t('product.addedToCart', { name: product.name }),
                 type: 'success'
             });
         } catch (error: any) {
             showToast({
-                message: error || 'Failed to add to cart',
+                message: error || t('product.failedToAddToCart'),
                 type: 'error'
             });
         } finally {
@@ -171,7 +173,7 @@ export const ProductDetailScreen: React.FC = () => {
     if (isLoading) {
         return (
             <>
-                <Stack.Screen options={{ title: 'Product Details', headerBackTitle: 'Back' }} />
+                <Stack.Screen options={{ title: t('product.productDetails'), headerBackTitle: t('product.back') }} />
                 <LoadingSpinner />
             </>
         );
@@ -180,8 +182,8 @@ export const ProductDetailScreen: React.FC = () => {
     if (error || !product) {
         return (
             <>
-                <Stack.Screen options={{ title: 'Product Details' }} />
-                <ErrorMessage message={error || 'Product not found'} onRetry={loadProduct} />
+                <Stack.Screen options={{ title: t('product.productDetails') }} />
+                <ErrorMessage message={error || t('product.productNotFound')} onRetry={loadProduct} />
             </>
         );
     }
@@ -199,9 +201,9 @@ export const ProductDetailScreen: React.FC = () => {
     // Get price label based on product type and selection
     let priceLabel = '';
     if (product.type === 'configurable' && !selectedVariantId) {
-        priceLabel = 'As low as';
+        priceLabel = t('product.asLowAs');
     } else if (product.type === 'grouped') {
-        priceLabel = 'Starting at';
+        priceLabel = t('product.startingAt');
     }
 
     // Use variant images if available, otherwise use product images
@@ -214,7 +216,7 @@ export const ProductDetailScreen: React.FC = () => {
             <Stack.Screen
                 options={{
                     title: product.name,
-                    headerBackTitle: 'Back',
+                    headerBackTitle: t('product.back'),
                 }}
             />
 
@@ -267,7 +269,7 @@ export const ProductDetailScreen: React.FC = () => {
                                 ))}
                             </View>
                             <Text style={styles.ratingText}>
-                                {product.rating.toFixed(1)} ({product.reviews_count || 0} reviews)
+                                {product.rating.toFixed(1)} ({product.reviews_count || 0} {t('product.reviews')})
                             </Text>
                         </View>
                     ) : null}
@@ -290,7 +292,7 @@ export const ProductDetailScreen: React.FC = () => {
                                         </Text>
                                         <View style={styles.discountBadge}>
                                             <Text style={styles.discountText}>
-                                                {Math.round(((displayRegularPrice! - displayPrice) / displayRegularPrice!) * 100)}% OFF
+                                                {Math.round(((displayRegularPrice! - displayPrice) / displayRegularPrice!) * 100)}% {t('product.off')}
                                             </Text>
                                         </View>
                                     </>
@@ -379,7 +381,7 @@ export const ProductDetailScreen: React.FC = () => {
                     {/* Description Accordion */}
                     {product.description ? (
                         <Accordion
-                            title="Description"
+                            title={t('product.description')}
                             defaultExpanded={false}
                             style={styles.accordion}
                         >
@@ -393,7 +395,7 @@ export const ProductDetailScreen: React.FC = () => {
                     {/* Sold By Accordion */}
                     {product.supplier ? (
                         <Accordion
-                            title="Sold By"
+                            title={t('product.soldBy')}
                             defaultExpanded={false}
                             style={styles.accordion}
                         >
@@ -436,7 +438,7 @@ export const ProductDetailScreen: React.FC = () => {
                                         <Text style={styles.supplierRatingText}>
                                             {product.supplier.rating.toFixed(1)}
                                             {product.supplier.total_reviews
-                                                ? ` (${product.supplier.total_reviews} ${product.supplier.total_reviews === 1 ? 'review' : 'reviews'})`
+                                                ? ` (${product.supplier.total_reviews} ${product.supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')})`
                                                 : ''
                                             }
                                         </Text>
@@ -451,14 +453,14 @@ export const ProductDetailScreen: React.FC = () => {
                                             router.push(`/supplier/${product.supplier.url}`);
                                         } else {
                                             showToast({
-                                                message: 'Supplier shop URL not available',
+                                                message: t('product.supplierShopNotAvailable'),
                                                 type: 'warning'
                                             });
                                         }
                                     }}
                                 >
                                     <Text style={styles.viewSupplierButtonText}>
-                                        View Supplier Shop
+                                        {t('product.viewSupplierShop')}
                                     </Text>
                                     <Ionicons
                                         name="storefront-outline"
@@ -473,7 +475,7 @@ export const ProductDetailScreen: React.FC = () => {
                                     onPress={() => {
                                         if (!isAuthenticated) {
                                             showToast({
-                                                message: 'Please login to message supplier',
+                                                message: t('product.loginToMessageSupplier'),
                                                 type: 'warning'
                                             });
                                             return;
@@ -487,7 +489,7 @@ export const ProductDetailScreen: React.FC = () => {
                                         color={theme.colors.primary[500]}
                                     />
                                     <Text style={styles.messageSupplierButtonText}>
-                                        Message Supplier
+                                        {t('product.messageSupplier')}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -503,7 +505,7 @@ export const ProductDetailScreen: React.FC = () => {
                             onClose={() => setIsMessageModalVisible(false)}
                             onSuccess={() => {
                                 showToast({
-                                    message: 'Message sent successfully!',
+                                    message: t('product.messageSentSuccess'),
                                     type: 'success'
                                 });
                             }}
@@ -549,7 +551,7 @@ export const ProductDetailScreen: React.FC = () => {
                                 >
                                     <Ionicons name="document-text-outline" size={18} color={theme.colors.primary[500]} />
                                     <Text style={styles.rfqButtonText}>
-                                        Request for Quote
+                                        {t('product.requestForQuote')}
                                     </Text>
                                 </TouchableOpacity>
                             ) : (
@@ -561,7 +563,7 @@ export const ProductDetailScreen: React.FC = () => {
                                 >
                                     <Ionicons name="log-in-outline" size={18} color={theme.colors.primary[500]} />
                                     <Text style={styles.rfqButtonText}>
-                                        Login for RFQ
+                                        {t('product.loginForRFQ')}
                                     </Text>
                                 </TouchableOpacity>
                             )
@@ -569,7 +571,7 @@ export const ProductDetailScreen: React.FC = () => {
 
                         {/* Add to Cart Button */}
                         <Button
-                            title={isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                            title={isAddingToCart ? t('product.adding') : t('product.addToCart')}
                             onPress={handleAddToCart}
                             style={[
                                 styles.addToCartButton,

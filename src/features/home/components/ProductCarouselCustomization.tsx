@@ -15,6 +15,7 @@ import { Product } from '@/features/product/types/product.types';
 import { ProductCard } from './ProductCard';
 import { theme } from '@/theme';
 import { useAppSelector } from '@/store/hooks';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCarouselCustomizationProps {
     options: ProductCarouselOptions;
@@ -31,6 +32,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
     options,
 }) => {
     const router = useRouter();
+    const { t } = useTranslation();
     const { selectedLocale } = useAppSelector((state) => state.core);
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -108,7 +110,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
                         style={styles.viewAllButton}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.viewAllText}>View All</Text>
+                        <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
                         <Ionicons
                             name="arrow-forward"
                             size={16}

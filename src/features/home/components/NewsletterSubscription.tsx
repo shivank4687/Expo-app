@@ -5,23 +5,25 @@ import { theme } from '@/theme';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { useToast } from '@/shared/components/Toast';
+import { useTranslation } from 'react-i18next';
 
 export const NewsletterSubscription = () => {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const { showToast } = useToast();
+    const { t } = useTranslation();
 
     const handleSubscribe = async () => {
         setError('');
         if (!email) {
-            setError('Please enter your email address');
+            setError(t('newsletter.emailRequired'));
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address');
+            setError(t('newsletter.emailInvalid'));
             return;
         }
 
@@ -29,13 +31,13 @@ export const NewsletterSubscription = () => {
         try {
             const response = await subscriptionApi.subscribe(email);
             showToast({
-                message: response.message || 'Thank you for subscribing!',
+                message: response.message || t('newsletter.subscribeSuccess'),
                 type: 'success',
             });
             setEmail('');
         } catch (error: any) {
             showToast({
-                message: error.message || 'Failed to subscribe. Please try again.',
+                message: error.message || t('newsletter.subscribeFailed'),
                 type: 'error',
             });
         } finally {
@@ -46,16 +48,16 @@ export const NewsletterSubscription = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.heading} role="heading" aria-level="2">
-                Subscribe to our newsletter
+                {t('newsletter.heading')}
             </Text>
 
             <Text style={styles.subtext}>
-                Get the latest updates and offers
+                {t('newsletter.subtext')}
             </Text>
 
             <View style={styles.formContainer}>
                 <Input
-                    placeholder="email@example.com"
+                    placeholder={t('newsletter.emailPlaceholder')}
                     value={email}
                     onChangeText={(text) => {
                         setEmail(text);
@@ -70,7 +72,7 @@ export const NewsletterSubscription = () => {
                 />
 
                 <Button
-                    title="Subscribe"
+                    title={t('newsletter.subscribeButton')}
                     onPress={handleSubscribe}
                     loading={isLoading}
                     style={styles.button}
