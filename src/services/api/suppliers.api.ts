@@ -67,7 +67,7 @@ export const suppliersApi = {
             API_ENDPOINTS.MESSAGE_SUPPLIER,
             payload
         );
-        
+
         return response;
     },
 
@@ -79,7 +79,7 @@ export const suppliersApi = {
         const response = await restApiClient.get<{ data: MessageThread[] }>(
             '/supplier/messages'
         );
-        
+
         return response;
     },
 
@@ -91,7 +91,7 @@ export const suppliersApi = {
         const response = await restApiClient.get<{ data: ThreadDetails }>(
             `/supplier/messages/${threadId}`
         );
-        
+
         return response;
     },
 
@@ -104,7 +104,7 @@ export const suppliersApi = {
             `/supplier/messages/${threadId}`,
             { message }
         );
-        
+
         return response;
     },
 
@@ -122,7 +122,12 @@ export const suppliersApi = {
      * Get supplier products
      * Public endpoint - no authentication required
      */
-    async getSupplierProducts(url: string, page: number = 1, perPage: number = 20): Promise<PaginatedResponse<Product>> {
+    async getSupplierProducts(
+        url: string,
+        page: number = 1,
+        perPage: number = 20,
+        additionalParams?: Record<string, any>
+    ): Promise<PaginatedResponse<Product>> {
         const endpoint = API_ENDPOINTS.SUPPLIER_PRODUCTS.replace(':url', url);
         const response = await restApiClient.get<{
             data: Product[];
@@ -141,13 +146,19 @@ export const suppliersApi = {
                 next: string | null;
             };
         }>(endpoint, {
-            params: { page, per_page: perPage },
+            params: {
+                page,
+                limit: perPage,
+                ...additionalParams
+            },
         });
-        
+
         return {
             data: response.data,
-            meta: response.meta,
-            links: response.links,
+            current_page: response.meta.current_page,
+            last_page: response.meta.last_page,
+            per_page: response.meta.per_page,
+            total: response.meta.total,
         };
     },
 
@@ -190,7 +201,7 @@ export const suppliersApi = {
      */
     async submitRFQ(payload: RFQPayload, images?: string[], files?: string[] | Array<{ uri: string; name: string }>): Promise<RFQResponse> {
         const formData = new FormData();
-        
+
         // Add basic fields
         formData.append('supplier_id', payload.supplier_id.toString());
         formData.append('quote_title', payload.quote_title);
@@ -216,8 +227,8 @@ export const suppliersApi = {
                 }
                 formData.append(`products[${index}][is_sample]`, product.is_sample ? '1' : '0');
                 if (product.category_id) {
-                    const categoryIds = Array.isArray(product.category_id) 
-                        ? product.category_id 
+                    const categoryIds = Array.isArray(product.category_id)
+                        ? product.category_id
                         : [product.category_id];
                     categoryIds.forEach((catId, catIndex) => {
                         formData.append(`products[${index}][category_id][${catIndex}]`, catId.toString());
@@ -231,13 +242,13 @@ export const suppliersApi = {
             images.forEach((imageUri, index) => {
                 // Detect file extension and mime type
                 const extension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
-                const mimeType = extension === 'png' ? 'image/png' 
+                const mimeType = extension === 'png' ? 'image/png'
                     : extension === 'gif' ? 'image/gif'
-                    : extension === 'webp' ? 'image/webp'
-                    : extension === 'mp4' ? 'video/mp4'
-                    : extension === 'mov' ? 'video/quicktime'
-                    : 'image/jpeg';
-                
+                        : extension === 'webp' ? 'image/webp'
+                            : extension === 'mp4' ? 'video/mp4'
+                                : extension === 'mov' ? 'video/quicktime'
+                                    : 'image/jpeg';
+
                 formData.append(`images[${index}]`, {
                     uri: imageUri,
                     type: mimeType,
@@ -251,20 +262,20 @@ export const suppliersApi = {
             files.forEach((file, index) => {
                 // Handle both string URI and object with uri and name
                 const fileUri = typeof file === 'string' ? file : file.uri;
-                const fileName = typeof file === 'string' 
+                const fileName = typeof file === 'string'
                     ? file.split('/').pop() || `file_${index}`
                     : file.name || `file_${index}`;
-                
+
                 // Try to detect file extension from URI or filename
                 const extension = fileName.split('.').pop()?.toLowerCase() || fileUri.split('.').pop()?.toLowerCase() || 'bin';
                 const mimeType = extension === 'pdf' ? 'application/pdf'
                     : extension === 'doc' ? 'application/msword'
-                    : extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                    : extension === 'xls' ? 'application/vnd.ms-excel'
-                    : extension === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                    : extension === 'txt' ? 'text/plain'
-                    : 'application/octet-stream';
-                
+                        : extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                            : extension === 'xls' ? 'application/vnd.ms-excel'
+                                : extension === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                                    : extension === 'txt' ? 'text/plain'
+                                        : 'application/octet-stream';
+
                 formData.append(`files[${index}]`, {
                     uri: fileUri,
                     type: mimeType,
@@ -282,7 +293,7 @@ export const suppliersApi = {
                 },
             }
         );
-        
+
         return response;
     },
 

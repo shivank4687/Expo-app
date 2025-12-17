@@ -27,9 +27,9 @@ const ENV = {
     timeout: 30000,
   },
   production: {
-    baseUrl: "https://api.yourdomain.com",
-    restApiUrl: "https://api.yourdomain.com/api/v1",
-    shopApiUrl: "https://api.yourdomain.com/api",
+    baseUrl: "https://artemayor.com",
+    restApiUrl: "https://artemayor.com/api/v1",
+    shopApiUrl: "https://artemayor.com/api",
     timeout: 30000,
   },
 };

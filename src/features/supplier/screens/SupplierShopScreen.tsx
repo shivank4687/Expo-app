@@ -31,9 +31,14 @@ import { WriteReviewModal } from '@/features/supplier/components/WriteReviewModa
 import { ContactSupplierModal } from '@/features/supplier/components/ContactSupplierModal';
 import { ReportSupplierModal } from '@/features/supplier/components/ReportSupplierModal';
 import { MessageSupplierModal } from '@/features/product/components/MessageSupplierModal';
+import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
+import { SortModal } from '@/shared/components/SortModal';
+import { FilterModal } from '@/shared/components/FilterModal';
 import { cartApi } from '@/services/api/cart.api';
 import { Cart } from '@/features/cart/types/cart.types';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
+import { FilterState } from '@/types/filters.types';
+import { SORT_OPTIONS } from '@/constants/sortOptions';
 
 type TabType = 'products' | 'about' | 'quickorder' | 'reviews' | 'contact';
 
@@ -92,6 +97,16 @@ export const SupplierShopScreen: React.FC = () => {
     // Refs to manage search timeout and prevent search on product selection
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isSelectingProductRef = useRef(false);
+    const isLoadingProductsRef = useRef(false);
+
+    // Filter and sort state for products tab
+    const [sortBy, setSortBy] = useState<string>('');
+    const [filters, setFilters] = useState<FilterState>({
+        price: null,
+        attributes: {},
+    });
+    const [isSortModalVisible, setIsSortModalVisible] = useState(false);
+    const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
     // Use Redux cart state instead of local state
     const cart = reduxCart;
@@ -112,27 +127,78 @@ export const SupplierShopScreen: React.FC = () => {
         }
     }, [url]);
 
-    const loadProducts = useCallback(async (page: number = 1, append: boolean = false) => {
-        if (!url) return;
+    const loadProducts = async (page: number = 1, reset: boolean = false) => {
+        console.log('🔵 loadProducts called:', { page, reset, url, sortBy, filters, isLoadingRef: isLoadingProductsRef.current });
 
-        setIsLoadingProducts(true);
+        if (!url) {
+            console.log('❌ No URL, returning');
+            return;
+        }
+
+        // Prevent duplicate requests
+        if (reset && isLoadingProductsRef.current) {
+            console.log('⛔ Duplicate call prevented - already loading');
+            return;
+        }
+
         try {
-            const response = await suppliersApi.getSupplierProducts(url, page, 20);
-
-            if (append) {
-                setProducts((prev) => [...prev, ...response.data]);
+            if (reset) {
+                console.log('🟢 Starting new load (reset=true)');
+                setIsLoadingProducts(true);
+                isLoadingProductsRef.current = true;
             } else {
+                console.log('🟡 Appending products (reset=false)');
+            }
+            setError(null);
+
+            // Build filter and sort parameters
+            const params: Record<string, any> = {};
+
+            // Add sort parameter
+            if (sortBy) {
+                params.sort = sortBy;
+            }
+
+            // Add price filter
+            if (filters.price) {
+                params.price = filters.price;
+            }
+
+            // Add attribute filters
+            Object.keys(filters.attributes).forEach((key) => {
+                const values = filters.attributes[key];
+                if (values && values.length > 0) {
+                    params[key] = values.join(',');
+                }
+            });
+
+            console.log('📤 API Request params:', { page, params });
+            const response = await suppliersApi.getSupplierProducts(url, page, 20, params);
+            console.log('📥 API Response:', {
+                productCount: response.data.length,
+                currentPage: response.current_page,
+                lastPage: response.last_page,
+                firstProductId: response.data[0]?.id,
+                firstProductName: response.data[0]?.name
+            });
+
+            if (reset) {
                 setProducts(response.data);
+            } else {
+                setProducts((prev) => [...prev, ...response.data]);
             }
 
             setCurrentPage(page);
-            setHasMore(response.meta.current_page < response.meta.last_page);
+            setHasMore(response.current_page < response.last_page);
         } catch (err: any) {
+            console.log('❌ API Error:', err.message);
             setError(err.message || t('supplier.loadProductsError'));
         } finally {
             setIsLoadingProducts(false);
+            isLoadingProductsRef.current = false;
+            console.log('✅ loadProducts completed');
         }
-    }, [url]);
+    };
 
     const loadCart = useCallback(async () => {
         if (!isAuthenticated) return;
@@ -159,11 +225,24 @@ export const SupplierShopScreen: React.FC = () => {
         loadSupplierProfile();
     }, [loadSupplierProfile]);
 
+    // Clear products when URL changes (navigating to different supplier)
     useEffect(() => {
+        console.log('🔄 URL changed, clearing products:', url);
+        setProducts([]);
+        setCurrentPage(1);
+        setHasMore(true);
+        setIsLoadingProducts(true); // Show loader immediately
+        console.log('✅ Products cleared, currentPage reset to 1, loading set to true');
+    }, [url]);
+
+    useEffect(() => {
+        console.log('🔄 useEffect triggered:', { activeTab, supplierId: supplier?.id, sortBy, filters });
         if (activeTab === 'products' && supplier) {
-            loadProducts(1, false);
+            console.log('✨ Calling loadProducts from useEffect');
+            loadProducts(1, true);
         }
-    }, [activeTab, supplier, loadProducts]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, supplier?.id, sortBy, filters]);
 
     // Load cart when supplier is loaded and user is on quick order tab
     useEffect(() => {
@@ -346,18 +425,44 @@ export const SupplierShopScreen: React.FC = () => {
         setIsRefreshing(true);
         loadSupplierProfile();
         if (activeTab === 'products') {
-            loadProducts(1, false);
+            loadProducts(1, true);
         }
-    }, [loadSupplierProfile, activeTab, loadProducts]);
+    }, [loadSupplierProfile, activeTab]);
 
     const handleLoadMore = () => {
+        console.log('📜 handleLoadMore called:', { isLoadingProducts, hasMore, activeTab, currentPage, productsCount: products.length });
+
+        // Prevent loading more if we haven't loaded the first page yet
+        if (products.length === 0) {
+            console.log('⏸️ Skipping - no products loaded yet');
+            return;
+        }
+
         if (!isLoadingProducts && hasMore && activeTab === 'products') {
-            loadProducts(currentPage + 1, true);
+            console.log('➕ Loading more products, page:', currentPage + 1);
+            loadProducts(currentPage + 1, false);
+        } else {
+            console.log('⏸️ Not loading more:', { isLoadingProducts, hasMore, activeTab });
         }
     };
 
     const handleProductPress = (productId: number) => {
         router.push(`/product/${productId}`);
+    };
+
+    const handleSortSelect = (value: string) => {
+        setSortBy(value);
+    };
+
+    const handleFilterApply = (newFilters: FilterState) => {
+        setFilters(newFilters);
+    };
+
+    const getActiveFilterCount = (): number => {
+        let count = 0;
+        if (filters.price) count++;
+        count += Object.keys(filters.attributes).length;
+        return count;
     };
 
     const renderBanner = () => {
@@ -1209,6 +1314,35 @@ export const SupplierShopScreen: React.FC = () => {
                     }}
                 />
             )}
+
+            {/* Product Filter Bar - Only show on products tab */}
+            {activeTab === 'products' && (
+                <>
+                    <ProductFilterBar
+                        onSortPress={() => setIsSortModalVisible(true)}
+                        onFilterPress={() => setIsFilterModalVisible(true)}
+                        filterCount={getActiveFilterCount()}
+                    />
+
+                    {/* Sort Modal */}
+                    <SortModal
+                        visible={isSortModalVisible}
+                        onClose={() => setIsSortModalVisible(false)}
+                        options={SORT_OPTIONS}
+                        selectedValue={sortBy}
+                        onSelect={handleSortSelect}
+                    />
+
+                    {/* Filter Modal */}
+                    <FilterModal
+                        visible={isFilterModalVisible}
+                        onClose={() => setIsFilterModalVisible(false)}
+                        categoryId={undefined}
+                        currentFilters={filters}
+                        onApply={handleFilterApply}
+                    />
+                </>
+            )}
         </SafeAreaView>
     );
 };
@@ -1381,6 +1515,7 @@ const styles = StyleSheet.create({
     },
     productsContainer: {
         padding: theme.spacing.md,
+        paddingBottom: 80, // Add padding for fixed filter bar
     },
     productRow: {
         justifyContent: 'space-between',
