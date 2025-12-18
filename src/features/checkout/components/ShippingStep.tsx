@@ -134,14 +134,23 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
 
                                                 {/* Method Details */}
                                                 <View style={styles.rateDetails}>
-                                                    <Text style={styles.rateTitle}>
-                                                        {rate.method_title}
-                                                    </Text>
+                                                    {/* Title and Price Row */}
+                                                    <View style={styles.rateTitleRow}>
+                                                        <Text style={styles.rateTitle}>
+                                                            {rate.method_title}
+                                                        </Text>
+                                                        <Text style={styles.ratePrice}>
+                                                            {rate.formatted_price || rate.base_formatted_price}
+                                                        </Text>
+                                                    </View>
+
+                                                    {/* Description */}
                                                     {rate.method_description && (
                                                         <Text style={styles.rateDescription}>
                                                             {rate.method_description}
                                                         </Text>
                                                     )}
+
                                                     {/* Store-wise Shipping Breakdown */}
                                                     {rate.supplier_breakdown && rate.supplier_breakdown.length > 0 && (
                                                         <View style={styles.breakdownContainer}>
@@ -161,11 +170,6 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                         </View>
                                                     )}
                                                 </View>
-
-                                                {/* Price */}
-                                                <Text style={styles.ratePrice}>
-                                                    {rate.formatted_price || rate.base_formatted_price}
-                                                </Text>
                                             </TouchableOpacity>
                                         );
                                     })}
@@ -245,7 +249,7 @@ const styles = StyleSheet.create({
     },
     rateItem: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         padding: theme.spacing.md,
         borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
@@ -275,15 +279,23 @@ const styles = StyleSheet.create({
     rateDetails: {
         flex: 1,
     },
+    rateTitleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: theme.spacing.xs,
+    },
     rateTitle: {
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.medium,
         color: theme.colors.text.primary,
-        marginBottom: 2,
+        flex: 1,
+        marginRight: theme.spacing.sm,
     },
     rateDescription: {
         fontSize: theme.typography.fontSize.xs,
         color: theme.colors.text.secondary,
+        marginBottom: theme.spacing.xs,
     },
     ratePrice: {
         fontSize: theme.typography.fontSize.md,
@@ -418,7 +430,7 @@ const styles = StyleSheet.create({
     breakdownPrice: {
         fontSize: theme.typography.fontSize.xs,
         fontWeight: theme.typography.fontWeight.medium,
-        color: theme.colors.text.primary,
+        color: theme.colors.primary[500],
         marginLeft: theme.spacing.sm,
     },
 });
