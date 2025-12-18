@@ -79,7 +79,21 @@
     "termsAgreement": "By signing up, you agree to our",
     "termsOfService": "Terms of Service",
     "and": "and",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "forgotPasswordTitle": "Forgot Password",
+    "forgotPasswordSubtitle": "Enter your phone number to reset your password",
+    "sendOtp": "Send OTP",
+    "resetPassword": "Reset Password",
+    "resetPasswordTitle": "Reset Password",
+    "resetPasswordSubtitle": "Enter your new password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordResetSuccess": "Password reset successfully! Please login with your new password.",
+    "phoneNotFound": "Phone number not found. Please check and try again.",
+    "otpSentForPasswordReset": "OTP has been sent to your phone number for password reset.",
+    "enterNewPassword": "Enter your new password",
+    "newPasswordRequired": "New password is required",
+    "backToLogin": "Back to Login"
   },
   "drawer": {
     "home": "Home",

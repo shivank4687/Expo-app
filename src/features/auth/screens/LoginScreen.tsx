@@ -85,22 +85,22 @@ export const LoginScreen: React.FC = () => {
                 email_or_phone: emailOrPhone,
                 password,
             };
-            
+
             // Add phone_country_id if it's a phone number
             if (isPhoneInput && selectedCountry) {
                 loginPayload.phone_country_id = selectedCountry.id;
             }
-            
+
             if (userType === 'supplier') {
                 // Supplier login
                 await dispatch(supplierLoginThunk(loginPayload)).unwrap();
-                
+
                 showToast({
                     message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
                     type: 'success',
                     duration: 3000,
                 });
-                
+
                 // Navigate to supplier dashboard
                 setTimeout(() => {
                     if (router.canGoBack()) {
@@ -111,13 +111,13 @@ export const LoginScreen: React.FC = () => {
             } else {
                 // Customer login
                 await dispatch(loginThunk(loginPayload)).unwrap();
-                
+
                 showToast({
                     message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
                     type: 'success',
                     duration: 3000,
                 });
-                
+
                 // Navigate to customer home/drawer
                 setTimeout(() => {
                     if (router.canGoBack()) {
@@ -225,7 +225,7 @@ export const LoginScreen: React.FC = () => {
                         autoComplete="password"
                     />
 
-                    <TouchableOpacity style={styles.forgotPassword}>
+                    <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/forgot-password')}>
                         <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
                     </TouchableOpacity>
 

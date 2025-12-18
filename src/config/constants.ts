@@ -19,6 +19,8 @@ export const API_ENDPOINTS = {
     VERIFY_OTP: '/customer/verify-otp',
     RESEND_OTP: '/customer/resend-otp',
     LOGOUT: '/customer/logout',
+    FORGOT_PASSWORD_PHONE: '/customer/forgot-password-phone',
+    RESET_PASSWORD: '/customer/reset-password',
     // Supplier App Auth
     SUPPLIER_LOGIN: '/supplier-app/login',
     SUPPLIER_LOGOUT: '/supplier-app/logout',

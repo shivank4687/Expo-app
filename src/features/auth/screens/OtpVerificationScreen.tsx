@@ -20,6 +20,7 @@ import { useToast } from '@/shared/components/Toast';
 interface OtpVerificationParams {
     verificationToken: string;
     phone: string;
+    type?: string;
 }
 
 export const OtpVerificationScreen: React.FC = () => {
@@ -38,6 +39,7 @@ export const OtpVerificationScreen: React.FC = () => {
     // Get verification token from params or Redux state
     const token = params.verificationToken || verificationToken || '';
     const phone = params.phone || '';
+    const verificationType = params.type || 'customer';
 
     // Mask phone number for display
     const maskedPhone = phone ? phone.replace(/(\d{3})\d{4}(\d+)/, '$1****$2') : '';
@@ -45,7 +47,7 @@ export const OtpVerificationScreen: React.FC = () => {
     // Verify OTP
     const handleVerify = useCallback(async (otpValue?: string) => {
         const otpCode = otpValue || otp.join('');
-        
+
         if (otpCode.length !== 6) {
             showToast({
                 message: t('auth.otpRequired', 'Please enter the 6-digit OTP'),
@@ -66,6 +68,20 @@ export const OtpVerificationScreen: React.FC = () => {
         }
 
         try {
+            // For password reset, we don't use the Redux thunk
+            if (verificationType === 'password_reset') {
+                // Navigate to reset password screen with verification token and OTP
+                router.push({
+                    pathname: '/reset-password',
+                    params: {
+                        verificationToken: token,
+                        otp: otpCode,
+                    },
+                } as any);
+                return;
+            }
+
+            // For customer registration, use the Redux thunk
             await dispatch(verifyOtpThunk({
                 verification_token: token,
                 otp: otpCode,
@@ -102,7 +118,7 @@ export const OtpVerificationScreen: React.FC = () => {
     const handleOtpChange = useCallback((index: number, value: string) => {
         // Extract only digits
         const digits = value.replace(/\D/g, '');
-        
+
         // If multiple digits detected (autofill), handle it specially
         if (digits.length > 1) {
             const allDigits = digits.slice(0, 6);
@@ -112,7 +128,7 @@ export const OtpVerificationScreen: React.FC = () => {
                 newOtp.push('');
             }
             setOtp(newOtp);
-            
+
             // Auto-verify if we have 6 digits
             if (allDigits.length === 6) {
                 setTimeout(() => {
@@ -121,7 +137,7 @@ export const OtpVerificationScreen: React.FC = () => {
             }
             return;
         }
-        
+
         // Single digit input (normal typing)
         if (value && !/^\d$/.test(value)) {
             return;
@@ -153,12 +169,12 @@ export const OtpVerificationScreen: React.FC = () => {
     const handleOtpAutofill = useCallback((value: string) => {
         // Extract only digits from the autofilled value
         const digits = value.replace(/\D/g, '').slice(0, 6);
-        
+
         if (digits.length === 6) {
             // Split into array and update all OTP inputs
             const newOtp = digits.split('');
             setOtp(newOtp);
-            
+
             // Auto-verify after a short delay to ensure state is updated
             setTimeout(() => {
                 handleVerify(digits);
@@ -268,7 +284,7 @@ export const OtpVerificationScreen: React.FC = () => {
                         maxLength={6}
                         editable={!isLoading}
                     />
-                    
+
                     <View style={styles.otpContainer}>
                         {otp.map((digit, index) => (
                             <TextInput
@@ -314,8 +330,8 @@ export const OtpVerificationScreen: React.FC = () => {
                                 {t('auth.resendIn', 'Resend in')} {resendCooldown}s
                             </Text>
                         ) : (
-                            <TouchableOpacity 
-                                onPress={handleResendOtp} 
+                            <TouchableOpacity
+                                onPress={handleResendOtp}
                                 disabled={isLoading}
                                 style={isLoading ? styles.resendDisabled : undefined}
                             >

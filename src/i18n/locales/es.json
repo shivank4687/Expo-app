@@ -79,7 +79,21 @@
     "termsAgreement": "Al registrarte, aceptas nuestros",
     "termsOfService": "Términos de servicio",
     "and": "y",
-    "privacyPolicy": "Política de privacidad"
+    "privacyPolicy": "Política de privacidad",
+    "forgotPasswordTitle": "¿Olvidaste tu contraseña?",
+    "forgotPasswordSubtitle": "Ingresa tu número de teléfono para restablecer tu contraseña",
+    "sendOtp": "Enviar OTP",
+    "resetPassword": "Restablecer Contraseña",
+    "resetPasswordTitle": "Restablecer Contraseña",
+    "resetPasswordSubtitle": "Ingresa tu nueva contraseña",
+    "newPassword": "Nueva Contraseña",
+    "confirmNewPassword": "Confirmar Nueva Contraseña",
+    "passwordResetSuccess": "¡Contraseña restablecida exitosamente! Por favor inicia sesión con tu nueva contraseña.",
+    "phoneNotFound": "Número de teléfono no encontrado. Por favor verifica e intenta de nuevo.",
+    "otpSentForPasswordReset": "Se ha enviado un OTP a tu número de teléfono para restablecer la contraseña.",
+    "enterNewPassword": "Ingresa tu nueva contraseña",
+    "newPasswordRequired": "La nueva contraseña es obligatoria",
+    "backToLogin": "Volver al inicio de sesión"
   },
   "drawer": {
     "home": "Inicio",
