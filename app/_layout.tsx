@@ -12,6 +12,7 @@ import { ActivityIndicator, View } from "react-native";
 import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
 import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
+import { expoPushNotificationService } from "@/services/notifications/expo-push-notification.service";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;
@@ -23,19 +24,17 @@ function AppContent() {
   const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
 
+  // Setup push notification handlers on app start
+  useEffect(() => {
+    console.log('🔔 Setting up push notification handlers...');
+    expoPushNotificationService.setupNotificationHandlers();
 
-
-
-
-  // useEffect(() => {
-
-
-  //   // Initialize core config (locale, currency, channels) on app start
-  //   dispatch(fetchCoreConfig());
-  //   // Check both customer and supplier authentication status
-  //   dispatch(checkAuthThunk());
-  //   dispatch(checkSupplierAuthThunk());
-  // }, [dispatch]);
+    // Cleanup on unmount
+    return () => {
+      console.log('🔕 Cleaning up push notification handlers...');
+      expoPushNotificationService.cleanup();
+    };
+  }, []);
 
   // Load wishlist when customer is authenticated
   useEffect(() => {
@@ -44,6 +43,7 @@ function AppContent() {
       dispatch(fetchWishlistThunk());
     }
   }, [isCustomerAuthenticated, isCustomerLoading, dispatch]);
+
 
   // Handle navigation based on authentication state (for route protection)
   useEffect(() => {

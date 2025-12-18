@@ -2,11 +2,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authApi } from '@/services/api/auth.api';
 import { secureStorage } from '@/services/storage/secureStorage';
 import { STORAGE_KEYS } from '@/config/constants';
-import { 
-    User, 
-    LoginRequest, 
-    SignupRequest, 
-    AuthResponse, 
+import {
+    User,
+    LoginRequest,
+    SignupRequest,
+    AuthResponse,
     UpdateProfileRequest,
     SignupResponse,
     OtpVerificationRequest,
@@ -14,6 +14,7 @@ import {
 } from '@/features/auth/types/auth.types';
 import { resetCart } from './cartSlice';
 import { setGlobalToken } from '@/services/api/client';
+import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
 
 interface AuthState {
     user: User | null;
@@ -73,7 +74,7 @@ export const loginThunk = createAsyncThunk(
                 password: credentials.password,
                 device_name: credentials.device_name || 'mobile_app',
             };
-            
+
             // Add phone_country_id if provided
             if (credentials.phone_country_id) {
                 loginPayload.phone_country_id = credentials.phone_country_id;
@@ -117,12 +118,22 @@ export const loginThunk = createAsyncThunk(
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
 
+            // Register device token for push notifications
+            try {
+                console.log('🔔 Registering device token for push notifications...');
+                await expoPushNotificationService.registerToken();
+            } catch (notificationError) {
+                console.error('Failed to register push notification token (non-critical):', notificationError);
+                // Don't fail login if notification registration fails
+            }
+
             return { user, token };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Login failed');
         }
     }
 );
+
 
 export const signupThunk = createAsyncThunk(
     'auth/signup',
@@ -200,6 +211,15 @@ export const verifyOtpThunk = createAsyncThunk(
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
 
+            // Register device token for push notifications
+            try {
+                console.log('🔔 Registering device token for push notifications...');
+                await expoPushNotificationService.registerToken();
+            } catch (notificationError) {
+                console.error('Failed to register push notification token (non-critical):', notificationError);
+                // Don't fail OTP verification if notification registration fails
+            }
+
             return { user, token };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
@@ -223,6 +243,15 @@ export const logoutThunk = createAsyncThunk(
     'auth/logout',
     async (_, { rejectWithValue }) => {
         try {
+            // Unregister device token for push notifications
+            try {
+                console.log('🔕 Unregistering device token for push notifications...');
+                await expoPushNotificationService.unregisterToken();
+            } catch (notificationError) {
+                console.error('Failed to unregister push notification token (non-critical):', notificationError);
+                // Don't fail logout if notification unregistration fails
+            }
+
             await authApi.logout();
         } catch (error) {
             console.error('Logout API error:', error);
@@ -241,27 +270,27 @@ export const updateProfileThunk = createAsyncThunk(
         try {
             const response = await authApi.updateProfile(data);
             console.log('Update Profile Response:', JSON.stringify(response, null, 2));
-            
+
             // Handle nested response structure
             let user = response.data;
-            
+
             // Sometimes the response might have data.data structure
             if (!user && (response as any).data?.data) {
                 user = (response as any).data.data;
             }
-            
+
             // Or the user might be directly in the response
             if (!user && (response as any).user) {
                 user = (response as any).user;
             }
-            
+
             console.log('Extracted user:', JSON.stringify(user, null, 2));
-            
+
             // Store updated user data
             if (user) {
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
-            
+
             return { user, message: response.message || (response as any).message };
         } catch (error: any) {
             console.error('Update Profile Error:', error);

@@ -4,6 +4,7 @@ import { secureStorage } from '@/services/storage/secureStorage';
 import { STORAGE_KEYS } from '@/config/constants';
 import { LoginRequest } from '@/features/auth/types/auth.types';
 import { setGlobalToken } from '@/services/api/client';
+import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
 
 interface SupplierAuthState {
     supplier: Supplier | null;
@@ -55,20 +56,29 @@ export const supplierLoginThunk = createAsyncThunk(
                 password: credentials.password,
                 device_name: credentials.device_name || 'mobile_app',
             };
-            
+
             if (credentials.phone_country_id) {
                 loginPayload.phone_country_id = credentials.phone_country_id;
             }
-            
+
             const response = await supplierAuthApi.login(loginPayload);
-            
+
             // Store token and supplier data
             await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, response.token);
             await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(response.data));
-            
+
             // Set global token for API client
             setGlobalToken(response.token);
-            
+
+            // Register device token for push notifications
+            try {
+                console.log('🔔 Registering supplier device token for push notifications...');
+                await expoPushNotificationService.registerToken();
+            } catch (notificationError) {
+                console.error('Failed to register push notification token (non-critical):', notificationError);
+                // Don't fail login if notification registration fails
+            }
+
             return {
                 supplier: response.data,
                 token: response.token,
@@ -84,6 +94,15 @@ export const supplierLogoutThunk = createAsyncThunk(
     'supplierAuth/logout',
     async (_, { rejectWithValue }) => {
         try {
+            // Unregister device token for push notifications
+            try {
+                console.log('🔕 Unregistering supplier device token for push notifications...');
+                await expoPushNotificationService.unregisterToken();
+            } catch (notificationError) {
+                console.error('Failed to unregister push notification token (non-critical):', notificationError);
+                // Don't fail logout if notification unregistration fails
+            }
+
             await supplierAuthApi.logout();
         } catch (error) {
             console.error('Logout API error (non-critical):', error);
