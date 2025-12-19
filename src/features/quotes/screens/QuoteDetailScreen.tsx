@@ -75,15 +75,20 @@ export const QuoteDetailScreen: React.FC = () => {
 
         try {
             const response = await suppliersApi.getQuoteByStatus(Number(quoteId), status, page, 15);
-            
+
             if (refresh) {
                 setResponses(response.data);
             } else {
                 setResponses((prev) => (page === 1 ? response.data : [...prev, ...response.data]));
             }
-            
-            setHasMore(response.meta.current_page < response.meta.last_page);
-            setCurrentPage(response.meta.current_page);
+
+
+            // Use meta if available, otherwise fall back to top-level properties
+            const currentPage = response.meta?.current_page ?? response.current_page;
+            const lastPage = response.meta?.last_page ?? response.last_page;
+
+            setHasMore(currentPage < lastPage);
+            setCurrentPage(currentPage);
         } catch (err: any) {
             showToast({ message: err.message || 'Failed to load responses', type: 'error' });
         } finally {
@@ -192,7 +197,7 @@ export const QuoteDetailScreen: React.FC = () => {
                     </Text>
                     <Text style={styles.detailValue}>{item.requested_quantity}</Text>
                 </View>
-                
+
                 {item.quoted_quantity !== null && (
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>
@@ -208,7 +213,7 @@ export const QuoteDetailScreen: React.FC = () => {
                             {t('quotes.requestedPrice', 'Requested Price')}:
                         </Text>
                         <Text style={styles.detailValue}>
-                            {formatters.formatCurrency(item.requested_price)}
+                            {formatters.formatPrice(item.requested_price)}
                         </Text>
                     </View>
                 )}
@@ -219,7 +224,7 @@ export const QuoteDetailScreen: React.FC = () => {
                             {t('quotes.quotedPrice', 'Quoted Price')}:
                         </Text>
                         <Text style={[styles.detailValue, styles.quotedPrice]}>
-                            {formatters.formatCurrency(item.quoted_price)}
+                            {formatters.formatPrice(item.quoted_price)}
                         </Text>
                     </View>
                 )}
@@ -253,7 +258,7 @@ export const QuoteDetailScreen: React.FC = () => {
                 <Text style={styles.sectionTitle}>
                     {t('quotes.quoteInfo', 'Quote Information')}
                 </Text>
-                
+
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>
                         {t('quotes.quoteTitle', 'Quote Title')}:
@@ -342,6 +347,7 @@ export const QuoteDetailScreen: React.FC = () => {
 
             <ScrollView
                 style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
@@ -349,12 +355,12 @@ export const QuoteDetailScreen: React.FC = () => {
                         colors={[theme.colors.primary[500]]}
                     />
                 }
+                showsVerticalScrollIndicator={false}
             >
                 {renderQuoteInfo()}
-                {renderTabs()}
-            </ScrollView>
 
-            <View style={styles.responsesContainer}>
+                {renderTabs()}
+
                 {isLoadingResponses ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={theme.colors.primary[500]} />
@@ -367,27 +373,23 @@ export const QuoteDetailScreen: React.FC = () => {
                         </Text>
                     </View>
                 ) : (
-                    <FlatList
-                        data={responses}
-                        renderItem={renderResponseCard}
-                        keyExtractor={(item, index) => `${item.customer_quote_item_id}-${index}`}
-                        contentContainerStyle={styles.responsesList}
-                        showsVerticalScrollIndicator={false}
-                        onEndReached={handleLoadMore}
-                        onEndReachedThreshold={0.5}
-                        ListFooterComponent={
-                            isLoadingMore ? (
-                                <View style={styles.loadingMore}>
-                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                                    <Text style={styles.loadingMoreText}>
-                                        {t('common.loadingMore', 'Loading more...')}
-                                    </Text>
-                                </View>
-                            ) : null
-                        }
-                    />
+                    <View style={styles.responsesContainer}>
+                        {responses.map((item, index) => (
+                            <View key={`${item.customer_quote_item_id}-${index}`}>
+                                {renderResponseCard({ item })}
+                            </View>
+                        ))}
+                        {isLoadingMore && (
+                            <View style={styles.loadingMore}>
+                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                <Text style={styles.loadingMoreText}>
+                                    {t('common.loadingMore', 'Loading more...')}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 )}
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 };
@@ -422,12 +424,17 @@ const styles = StyleSheet.create({
         minWidth: 40,
     },
     scrollView: {
-        flex: 0,
+        flex: 1,
+    },
+    scrollViewContent: {
+        flexGrow: 1,
     },
     quoteInfoContainer: {
         backgroundColor: theme.colors.white,
         padding: theme.spacing.lg,
-        margin: theme.spacing.md,
+        marginHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.sm,
+        marginBottom: 0,
         borderRadius: theme.borderRadius.md,
         ...theme.shadows.sm,
     },
@@ -489,11 +496,11 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.xs,
     },
     responsesContainer: {
-        flex: 1,
         backgroundColor: theme.colors.background.default,
     },
     responsesList: {
-        padding: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingBottom: theme.spacing.md,
     },
     responseCard: {
         backgroundColor: theme.colors.white,
@@ -581,16 +588,14 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.medium,
     },
     loadingContainer: {
-        flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: theme.spacing.xl,
+        paddingTop: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
     },
     emptyContainer: {
-        flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: theme.spacing.xl,
+        paddingTop: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
     },
     emptyText: {
         fontSize: theme.typography.fontSize.base,
