@@ -479,6 +479,58 @@ export const suppliersApi = {
         );
         return response;
     },
+
+    /**
+     * Get quote response detail
+     * Requires authentication
+     */
+    async getQuoteResponseDetail(quoteId: number, customerQuoteItemId: number): Promise<QuoteResponseDetail> {
+        const endpoint = API_ENDPOINTS.CUSTOMER_QUOTE_RESPONSE_DETAIL
+            .replace(':quoteId', quoteId.toString())
+            .replace(':customerQuoteItemId', customerQuoteItemId.toString());
+        const response = await restApiClient.get<{ data: QuoteResponseDetail }>(endpoint);
+        return response.data;
+    },
+
+    /**
+     * Approve supplier quote
+     * Requires authentication
+     */
+    async approveQuote(supplierQuoteItemId: number): Promise<{ success: boolean; message: string }> {
+        const endpoint = API_ENDPOINTS.QUOTE_APPROVE.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
+        const response = await restApiClient.post<{ success: boolean; message: string }>(endpoint);
+        return response;
+    },
+
+    /**
+     * Reject supplier quote
+     * Requires authentication
+     */
+    async rejectQuote(supplierQuoteItemId: number): Promise<{ success: boolean; message: string }> {
+        const endpoint = API_ENDPOINTS.QUOTE_REJECT.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
+        const response = await restApiClient.post<{ success: boolean; message: string }>(endpoint);
+        return response;
+    },
+
+    /**
+     * Send message in quote thread
+     * Requires authentication
+     */
+    async sendQuoteMessage(
+        supplierQuoteItemId: number,
+        customerQuoteItemId: number,
+        message: string
+    ): Promise<{ success: boolean; message: string; data?: QuoteMessage }> {
+        const endpoint = API_ENDPOINTS.QUOTE_MESSAGE.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
+        const response = await restApiClient.post<{ success: boolean; message: string; data?: QuoteMessage }>(
+            endpoint,
+            {
+                message,
+                customer_quote_item_id: customerQuoteItemId,
+            }
+        );
+        return response;
+    },
 };
 
 export interface RFQProduct {
@@ -597,6 +649,59 @@ export interface QuoteResponse {
     supplier_url: string | null;
     product_name: string | null;
     product_sku: string | null;
+}
+
+export interface QuoteResponseDetail {
+    customer_quote_item: CustomerQuoteItem;
+    supplier_quote_items: SupplierQuoteItem[];
+    quote_messages: QuoteMessage[];
+    supplier: {
+        id: number;
+        name: string;
+        company_name: string;
+    } | null;
+    quote_info: {
+        id: number;
+        quote_title: string;
+        quote_brief: string;
+    };
+}
+
+export interface CustomerQuoteItem {
+    id: number;
+    quote_id: number;
+    product_id: number;
+    product_name: string;
+    quantity: number;
+    price_per_quantity: number | null;
+    description: string | null;
+    is_sample: boolean;
+    is_approve: boolean;
+    created_at: string;
+}
+
+export interface SupplierQuoteItem {
+    id: number;
+    product_name: string;
+    quantity: number;
+    price_per_quantity: number;
+    is_sample: boolean;
+    sample_unit: number | null;
+    sample_price: number | null;
+    shipping_time: number;
+    note: string | null;
+    status: string;
+    is_approve: boolean;
+    is_ordered: boolean;
+    created_at: string;
+}
+
+export interface QuoteMessage {
+    id: number;
+    message: string;
+    customer_id: number | null;
+    supplier_id: number | null;
+    created_at: string;
 }
 
 export default suppliersApi;

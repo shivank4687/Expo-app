@@ -156,6 +156,12 @@ function AppContent() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="quotes/quote-response-detail"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
       <ToastContainer />
     </ToastProvider>

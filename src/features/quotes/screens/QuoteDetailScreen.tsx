@@ -10,7 +10,7 @@ import {
     RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { theme } from '@/theme';
@@ -108,6 +108,19 @@ export const QuoteDetailScreen: React.FC = () => {
         }
     }, [activeTab, quoteDetail, loadResponses]);
 
+    // Refresh data when screen comes into focus (e.g., after navigating back from detail screen)
+    useFocusEffect(
+        useCallback(() => {
+            // Refresh quote detail and current tab responses when screen gains focus
+            if (isAuthenticated && user && quoteId) {
+                loadQuoteDetail();
+                if (activeTab) {
+                    loadResponses(activeTab, 1, true);
+                }
+            }
+        }, [isAuthenticated, user, quoteId, activeTab, loadQuoteDetail, loadResponses])
+    );
+
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
         loadQuoteDetail();
@@ -121,6 +134,11 @@ export const QuoteDetailScreen: React.FC = () => {
     };
 
     const handleTabChange = (tab: StatusTab) => {
+        // Don't do anything if clicking the same tab
+        if (tab === activeTab) {
+            return;
+        }
+
         setActiveTab(tab);
         setCurrentPage(1);
         setHasMore(true);
@@ -173,81 +191,95 @@ export const QuoteDetailScreen: React.FC = () => {
     };
 
     const renderResponseCard = ({ item }: { item: QuoteResponse }) => (
-        <View style={styles.responseCard}>
-            <View style={styles.responseHeader}>
-                <View style={styles.responseTitleContainer}>
-                    <Text style={styles.productName} numberOfLines={1}>
-                        {item.product_name || t('quotes.unknownProduct', 'Unknown Product')}
-                    </Text>
-                    {item.supplier_name && (
-                        <Text style={styles.supplierName}>{item.supplier_name}</Text>
+        <TouchableOpacity
+            onPress={() => router.push({
+                pathname: '/quotes/quote-response-detail',
+                params: {
+                    quoteId: quoteId,
+                    customerQuoteItemId: item.customer_quote_item_id.toString(),
+                    supplierId: item.supplier_id?.toString() || '',
+                    productId: item.product_id.toString(),
+                    productName: item.product_name || '',
+                }
+            })}
+            activeOpacity={0.7}
+        >
+            <View style={styles.responseCard}>
+                <View style={styles.responseHeader}>
+                    <View style={styles.responseTitleContainer}>
+                        <Text style={styles.productName} numberOfLines={1}>
+                            {item.product_name || t('quotes.unknownProduct', 'Unknown Product')}
+                        </Text>
+                        {item.supplier_name && (
+                            <Text style={styles.supplierName}>{item.supplier_name}</Text>
+                        )}
+                    </View>
+                    {item.supplier_status && (
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>{item.supplier_status}</Text>
+                        </View>
                     )}
                 </View>
-                {item.supplier_status && (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>{item.supplier_status}</Text>
-                    </View>
-                )}
-            </View>
 
-            <View style={styles.responseDetails}>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>
-                        {t('quotes.requestedQuantity', 'Requested Qty')}:
-                    </Text>
-                    <Text style={styles.detailValue}>{item.requested_quantity}</Text>
+                <View style={styles.responseDetails}>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>
+                            {t('quotes.requestedQuantity', 'Requested Qty')}:
+                        </Text>
+                        <Text style={styles.detailValue}>{item.requested_quantity}</Text>
+                    </View>
+
+                    {item.quoted_quantity !== null && (
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>
+                                {t('quotes.quotedQuantity', 'Quoted Qty')}:
+                            </Text>
+                            <Text style={styles.detailValue}>{item.quoted_quantity}</Text>
+                        </View>
+                    )}
+
+                    {item.requested_price !== null && (
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>
+                                {t('quotes.requestedPrice', 'Requested Price')}:
+                            </Text>
+                            <Text style={styles.detailValue}>
+                                {formatters.formatPrice(item.requested_price)}
+                            </Text>
+                        </View>
+                    )}
+
+                    {item.quoted_price !== null && (
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>
+                                {t('quotes.quotedPrice', 'Quoted Price')}:
+                            </Text>
+                            <Text style={[styles.detailValue, styles.quotedPrice]}>
+                                {formatters.formatPrice(item.quoted_price)}
+                            </Text>
+                        </View>
+                    )}
+
+                    {item.customer_description && (
+                        <View style={styles.descriptionContainer}>
+                            <Text style={styles.detailLabel}>
+                                {t('quotes.description', 'Description')}:
+                            </Text>
+                            <Text style={styles.descriptionText}>{item.customer_description}</Text>
+                        </View>
+                    )}
+
+                    {item.is_sample === 1 && (
+                        <View style={styles.sampleBadge}>
+                            <Ionicons name="cube-outline" size={16} color={theme.colors.primary[500]} />
+                            <Text style={styles.sampleText}>
+                                {t('quotes.sampleRequired', 'Sample Required')}
+                            </Text>
+                        </View>
+                    )}
                 </View>
-
-                {item.quoted_quantity !== null && (
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>
-                            {t('quotes.quotedQuantity', 'Quoted Qty')}:
-                        </Text>
-                        <Text style={styles.detailValue}>{item.quoted_quantity}</Text>
-                    </View>
-                )}
-
-                {item.requested_price !== null && (
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>
-                            {t('quotes.requestedPrice', 'Requested Price')}:
-                        </Text>
-                        <Text style={styles.detailValue}>
-                            {formatters.formatPrice(item.requested_price)}
-                        </Text>
-                    </View>
-                )}
-
-                {item.quoted_price !== null && (
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>
-                            {t('quotes.quotedPrice', 'Quoted Price')}:
-                        </Text>
-                        <Text style={[styles.detailValue, styles.quotedPrice]}>
-                            {formatters.formatPrice(item.quoted_price)}
-                        </Text>
-                    </View>
-                )}
-
-                {item.customer_description && (
-                    <View style={styles.descriptionContainer}>
-                        <Text style={styles.detailLabel}>
-                            {t('quotes.description', 'Description')}:
-                        </Text>
-                        <Text style={styles.descriptionText}>{item.customer_description}</Text>
-                    </View>
-                )}
-
-                {item.is_sample === 1 && (
-                    <View style={styles.sampleBadge}>
-                        <Ionicons name="cube-outline" size={16} color={theme.colors.primary[500]} />
-                        <Text style={styles.sampleText}>
-                            {t('quotes.sampleRequired', 'Sample Required')}
-                        </Text>
-                    </View>
-                )}
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     const renderQuoteInfo = () => {
@@ -594,8 +626,10 @@ const styles = StyleSheet.create({
     },
     emptyContainer: {
         alignItems: 'center',
-        paddingTop: theme.spacing.sm,
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.xl,
         paddingHorizontal: theme.spacing.md,
+        minHeight: 200,
     },
     emptyText: {
         fontSize: theme.typography.fontSize.base,

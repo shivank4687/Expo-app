@@ -77,6 +77,12 @@ export const API_ENDPOINTS = {
     // B2B Marketplace - Report Supplier
     REPORT_SUPPLIER: '/supplier/flag',
 
+    // B2B Marketplace - Quote Response Detail
+    CUSTOMER_QUOTE_RESPONSE_DETAIL: '/customer/quotes/:quoteId/response/:customerQuoteItemId',
+    QUOTE_APPROVE: '/customer/quotes/response/:supplierQuoteItemId/approve',
+    QUOTE_REJECT: '/customer/quotes/response/:supplierQuoteItemId/reject',
+    QUOTE_MESSAGE: '/customer/quotes/response/:supplierQuoteItemId/message',
+
     // Theme Customizations
     THEME_CUSTOMIZATIONS: '/theme/customizations',
 };
