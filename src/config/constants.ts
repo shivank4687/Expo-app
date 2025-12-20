@@ -82,6 +82,7 @@ export const API_ENDPOINTS = {
     QUOTE_APPROVE: '/customer/quotes/response/:supplierQuoteItemId/approve',
     QUOTE_REJECT: '/customer/quotes/response/:supplierQuoteItemId/reject',
     QUOTE_MESSAGE: '/customer/quotes/response/:supplierQuoteItemId/message',
+    QUOTE_ADD_TO_CART: '/customer/quotes/response/:supplierQuoteItemId/add-to-cart',
 
     // Theme Customizations
     THEME_CUSTOMIZATIONS: '/theme/customizations',

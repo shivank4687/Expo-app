@@ -204,6 +204,23 @@ export const QuoteResponseDetailScreen: React.FC = () => {
         );
     };
 
+    const handleAddToCart = async () => {
+        if (!quoteDetail) return;
+
+        const latestSupplierQuote = quoteDetail.supplier_quote_items[quoteDetail.supplier_quote_items.length - 1];
+        if (!latestSupplierQuote) return;
+
+        try {
+            const response = await suppliersApi.addQuoteToCart(latestSupplierQuote.id);
+            showToast({ message: response.message || t('quotes.addToCartSuccess', 'Quote added to cart successfully'), type: 'success' });
+            loadQuoteDetail();
+            // Navigate to cart after successful add
+            router.push('/cart');
+        } catch (err: any) {
+            showToast({ message: err.message || 'Failed to add quote to cart', type: 'error' });
+        }
+    };
+
     const formatMessageTime = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleTimeString('en-US', {
@@ -385,10 +402,18 @@ export const QuoteResponseDetailScreen: React.FC = () => {
 
                         {/* Show approved status if latest quote is approved */}
                         {latestSupplierQuote.is_approve && (
-                            <View style={styles.statusContainer}>
-                                <Ionicons name="checkmark-circle" size={24} color={theme.colors.success.main} />
-                                <Text style={styles.approvedText}>{t('quotes.quoteApproved', 'Quote Approved')}</Text>
-                            </View>
+                            <>
+                                <View style={styles.statusContainer}>
+                                    <Ionicons name="checkmark-circle" size={24} color={theme.colors.success.main} />
+                                    <Text style={styles.approvedText}>{t('quotes.quoteApproved', 'Quote Approved')}</Text>
+                                </View>
+
+                                {/* Add to Cart button for approved quotes */}
+                                <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+                                    <Ionicons name="cart" size={20} color={theme.colors.white} />
+                                    <Text style={styles.addToCartButtonText}>{t('quotes.addToCart', 'Add to Cart')}</Text>
+                                </TouchableOpacity>
+                            </>
                         )}
 
                         {/* Show rejected status if latest quote is rejected */}
@@ -528,6 +553,13 @@ export const QuoteResponseDetailScreen: React.FC = () => {
 
             {/* Tab Content */}
             {activeTab === 'summary' ? renderSummaryTab() : renderMessagesTab()}
+            {/* Tab Content - Keep both mounted to prevent refresh */}
+            {/* <View style={{ display: activeTab === 'summary' ? 'flex' : 'none', flex: 1 }}>
+                {renderSummaryTab()}
+            </View>
+            <View style={{ display: activeTab === 'messages' ? 'flex' : 'none', flex: 1 }}>
+                {renderMessagesTab()}
+            </View> */}
         </SafeAreaView>
     );
 };
@@ -797,6 +829,20 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary[500],
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    addToCartButton: {
+        backgroundColor: theme.colors.primary[500],
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: theme.spacing.sm,
+    },
+    addToCartButtonText: {
+        color: theme.colors.white,
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.bold,
     },
     sendButtonDisabled: {
         backgroundColor: theme.colors.text.secondary,

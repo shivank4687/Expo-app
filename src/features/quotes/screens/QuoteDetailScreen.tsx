@@ -102,23 +102,56 @@ export const QuoteDetailScreen: React.FC = () => {
         loadQuoteDetail();
     }, [loadQuoteDetail]);
 
+    // Use refs to track state and prevent cascading re-renders
+    const activeTabRef = React.useRef<StatusTab>(activeTab);
+    const hasLoadedInitial = React.useRef(false);
+
     useEffect(() => {
-        if (quoteDetail) {
+        if (!quoteDetail) return;
+
+        // Initial load when quote detail is first available
+        if (!hasLoadedInitial.current) {
+            hasLoadedInitial.current = true;
+            activeTabRef.current = activeTab;
+            loadResponses(activeTab, 1, true);
+            return;
+        }
+
+        // Tab changed - load new tab data
+        if (activeTabRef.current !== activeTab) {
+            activeTabRef.current = activeTab;
             loadResponses(activeTab, 1, true);
         }
-    }, [activeTab, quoteDetail, loadResponses]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, quoteDetail]);
 
     // Refresh data when screen comes into focus (e.g., after navigating back from detail screen)
+    // Use a ref to track if this is the initial mount to avoid double-loading
+    const isInitialMount = React.useRef(true);
+    // Track the active tab in a ref for useFocusEffect to avoid re-running when tab changes
+    const activeTabForFocus = React.useRef<StatusTab>(activeTab);
+
+    // Update the ref whenever activeTab changes
+    useEffect(() => {
+        activeTabForFocus.current = activeTab;
+    }, [activeTab]);
+
     useFocusEffect(
         useCallback(() => {
-            // Refresh quote detail and current tab responses when screen gains focus
-            if (isAuthenticated && user && quoteId) {
-                loadQuoteDetail();
-                if (activeTab) {
-                    loadResponses(activeTab, 1, true);
-                }
+            // Skip on initial mount since useEffect already handles it
+            if (isInitialMount.current) {
+                isInitialMount.current = false;
+                return;
             }
-        }, [isAuthenticated, user, quoteId, activeTab, loadQuoteDetail, loadResponses])
+
+            // Only refresh when screen gains focus (coming back from another screen)
+            // Use the ref to get the current active tab without adding it to dependencies
+            if (isAuthenticated && user && quoteId) {
+                // Only reload the current tab's data, not the quote details
+                loadResponses(activeTabForFocus.current, 1, true);
+            }
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [isAuthenticated, user, quoteId])
     );
 
     const onRefresh = useCallback(() => {
@@ -139,6 +172,8 @@ export const QuoteDetailScreen: React.FC = () => {
             return;
         }
 
+        // Set loading state immediately to show loader instead of empty state
+        setIsLoadingResponses(true);
         setActiveTab(tab);
         setCurrentPage(1);
         setHasMore(true);

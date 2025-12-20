@@ -531,6 +531,16 @@ export const suppliersApi = {
         );
         return response;
     },
+
+    /**
+     * Add approved quote item to cart
+     * Requires authentication
+     */
+    async addQuoteToCart(supplierQuoteItemId: number): Promise<{ success: boolean; message: string }> {
+        const endpoint = API_ENDPOINTS.QUOTE_ADD_TO_CART.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
+        const response = await restApiClient.post<{ success: boolean; message: string }>(endpoint);
+        return response;
+    },
 };
 
 export interface RFQProduct {
