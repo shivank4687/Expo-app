@@ -537,9 +537,24 @@ export const suppliersApi = {
      * Requires authentication
      */
     async addQuoteToCart(supplierQuoteItemId: number): Promise<{ success: boolean; message: string }> {
-        const endpoint = API_ENDPOINTS.QUOTE_ADD_TO_CART.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
-        const response = await restApiClient.post<{ success: boolean; message: string }>(endpoint);
-        return response;
+        try {
+            const endpoint = API_ENDPOINTS.QUOTE_ADD_TO_CART.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
+            const response = await restApiClient.post<{ success: boolean; message: string }>(endpoint);
+            return response;
+        } catch (error: any) {
+            // Handle API errors - extract message from error response
+            if (error.response?.data) {
+                // If the error response has the expected structure, return it
+                if (typeof error.response.data === 'object' && 'message' in error.response.data) {
+                    return {
+                        success: false,
+                        message: error.response.data.message || 'Failed to add quote to cart',
+                    };
+                }
+            }
+            // If error doesn't have expected structure, throw it
+            throw error;
+        }
     },
 };
 

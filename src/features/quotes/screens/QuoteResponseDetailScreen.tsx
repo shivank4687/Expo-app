@@ -212,10 +212,15 @@ export const QuoteResponseDetailScreen: React.FC = () => {
 
         try {
             const response = await suppliersApi.addQuoteToCart(latestSupplierQuote.id);
-            showToast({ message: response.message || t('quotes.addToCartSuccess', 'Quote added to cart successfully'), type: 'success' });
-            loadQuoteDetail();
-            // Navigate to cart after successful add
-            router.push('/cart');
+
+            if (response.success) {
+                showToast({ message: response.message || t('quotes.addToCartSuccess', 'Quote added to cart successfully'), type: 'success' });
+                loadQuoteDetail();
+                // Navigate to cart after successful add
+                router.push('/cart');
+            } else {
+                showToast({ message: response.message || 'Failed to add quote to cart', type: 'error' });
+            }
         } catch (err: any) {
             showToast({ message: err.message || 'Failed to add quote to cart', type: 'error' });
         }

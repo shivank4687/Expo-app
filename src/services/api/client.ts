@@ -26,7 +26,7 @@ class ApiClient {
     constructor(apiType: ApiType = 'rest') {
         this.apiType = apiType;
         const baseURL = apiType === 'shop' ? config.shopApiUrl : config.restApiUrl;
-        
+
         this.instance = axios.create({
             baseURL,
             timeout: config.timeout,
@@ -47,27 +47,27 @@ class ApiClient {
                 try {
                     // 1. Try global token (set by Redux)
                     let token = globalToken;
-                    
+
                     // 2. Try customer token from secure storage
                     if (!token) {
                         token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
                     }
-                    
+
                     // 3. Try supplier token if customer token not found
                     if (!token) {
                         token = await secureStorage.getItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
                     }
-                    
+
                     // 4. Try AsyncStorage as fallback (customer)
                     if (!token) {
                         token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
                     }
-                    
+
                     // 5. Try AsyncStorage as fallback (supplier)
                     if (!token) {
                         token = await AsyncStorage.getItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
                     }
-                    
+
                     if (token) {
                         config.headers.Authorization = `Bearer ${token}`;
                         console.log('✅ Token added to request:', config.url);
@@ -158,7 +158,7 @@ class ApiClient {
         await secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         await secureStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         await secureStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        
+
         // Clear supplier auth data
         await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
         await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_DATA);
