@@ -399,17 +399,17 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                         )}
 
                         {/* Show reject button if latest quote is not rejected */}
-                        {latestSupplierQuote.status !== 'rejected' && (
+                        {latestSupplierQuote.status !== 'rejected' && !latestSupplierQuote.is_approve && (
                             <TouchableOpacity style={styles.rejectButton} onPress={handleReject}>
                                 <Text style={styles.rejectButtonText}>{t('quotes.rejectQuote', 'Reject Quote')}</Text>
                             </TouchableOpacity>
                         )}
 
                         {/* Show approved status if latest quote is approved */}
-                        {latestSupplierQuote.is_approve && (
+                        {latestSupplierQuote.is_approve && latestSupplierQuote.status !== 'rejected' && (
                             <>
                                 <View style={styles.statusContainer}>
-                                    <Ionicons name="checkmark-circle" size={24} color={theme.colors.success.main} />
+                                    {/* <Ionicons name="checkmark-circle" size={24} color={theme.colors.success.main} /> */}
                                     <Text style={styles.approvedText}>{t('quotes.quoteApproved', 'Quote Approved')}</Text>
                                 </View>
 
@@ -424,7 +424,7 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                         {/* Show rejected status if latest quote is rejected */}
                         {latestSupplierQuote.status === 'rejected' && (
                             <View style={styles.statusContainer}>
-                                <Ionicons name="close-circle" size={24} color={theme.colors.error.main} />
+                                {/* <Ionicons name="close-circle" size={24} color={theme.colors.error.main} /> */}
                                 <Text style={styles.rejectedText}>{t('quotes.quoteRejected', 'Quote Rejected')}</Text>
                             </View>
                         )}
