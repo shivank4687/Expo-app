@@ -147,6 +147,7 @@ export const QuoteDetailScreen: React.FC = () => {
             // Only refresh when screen gains focus (coming back from another screen)
             // Use the ref to get the current active tab without adding it to dependencies
             if (isAuthenticated && user && quoteId) {
+                loadQuoteDetail();
                 // Only reload the current tab's data, not the quote details
                 loadResponses(activeTabForFocus.current, 1, true);
             }

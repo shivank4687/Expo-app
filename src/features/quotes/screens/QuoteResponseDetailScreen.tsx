@@ -416,7 +416,7 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                                 {/* Add to Cart button for approved quotes */}
                                 <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
                                     <Ionicons name="cart" size={20} color={theme.colors.white} />
-                                    <Text style={styles.addToCartButtonText}>{t('quotes.addToCart', 'Add to Cart')}</Text>
+                                    <Text style={styles.addToCartButtonText}>{t('quotes.placeOrder', 'Place Order')}</Text>
                                 </TouchableOpacity>
                             </>
                         )}
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     },
     messageContainer: {
         maxWidth: '75%',
-        padding: theme.spacing.md,
+        padding: 8,//theme.spacing.md,
         borderRadius: theme.borderRadius.md,
         marginVertical: theme.spacing.xs,
     },
