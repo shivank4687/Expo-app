@@ -51,9 +51,9 @@ export const RFQScreen: React.FC = () => {
 
     // Products
     const [products, setProducts] = useState<RFQProduct[]>([]);
-    const [isAddingProduct, setIsAddingProduct] = useState(false);
 
-    // Product search state
+    // Global product search state (for adding products)
+    const [globalProductSearch, setGlobalProductSearch] = useState('');
     const [productSearchResults, setProductSearchResults] = useState<Array<{
         id: number;
         sku: string;
@@ -65,7 +65,6 @@ export const RFQScreen: React.FC = () => {
         is_config: number;
     }>>([]);
     const [isSearchingProducts, setIsSearchingProducts] = useState(false);
-    const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(null);
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Attachments
@@ -138,11 +137,14 @@ export const RFQScreen: React.FC = () => {
             newErrors.contactNumber = t('rfq.errors.contactNumberRequired', 'Contact number is required');
         }
 
-        // Products are optional - only validate if products are added
-        // Validate each product (if any are added)
+        // Validate products - require at least one product with valid product_id
+        if (products.length === 0) {
+            newErrors.products = t('rfq.errors.productsRequired', 'Please add at least one product from the catalog');
+        }
+
         products.forEach((product, index) => {
-            if (!product.product_name || !product.product_name.trim()) {
-                newErrors[`product_${index}_name`] = t('rfq.errors.productNameRequired', 'Product name is required');
+            if (!product.product_id) {
+                newErrors[`product_${index}_id`] = t('rfq.errors.productSelectionRequired', 'Invalid product - please remove and select from catalog');
             }
             if (!product.quantity || product.quantity < 1) {
                 newErrors[`product_${index}_quantity`] = t('rfq.errors.quantityRequired', 'Quantity must be at least 1');
@@ -153,29 +155,15 @@ export const RFQScreen: React.FC = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleAddProduct = () => {
-        // Add a new product entry
-        setProducts([
-            ...products,
-            {
-                product_id: null,
-                product_name: '',
-                quantity: 1,
-                description: '',
-                price_per_quantity: null,
-                is_sample: false,
-            },
-        ]);
-        setIsAddingProduct(false);
-    };
+    // Removed handleAddProduct - products are now added only via search selection
 
     const handleRemoveProduct = (index: number) => {
         setProducts(products.filter((_, i) => i !== index));
-        // Clear search if removing active search product
-        if (activeSearchIndex === index) {
-            setProductSearchResults([]);
-            setActiveSearchIndex(null);
-        }
+        // Clear any validation errors for this product
+        const newErrors = { ...errors };
+        delete newErrors[`product_${index}_id`];
+        delete newErrors[`product_${index}_quantity`];
+        setErrors(newErrors);
     };
 
     const handleProductChange = (index: number, field: keyof RFQProduct, value: any) => {
@@ -186,23 +174,21 @@ export const RFQScreen: React.FC = () => {
         };
         setProducts(updatedProducts);
 
-        // If product name is being changed, trigger search
-        if (field === 'product_name' && value && value.length >= 2) {
-            handleProductSearch(value, index);
-        } else if (field === 'product_name' && (!value || value.length < 2)) {
-            setProductSearchResults([]);
-            setActiveSearchIndex(null);
+        // Clear validation error for this field
+        if (field === 'quantity' && errors[`product_${index}_quantity`]) {
+            const newErrors = { ...errors };
+            delete newErrors[`product_${index}_quantity`];
+            setErrors(newErrors);
         }
     };
 
-    const handleProductSearch = useCallback((query: string, index: number) => {
+    const handleGlobalProductSearch = useCallback((query: string) => {
+        setGlobalProductSearch(query);
+
         // Clear previous timeout
         if (searchTimeoutRef.current) {
             clearTimeout(searchTimeoutRef.current);
         }
-
-        // Set active search index
-        setActiveSearchIndex(index);
 
         // Debounce search
         searchTimeoutRef.current = setTimeout(async () => {
@@ -224,16 +210,41 @@ export const RFQScreen: React.FC = () => {
         }, 300);
     }, [supplierId]);
 
-    const handleSelectProduct = (index: number, product: typeof productSearchResults[0]) => {
-        const updatedProducts = [...products];
-        updatedProducts[index] = {
-            ...updatedProducts[index],
-            product_id: product.id,
-            product_name: product.name,
-        };
-        setProducts(updatedProducts);
+    const handleSelectProduct = (product: typeof productSearchResults[0]) => {
+        // Check if product is already added
+        const isDuplicate = products.some(p => p.product_id === product.id);
+
+        if (isDuplicate) {
+            showToast({
+                message: t('rfq.productAlreadyAdded', 'This product is already added to the quote'),
+                type: 'warning',
+            });
+            setProductSearchResults([]);
+            setGlobalProductSearch('');
+            return;
+        }
+
+        // Add new product to list
+        setProducts([
+            ...products,
+            {
+                product_id: product.id,
+                product_name: product.name,
+                quantity: 1,
+                description: '',
+                price_per_quantity: product.price,
+                is_sample: false,
+            },
+        ]);
         setProductSearchResults([]);
-        setActiveSearchIndex(null);
+        setGlobalProductSearch('');
+
+        // Clear products validation error if it exists
+        if (errors.products) {
+            const newErrors = { ...errors };
+            delete newErrors.products;
+            setErrors(newErrors);
+        }
     };
 
     // Handle contact attachment picker (single select)
@@ -416,12 +427,17 @@ export const RFQScreen: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            // Products are optional - ensure all added products have required fields
-            const validProducts = products.map((product) => ({
-                ...product,
-                product_name: product.product_name || t('rfq.product', 'Product'),
-                quantity: product.quantity || 1,
-            }));
+            // Filter out products without product_id (safety check)
+            const validProducts = products.filter(p => p.product_id !== null && p.product_id !== undefined);
+
+            if (validProducts.length === 0) {
+                showToast({
+                    message: t('rfq.noValidProducts', 'Please select at least one product from the catalog'),
+                    type: 'error',
+                });
+                setIsSubmitting(false);
+                return;
+            }
 
             const payload = {
                 supplier_id: Number(supplierId),
@@ -431,7 +447,7 @@ export const RFQScreen: React.FC = () => {
                 company_name: companyName.trim(),
                 address: address.trim(),
                 contact_number: contactNumber.trim(),
-                products: validProducts, // Can be empty array
+                products: validProducts, // Only send products with valid product_id
             };
 
             // Extract file info from contact attachment (single file)
@@ -630,21 +646,73 @@ export const RFQScreen: React.FC = () => {
 
                     {/* Product Information Section */}
                     <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>
-                                {t('rfq.productInfo', 'Product Information')}
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.addProductButton}
-                                onPress={handleAddProduct}
-                            >
-                                <Ionicons name="add-circle-outline" size={20} color={theme.colors.primary[500]} />
-                                <Text style={styles.addProductText}>
-                                    {t('rfq.addProduct', 'Add Product')}
-                                </Text>
-                            </TouchableOpacity>
+                        <Text style={styles.sectionTitle}>
+                            {t('rfq.productInfo', 'Product Information')}
+                        </Text>
+
+                        {/* Global Product Search */}
+                        <View style={styles.productSearchSection}>
+                            <Input
+                                label={t('rfq.searchProducts', 'Search Products')}
+                                placeholder={t('rfq.searchProductsPlaceholder', 'Type to search supplier\'s products...')}
+                                value={globalProductSearch}
+                                onChangeText={handleGlobalProductSearch}
+                                leftIcon="search-outline"
+                            />
+
+                            {/* Search Results Dropdown */}
+                            {productSearchResults.length > 0 && (
+                                <View style={styles.searchResultsContainer}>
+                                    <ScrollView
+                                        style={styles.searchResultsList}
+                                        keyboardShouldPersistTaps="handled"
+                                        nestedScrollEnabled
+                                    >
+                                        {productSearchResults.map((searchProduct) => (
+                                            <TouchableOpacity
+                                                key={searchProduct.id}
+                                                style={styles.searchResultItem}
+                                                onPress={() => handleSelectProduct(searchProduct)}
+                                            >
+                                                {searchProduct.base_image && (
+                                                    <Image
+                                                        source={{ uri: searchProduct.base_image }}
+                                                        style={styles.searchResultImage}
+                                                    />
+                                                )}
+                                                <View style={styles.searchResultInfo}>
+                                                    <Text style={styles.searchResultName} numberOfLines={1}>
+                                                        {searchProduct.name}
+                                                    </Text>
+                                                    <Text style={styles.searchResultSku}>
+                                                        {searchProduct.sku}
+                                                    </Text>
+                                                    <Text style={styles.searchResultPrice}>
+                                                        {searchProduct.formated_price}
+                                                    </Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
+
+                            {isSearchingProducts && (
+                                <View style={styles.searchLoadingContainer}>
+                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                    <Text style={styles.searchLoadingText}>
+                                        {t('rfq.searching', 'Searching...')}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
+                        {/* Validation Error for Products */}
+                        {errors.products && (
+                            <Text style={styles.error}>{errors.products}</Text>
+                        )}
+
+                        {/* Products List */}
                         {products.length === 0 ? (
                             <View style={styles.emptyProducts}>
                                 <Ionicons name="cube-outline" size={48} color={theme.colors.gray[400]} />
@@ -652,7 +720,7 @@ export const RFQScreen: React.FC = () => {
                                     {t('rfq.noProducts', 'No products added yet')}
                                 </Text>
                                 <Text style={styles.emptyProductsSubText}>
-                                    {t('rfq.clickAddProduct', 'Click "Add Product" to add items')}
+                                    {t('rfq.searchToAddProducts', 'Search above to add products from the catalog')}
                                 </Text>
                             </View>
                         ) : (
@@ -671,65 +739,20 @@ export const RFQScreen: React.FC = () => {
                                             </TouchableOpacity>
                                         </View>
 
-                                        <View style={styles.productNameContainer}>
-                                            <Input
-                                                label={t('rfq.productName', 'Product Name')}
-                                                placeholder={t('rfq.productNamePlaceholder', 'Type to search products...')}
-                                                value={product.product_name}
-                                                onChangeText={(text) => {
-                                                    handleProductChange(index, 'product_name', text);
-                                                    if (errors[`product_${index}_name`]) {
-                                                        const newErrors = { ...errors };
-                                                        delete newErrors[`product_${index}_name`];
-                                                        setErrors(newErrors);
-                                                    }
-                                                }}
-                                                error={errors[`product_${index}_name`]}
-                                            />
-                                            {activeSearchIndex === index && productSearchResults.length > 0 && (
-                                                <View style={styles.searchResultsContainer}>
-                                                    <ScrollView
-                                                        style={styles.searchResultsList}
-                                                        keyboardShouldPersistTaps="handled"
-                                                        nestedScrollEnabled
-                                                    >
-                                                        {productSearchResults.map((searchProduct) => (
-                                                            <TouchableOpacity
-                                                                key={searchProduct.id}
-                                                                style={styles.searchResultItem}
-                                                                onPress={() => handleSelectProduct(index, searchProduct)}
-                                                            >
-                                                                {searchProduct.base_image && (
-                                                                    <Image
-                                                                        source={{ uri: searchProduct.base_image }}
-                                                                        style={styles.searchResultImage}
-                                                                    />
-                                                                )}
-                                                                <View style={styles.searchResultInfo}>
-                                                                    <Text style={styles.searchResultName} numberOfLines={1}>
-                                                                        {searchProduct.name}
-                                                                    </Text>
-                                                                    <Text style={styles.searchResultSku}>
-                                                                        {searchProduct.sku}
-                                                                    </Text>
-                                                                    <Text style={styles.searchResultPrice}>
-                                                                        {searchProduct.formated_price}
-                                                                    </Text>
-                                                                </View>
-                                                            </TouchableOpacity>
-                                                        ))}
-                                                    </ScrollView>
-                                                </View>
-                                            )}
-                                            {activeSearchIndex === index && isSearchingProducts && (
-                                                <View style={styles.searchLoadingContainer}>
-                                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                                                    <Text style={styles.searchLoadingText}>
-                                                        {t('rfq.searching', 'Searching...')}
-                                                    </Text>
-                                                </View>
-                                            )}
+                                        {/* Product Name - Read Only */}
+                                        <View style={styles.productInfoRow}>
+                                            <Text style={styles.label}>
+                                                {t('rfq.productName', 'Product Name')}
+                                            </Text>
+                                            <Text style={styles.productNameText}>
+                                                {product.product_name}
+                                            </Text>
                                         </View>
+
+                                        {/* Validation Error for Product ID */}
+                                        {errors[`product_${index}_id`] && (
+                                            <Text style={styles.error}>{errors[`product_${index}_id`]}</Text>
+                                        )}
 
                                         <View style={styles.row}>
                                             <View style={styles.halfWidth}>
@@ -1219,6 +1242,24 @@ const styles = StyleSheet.create({
         marginLeft: theme.spacing.sm,
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.secondary,
+    },
+    productSearchSection: {
+        marginBottom: theme.spacing.md,
+    },
+    productInfoRow: {
+        marginBottom: theme.spacing.md,
+    },
+    productNameText: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.text.primary,
+        marginTop: theme.spacing.xs,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        backgroundColor: theme.colors.gray[50] || '#f9fafb',
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: theme.colors.gray[200],
     },
 });
 
