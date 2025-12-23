@@ -577,6 +577,18 @@
     "quickOrder": "Quick Order",
     "contact": "Contact"
   },
+  "quotes": {
+    "title": "My Requested Quotes",
+    "noQuotes": "You have no requested quotes yet.",
+    "createQuote": "Request a quote from a supplier to get started.",
+    "quantity": "Quantity",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "expired": "Expired"
+    }
+  },
   "newsletter": {
     "heading": "Subscribe to our newsletter",
     "subtext": "Get the latest updates and offers",

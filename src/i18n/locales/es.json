@@ -577,6 +577,18 @@
     "quickOrder": "Pedido Rápido",
     "contact": "Contacto"
   },
+  "quotes": {
+    "title": "Mis Cotizaciones Solicitadas",
+    "noQuotes": "Aún no tienes cotizaciones solicitadas.",
+    "createQuote": "Solicita una cotización a un proveedor para comenzar.",
+    "quantity": "Cantidad",
+    "status": {
+      "pending": "Pendiente",
+      "processing": "En Proceso",
+      "completed": "Completado",
+      "expired": "Vencido"
+    }
+  },
   "newsletter": {
     "heading": "Suscríbete a nuestro boletín",
     "subtext": "Recibe las últimas actualizaciones y ofertas",

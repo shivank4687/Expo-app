@@ -49,13 +49,13 @@ export const RequestedQuotesListScreen: React.FC = () => {
 
         try {
             const response = await suppliersApi.getCustomerQuotes(page, 15);
-            
+
             if (refresh) {
                 setQuotes(response.data);
             } else {
                 setQuotes((prev) => (page === 1 ? response.data : [...prev, ...response.data]));
             }
-            
+
             setHasMore(response.meta.current_page < response.meta.last_page);
             setCurrentPage(response.meta.current_page);
         } catch (err: any) {
@@ -95,6 +95,8 @@ export const RequestedQuotesListScreen: React.FC = () => {
                 return theme.colors.info.main || theme.colors.primary[500];
             case 'completed':
                 return theme.colors.success.main;
+            case 'expired':
+                return theme.colors.error.main;
             default:
                 return theme.colors.text.secondary;
         }
@@ -108,6 +110,8 @@ export const RequestedQuotesListScreen: React.FC = () => {
                 return t('quotes.status.processing', 'Processing');
             case 'completed':
                 return t('quotes.status.completed', 'Completed');
+            case 'expired':
+                return t('quotes.status.expired', 'Expired');
             default:
                 return status;
         }
