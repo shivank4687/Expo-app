@@ -24,6 +24,8 @@ import { suppliersApi, QuoteResponseDetail, QuoteMessage } from '@/services/api/
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { formatters } from '@/shared/utils/formatters';
+import socketService from '@/services/socket.service';
+import { useAppSelector } from '@/store/hooks';
 
 type TabType = 'summary' | 'messages';
 
@@ -48,6 +50,9 @@ export const QuoteResponseDetailScreen: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const { user: authUser } = useAppSelector((state) => state.auth);
 
     const loadQuoteDetail = useCallback(async () => {
         if (!isAuthenticated || !user || !quoteId || !customerQuoteItemId) {
@@ -78,6 +83,66 @@ export const QuoteResponseDetailScreen: React.FC = () => {
         loadQuoteDetail();
     }, [loadQuoteDetail]);
 
+    // Socket.IO connection
+    useEffect(() => {
+        if (authUser?.id) {
+            const token = `customer_${authUser.id}`;
+            socketService.connect(token, 'customer');
+            console.log('Socket.IO connected for customer:', authUser.id);
+        }
+
+        return () => {
+            socketService.disconnect();
+            console.log('Socket.IO disconnected');
+        };
+    }, [authUser]);
+
+    // Join/leave RFQ room based on active tab
+    useEffect(() => {
+        if (activeTab === 'messages' && quoteId && customerQuoteItemId) {
+            const qId = Number(quoteId);
+            const cqId = Number(customerQuoteItemId);
+
+            socketService.joinRFQRoom(qId, cqId);
+            console.log(`Joined RFQ room: ${qId}-${cqId}`);
+
+            // Listen for new messages
+            socketService.onNewMessage((data) => {
+                console.log('New message received:', data);
+
+                // Only add message if it's from the supplier
+                if (data.sender.type === 'supplier') {
+                    setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        message: data.message.message,
+                        customer_id: null,
+                        supplier_id: data.message.supplier_id || null,
+                        created_at: data.message.created_at,
+                    }]);
+                }
+            });
+
+            // Listen for typing indicators
+            socketService.onUserTyping((data) => {
+                if (data.user.type === 'supplier') {
+                    setIsTyping(true);
+                }
+            });
+
+            socketService.onUserStoppedTyping((data) => {
+                if (data.user.type === 'supplier') {
+                    setIsTyping(false);
+                }
+            });
+
+            return () => {
+                socketService.leaveRFQRoom(qId, cqId);
+                socketService.offNewMessage();
+                console.log(`Left RFQ room: ${qId}-${cqId}`);
+            };
+        }
+    }, [activeTab, quoteId, customerQuoteItemId]);
+
     useEffect(() => {
         // Scroll to bottom when messages change
         if (messages.length > 0 && flatListRef.current && activeTab === 'messages') {
@@ -100,33 +165,17 @@ export const QuoteResponseDetailScreen: React.FC = () => {
             return;
         }
 
-        console.log('📊 Quote detail:', {
-            supplierQuoteItemsCount: quoteDetail.supplier_quote_items.length,
-            customerQuoteItemId: quoteDetail.customer_quote_item.id,
-        });
-
-        const latestSupplierQuote = quoteDetail.supplier_quote_items[quoteDetail.supplier_quote_items.length - 1];
-        if (!latestSupplierQuote) {
-            console.log('❌ No supplier quote found');
-            showToast({ message: 'No supplier quote found. Please wait for supplier to respond first.', type: 'error' });
-            return;
-        }
-
-        console.log('✅ Latest supplier quote:', { id: latestSupplierQuote.id });
-
         const messageToSend = messageText.trim();
         setMessageText('');
         setIsSending(true);
 
         try {
             console.log('🚀 Sending message:', {
-                supplierQuoteItemId: latestSupplierQuote.id,
                 customerQuoteItemId: quoteDetail.customer_quote_item.id,
                 message: messageToSend,
             });
 
             const response = await suppliersApi.sendQuoteMessage(
-                latestSupplierQuote.id,
                 quoteDetail.customer_quote_item.id,
                 messageToSend
             );
@@ -135,6 +184,24 @@ export const QuoteResponseDetailScreen: React.FC = () => {
 
             if (response.data) {
                 setMessages(prev => [...prev, response.data!]);
+
+                // Broadcast message via Socket.IO
+                if (quoteId && customerQuoteItemId) {
+                    socketService.sendRFQMessage(
+                        Number(quoteId),
+                        Number(customerQuoteItemId),
+                        response.data
+                    );
+                }
+
+                // Stop typing indicator
+                if (quoteId && customerQuoteItemId) {
+                    socketService.emitStopTyping(
+                        Number(quoteId),
+                        Number(customerQuoteItemId)
+                    );
+                }
+
                 setTimeout(() => {
                     flatListRef.current?.scrollToEnd({ animated: true });
                 }, 100);
@@ -463,13 +530,45 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                     }
                 />
 
+                {/* Typing Indicator */}
+                {isTyping && (
+                    <View style={styles.typingContainer}>
+                        <Text style={styles.typingText}>Supplier is typing...</Text>
+                    </View>
+                )}
+
                 <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                     <TextInput
                         style={styles.textInput}
                         placeholder={t('quotes.typeMessage', 'Type a message...')}
                         placeholderTextColor={theme.colors.text.secondary}
                         value={messageText}
-                        onChangeText={setMessageText}
+                        onChangeText={(text) => {
+                            setMessageText(text);
+
+                            // Emit typing indicator
+                            if (text.trim() && quoteId && customerQuoteItemId) {
+                                socketService.emitTyping(
+                                    Number(quoteId),
+                                    Number(customerQuoteItemId)
+                                );
+
+                                // Clear previous timeout
+                                if (typingTimeoutRef.current) {
+                                    clearTimeout(typingTimeoutRef.current);
+                                }
+
+                                // Set timeout to emit stop typing
+                                typingTimeoutRef.current = setTimeout(() => {
+                                    if (quoteId && customerQuoteItemId) {
+                                        socketService.emitStopTyping(
+                                            Number(quoteId),
+                                            Number(customerQuoteItemId)
+                                        );
+                                    }
+                                }, 1000);
+                            }
+                        }}
                         multiline
                         maxLength={1000}
                     />
@@ -852,6 +951,16 @@ const styles = StyleSheet.create({
     sendButtonDisabled: {
         backgroundColor: theme.colors.text.secondary,
         opacity: 0.5,
+    },
+    typingContainer: {
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        backgroundColor: theme.colors.background.default,
+    },
+    typingText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.secondary,
+        fontStyle: 'italic',
     },
 });
 

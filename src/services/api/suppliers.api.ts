@@ -41,6 +41,7 @@ export interface ChatMessage {
 
 export interface ThreadDetails {
     thread_id: number;
+    quote_id: number;
     supplier_id: number;
     supplier_name: string;
     supplier_company_name: string;
@@ -517,11 +518,10 @@ export const suppliersApi = {
      * Requires authentication
      */
     async sendQuoteMessage(
-        supplierQuoteItemId: number,
         customerQuoteItemId: number,
         message: string
     ): Promise<{ success: boolean; message: string; data?: QuoteMessage }> {
-        const endpoint = API_ENDPOINTS.QUOTE_MESSAGE.replace(':supplierQuoteItemId', supplierQuoteItemId.toString());
+        const endpoint = API_ENDPOINTS.QUOTE_MESSAGE;
         const response = await restApiClient.post<{ success: boolean; message: string; data?: QuoteMessage }>(
             endpoint,
             {

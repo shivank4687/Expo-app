@@ -22,6 +22,7 @@ type ApiType = 'rest' | 'shop';
 class ApiClient {
     private instance: AxiosInstance;
     private apiType: ApiType;
+    private isLoggingOut: boolean = false;
 
     constructor(apiType: ApiType = 'rest') {
         this.apiType = apiType;
@@ -117,7 +118,10 @@ class ApiClient {
                     switch (status) {
                         case 401:
                             // Unauthorized - Clear auth and redirect to login
-                            await this.handleUnauthorized();
+                            // Only handle if not already logging out to prevent infinite loop
+                            if (!this.isLoggingOut) {
+                                await this.handleUnauthorized();
+                            }
                             break;
                         case 403:
                             // Forbidden
@@ -154,17 +158,51 @@ class ApiClient {
     }
 
     private async handleUnauthorized() {
-        // Clear customer auth data
-        await secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-        await secureStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        await secureStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        // Prevent infinite loop
+        if (this.isLoggingOut) {
+            console.log('⚠️ Already logging out, skipping...');
+            return;
+        }
 
-        // Clear supplier auth data
-        await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
-        await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_DATA);
+        this.isLoggingOut = true;
+        console.log('🚨 401 Unauthorized - Logging out user');
 
-        // You can emit an event here to trigger navigation to login
-        // or use a global state management solution
+        try {
+            // Clear customer auth data
+            await secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            await secureStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+            await secureStorage.removeItem(STORAGE_KEYS.USER_DATA);
+
+            // Clear supplier auth data
+            await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
+            await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_DATA);
+
+            // Clear global token
+            setGlobalToken(null);
+
+            // Dispatch logout to Redux store
+            // Import store dynamically to avoid circular dependencies
+            try {
+                const { store } = await import('@/store/store');
+                const { logoutThunk } = await import('@/store/slices/authSlice');
+                const { supplierLogoutThunk } = await import('@/store/slices/supplierAuthSlice');
+
+                // Dispatch both logout actions to clear all auth state
+                // Note: These will try to call logout API which will fail with 401
+                // but that's okay because we're already clearing everything
+                await store.dispatch(logoutThunk());
+                await store.dispatch(supplierLogoutThunk());
+
+                console.log('✅ User logged out successfully');
+            } catch (error) {
+                console.error('❌ Error dispatching logout:', error);
+            }
+        } finally {
+            // Reset flag after a delay to allow logout to complete
+            setTimeout(() => {
+                this.isLoggingOut = false;
+            }, 2000);
+        }
     }
 
     // HTTP Methods
