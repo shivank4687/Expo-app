@@ -161,6 +161,36 @@ class SocketService {
         this.socket.on('rfq:user-stopped-typing', callback);
     }
 
+    // Notification methods
+    subscribeToNotifications(): void {
+        if (!this.socket) {
+            console.error('Socket not connected');
+            return;
+        }
+
+        this.socket.emit('notification:subscribe');
+        console.log('Subscribed to notifications');
+    }
+
+    unsubscribeFromNotifications(): void {
+        if (!this.socket) return;
+
+        this.socket.emit('notification:unsubscribe');
+        console.log('Unsubscribed from notifications');
+    }
+
+    onNewNotification(callback: (data: any) => void): void {
+        if (!this.socket) return;
+
+        this.socket.on('notification:new', callback);
+    }
+
+    offNewNotification(): void {
+        if (!this.socket) return;
+
+        this.socket.off('notification:new');
+    }
+
     disconnect(): void {
         if (this.socket) {
             this.socket.disconnect();

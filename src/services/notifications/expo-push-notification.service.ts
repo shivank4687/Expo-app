@@ -142,8 +142,21 @@ class ExpoPushNotificationService {
                     }
                     break;
 
+                case 'message':
+                case 'rfq_new_message':
+                    // Navigate to RFQ response screen for customer notifications
+                    if (data.quote_id && data.customer_quote_item_id) {
+                        router.push(`/quotes/response/${data.quote_id}/${data.customer_quote_item_id}` as any);
+                    } else {
+                        // Fallback to notifications screen
+                        router.push('/notifications' as any);
+                    }
+                    break;
+
                 default:
                     console.log('Unknown notification type:', data.type);
+                    // Navigate to notifications screen as fallback
+                    router.push('/notifications' as any);
             }
         } catch (error) {
             console.error('Error navigating from notification:', error);

@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
+import { fetchUnreadCountThunk } from '@/store/slices/notificationSlice';
 import { APP_NAME } from '@/config/constants';
 interface ShopHeaderProps {
     title?: string;
@@ -19,6 +20,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { cart } = useAppSelector((state) => state.cart);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+    const { totalUnread } = useAppSelector((state) => state.notifications);
 
     // Fetch cart on mount (works for both authenticated and guest users)
     // useEffect(() => {
@@ -30,6 +32,11 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         // if (isAuthenticated) {
         dispatch(fetchCartThunk());
         // }
+
+        // Fetch notification count for authenticated users
+        if (isAuthenticated) {
+            dispatch(fetchUnreadCountThunk());
+        }
     }, [isAuthenticated, dispatch]);
 
     const cartItemsCount = cart?.items_count || 0;
@@ -50,6 +57,10 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
 
     const handleWishlistPress = () => {
         router.push('/wishlist');
+    };
+
+    const handleNotificationsPress = () => {
+        router.push('/notifications' as any);
     };
 
     const handleSearchPress = () => {
@@ -101,6 +112,22 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                                 size={28}
                                 color={theme.colors.text.primary}
                             />
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Notification Bell (only for authenticated users) */}
+                    {isAuthenticated && (
+                        <TouchableOpacity style={styles.iconButton} onPress={handleNotificationsPress}>
+                            <View>
+                                <Ionicons name="notifications-outline" size={28} color={theme.colors.text.primary} />
+                                {totalUnread > 0 && (
+                                    <View style={styles.badge}>
+                                        <Text style={styles.badgeText}>
+                                            {totalUnread > 99 ? '99+' : totalUnread}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                         </TouchableOpacity>
                     )}
 

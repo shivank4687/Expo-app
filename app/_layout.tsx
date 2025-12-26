@@ -121,6 +121,12 @@ function AppContent() {
           }}
         />
         <Stack.Screen
+          name="notifications"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="messages"
           options={{
             headerShown: false,

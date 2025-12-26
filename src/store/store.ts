@@ -9,6 +9,7 @@ import categoryReducer from './slices/categorySlice';
 import cmsReducer from './slices/cmsSlice';
 import cartReducer from './slices/cartSlice';
 import wishlistReducer from './slices/wishlistSlice';
+import notificationReducer from './slices/notificationSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -46,13 +47,14 @@ const persistConfig = {
 
 // Root reducer
 const rootReducer = combineReducers({
-  auth: authReducer,
-  supplierAuth: supplierAuthReducer,
-  core: coreReducer,
-  category: categoryReducer,
-  cms: cmsReducer,
-  cart: cartReducer,
-  wishlist: wishlistReducer,
+    auth: authReducer,
+    supplierAuth: supplierAuthReducer,
+    core: coreReducer,
+    category: categoryReducer,
+    cms: cmsReducer,
+    cart: cartReducer,
+    wishlist: wishlistReducer,
+    notifications: notificationReducer,
 });
 
 // Persisted reducer
