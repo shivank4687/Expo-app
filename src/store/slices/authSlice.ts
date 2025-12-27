@@ -15,6 +15,7 @@ import {
 import { resetCart } from './cartSlice';
 import { setGlobalToken } from '@/services/api/client';
 import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
+import socketService from '@/services/socket.service';
 
 interface AuthState {
     user: User | null;
@@ -253,6 +254,8 @@ export const logoutThunk = createAsyncThunk(
             }
 
             await authApi.logout();
+            // Disconnect Socket.IO session
+            socketService.disconnect();
         } catch (error) {
             console.error('Logout API error:', error);
         } finally {

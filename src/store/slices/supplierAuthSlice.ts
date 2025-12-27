@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from '@/config/constants';
 import { LoginRequest } from '@/features/auth/types/auth.types';
 import { setGlobalToken } from '@/services/api/client';
 import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
+import socketService from '@/services/socket.service';
 
 interface SupplierAuthState {
     supplier: Supplier | null;
@@ -104,6 +105,8 @@ export const supplierLogoutThunk = createAsyncThunk(
             }
 
             await supplierAuthApi.logout();
+            // Disconnect Socket.IO session
+            socketService.disconnect();
         } catch (error) {
             console.error('Logout API error (non-critical):', error);
         } finally {

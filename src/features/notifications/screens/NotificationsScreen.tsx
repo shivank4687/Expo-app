@@ -17,6 +17,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import {
     fetchNotificationsThunk,
     markAsReadThunk,
+    markOrderAsReadThunk,
     markAllAsReadThunk,
 } from '@/store/slices/notificationSlice';
 import { Notification } from '@/features/notifications/types/notification.types';
@@ -84,20 +85,17 @@ export const NotificationsScreen: React.FC = () => {
     // Socket.IO real-time notifications
     useEffect(() => {
         if (isAuthenticated && user?.id) {
-            const token = `customer_${user.id}`;
-            socketService.connect(token, 'customer');
-            socketService.subscribeToNotifications();
-
             // Listen for new notifications
-            socketService.onNewNotification((data) => {
+            const handleNotification = (data: any) => {
                 console.log('Real-time notification received:', data);
                 // Refresh notifications list
                 dispatch(fetchNotificationsThunk({ page: 1, append: false }));
-            });
+            };
+
+            socketService.onNewNotification(handleNotification);
 
             return () => {
-                socketService.offNewNotification();
-                socketService.unsubscribeFromNotifications();
+                socketService.offNewNotification(handleNotification);
             };
         }
     }, [isAuthenticated, user, dispatch]);
@@ -173,27 +171,76 @@ export const NotificationsScreen: React.FC = () => {
     };
 
     const handleNotificationPress = async (notification: Notification) => {
-        // Mark as read
-        if (!notification.read_at) {
-            await dispatch(markAsReadThunk(notification.id));
+        // Mark as read - check both read_at and read fields
+        const isUnread = !notification.read_at && !(notification as any).read;
+        if (isUnread) {
+            // Use the correct endpoint based on notification type
+            if (notification.type === 'order') {
+                await dispatch(markOrderAsReadThunk(notification.id));
+            } else {
+                await dispatch(markAsReadThunk(notification.id));
+            }
         }
 
-        // Navigate based on action_url
+        // Navigate based on notification type and action_url
         if (notification.action_url) {
-            // Extract path from action_url
-            // Example: http://localhost:8000/customer/quote/response/new/view/38/id/5/product/13#tab=messages
-            const url = new URL(notification.action_url);
-            const path = url.pathname + url.hash;
+            try {
+                // Extract path from action_url
+                const url = new URL(notification.action_url);
+                const path = url.pathname + url.hash;
 
-            // Navigate to RFQ response screen if it's a message notification
-            if (path.includes('/customer/quote/response')) {
-                // Extract IDs from path
-                const matches = path.match(/view\/(\d+)\/id\/(\d+)\/product\/(\d+)/);
-                if (matches) {
-                    const [, quoteId, customerQuoteItemId, productId] = matches;
-                    router.push(`/quotes/response/${quoteId}/${customerQuoteItemId}` as any);
+                console.log('[NotificationsScreen] Navigating to:', path);
+
+                // Handle Order Notifications
+                if (path.includes('/customer/account/orders/view/')) {
+                    // Extract order ID from path: /customer/account/orders/view/{orderId}
+                    const orderMatches = path.match(/\/customer\/account\/orders\/view\/(\d+)/);
+                    if (orderMatches) {
+                        const [, orderId] = orderMatches;
+                        console.log('[NotificationsScreen] Navigating to order:', orderId);
+                        router.push(`/orders/${orderId}` as any);
+                        return;
+                    }
                 }
+
+                // Handle RFQ/Message Notifications
+                if (path.includes('/customer/quote/response')) {
+                    // Extract IDs from path: /customer/quote/response/new/view/{quoteId}/id/{supplierId}/product/{productId}
+                    const rfqMatches = path.match(/view\/(\d+)\/id\/(\d+)\/product\/(\d+)/);
+                    if (rfqMatches) {
+                        const [, quoteId, supplierId, productId] = rfqMatches;
+                        console.log('[NotificationsScreen] Extracted RFQ params:', {
+                            quoteId,
+                            supplierId,
+                            productId,
+                            fullPath: path,
+                            fullUrl: notification.action_url,
+                            note: 'Using supplierId from web URL format'
+                        });
+
+                        // Navigate to quote response detail with supplier params
+                        // The screen will use the new API endpoint that converts supplierId to customerQuoteItemId
+                        router.push({
+                            pathname: '/quotes/quote-response-detail',
+                            params: {
+                                quoteId,
+                                supplierId,
+                                productId,
+                            }
+                        } as any);
+                        return;
+                    } else {
+                        console.error('[NotificationsScreen] Failed to extract RFQ IDs from path:', path);
+                    }
+                }
+
+                // If no match found, log for debugging
+                console.warn('[NotificationsScreen] Unmatched notification URL:', path);
+            } catch (error) {
+                console.error('[NotificationsScreen] Error parsing notification URL:', error);
             }
+        } else {
+            console.warn('[NotificationsScreen] Notification has no action_url:', notification);
         }
     };
 

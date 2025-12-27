@@ -8,6 +8,9 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
 import { fetchUnreadCountThunk } from '@/store/slices/notificationSlice';
 import { APP_NAME } from '@/config/constants';
+import socketService from '@/services/socket.service';
+import { useToast } from '@/shared/components/Toast';
+
 interface ShopHeaderProps {
     title?: string;
     showSearch?: boolean;
@@ -17,7 +20,8 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     const navigation = useNavigation();
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { showToast } = useToast();
+    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
     const { cart } = useAppSelector((state) => state.cart);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { totalUnread } = useAppSelector((state) => state.notifications);
@@ -38,6 +42,37 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
             dispatch(fetchUnreadCountThunk());
         }
     }, [isAuthenticated, dispatch]);
+
+    // Listen for real-time notification updates
+    useEffect(() => {
+        if (isAuthenticated && user?.id) {
+            // Connect to Socket.IO
+            const token = `customer_${user.id}`;
+            socketService.connect(token, 'customer');
+            socketService.subscribeToNotifications();
+
+            // Listen for new notifications
+            const handleNotification = (data: any) => {
+                console.log('[ShopHeader] New notification received, refreshing count', data);
+                dispatch(fetchUnreadCountThunk());
+
+                // Show toast notification
+                if (data) {
+                    showToast({
+                        message: data.message || 'New notification received',
+                        type: 'info',
+                        title: data.title || 'Notification',
+                    });
+                }
+            };
+
+            socketService.onNewNotification(handleNotification);
+
+            return () => {
+                socketService.offNewNotification(handleNotification);
+            };
+        }
+    }, [isAuthenticated, user?.id, dispatch]);
 
     const cartItemsCount = cart?.items_count || 0;
     const wishlistItemsCount = wishlistItems?.length || 0;

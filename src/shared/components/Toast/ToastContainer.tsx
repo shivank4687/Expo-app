@@ -30,7 +30,7 @@ export const ToastContainer: React.FC = () => {
     useEffect(() => {
         if (toast.visible && toast.message) {
             showToastAnimation();
-            
+
             // Auto hide after duration
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -108,9 +108,16 @@ export const ToastContainer: React.FC = () => {
                 <View style={[styles.iconContainer, { backgroundColor: iconColor }]}>
                     <Ionicons name={icon} size={24} color="#FFFFFF" />
                 </View>
-                <Text style={styles.message} numberOfLines={2}>
-                    {toast.message}
-                </Text>
+                <View style={styles.textContainer}>
+                    {toast.title && (
+                        <Text style={styles.title} numberOfLines={1}>
+                            {toast.title}
+                        </Text>
+                    )}
+                    <Text style={styles.message} numberOfLines={2}>
+                        {toast.message}
+                    </Text>
+                </View>
                 <TouchableOpacity
                     onPress={hideToastAnimation}
                     style={styles.closeButton}
@@ -187,12 +194,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 12,
     },
-    message: {
+    textContainer: {
         flex: 1,
-        fontSize: 15,
-        fontWeight: '600',
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: 'bold',
         color: '#FFFFFF',
-        lineHeight: 20,
+        marginBottom: 2,
+    },
+    message: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        lineHeight: 18,
     },
     closeButton: {
         padding: 4,

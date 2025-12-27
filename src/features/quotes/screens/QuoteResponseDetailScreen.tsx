@@ -24,7 +24,7 @@ import { suppliersApi, QuoteResponseDetail, QuoteMessage } from '@/services/api/
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { formatters } from '@/shared/utils/formatters';
-import socketService from '@/services/socket.service';
+import socketService, { NewMessageData } from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 
 type TabType = 'summary' | 'messages';
@@ -34,9 +34,11 @@ export const QuoteResponseDetailScreen: React.FC = () => {
     const router = useRouter();
     const { showToast } = useToast();
     const insets = useSafeAreaInsets();
-    const { quoteId, customerQuoteItemId, productName } = useLocalSearchParams<{
+    const { quoteId, customerQuoteItemId, supplierId, productId, productName } = useLocalSearchParams<{
         quoteId: string;
-        customerQuoteItemId: string;
+        customerQuoteItemId?: string;
+        supplierId?: string;
+        productId?: string;
         productName?: string;
     }>();
     const { user, isAuthenticated, isLoading: isAuthLoading } = useRequireAuth();
@@ -55,29 +57,70 @@ export const QuoteResponseDetailScreen: React.FC = () => {
     const { user: authUser } = useAppSelector((state) => state.auth);
 
     const loadQuoteDetail = useCallback(async () => {
-        if (!isAuthenticated || !user || !quoteId || !customerQuoteItemId) {
+        if (!isAuthenticated || !user || !quoteId) {
+            console.log('[QuoteResponseDetail] Missing required params:', {
+                isAuthenticated,
+                hasUser: !!user,
+                quoteId
+            });
             setIsLoading(false);
             return;
         }
+
+        // Check if we have either customerQuoteItemId or (supplierId + productId)
+        const hasCustomerQuoteItemId = !!customerQuoteItemId;
+        const hasSupplierParams = !!supplierId && !!productId;
+
+        if (!hasCustomerQuoteItemId && !hasSupplierParams) {
+            console.error('[QuoteResponseDetail] Missing required params: need either customerQuoteItemId or (supplierId + productId)');
+            setIsLoading(false);
+            return;
+        }
+
+        console.log('[QuoteResponseDetail] Loading quote detail with params:', {
+            quoteId: Number(quoteId),
+            customerQuoteItemId: customerQuoteItemId ? Number(customerQuoteItemId) : undefined,
+            supplierId: supplierId ? Number(supplierId) : undefined,
+            productId: productId ? Number(productId) : undefined,
+            usingSupplierEndpoint: hasSupplierParams && !hasCustomerQuoteItemId,
+            apiEndpoint: hasSupplierParams && !hasCustomerQuoteItemId
+                ? `/customer/quotes/${quoteId}/response-by-supplier/${supplierId}/product/${productId}`
+                : `/customer/quotes/${quoteId}/response/${customerQuoteItemId}`
+        });
 
         setIsLoading(true);
         setError(null);
 
         try {
-            const detail = await suppliersApi.getQuoteResponseDetail(
-                Number(quoteId),
-                Number(customerQuoteItemId)
-            );
+            let detail;
+
+            // Use supplier-based endpoint if we have supplierId and productId (from notifications)
+            if (hasSupplierParams && !hasCustomerQuoteItemId) {
+                detail = await suppliersApi.getQuoteResponseDetailBySupplier(
+                    Number(quoteId),
+                    Number(supplierId),
+                    Number(productId)
+                );
+            } else {
+                // Use customer quote item endpoint (direct navigation)
+                detail = await suppliersApi.getQuoteResponseDetail(
+                    Number(quoteId),
+                    Number(customerQuoteItemId)
+                );
+            }
+
+            console.log('[QuoteResponseDetail] Successfully loaded quote detail');
             setQuoteDetail(detail);
             setMessages(detail.quote_messages || []);
         } catch (err: any) {
+            console.error('[QuoteResponseDetail] Failed to load quote detail:', err);
             setError(err.message || 'Failed to load quote details');
             showToast({ message: err.message || 'Failed to load quote', type: 'error' });
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
         }
-    }, [isAuthenticated, user, quoteId, customerQuoteItemId, showToast]);
+    }, [isAuthenticated, user, quoteId, customerQuoteItemId, supplierId, productId, showToast]);
 
     useEffect(() => {
         loadQuoteDetail();
@@ -85,29 +128,38 @@ export const QuoteResponseDetailScreen: React.FC = () => {
 
     // Socket.IO connection
     useEffect(() => {
+        console.log('[QuoteResponseDetail] Socket.IO connection effect triggered', {
+            hasAuthUser: !!authUser,
+            authUserId: authUser?.id
+        });
+
         if (authUser?.id) {
             const token = `customer_${authUser.id}`;
             socketService.connect(token, 'customer');
-            console.log('Socket.IO connected for customer:', authUser.id);
+            console.log('✅ Socket.IO connected for customer:', authUser.id);
+        } else {
+            console.warn('⚠️ Socket.IO not connected - authUser not available');
         }
 
         return () => {
-            socketService.disconnect();
-            console.log('Socket.IO disconnected');
+            console.log('[QuoteResponseDetail] Socket.IO cleanup');
         };
-    }, [authUser]);
+    }, [authUser?.id]);
 
     // Join/leave RFQ room based on active tab
     useEffect(() => {
-        if (activeTab === 'messages' && quoteId && customerQuoteItemId) {
+        // Use customerQuoteItemId from loaded quote detail (works for both navigation types)
+        const effectiveCustomerQuoteItemId = quoteDetail?.customer_quote_item?.id;
+
+        if (activeTab === 'messages' && quoteId && effectiveCustomerQuoteItemId) {
             const qId = Number(quoteId);
-            const cqId = Number(customerQuoteItemId);
+            const cqId = effectiveCustomerQuoteItemId;
 
             socketService.joinRFQRoom(qId, cqId);
             console.log(`Joined RFQ room: ${qId}-${cqId}`);
 
             // Listen for new messages
-            socketService.onNewMessage((data) => {
+            const handleNewMessage = (data: NewMessageData) => {
                 console.log('New message received:', data);
 
                 // Only add message if it's from the supplier
@@ -120,28 +172,34 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                         created_at: data.message.created_at,
                     }]);
                 }
-            });
+            };
 
             // Listen for typing indicators
-            socketService.onUserTyping((data) => {
+            const handleUserTyping = (data: any) => {
                 if (data.user.type === 'supplier') {
                     setIsTyping(true);
                 }
-            });
+            };
 
-            socketService.onUserStoppedTyping((data) => {
+            const handleUserStoppedTyping = (data: any) => {
                 if (data.user.type === 'supplier') {
                     setIsTyping(false);
                 }
-            });
+            };
+
+            socketService.onNewMessage(handleNewMessage);
+            socketService.onUserTyping(handleUserTyping);
+            socketService.onUserStoppedTyping(handleUserStoppedTyping);
 
             return () => {
                 socketService.leaveRFQRoom(qId, cqId);
-                socketService.offNewMessage();
+                socketService.offNewMessage(handleNewMessage);
+                socketService.offUserTyping(handleUserTyping);
+                socketService.offUserStoppedTyping(handleUserStoppedTyping);
                 console.log(`Left RFQ room: ${qId}-${cqId}`);
             };
         }
-    }, [activeTab, quoteId, customerQuoteItemId]);
+    }, [activeTab, quoteId, quoteDetail]);
 
     useEffect(() => {
         // Scroll to bottom when messages change
@@ -185,20 +243,21 @@ export const QuoteResponseDetailScreen: React.FC = () => {
             if (response.data) {
                 setMessages(prev => [...prev, response.data!]);
 
-                // Broadcast message via Socket.IO
-                if (quoteId && customerQuoteItemId) {
+                // Broadcast message via Socket.IO using loaded quote data
+                const effectiveCustomerQuoteItemId = quoteDetail.customer_quote_item.id;
+                if (quoteId && effectiveCustomerQuoteItemId) {
                     socketService.sendRFQMessage(
                         Number(quoteId),
-                        Number(customerQuoteItemId),
+                        effectiveCustomerQuoteItemId,
                         response.data
                     );
                 }
 
                 // Stop typing indicator
-                if (quoteId && customerQuoteItemId) {
+                if (quoteId && effectiveCustomerQuoteItemId) {
                     socketService.emitStopTyping(
                         Number(quoteId),
-                        Number(customerQuoteItemId)
+                        effectiveCustomerQuoteItemId
                     );
                 }
 
@@ -546,11 +605,12 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                         onChangeText={(text) => {
                             setMessageText(text);
 
-                            // Emit typing indicator
-                            if (text.trim() && quoteId && customerQuoteItemId) {
+                            // Emit typing indicator using loaded quote data
+                            const effectiveCustomerQuoteItemId = quoteDetail?.customer_quote_item?.id;
+                            if (text.trim() && quoteId && effectiveCustomerQuoteItemId) {
                                 socketService.emitTyping(
                                     Number(quoteId),
-                                    Number(customerQuoteItemId)
+                                    effectiveCustomerQuoteItemId
                                 );
 
                                 // Clear previous timeout
@@ -560,10 +620,10 @@ export const QuoteResponseDetailScreen: React.FC = () => {
 
                                 // Set timeout to emit stop typing
                                 typingTimeoutRef.current = setTimeout(() => {
-                                    if (quoteId && customerQuoteItemId) {
+                                    if (quoteId && effectiveCustomerQuoteItemId) {
                                         socketService.emitStopTyping(
                                             Number(quoteId),
-                                            Number(customerQuoteItemId)
+                                            effectiveCustomerQuoteItemId
                                         );
                                     }
                                 }, 1000);

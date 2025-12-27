@@ -494,6 +494,16 @@ export const suppliersApi = {
     },
 
     /**
+     * Get quote response detail by supplier (for web-style notification URLs)
+     * Requires authentication
+     */
+    async getQuoteResponseDetailBySupplier(quoteId: number, supplierId: number, productId: number): Promise<QuoteResponseDetail> {
+        const endpoint = `/customer/quotes/${quoteId}/response-by-supplier/${supplierId}/product/${productId}`;
+        const response = await restApiClient.get<{ data: QuoteResponseDetail }>(endpoint);
+        return response.data;
+    },
+
+    /**
      * Approve supplier quote
      * Requires authentication
      */

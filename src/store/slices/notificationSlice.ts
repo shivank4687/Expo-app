@@ -71,6 +71,19 @@ export const markAsReadThunk = createAsyncThunk(
     }
 );
 
+// Mark order notification as read
+export const markOrderAsReadThunk = createAsyncThunk(
+    'notifications/markOrderAsRead',
+    async (id: number, { rejectWithValue }) => {
+        try {
+            await notificationsApi.markOrderAsRead(id);
+            return id;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to mark order as read');
+        }
+    }
+);
+
 // Mark all as read
 export const markAllAsReadThunk = createAsyncThunk(
     'notifications/markAllAsRead',
@@ -174,6 +187,20 @@ const notificationSlice = createSlice({
                 if (customerNotif && !customerNotif.read_at) {
                     customerNotif.read_at = new Date().toISOString();
                     state.customerUnread = Math.max(0, state.customerUnread - 1);
+                    state.totalUnread = Math.max(0, state.totalUnread - 1);
+                }
+            });
+
+        // Mark order as read
+        builder
+            .addCase(markOrderAsReadThunk.fulfilled, (state, action) => {
+                const id = action.payload;
+
+                // Find and update in order notifications
+                const orderNotif = state.orderNotifications.find(n => n.id === id);
+                if (orderNotif && !orderNotif.read_at) {
+                    orderNotif.read_at = new Date().toISOString();
+                    state.orderUnread = Math.max(0, state.orderUnread - 1);
                     state.totalUnread = Math.max(0, state.totalUnread - 1);
                 }
             });

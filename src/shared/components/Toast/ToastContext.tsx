@@ -4,6 +4,7 @@ export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export interface ToastConfig {
     message: string;
+    title?: string;
     type?: ToastType;
     duration?: number;
 }
@@ -34,6 +35,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setToast({
             visible: true,
             message: config.message,
+            title: config.title,
             type: config.type || 'info',
             duration: config.duration || 3000,
             id: Date.now(),

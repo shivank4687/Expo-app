@@ -93,6 +93,23 @@ export const notificationsApi = {
     },
 
     /**
+     * Mark a single order notification as read
+     */
+    markOrderAsRead: async (id: number): Promise<void> => {
+        try {
+            await restApiClient.post(`/customer/notifications/order/${id}/read`);
+        } catch (error: any) {
+            // Silently fail on 401
+            if (error.response?.status === 401) {
+                console.log('Mark order as read: Not authenticated');
+                return;
+            }
+            console.error('Mark order as read error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to mark order notification as read');
+        }
+    },
+
+    /**
      * Mark all notifications as read
      */
     markAllAsRead: async (): Promise<void> => {

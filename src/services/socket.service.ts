@@ -107,10 +107,14 @@ class SocketService {
         this.socket.on('rfq:new-message', callback);
     }
 
-    offNewMessage(): void {
+    offNewMessage(callback?: (data: NewMessageData) => void): void {
         if (!this.socket) return;
 
-        this.socket.off('rfq:new-message');
+        if (callback) {
+            this.socket.off('rfq:new-message', callback);
+        } else {
+            this.socket.off('rfq:new-message');
+        }
     }
 
     onUserJoined(callback: (data: any) => void): void {
@@ -119,16 +123,43 @@ class SocketService {
         this.socket.on('rfq:user-joined', callback);
     }
 
+    offUserJoined(callback?: (data: any) => void): void {
+        if (!this.socket) return;
+        if (callback) {
+            this.socket.off('rfq:user-joined', callback);
+        } else {
+            this.socket.off('rfq:user-joined');
+        }
+    }
+
     onUserLeft(callback: (data: any) => void): void {
         if (!this.socket) return;
 
         this.socket.on('rfq:user-left', callback);
     }
 
+    offUserLeft(callback?: (data: any) => void): void {
+        if (!this.socket) return;
+        if (callback) {
+            this.socket.off('rfq:user-left', callback);
+        } else {
+            this.socket.off('rfq:user-left');
+        }
+    }
+
     onRoomMembers(callback: (data: any) => void): void {
         if (!this.socket) return;
 
         this.socket.on('rfq:room-members', callback);
+    }
+
+    offRoomMembers(callback?: (data: any) => void): void {
+        if (!this.socket) return;
+        if (callback) {
+            this.socket.off('rfq:room-members', callback);
+        } else {
+            this.socket.off('rfq:room-members');
+        }
     }
 
     emitTyping(quoteId: number, customerQuoteId: number): void {
@@ -155,10 +186,28 @@ class SocketService {
         this.socket.on('rfq:user-typing', callback);
     }
 
+    offUserTyping(callback?: (data: any) => void): void {
+        if (!this.socket) return;
+        if (callback) {
+            this.socket.off('rfq:user-typing', callback);
+        } else {
+            this.socket.off('rfq:user-typing');
+        }
+    }
+
     onUserStoppedTyping(callback: (data: any) => void): void {
         if (!this.socket) return;
 
         this.socket.on('rfq:user-stopped-typing', callback);
+    }
+
+    offUserStoppedTyping(callback?: (data: any) => void): void {
+        if (!this.socket) return;
+        if (callback) {
+            this.socket.off('rfq:user-stopped-typing', callback);
+        } else {
+            this.socket.off('rfq:user-stopped-typing');
+        }
     }
 
     // Notification methods
@@ -185,10 +234,14 @@ class SocketService {
         this.socket.on('notification:new', callback);
     }
 
-    offNewNotification(): void {
+    offNewNotification(callback?: (data: any) => void): void {
         if (!this.socket) return;
 
-        this.socket.off('notification:new');
+        if (callback) {
+            this.socket.off('notification:new', callback);
+        } else {
+            this.socket.off('notification:new');
+        }
     }
 
     disconnect(): void {
