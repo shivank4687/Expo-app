@@ -1,7 +1,7 @@
 import { Drawer } from "expo-router/drawer";
 import { SupplierDrawerContent } from "@/shared/components/SupplierDrawerContent";
 import { SupplierHeader } from "@/shared/components/SupplierHeader";
-import { theme } from "@/theme";
+import { supplierTheme } from "@/theme";
 
 export default function SupplierDrawerLayout() {
   return (
@@ -9,12 +9,12 @@ export default function SupplierDrawerLayout() {
       drawerContent={(props) => <SupplierDrawerContent {...props} />}
       screenOptions={{
         header: ({ options }) => <SupplierHeader title={options.title} />,
-        headerShown: true,
-        drawerActiveTintColor: theme.colors.primary[500],
-        drawerInactiveTintColor: theme.colors.text.primary,
+        headerShown: false,
+        drawerActiveTintColor: supplierTheme.colors.primary[500],
+        drawerInactiveTintColor: supplierTheme.colors.text.primary,
         drawerLabelStyle: {
           marginLeft: -20,
-          fontSize: theme.typography.fontSize.md,
+          fontSize: supplierTheme.typography.fontSize.md,
         },
       }}
     >

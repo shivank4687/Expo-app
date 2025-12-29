@@ -125,23 +125,23 @@ class ApiClient {
                             break;
                         case 403:
                             // Forbidden
-                            console.error('Access forbidden');
+                            //console.error('Access forbidden');
                             break;
                         case 404:
                             // Not found
-                            console.error('Resource not found');
+                            //console.error('Resource not found');
                             break;
                         case 422:
                             // Validation error
-                            console.error('Validation error:', error.response.data);
+                            //console.error('Validation error:', error.response.data);
                             break;
                         case 500:
                             // Server error
-                            console.error('Server error:', error.response?.data);
-                            console.error('Error details:', JSON.stringify(error.response?.data, null, 2));
+                            //console.error('Server error:', error.response?.data);
+                            //console.error('Error details:', JSON.stringify(error.response?.data, null, 2));
                             break;
                         default:
-                            console.error('API Error:', status, error.response.data);
+                        //console.error('API Error:', status, error.response.data);
                     }
                 } else if (error.request) {
                     // Network error

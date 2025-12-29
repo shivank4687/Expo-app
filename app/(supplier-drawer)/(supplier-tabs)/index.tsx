@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useAppSelector } from '@/store/hooks';
-import { theme } from '@/theme';
+import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SupplierDashboardScreen() {
   const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
@@ -16,143 +17,175 @@ export default function SupplierDashboardScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.nameText}>{supplier.name}</Text>
-        </View>
-        {supplier.company_name && (
-          <Text style={styles.companyText}>{supplier.company_name}</Text>
-        )}
-      </View>
+    <View style={styles.root}>
+      <LinearGradient
+        colors={['#00615E', '#1a7470', '#4d9892', '#8bbbb7', '#c4dbd9', '#FCF7EA']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.backgroundGradient}
+      />
+      <ScrollView contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header content */}
+        <View style={styles.header}>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.nameText}>{supplier.name}</Text>
+          </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Ionicons name="receipt-outline" size={32} color={theme.colors.primary[500]} />
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Total Orders</Text>
+          {supplier.company_name && (
+            <Text style={styles.companyText}>{supplier.company_name}</Text>
+          )}
         </View>
-        <View style={styles.statCard}>
-          <Ionicons name="cube-outline" size={32} color={theme.colors.primary[500]} />
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Products</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Ionicons name="chatbubbles-outline" size={32} color={theme.colors.primary[500]} />
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Messages</Text>
-        </View>
-      </View>
 
-      <View style={styles.infoSection}>
-        <View style={styles.infoCard}>
-          <Ionicons name="information-circle-outline" size={24} color={theme.colors.text.secondary} />
-          <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Account Status</Text>
-            <Text style={styles.infoValue}>
-              {supplier.is_approved ? 'Approved' : 'Pending Approval'}
-            </Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Ionicons name="receipt-outline" size={32} color={supplierTheme.colors.primary[500]} />
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Total Orders</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="cube-outline" size={32} color={supplierTheme.colors.primary[500]} />
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Products</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="chatbubbles-outline" size={32} color={supplierTheme.colors.primary[500]} />
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Messages</Text>
           </View>
         </View>
-        <View style={styles.infoCard}>
-          <Ionicons name="checkmark-circle-outline" size={24} color={theme.colors.text.secondary} />
-          <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Verification</Text>
-            <Text style={styles.infoValue}>
-              {supplier.is_verified ? 'Verified' : 'Not Verified'}
-            </Text>
+
+        <View style={styles.infoSection}>
+          <View style={styles.infoCard}>
+            <Ionicons name="information-circle-outline" size={24} color={supplierTheme.colors.text.secondary} />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoTitle}>Account Status</Text>
+              <Text style={styles.infoValue}>
+                {supplier.is_approved ? 'Approved' : 'Pending Approval'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.infoCard}>
+            <Ionicons name="checkmark-circle-outline" size={24} color={supplierTheme.colors.text.secondary} />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoTitle}>Verification</Text>
+              <Text style={styles.infoValue}>
+                {supplier.is_verified ? 'Verified' : 'Not Verified'}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+
+  root: {
+    flex: 1,
+    backgroundColor: supplierTheme.colors.background.default,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background.default,
+    backgroundColor: supplierTheme.colors.background.default,
   },
+  backgroundGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 241,
+  },
+
   content: {
-    padding: theme.spacing.lg,
+    padding: supplierTheme.spacing.lg,
+    paddingTop: 80, // content starts inside gradient
   },
+
   header: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: supplierTheme.spacing.xl,
   },
-  welcomeSection: {
-    marginBottom: theme.spacing.sm,
-  },
+
   welcomeText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing.xs,
+    fontSize: supplierTheme.typography.fontSize.base,
+    color: '#E6F2F1',
   },
+
   nameText: {
-    fontSize: theme.typography.fontSize['2xl'],
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
+    fontSize: supplierTheme.typography.fontSize['2xl'],
+    fontWeight: supplierTheme.typography.fontWeight.bold,
+    color: '#FFFFFF',
   },
+
   companyText: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.text.secondary,
+    fontSize: supplierTheme.typography.fontSize.lg,
+    color: '#F1F5F4',
   },
+
+  welcomeSection: {
+    marginBottom: supplierTheme.spacing.sm,
+  },
+
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.xl,
-    gap: theme.spacing.md,
+    marginBottom: supplierTheme.spacing.xl,
+    gap: supplierTheme.spacing.md,
   },
   statCard: {
     flex: 1,
-    backgroundColor: theme.colors.background.paper,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
+    backgroundColor: supplierTheme.colors.background.paper,
+    borderRadius: supplierTheme.borderRadius.md,
+    padding: supplierTheme.spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    borderColor: supplierTheme.colors.border.light,
   },
   statValue: {
-    fontSize: theme.typography.fontSize['2xl'],
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
-    marginTop: theme.spacing.sm,
+    fontSize: supplierTheme.typography.fontSize['2xl'],
+    fontWeight: supplierTheme.typography.fontWeight.bold,
+    color: supplierTheme.colors.text.primary,
+    marginTop: supplierTheme.spacing.sm,
   },
   statLabel: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text.secondary,
-    marginTop: theme.spacing.xs,
+    fontSize: supplierTheme.typography.fontSize.sm,
+    color: supplierTheme.colors.text.secondary,
+    marginTop: supplierTheme.spacing.xs,
   },
   infoSection: {
-    gap: theme.spacing.md,
+    gap: supplierTheme.spacing.md,
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.background.paper,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
+    backgroundColor: supplierTheme.colors.background.paper,
+    borderRadius: supplierTheme.borderRadius.md,
+    padding: supplierTheme.spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    borderColor: supplierTheme.colors.border.light,
   },
   infoContent: {
-    marginLeft: theme.spacing.md,
+    marginLeft: supplierTheme.spacing.md,
     flex: 1,
   },
   infoTitle: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing.xs,
+    fontSize: supplierTheme.typography.fontSize.sm,
+    color: supplierTheme.colors.text.secondary,
+    marginBottom: supplierTheme.spacing.xs,
   },
   infoValue: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.medium,
-    color: theme.colors.text.primary,
+    fontSize: supplierTheme.typography.fontSize.base,
+    fontWeight: supplierTheme.typography.fontWeight.medium,
+    color: supplierTheme.colors.text.primary,
   },
   errorText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.error.main,
+    fontSize: supplierTheme.typography.fontSize.base,
+    color: supplierTheme.colors.error.main,
     textAlign: 'center',
-    marginTop: theme.spacing.xl,
+    marginTop: supplierTheme.spacing.xl,
   },
 });
+
