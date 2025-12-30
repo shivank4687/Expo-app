@@ -34,17 +34,19 @@ export const QuoteResponseDetailScreen: React.FC = () => {
     const router = useRouter();
     const { showToast } = useToast();
     const insets = useSafeAreaInsets();
-    const { quoteId, customerQuoteItemId, supplierId, productId, productName } = useLocalSearchParams<{
+    const { quoteId, customerQuoteItemId, supplierId, productId, productName, defaultTab } = useLocalSearchParams<{
         quoteId: string;
         customerQuoteItemId?: string;
         supplierId?: string;
         productId?: string;
         productName?: string;
+        defaultTab?: 'summary' | 'messages';
     }>();
     const { user, isAuthenticated, isLoading: isAuthLoading } = useRequireAuth();
     const flatListRef = useRef<FlatList>(null);
 
-    const [activeTab, setActiveTab] = useState<TabType>('summary');
+    // Use defaultTab from params if provided, otherwise default to 'summary'
+    const [activeTab, setActiveTab] = useState<TabType>((defaultTab as TabType) || 'summary');
     const [quoteDetail, setQuoteDetail] = useState<QuoteResponseDetail | null>(null);
     const [messages, setMessages] = useState<QuoteMessage[]>([]);
     const [messageText, setMessageText] = useState('');

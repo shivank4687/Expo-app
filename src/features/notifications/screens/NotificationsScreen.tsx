@@ -209,16 +209,27 @@ export const NotificationsScreen: React.FC = () => {
                     const rfqMatches = path.match(/view\/(\d+)\/id\/(\d+)\/product\/(\d+)/);
                     if (rfqMatches) {
                         const [, quoteId, supplierId, productId] = rfqMatches;
+
+                        // Extract tab from hash (e.g., #tab=messages)
+                        let defaultTab: 'summary' | 'messages' = 'summary';
+                        if (url.hash) {
+                            const tabMatch = url.hash.match(/tab=(\w+)/);
+                            if (tabMatch && tabMatch[1] === 'messages') {
+                                defaultTab = 'messages';
+                            }
+                        }
+
                         console.log('[NotificationsScreen] Extracted RFQ params:', {
                             quoteId,
                             supplierId,
                             productId,
+                            defaultTab,
                             fullPath: path,
                             fullUrl: notification.action_url,
                             note: 'Using supplierId from web URL format'
                         });
 
-                        // Navigate to quote response detail with supplier params
+                        // Navigate to quote response detail with supplier params and default tab
                         // The screen will use the new API endpoint that converts supplierId to customerQuoteItemId
                         router.push({
                             pathname: '/quotes/quote-response-detail',
@@ -226,6 +237,7 @@ export const NotificationsScreen: React.FC = () => {
                                 quoteId,
                                 supplierId,
                                 productId,
+                                defaultTab,
                             }
                         } as any);
                         return;
