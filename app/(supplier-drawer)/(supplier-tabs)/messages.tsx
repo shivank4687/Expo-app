@@ -1,6 +1,6 @@
+import { supplierTheme } from '@/theme';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '@/theme';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function SupplierMessagesScreen() {
   return (
@@ -16,16 +16,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background.default,
+    backgroundColor: supplierTheme.colors.background.default,
   },
   text: {
-    fontSize: theme.typography.fontSize.xl,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
+    fontSize: supplierTheme.typography.fontSize.xl,
+    fontWeight: supplierTheme.typography.fontWeight.bold,
+    color: supplierTheme.colors.text.primary,
   },
   subtext: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.secondary,
-    marginTop: theme.spacing.sm,
+    fontSize: supplierTheme.typography.fontSize.base,
+    color: supplierTheme.colors.text.secondary,
+    marginTop: supplierTheme.spacing.sm,
   },
 });

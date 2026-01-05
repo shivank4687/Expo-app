@@ -1,57 +1,45 @@
+import { SupplierTabBar } from "@/shared/components/SupplierTabBar";
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { supplierTheme } from "@/theme";
 
 export default function SupplierTabsLayout() {
+  let screens = [
+    {
+      name: "index",
+      title: "Home"
+    },
+    {
+      name: "orders",
+      title: "Orders"
+    },
+    {
+      name: "products",
+      title: "Products"
+    },
+    {
+      name: "messages",
+      title: "Shop"
+    },
+    {
+      name: "settings",
+      title: "More"
+    },
+  ];
   return (
     <Tabs
+      tabBar={(props) => <SupplierTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: supplierTheme.colors.primary[500],
-        tabBarInactiveTintColor: supplierTheme.colors.text.secondary,
-        tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: supplierTheme.colors.border.light,
-          backgroundColor: supplierTheme.colors.background.paper,
-        },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Dashboard",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: "Orders",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="products"
-        options={{
-          title: "Products",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cube" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: "Messages",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles" size={size} color={color} />
-          ),
-        }}
-      />
+      {screens.map((screen) => (
+        <Tabs.Screen
+          key={screen.name}
+          name={screen.name}
+          options={{
+            title: screen.title,
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

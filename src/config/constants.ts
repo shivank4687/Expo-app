@@ -86,6 +86,14 @@ export const API_ENDPOINTS = {
 
     // Theme Customizations
     THEME_CUSTOMIZATIONS: '/theme/customizations',
+
+    // Supplier Dashboard Stats
+    SUPPLIER_DASHBOARD_SALES_STATS: '/supplier-app/dashboard/sales-stats',
+    SUPPLIER_DASHBOARD_PENDING_ORDERS_STATS: '/supplier-app/dashboard/pending-orders-stats',
+    SUPPLIER_DASHBOARD_PAYMENTS_STATS: '/supplier-app/dashboard/payments-stats',
+    SUPPLIER_DASHBOARD_QUOTES_STATS: '/supplier-app/dashboard/quotes-stats',
+    SUPPLIER_DASHBOARD_PENDING_ORDERS_LIST: '/supplier-app/dashboard/pending-orders',
+    SUPPLIER_PRODUCTS_LIST: '/supplier-app/products',
 };
 
 export const PAGINATION = {
