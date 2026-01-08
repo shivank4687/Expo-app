@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
 import { AiIcon } from '@/assets/icons';
+import { forwardRef, useImperativeHandle } from 'react';
 
 const VARIANT_VALUES = ['S', 'M', 'L', 'XL'];
 const VARIANT_GROUP_OPTIONS = [
@@ -12,12 +13,28 @@ const VARIANT_GROUP_OPTIONS = [
     { label: 'Material', value: 'material' },
 ];
 
-export default function PriceStockVariantsCard() {
+export interface PriceStockVariantsCardRef {
+    getData: () => any;
+}
+
+const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef>((props, ref) => {
     const [variantGroup, setVariantGroup] = useState('');
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
     const [selectedMainVariant, setSelectedMainVariant] = useState<string | null>(null);
     const [inStockEnabled, setInStockEnabled] = useState(false);
     const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(false);
+
+    useImperativeHandle(ref, () => ({
+        getData: () => ({
+            variant_group: variantGroup,
+            selected_values: selectedValues,
+            main_variant: selectedMainVariant,
+            manage_stock: inStockEnabled ? 1 : 0,
+            made_to_order: madeToOrderEnabled ? 1 : 0,
+            // Note: This card has many more fields that aren't yet fully mapped to state
+            // For now, we return the core states.
+        })
+    }));
 
     const toggleValue = (value: string) => {
         setSelectedValues(prev =>
@@ -273,7 +290,9 @@ export default function PriceStockVariantsCard() {
             </View>
         </View>
     );
-}
+});
+
+export default PriceStockVariantsCard;
 
 const styles = StyleSheet.create({
     card: {

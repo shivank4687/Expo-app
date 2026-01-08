@@ -35,7 +35,7 @@ export const categoriesApi = {
                 original_image_url: cat.logo.original_image_url,
             } : undefined,
             // Recursively map children
-            children: Array.isArray(cat.children) 
+            children: Array.isArray(cat.children)
                 ? cat.children.map((child: any) => this.mapCategory(child))
                 : []
         };
@@ -49,7 +49,7 @@ export const categoriesApi = {
     async getCategories(filters?: any): Promise<{ data: Category[] }> {
         try {
             console.log('[Categories API] Fetching from API');
-            
+
             // If filters are provided, use REST API
             if (filters && Object.keys(filters).length > 0) {
                 const response = await restApiClient.get<any>(API_ENDPOINTS.CATEGORIES, {
@@ -59,21 +59,21 @@ export const categoriesApi = {
                 const mappedCategories = categories.map((cat: any) => this.mapCategory(cat));
                 return { data: mappedCategories };
             }
-            
+
             // Use Shop API client - it automatically handles locale as query parameter
             const response = await shopApiClient.get<any>('/categories/tree');
-            
+
             // Shop API wraps response in { data: [...] }
             // The backend already returns the tree structure with nested children
             const categories = Array.isArray(response) ? response : (response.data || []);
-            
+
             console.log('[Categories API] Loaded categories:', categories.length);
-            
+
             // Map and ensure children arrays exist
             const mappedCategories = categories.map((cat: any) => this.mapCategory(cat));
-            
+
             console.log('[Categories API] Returning', mappedCategories.length, 'root categories');
-            
+
             return { data: mappedCategories };
         } catch (error) {
             console.error('[Categories API] Error fetching categories:', error);
@@ -115,6 +115,21 @@ export const categoriesApi = {
             ...category,
             image: category.logo_url || category.image,
         };
+    },
+
+    /**
+     * Get categories for supplier app
+     */
+    async getSupplierCategories(): Promise<{ data: Category[] }> {
+        try {
+            const response = await restApiClient.get<any>(API_ENDPOINTS.SUPPLIER_PRODUCT_CATEGORIES);
+            const categories = Array.isArray(response) ? response : (response.data || []);
+            const mappedCategories = categories.map((cat: any) => this.mapCategory(cat));
+            return { data: mappedCategories };
+        } catch (error) {
+            console.error('[Categories API] Error fetching supplier categories:', error);
+            throw error;
+        }
     },
 };
 

@@ -113,6 +113,73 @@ export const productsApi = {
         const response = await restApiClient.get<{ data: any }>(url);
         return response.data || response;
     },
+
+    /**
+     * Create a new product as a supplier
+     */
+    async createSupplierProduct(data: any): Promise<any> {
+        const hasFiles = (data.images && data.images.length > 0) || data.video;
+
+        if (!hasFiles) {
+            const response = await restApiClient.post<{ data: any, message: string }>(
+                API_ENDPOINTS.SUPPLIER_PRODUCTS_LIST,
+                data
+            );
+            return response.data;
+        }
+
+        // Use FormData for multipart upload
+        const formData = new FormData();
+
+        const appendToFormData = (data: any, rootKey: string) => {
+            if (data === null || data === undefined) return;
+
+            if (rootKey === 'images' && Array.isArray(data)) {
+                data.forEach((uri: string, index: number) => {
+                    formData.append(`images[files][${index}]`, {
+                        uri,
+                        name: `image_${index}.png`,
+                        type: 'image/png',
+                    } as any);
+                });
+                return;
+            }
+
+            if (rootKey === 'video' && data) {
+                formData.append('videos[files][0]', {
+                    uri: data,
+                    name: 'video.mp4',
+                    type: 'video/mp4',
+                } as any);
+                return;
+            }
+
+            if (Array.isArray(data)) {
+                data.forEach((value, index) => {
+                    appendToFormData(value, `${rootKey}[${index}]`);
+                });
+            } else if (typeof data === 'object' && !(data instanceof Date)) {
+                Object.keys(data).forEach(key => {
+                    appendToFormData(data[key], rootKey ? `${rootKey}[${key}]` : key);
+                });
+            } else {
+                formData.append(rootKey, data);
+            }
+        };
+
+        appendToFormData(data, '');
+
+        const response = await restApiClient.post<{ data: any, message: string }>(
+            API_ENDPOINTS.SUPPLIER_PRODUCTS_LIST,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }
+        );
+        return response.data;
+    },
 };
 
 export default productsApi;
