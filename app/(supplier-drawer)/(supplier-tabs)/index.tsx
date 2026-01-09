@@ -13,12 +13,14 @@ import { usePendingOrdersList } from '@/features/supplier-panel/dashboard/hooks/
 import { createShipment } from '@/features/supplier-panel/dashboard/api/shipments.api';
 import { useToast } from '@/shared/components/Toast';
 import { LowStockProductsList } from '@/features/supplier-panel/dashboard/components/LowStockProductsList';
+import { useRouter } from 'expo-router';
 
 export default function SupplierDashboardScreen() {
   const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
   const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
   const { data: ordersData, loading: ordersLoading, error: ordersError, refetch } = usePendingOrdersList();
   const { showToast } = useToast();
+  const router = useRouter();
 
   // State for tracking numbers and photos per order
   const [trackingNumbers, setTrackingNumbers] = useState<Record<number, string>>({});
@@ -188,7 +190,10 @@ export default function SupplierDashboardScreen() {
             <TouchableOpacity style={styles.actionButton}>
               <Ionicons name="add" size={16} color="#000000" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/(supplier-drawer)/messages')}
+            >
               <Ionicons name="chatbubble-outline" size={16} color="#000000" />
             </TouchableOpacity>
           </View>

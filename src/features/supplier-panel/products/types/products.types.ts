@@ -14,7 +14,16 @@ export interface Product {
     image_url?: string | null;
 }
 
+export interface ProductsListParams {
+    page?: number;
+    per_page?: number;
+}
+
 export interface ProductsListResponse {
     products: Product[];
     total_count: number;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
 }

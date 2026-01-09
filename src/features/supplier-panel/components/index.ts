@@ -9,3 +9,4 @@ export * from './buttons';
 export * from './cards';
 
 export { default as Dropdown } from './Dropdown';
+export { TabGroup, type Tab } from './TabGroup';

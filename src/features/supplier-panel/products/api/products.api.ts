@@ -4,17 +4,19 @@
 
 import { restApiClient } from '@/services/api/client';
 import { API_ENDPOINTS } from '@/config/constants';
-import type { ProductsListResponse } from '../types/products.types';
+import type { ProductsListResponse, ProductsListParams } from '../types/products.types';
 
 export const productsApi = {
     /**
      * Get products list for the authenticated supplier
+     * @param params - Pagination parameters (page, per_page)
      * @returns Promise<ProductsListResponse>
      */
-    async getProductsList(): Promise<ProductsListResponse> {
+    async getProductsList(params?: ProductsListParams): Promise<ProductsListResponse> {
         try {
             const response = await restApiClient.get<{ data: ProductsListResponse }>(
-                API_ENDPOINTS.SUPPLIER_PRODUCTS_LIST
+                API_ENDPOINTS.SUPPLIER_PRODUCTS_LIST,
+                { params }
             );
 
             return response.data;
