@@ -94,8 +94,11 @@ export const API_ENDPOINTS = {
     SUPPLIER_DASHBOARD_QUOTES_STATS: '/supplier-app/dashboard/quotes-stats',
     SUPPLIER_DASHBOARD_PENDING_ORDERS_LIST: '/supplier-app/dashboard/pending-orders',
     SUPPLIER_PRODUCTS_LIST: '/supplier-app/products',
+    SUPPLIER_PRODUCT_DETAIL: '/supplier-app/products/:id',
+    SUPPLIER_PRODUCT_UPDATE: '/supplier-app/products/:id',
     SUPPLIER_PRODUCT_ATTRIBUTES: '/supplier-app/products/attributes',
     SUPPLIER_PRODUCT_CATEGORIES: '/supplier-app/products/categories',
+    SUPPLIER_CHECK_SKU: '/supplier-app/products/check-sku',
 };
 
 export const PAGINATION = {

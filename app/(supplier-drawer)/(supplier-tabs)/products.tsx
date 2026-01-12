@@ -151,7 +151,7 @@ export default function ProductsScreen() {
                   status={item.status}
                   stock={item.stock}
                   imageUrl={item.image_url}
-                  onEdit={() => console.log('Edit product:', item.id)}
+                  onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
                 />
               </View>
             );
@@ -164,7 +164,7 @@ export default function ProductsScreen() {
                 status={item.status}
                 stock={item.stock}
                 imageUrl={item.image_url}
-                onEdit={() => console.log('Edit product:', item.id)}
+                onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
               />
             );
           }
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary,
     borderRadius: 8,
-    marginBottom: 24,
+    marginBottom: 8,
   },
   addButtonText: {
     fontFamily: 'Inter',

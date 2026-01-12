@@ -8,7 +8,6 @@ import {
     ActivityIndicator,
     RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
@@ -132,31 +131,47 @@ export const MessagesListScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Messages</Text>
-                    <View style={styles.headerRight} />
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="arrow-back" size={16} color="#000000" />
+                        </TouchableOpacity>
+
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.headerTitle}>Messages</Text>
+                        </View>
+                    </View>
                 </View>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                     <Text style={styles.stateText}>Loading messages...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error && threads.length === 0) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Messages</Text>
-                    <View style={styles.headerRight} />
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="arrow-back" size={16} color="#000000" />
+                        </TouchableOpacity>
+
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.headerTitle}>Messages</Text>
+                        </View>
+                    </View>
                 </View>
                 <View style={styles.emptyContainer}>
                     <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
@@ -165,24 +180,31 @@ export const MessagesListScreen: React.FC = () => {
                         <Text style={styles.retryButtonText}>Retry</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Messages</Text>
-                <View style={styles.headerRight}>
-                    {threads.length > 0 && (
-                        <Text style={styles.itemCount}>
-                            {threads.length} {threads.length === 1 ? 'chat' : 'chats'}
-                        </Text>
-                    )}
+                <View style={styles.headerContent}>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => router.back()}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="arrow-back" size={16} color="#000000" />
+                    </TouchableOpacity>
+
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.headerTitle}>Messages</Text>
+                        {threads.length > 0 && (
+                            <Text style={styles.itemCount}>
+                                {threads.length} {threads.length === 1 ? 'chat' : 'chats'}
+                            </Text>
+                        )}
+                    </View>
                 </View>
             </View>
 
@@ -214,7 +236,7 @@ export const MessagesListScreen: React.FC = () => {
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -224,33 +246,44 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     header: {
+        backgroundColor: COLORS.background,
+        paddingTop: 60,
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-        backgroundColor: COLORS.white,
+        gap: 8,
+        height: 32,
     },
     backButton: {
-        padding: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 8,
+        width: 32,
+        height: 32,
+        backgroundColor: COLORS.white,
+        borderRadius: 8,
+        justifyContent: 'center',
+    },
+    titleContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 4,
+        flex: 1,
     },
     headerTitle: {
-        flex: 1,
-        fontSize: 20,
-        fontWeight: '700',
-        color: COLORS.black,
-        textAlign: 'center',
-    },
-    headerRight: {
-        minWidth: 40,
-        alignItems: 'flex-end',
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 16,
+        color: '#000000',
     },
     itemCount: {
-        fontSize: 14,
+        fontSize: 12,
         color: COLORS.textSecondary,
-        fontWeight: '500',
+        fontWeight: '400',
     },
     listContainer: {
         padding: 12,

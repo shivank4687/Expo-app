@@ -25,6 +25,13 @@ export default function SupplierDrawerLayout() {
           title: "Supplier Dashboard",
         }}
       />
+      <Drawer.Screen
+        name="(messaging)"
+        options={{
+          drawerLabel: "Messaging",
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
     </Drawer>
   );
 }

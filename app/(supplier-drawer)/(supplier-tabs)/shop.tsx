@@ -1,31 +1,6 @@
-import { supplierTheme } from '@/theme';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import ShopScreen from '@/features/supplier-panel/shop/screens/ShopScreen';
 
-export default function SupplierMessagesScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Supplier Messages</Text>
-      <Text style={styles.subtext}>Coming soon...</Text>
-    </View>
-  );
+export default function SupplierShopScreen() {
+  return <ShopScreen />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: supplierTheme.colors.background.default,
-  },
-  text: {
-    fontSize: supplierTheme.typography.fontSize.xl,
-    fontWeight: supplierTheme.typography.fontWeight.bold,
-    color: supplierTheme.colors.text.primary,
-  },
-  subtext: {
-    fontSize: supplierTheme.typography.fontSize.base,
-    color: supplierTheme.colors.text.secondary,
-    marginTop: supplierTheme.spacing.sm,
-  },
-});

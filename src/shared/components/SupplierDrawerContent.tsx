@@ -101,7 +101,7 @@ export const SupplierDrawerContent = (props: DrawerContentComponentProps) => {
 
                     <TouchableOpacity
                         style={styles.menuItem}
-                        onPress={() => navigateTo('/(supplier-drawer)/(supplier-tabs)/messages')}
+                        onPress={() => navigateTo('/(supplier-drawer)/messages')}
                     >
                         <Ionicons name="chatbubbles-outline" size={24} color={theme.colors.text.primary} />
                         <Text style={styles.menuItemText}>{t('supplier.messages', 'Messages')}</Text>

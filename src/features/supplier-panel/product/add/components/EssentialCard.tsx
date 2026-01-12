@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
@@ -46,13 +46,23 @@ interface EssentialCardProps {
 export interface EssentialCardRef {
     getData: () => any;
     validate: () => boolean;
-    updateFields: (data: { description?: string; short_description?: string }) => void;
+    updateFields: (data: {
+        name?: string;
+        description?: string;
+        short_description?: string;
+        weight?: string;
+        material_type?: any;
+        manufacturing_origin?: any;
+        images?: string[];
+        video?: string | null;
+    }) => void;
 }
 
 const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attributes, onNameChange, onAttributesRefresh, onAIGenerateClick }, ref) => {
     const [name, setName] = useState('');
     const [images, setImages] = useState<MediaFile[]>([]);
     const [video, setVideo] = useState<MediaFile | null>(null);
+    const [coverImageIndex, setCoverImageIndex] = useState(0); // Track which image is the cover
     const [length, setLength] = useState('');
     const [width, setWidth] = useState('');
     const [height, setHeight] = useState('');
@@ -148,24 +158,34 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     };
 
     useImperativeHandle(ref, () => ({
-        getData: () => ({
-            name,
-            images: images.map(img => img.uri),
-            video: video?.uri,
-            height,
-            weight,
-            length,
-            width,
-            area,
-            material_type: selectedMaterials,
-            description,
-            short_description: shortDescription,
-            categories: {
-                parent_id: categoryId,
-                subcategory_id: subcategoryId,
-                sub_subcategory_id: subSubcategoryId,
+        getData: () => {
+            // Rearrange images so cover image is at index 0
+            const rearrangedImages = [...images];
+            if (coverImageIndex > 0 && coverImageIndex < rearrangedImages.length) {
+                const coverImage = rearrangedImages[coverImageIndex];
+                rearrangedImages.splice(coverImageIndex, 1);
+                rearrangedImages.unshift(coverImage);
             }
-        }),
+
+            return {
+                name,
+                images: rearrangedImages.map(img => img.uri),
+                video: video?.uri,
+                height,
+                weight,
+                length,
+                width,
+                area,
+                material_type: selectedMaterials,
+                description,
+                short_description: shortDescription,
+                categories: {
+                    parent_id: categoryId,
+                    subcategory_id: subcategoryId,
+                    sub_subcategory_id: subSubcategoryId,
+                }
+            };
+        },
         validate: () => {
             return validate({
                 name,
@@ -175,20 +195,48 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             });
         },
         updateFields: (data) => {
-            console.log('🔵 EssentialCard updateFields called with:', data);
-            console.log('🔵 Current description:', description);
-            console.log('🔵 Current shortDescription:', shortDescription);
-
+            if (data.name !== undefined) {
+                setName(data.name);
+                clearError('name');
+                if (onNameChange) onNameChange(data.name);
+            }
             if (data.description !== undefined) {
-                console.log('🔵 Setting description to:', data.description);
                 setDescription(data.description);
+                clearError('description');
             }
             if (data.short_description !== undefined) {
-                console.log('🔵 Setting short_description to:', data.short_description);
                 setShortDescription(data.short_description);
+                clearError('short_description');
             }
-
-            console.log('🔵 updateFields completed');
+            if (data.weight !== undefined) {
+                setWeight(data.weight);
+                clearError('weight');
+            }
+            if (data.material_type !== undefined) {
+                // Handle both array of IDs and single ID
+                const materialIds = Array.isArray(data.material_type)
+                    ? data.material_type.map((m: any) => m.toString())
+                    : [data.material_type.toString()];
+                setSelectedMaterials(materialIds);
+            }
+            if (data.images !== undefined && Array.isArray(data.images)) {
+                // Convert image URLs to MediaFile format
+                const imageFiles: MediaFile[] = data.images.map((url, index) => ({
+                    uri: url,
+                    type: 'image' as const,
+                    fileName: `image_${index}.jpg`,
+                    fileSize: 0,
+                }));
+                setImages(imageFiles);
+            }
+            if (data.video !== undefined && data.video) {
+                setVideo({
+                    uri: data.video,
+                    type: 'video',
+                    fileName: 'video.mp4',
+                    fileSize: 0,
+                });
+            }
         },
     }));
 
@@ -361,10 +409,20 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
     const removeImage = (index: number) => {
         setImages(prev => prev.filter((_, i) => i !== index));
+        // Reset cover index if we removed the cover or an image before it
+        if (index === coverImageIndex) {
+            setCoverImageIndex(0);
+        } else if (index < coverImageIndex) {
+            setCoverImageIndex(prev => prev - 1);
+        }
     };
 
     const removeVideo = () => {
         setVideo(null);
+    };
+
+    const setCoverImage = (index: number) => {
+        setCoverImageIndex(index);
     };
 
     return (
@@ -422,11 +480,32 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     {/* Display selected images or placeholders */}
                     {[0, 1, 2, 3, 4].map((index) => {
                         const image = images[index];
+                        const isCover = index === coverImageIndex;
                         return (
-                            <View key={`image-${index}`} style={styles.previewBox}>
+                            <View
+                                key={`image-${index}`}
+                                style={[
+                                    styles.previewBox,
+                                    image && isCover && styles.previewBoxCover
+                                ]}
+                            >
                                 {image ? (
                                     <>
                                         <Image source={{ uri: image.uri }} style={styles.previewImage} />
+
+                                        {isCover ? (
+                                            <View style={styles.coverLabel}>
+                                                <Text style={styles.coverLabelText}>COVER</Text>
+                                            </View>
+                                        ) : (
+                                            <TouchableOpacity
+                                                style={styles.useCoverButton}
+                                                onPress={() => setCoverImage(index)}
+                                            >
+                                                <Text style={styles.useCoverButtonText}>Use Cover</Text>
+                                            </TouchableOpacity>
+                                        )}
+
                                         <TouchableOpacity
                                             style={styles.removeButton}
                                             onPress={() => removeImage(index)}
@@ -451,7 +530,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                         {video ? (
                             <>
                                 <View style={styles.videoPreview}>
-                                    <Ionicons name="videocam" size={40} color="#FFFFFF" />
+                                    <Ionicons name="videocam" size={40} color={COLORS.primary} />
                                     <Text style={styles.videoFileName}>{video.fileName}</Text>
                                 </View>
                                 <TouchableOpacity
@@ -477,9 +556,6 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 <View style={styles.buttonRow}>
                     <TouchableOpacity style={styles.secondaryButton}>
                         <Text style={styles.buttonText}>Edit (2/2)</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.secondaryButton}>
-                        <Text style={styles.buttonText}>Define Cover</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -538,7 +614,11 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     <Text style={styles.tipText}>You can select multiple values.</Text>
                 </View>
 
-                <View style={styles.materialChips}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.materialChips}
+                >
                     {(attributes.find(a => a.code === 'material_type')?.options || []).map((option, index) => (
                         <TouchableOpacity
                             key={index}
@@ -566,12 +646,12 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     <TouchableOpacity style={styles.addMaterialButton} onPress={handleAddMaterial}>
                         <Ionicons name="add" size={24} color="#FFFFFF" />
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
 
                 {/* AI Suggestion Button */}
                 <TouchableOpacity style={styles.aiButton} onPress={onAIGenerateClick}>
                     <AiIcon width={16} height={16} color="#000000" />
-                    <Text style={styles.buttonText}>Suggest material with AI</Text>
+                    <Text style={styles.buttonText}>Auto-generate information</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.tipText}>
@@ -815,10 +895,8 @@ const styles = StyleSheet.create({
     },
     materialChips: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         gap: 8,
-        width: '100%',
     },
     materialChip: {
         flexDirection: 'row',
@@ -966,23 +1044,66 @@ const styles = StyleSheet.create({
         right: 4,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
+        zIndex: 10,
+    },
+    previewBoxCover: {
+        borderColor: COLORS.primary,
+        borderStyle: 'solid',
+        borderWidth: 2,
+    },
+    coverLabel: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderTopLeftRadius: 6,
+        borderBottomRightRadius: 8,
+        zIndex: 5,
+    },
+    coverLabelText: {
+        fontFamily: 'Inter',
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    useCoverButton: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingVertical: 4,
+        alignItems: 'center',
+        borderBottomLeftRadius: 6,
+        borderBottomRightRadius: 6,
+        zIndex: 5,
+    },
+    useCoverButtonText: {
+        fontFamily: 'Inter',
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '600',
     },
     videoPreview: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#333333',
+        backgroundColor: COLORS.primaryLight,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         gap: 4,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
     },
     videoFileName: {
         fontFamily: 'Inter',
         fontStyle: 'normal',
-        fontWeight: '400',
+        fontWeight: '500',
         fontSize: 10,
         lineHeight: 12,
-        color: '#FFFFFF',
+        color: '#000000',
         textAlign: 'center',
         paddingHorizontal: 4,
     },

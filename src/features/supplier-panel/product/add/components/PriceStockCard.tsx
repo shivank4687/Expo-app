@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useFormValidation } from '@/shared/hooks/useFormValidation';
+import { productsApi } from '@/services/api/products.api';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD ($)', value: 'usd' },
@@ -37,6 +38,7 @@ export interface PriceStockCardProps {
 export interface PriceStockCardRef {
     getData: () => any;
     validate: () => boolean;
+    updateFields: (data: any) => void;
 }
 
 const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ productName, attributes }, ref) => {
@@ -82,6 +84,8 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
     // Tier-specific errors: { [tierId]: { qty: string, price: string } }
     const [tierErrors, setTierErrors] = useState<Record<string, { qty?: string; price?: string }>>({});
     const [generalTierError, setGeneralTierError] = useState<string | null>(null);
+    const [isSkuChecking, setIsSkuChecking] = useState(false);
+    const [skuExists, setSkuExists] = useState(false);
 
     // Form validation
     const { errors, validate, clearError, setError } = useFormValidation({
@@ -137,6 +141,36 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
         clearError('discounts');
         return true;
     };
+
+    const validateSkuUniqueness = async (sku: string) => {
+        if (!sku) return true;
+
+        setIsSkuChecking(true);
+        try {
+            const fullSku = getSkuPrefix() + sku;
+            const exists = await productsApi.checkSkuExists(fullSku);
+            setSkuExists(exists);
+            if (exists) {
+                setError('sku', 'This SKU is already taken');
+                return false;
+            } else {
+                clearError('sku');
+                return true;
+            }
+        } catch (error) {
+            console.error('Error checking SKU uniqueness:', error);
+            return true; // Assume valid on error or handle differently
+        } finally {
+            setIsSkuChecking(false);
+        }
+    };
+
+    // Re-check SKU if productName changes (affects prefix)
+    useEffect(() => {
+        if (formData.sku) {
+            validateSkuUniqueness(formData.sku);
+        }
+    }, [productName]);
 
     // Tier management functions
     const addTier = () => {
@@ -221,6 +255,11 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             const isFormValid = validate(formData);
             const isDiscountValid = validateDiscount();
 
+            // Use the current SKU existence state
+            if (skuExists) {
+                setError('sku', 'This SKU is already taken');
+            }
+
             // Validate Pricing Tiers
             const newTierErrors: Record<string, { qty?: string; price?: string }> = {};
             let hasTierError = false;
@@ -246,7 +285,28 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 setGeneralTierError(null);
             }
 
-            return isFormValid && isDiscountValid && !hasTierError;
+            return isFormValid && isDiscountValid && !hasTierError && !skuExists;
+        },
+        updateFields: (data) => {
+            if (data.price !== undefined) setFormData(prev => ({ ...prev, price: data.price }));
+            if (data.sku !== undefined) setFormData(prev => ({ ...prev, sku: data.sku.replace(getSkuPrefix(), '') }));
+            if (data.in_order_qty !== undefined) setFormData(prev => ({ ...prev, inOrOrderQty: data.in_order_qty }));
+            if (data.in_order_qty_type !== undefined) setFormData(prev => ({ ...prev, inOrderQtyUnit: data.in_order_qty_type }));
+            if (data.made_to_order_qty !== undefined) setFormData(prev => ({ ...prev, madeToOrderQuantity: data.made_to_order_qty }));
+            if (data.made_to_order_days !== undefined) setFormData(prev => ({ ...prev, productionTime: data.made_to_order_days }));
+            if (data.immediate_shipping !== undefined) setFormData(prev => ({ ...prev, immediateShipping: !!data.immediate_shipping }));
+            if (data.made_to_order !== undefined) setFormData(prev => ({ ...prev, madeToOrderEnabled: !!data.made_to_order }));
+            if (data.inventory_qty !== undefined) setFormData(prev => ({ ...prev, inventoryQty: data.inventory_qty }));
+            if (data.price_tiers && Array.isArray(data.price_tiers)) {
+                const tiers: PriceTier[] = data.price_tiers.map((tier: any, index: number) => ({
+                    id: (index + 1).toString(),
+                    qty: tier.qty?.toString() || '',
+                    price: tier.value?.toString() || ''
+                }));
+                if (tiers.length > 0) setPriceTiers(tiers);
+            }
+            if (data.discounts !== undefined) setFormData(prev => ({ ...prev, discounts: data.discounts }));
+            if (data.discount_type !== undefined) setDiscountType(data.discount_type);
         }
     }));
 
@@ -308,9 +368,14 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                             placeholder="sku"
                             placeholderTextColor="#666666"
                             value={formData.sku}
-                            onChangeText={(val) => updateField('sku', val)}
+                            onChangeText={(val) => {
+                                updateField('sku', val);
+                                if (skuExists) setSkuExists(false);
+                            }}
+                            onBlur={() => validateSkuUniqueness(formData.sku)}
                         />
                     </View>
+                    {isSkuChecking && <Text style={styles.checkingText}>Checking SKU availability...</Text>}
                     {errors.sku && <Text style={styles.errorText}>{errors.sku}</Text>}
                 </View>
             </View>
@@ -792,13 +857,20 @@ const styles = StyleSheet.create({
         color: '#DC2626',
         marginTop: 4,
     },
+    checkingText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 12,
+        lineHeight: 16,
+        color: COLORS.primary,
+        marginTop: 4,
+    },
     discountInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
         height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
         overflow: 'hidden',
     },
     discountInput: {

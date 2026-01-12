@@ -11,6 +11,7 @@ export interface SettingsCardRef {
         guest_checkout: number;
         visible_individually: number;
     };
+    updateFields: (data: any) => void;
 }
 
 const SettingsCard = forwardRef<SettingsCardRef, {}>((props, ref) => {
@@ -26,7 +27,13 @@ const SettingsCard = forwardRef<SettingsCardRef, {}>((props, ref) => {
             featured: isFeatured ? 1 : 0,
             guest_checkout: allowGuestCheckout ? 1 : 0,
             visible_individually: visibleIndividually ? 1 : 0,
-        })
+        }),
+        updateFields: (data) => {
+            if (data.new !== undefined) setIsNewProduct(!!data.new);
+            if (data.featured !== undefined) setIsFeatured(!!data.featured);
+            if (data.guest_checkout !== undefined) setAllowGuestCheckout(!!data.guest_checkout);
+            if (data.visible_individually !== undefined) setVisibleIndividually(!!data.visible_individually);
+        }
     }));
 
     const CheckboxRow = ({

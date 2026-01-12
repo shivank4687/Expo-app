@@ -180,6 +180,95 @@ export const productsApi = {
         );
         return response.data;
     },
+
+    /**
+     * Get a supplier product by ID for editing
+     */
+    async getSupplierProductById(id: number): Promise<any> {
+        const url = API_ENDPOINTS.SUPPLIER_PRODUCT_DETAIL.replace(':id', id.toString());
+        const response = await restApiClient.get<{ data: any }>(url);
+        return response.data;
+    },
+
+    /**
+     * Update an existing supplier product
+     */
+    async updateSupplierProduct(id: number, data: any): Promise<any> {
+        const hasFiles = (data.images && data.images.length > 0) || data.video;
+
+        const url = API_ENDPOINTS.SUPPLIER_PRODUCT_UPDATE.replace(':id', id.toString());
+
+        if (!hasFiles) {
+            const response = await restApiClient.put<{ data: any, message: string }>(
+                url,
+                data
+            );
+            return response.data;
+        }
+
+        // Use FormData for multipart upload
+        const formData = new FormData();
+
+        const appendToFormData = (data: any, rootKey: string) => {
+            if (data === null || data === undefined) return;
+
+            if (rootKey === 'images' && Array.isArray(data)) {
+                data.forEach((uri: string, index: number) => {
+                    formData.append(`images[files][${index}]`, {
+                        uri,
+                        name: `image_${index}.png`,
+                        type: 'image/png',
+                    } as any);
+                });
+                return;
+            }
+
+            if (rootKey === 'video' && data) {
+                formData.append('videos[files][0]', {
+                    uri: data,
+                    name: 'video.mp4',
+                    type: 'video/mp4',
+                } as any);
+                return;
+            }
+
+            if (Array.isArray(data)) {
+                data.forEach((value, index) => {
+                    appendToFormData(value, `${rootKey}[${index}]`);
+                });
+            } else if (typeof data === 'object' && !(data instanceof Date)) {
+                Object.keys(data).forEach(key => {
+                    appendToFormData(data[key], rootKey ? `${rootKey}[${key}]` : key);
+                });
+            } else {
+                formData.append(rootKey, data);
+            }
+        };
+
+        appendToFormData(data, '');
+
+        const response = await restApiClient.put<{ data: any, message: string }>(
+            url,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }
+        );
+        return response.data;
+    },
+
+    /**
+     * Check if a SKU already exists
+     */
+    async checkSkuExists(sku: string): Promise<boolean> {
+        const response = await restApiClient.get<{ exists: boolean }>(
+            API_ENDPOINTS.SUPPLIER_CHECK_SKU,
+            { params: { sku } }
+        );
+        return response.exists;
+    },
 };
 
 export default productsApi;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { forwardRef, useImperativeHandle } from 'react';
@@ -19,6 +19,7 @@ import { ProductAttribute } from '../api/product-attributes.api';
 
 export interface DetailsCardRef {
     getData: () => any;
+    updateFields: (data: any) => void;
 }
 
 export interface DetailsCardProps {
@@ -43,7 +44,21 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
         getData: () => ({
             manufacturing_origin: selectedOrigins,
             manufacturing_value: selectedFeatures,
-        })
+        }),
+        updateFields: (data) => {
+            if (data.features !== undefined) {
+                const featureIds = Array.isArray(data.features)
+                    ? data.features.map((f: any) => f.toString())
+                    : [data.features.toString()];
+                setSelectedFeatures(featureIds);
+            }
+            if (data.manufacturing_origin !== undefined) {
+                const originIds = Array.isArray(data.manufacturing_origin)
+                    ? data.manufacturing_origin.map((o: any) => o.toString())
+                    : [data.manufacturing_origin.toString()];
+                setSelectedOrigins(originIds);
+            }
+        }
     }));
 
     const toggleOrigin = (id: string) => {
@@ -138,7 +153,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Manufacturing Origin</Text>
 
-                    <View style={styles.chipsContainer}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.chipsContainer}
+                    >
                         {(originOptions.length > 0 ? originOptions : MANUFACTURING_ORIGINS).map((option, index) => {
                             const label = typeof option === 'string' ? option : option.admin_name;
                             const value = typeof option === 'string' ? option : option.id.toString();
@@ -158,7 +177,7 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                         <TouchableOpacity style={styles.addButton} onPress={() => setShowOriginModal(true)}>
                             <Ionicons name="add" size={24} color="#FFFFFF" />
                         </TouchableOpacity>
-                    </View>
+                    </ScrollView>
 
                     <Text style={styles.tipText}>
                         Features: Select and add only the essentials.
@@ -166,7 +185,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 </View>
 
                 {/* Features Section */}
-                <View style={styles.chipsContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsContainer}
+                >
                     {(featureOptions.length > 0 ? featureOptions : FEATURES).map((option, index) => {
                         const label = typeof option === 'string' ? option : option.admin_name;
                         const value = typeof option === 'string' ? option : option.id.toString();
@@ -186,7 +209,7 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                     <TouchableOpacity style={styles.addButton} onPress={() => setShowFeatureModal(true)}>
                         <Ionicons name="add" size={24} color="#FFFFFF" />
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
 
                 {/* Action Buttons */}
                 <View style={styles.buttonGroup}>
@@ -303,10 +326,8 @@ const styles = StyleSheet.create({
     },
     chipsContainer: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         gap: 8,
-        width: '100%',
     },
     chip: {
         flexDirection: 'row',

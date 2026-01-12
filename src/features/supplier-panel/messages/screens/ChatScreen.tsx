@@ -9,7 +9,6 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
@@ -76,26 +75,32 @@ export const ChatScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <View style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-                    </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>{customerName || 'Chat'}</Text>
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="arrow-back" size={16} color="#000000" />
+                        </TouchableOpacity>
+
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.headerTitle}>{customerName || 'Chat'}</Text>
+                        </View>
                     </View>
-                    <View style={styles.headerRight} />
                 </View>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                     <Text style={styles.stateText}>Loading messages...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.container}>
             <KeyboardAvoidingView
                 style={styles.keyboardAvoid}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -103,13 +108,19 @@ export const ChatScreen: React.FC = () => {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-                    </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>{customerName || 'Chat'}</Text>
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="arrow-back" size={16} color="#000000" />
+                        </TouchableOpacity>
+
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.headerTitle}>{customerName || 'Chat'}</Text>
+                        </View>
                     </View>
-                    <View style={styles.headerRight} />
                 </View>
 
                 {/* Messages Container */}
@@ -145,7 +156,7 @@ export const ChatScreen: React.FC = () => {
                     <MessageInput onSend={handleSendMessage} disabled={isSending} />
                 </View>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -158,29 +169,39 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        backgroundColor: COLORS.background,
+        paddingTop: 60,
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-        backgroundColor: COLORS.white,
+        gap: 8,
+        height: 32,
     },
     backButton: {
-        padding: 4,
-    },
-    headerTitleContainer: {
-        flex: 1,
+        flexDirection: 'row',
         alignItems: 'center',
+        padding: 8,
+        width: 32,
+        height: 32,
+        backgroundColor: COLORS.white,
+        borderRadius: 8,
+        justifyContent: 'center',
+    },
+    titleContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 4,
+        flex: 1,
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: COLORS.black,
-    },
-    headerRight: {
-        minWidth: 40,
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 16,
+        color: '#000000',
     },
     chatContainer: {
         flex: 1,
@@ -203,6 +224,7 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         padding: 16,
+        paddingBottom: 32,
         backgroundColor: COLORS.white,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
