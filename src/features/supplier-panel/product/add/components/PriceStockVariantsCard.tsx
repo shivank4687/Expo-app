@@ -1,47 +1,189 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
 import { AiIcon } from '@/assets/icons';
-import { forwardRef, useImperativeHandle } from 'react';
+import { ProductAttribute, productAttributesApi } from '../api/product-attributes.api';
+import { InputModal } from '@/shared/components';
+import { useToast } from '@/shared/components/Toast';
 
-const VARIANT_VALUES = ['S', 'M', 'L', 'XL'];
-const VARIANT_GROUP_OPTIONS = [
-    { label: 'Size', value: 'size' },
-    { label: 'Color', value: 'color' },
-    { label: 'Material', value: 'material' },
-];
+export interface PriceStockVariantsCardProps {
+    attributes?: ProductAttribute[];
+    onAttributesRefresh?: () => Promise<void>;
+}
 
 export interface PriceStockVariantsCardRef {
     getData: () => any;
 }
 
-const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef>((props, ref) => {
-    const [variantGroup, setVariantGroup] = useState('');
-    const [selectedValues, setSelectedValues] = useState<string[]>([]);
-    const [selectedMainVariant, setSelectedMainVariant] = useState<string | null>(null);
+const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockVariantsCardProps>(({ attributes = [], onAttributesRefresh }, ref) => {
+    // Selected attributes for configuration (e.g. Color, Size)
+    // Storing IDs as strings
+    const [selectedVariantAttributes, setSelectedVariantAttributes] = useState<string[]>([]);
+
+    // Generated Variants
+    // Structure: { id: string, attributes: { [attrId]: optionId }, price: string, stock: string, ... }
+    const [variants, setVariants] = useState<any[]>([]);
+    const [mainVariantId, setMainVariantId] = useState<string | null>(null);
+
+    // Temp state for multi-attribute selection
+    const [tempSelection, setTempSelection] = useState<Record<string, string>>({});
+
+    // UI States
     const [inStockEnabled, setInStockEnabled] = useState(false);
     const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(false);
+    const [isAddingOption, setIsAddingOption] = useState(false);
+    const [showOptionModal, setShowOptionModal] = useState(false);
+    const [targetAttributeId, setTargetAttributeId] = useState<string | null>(null);
+
+    const { showToast } = useToast();
+
+    // Filter relevant attributes for variants (select/multiselect types)
+    // Strictly filtering for Color and Size as per user request to match web app
+    const validAttributes = attributes.filter(a =>
+        ['color', 'size'].includes(a.code)
+    );
 
     useImperativeHandle(ref, () => ({
         getData: () => ({
-            variant_group: variantGroup,
-            selected_values: selectedValues,
-            main_variant: selectedMainVariant,
-            manage_stock: inStockEnabled ? 1 : 0,
-            made_to_order: madeToOrderEnabled ? 1 : 0,
-            // Note: This card has many more fields that aren't yet fully mapped to state
-            // For now, we return the core states.
+            super_attributes: selectedVariantAttributes.map(id => {
+                const attr = attributes.find(a => a.id.toString() === id);
+                return {
+                    attribute_code: attr?.code,
+                    attribute_id: attr?.id,
+                };
+            }),
+            variants: variants.map(v => ({
+                ...v,
+                manage_stock: inStockEnabled ? 1 : 0,
+                made_to_order: madeToOrderEnabled ? 1 : 0,
+            })),
+            main_variant_id: mainVariantId,
         })
     }));
 
-    const toggleValue = (value: string) => {
-        setSelectedValues(prev =>
-            prev.includes(value)
-                ? prev.filter(v => v !== value)
-                : [...prev, value]
+    // Reset variants when variant group changes
+    useEffect(() => {
+        setVariants(prev => prev.filter(v => {
+            // Keep variant only if it has keys for all selected attributes
+            return selectedVariantAttributes.every(attrId => v.attributes && v.attributes[attrId]);
+        }));
+    }, [selectedVariantAttributes]);
+
+
+    const handleAddVariantOption = async (optionName: string) => {
+        if (!targetAttributeId) return;
+
+        setIsAddingOption(true);
+        try {
+            const attr = attributes.find(a => a.id.toString() === targetAttributeId);
+            if (!attr) throw new Error('Attribute not found');
+
+            const newOption = await productAttributesApi.createAttributeOption(
+                attr.code,
+                optionName
+            );
+
+            if (onAttributesRefresh) {
+                await onAttributesRefresh();
+            }
+
+            // Auto-select the new option if in Single Attribute Mode
+            if (selectedVariantAttributes.length === 1) {
+                toggleVariantSingleAttr(targetAttributeId, newOption.id.toString());
+            }
+
+            showToast({
+                message: `Option "${optionName}" added successfully!`,
+                type: 'success',
+            });
+
+        } catch (error) {
+            console.error('Error adding option:', error);
+            showToast({
+                message: 'Failed to add option.',
+                type: 'error',
+            });
+        } finally {
+            setIsAddingOption(false);
+            setShowOptionModal(false);
+        }
+    };
+
+    const toggleVariantSingleAttr = (attrId: string, optionId: string) => {
+        // Check if variant exists
+        const exists = variants.find(v => v.attributes[attrId] === optionId);
+
+        if (exists) {
+            // Remove
+            setVariants(prev => prev.filter(v => v.id !== exists.id));
+            if (mainVariantId === exists.id) setMainVariantId(null);
+        } else {
+            // Add
+            const newVariant = {
+                id: Date.now().toString(),
+                attributes: { [attrId]: optionId },
+                sku: '',
+                price: '',
+                stock: '',
+            };
+            setVariants(prev => [...prev, newVariant]);
+            if (!mainVariantId) setMainVariantId(newVariant.id);
+        }
+    };
+
+    const addMultiAttrVariant = () => {
+        // Check if all selected attributes have a value in tempSelection
+        const allSelected = selectedVariantAttributes.every(id => tempSelection[id]);
+        if (!allSelected) {
+            Alert.alert('Selection Missing', 'Please select values for all attributes.');
+            return;
+        }
+
+        // Check if duplicate
+        const isDuplicate = variants.some(v =>
+            selectedVariantAttributes.every(attrId => v.attributes[attrId] === tempSelection[attrId])
         );
+
+        if (isDuplicate) {
+            Alert.alert('Duplicate', 'This variant already exists.');
+            return;
+        }
+
+        const newVariant = {
+            id: Date.now().toString(),
+            attributes: { ...tempSelection },
+            sku: '',
+            price: '',
+            stock: '',
+        };
+
+        setVariants(prev => [...prev, newVariant]);
+        if (!mainVariantId) setMainVariantId(newVariant.id);
+    };
+
+    const removeVariant = (id: string) => {
+        setVariants(prev => prev.filter(v => v.id !== id));
+        if (mainVariantId === id) setMainVariantId(null);
+    };
+
+    const updateVariantField = (id: string, field: string, value: string) => {
+        setVariants(prev => prev.map(v =>
+            v.id === id ? { ...v, [field]: value } : v
+        ));
+    };
+
+    const isOptionSelected = (attrId: string, optionId: string) => {
+        return variants.some(v => v.attributes[attrId] === optionId);
+    };
+
+    const getVariantLabel = (variant: any) => {
+        return selectedVariantAttributes.map(attrId => {
+            const attr = attributes.find(a => a.id.toString() === attrId);
+            const opt = attr?.options?.find(o => o.id.toString() === variant.attributes[attrId]);
+            return opt?.admin_name || '?';
+        }).join(' - ');
     };
 
     return (
@@ -55,239 +197,172 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef>((props, ref
                     <Text style={styles.sectionTitle}>Variant Group</Text>
                     <Text style={styles.tipText}>Choose or create your group.</Text>
                     <Dropdown
-                        placeholder="Enter here..."
-                        options={VARIANT_GROUP_OPTIONS}
-                        value={variantGroup}
-                        onSelect={setVariantGroup}
+                        placeholder="Choose attributes (e.g. Color, Size)..."
+                        options={validAttributes.map(a => ({ label: a.admin_name, value: a.id.toString() }))}
+                        value={selectedVariantAttributes}
+                        onSelect={setSelectedVariantAttributes}
+                        multiple
                     />
                 </View>
-
-                <TouchableOpacity style={styles.aiButton}>
-                    <Ionicons name="add" size={16} color="#000000" />
-                    <Text style={styles.buttonText}>Create</Text>
-                </TouchableOpacity>
             </View>
 
             {/* Values Section */}
             <View style={styles.section}>
                 <View style={styles.valuesHeader}>
                     <Text style={styles.sectionTitle}>Values</Text>
-                    <Text style={styles.tipText}>Tap a value to edit its variant.</Text>
+                    <Text style={styles.tipText}>
+                        {selectedVariantAttributes.length > 1
+                            ? 'Select values and click Add Variant.'
+                            : 'Tap a value to add/remove it as a variant.'}
+                    </Text>
                 </View>
 
-                <View style={styles.chipsContainer}>
-                    {VARIANT_VALUES.map((value, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.chip,
-                                selectedValues.includes(value) && styles.chipActive
-                            ]}
-                            onPress={() => toggleValue(value)}
-                        >
-                            <Text style={styles.chipText}>{value}</Text>
+                {/* Single Attribute Selection */}
+                {selectedVariantAttributes.length === 1 && (() => {
+                    const attrId = selectedVariantAttributes[0];
+                    const attr = attributes.find(a => a.id.toString() === attrId);
+
+                    if (!attr) return null;
+
+                    return (
+                        <View style={styles.chipsContainer}>
+                            {(attr.options || []).map((option, index) => {
+                                const selected = isOptionSelected(attrId, option.id.toString());
+                                return (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={[
+                                            styles.chip,
+                                            selected && styles.chipActive
+                                        ]}
+                                        onPress={() => toggleVariantSingleAttr(attrId, option.id.toString())}
+                                    >
+                                        <Text style={styles.chipText}>{option.admin_name}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                            <TouchableOpacity
+                                style={styles.addChipButton}
+                                onPress={() => {
+                                    setTargetAttributeId(attrId);
+                                    setShowOptionModal(true);
+                                }}
+                            >
+                                <Ionicons name="add" size={24} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        </View>
+                    );
+                })()}
+
+                {/* Multiple Attribute Selection */}
+                {selectedVariantAttributes.length > 1 && (
+                    <View style={styles.multiSelectContainer}>
+                        {selectedVariantAttributes.map(attrId => {
+                            const attr = attributes.find(a => a.id.toString() === attrId);
+                            return (
+                                <View key={attrId} style={styles.inputGroup}>
+                                    <Text style={styles.label}>{attr?.admin_name}</Text>
+                                    <Dropdown
+                                        placeholder={`Select ${attr?.admin_name}...`}
+                                        options={(attr?.options || []).map(o => ({ label: o.admin_name, value: o.id.toString() }))}
+                                        value={tempSelection[attrId] || ''}
+                                        onSelect={(val) => setTempSelection(prev => ({ ...prev, [attrId]: val }))}
+                                    />
+                                </View>
+                            );
+                        })}
+                        <TouchableOpacity style={styles.addButton} onPress={addMultiAttrVariant}>
+                            <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+                            <Text style={styles.addButtonText}>Add Variant</Text>
                         </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.addChipButton}>
-                        <Ionicons name="add" size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
+                    </View>
+                )}
 
+                {/* AI Suggestion */}
                 <TouchableOpacity style={styles.aiButton}>
                     <AiIcon width={16} height={16} color="#000000" />
                     <Text style={styles.buttonText}>Suggest values with AI</Text>
                 </TouchableOpacity>
-
-                <Text style={styles.tipText}>
-                    Fill in SKU, suggest category, generate a short description, and activate the shipping calculation (preview).
-                </Text>
             </View>
 
-            {/* Main Variant Editor */}
-            <View style={styles.section}>
-                <View style={styles.valuesHeader}>
-                    <Text style={styles.sectionTitle}>Main Variant Editor (first selected)</Text>
-                    <Text style={styles.tipText}>Wholesale Price Retail Price Reference</Text>
-                </View>
+            {/* Main Variant Selector */}
+            {variants.length > 0 && (
+                <View style={styles.section}>
+                    <View style={styles.valuesHeader}>
+                        <Text style={styles.sectionTitle}>Main Variant (Default)</Text>
+                        <Text style={styles.tipText}>Select the default variant to show.</Text>
+                    </View>
 
-                <View style={styles.variantRow}>
-                    {VARIANT_VALUES.map((value, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.variantChip,
-                                selectedMainVariant === value && styles.chipActive
-                            ]}
-                            onPress={() => setSelectedMainVariant(value)}
-                        >
-                            <Text style={styles.chipText}>{value}</Text>
+                    <View style={styles.variantChipsContainer}>
+                        {variants.map((variant, index) => (
+                            <TouchableOpacity
+                                key={variant.id}
+                                style={[
+                                    styles.variantChip,
+                                    mainVariantId === variant.id && styles.chipActive
+                                ]}
+                                onPress={() => setMainVariantId(variant.id)}
+                            >
+                                <Text style={styles.chipText}>{getVariantLabel(variant)}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            )}
+
+            {/* Generated Variants Editors */}
+            {variants.map((variant) => (
+                <View key={variant.id} style={styles.variantEditorCard}>
+                    <View style={styles.variantHeader}>
+                        <Text style={styles.variantTitle}>{getVariantLabel(variant)}</Text>
+                        <TouchableOpacity onPress={() => removeVariant(variant.id)}>
+                            <Ionicons name="trash-outline" size={20} color={COLORS.error} />
                         </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.iconButton}>
-                        <Ionicons name="copy-outline" size={16} color="#000000" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteButton}>
-                        <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Size and Weight */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Size and Weight</Text>
-                <View style={styles.gridInputs}>
-                    <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                    <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                    <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                    <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-            </View>
-
-            {/* In Stock Section */}
-            <View style={styles.borderedSection}>
-                <TouchableOpacity
-                    style={styles.checkboxRow}
-                    onPress={() => setInStockEnabled(!inStockEnabled)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.checkbox}>
-                        {inStockEnabled && <View style={styles.checkboxChecked} />}
                     </View>
-                    <View style={styles.checkboxContent}>
-                        <Text style={styles.sectionTitle}>In Stock (Immediate Shipping)</Text>
-                        <Text style={styles.tipText}>A "4" icon will be displayed on the photo when Quantity {'>'}</Text>
-                    </View>
-                </TouchableOpacity>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Quantity in Stock</Text>
+
+
                     <View style={styles.rowInputs}>
-                        <TextInput style={styles.halfInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <View style={{ flex: 1 }}>
-                            <Dropdown placeholder="Unit..." options={[]} value="" onSelect={() => { }} />
+                        <View style={styles.halfInputContainer}>
+                            <Text style={styles.sectionTitle}>Price</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Price"
+                                keyboardType="numeric"
+                                value={variant.price}
+                                onChangeText={v => updateVariantField(variant.id, 'price', v)}
+                            />
+                        </View>
+                        <View style={styles.halfInputContainer}>
+                            <Text style={styles.sectionTitle}>Stock</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Qty"
+                                keyboardType="numeric"
+                                value={variant.stock}
+                                onChangeText={v => updateVariantField(variant.id, 'stock', v)}
+                            />
                         </View>
                     </View>
                 </View>
-            </View>
-
-            {/* Made to Order Section */}
-            <View style={styles.borderedSection}>
-                <TouchableOpacity
-                    style={styles.checkboxRow}
-                    onPress={() => setMadeToOrderEnabled(!madeToOrderEnabled)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.checkbox}>
-                        {madeToOrderEnabled && <View style={styles.checkboxChecked} />}
-                    </View>
-                    <View style={styles.checkboxContent}>
-                        <Text style={styles.sectionTitle}>Made to Order (Made to Order) if necessary</Text>
-                        <Text style={styles.tipText}>If Quantity in Stock = 0 (or insufficient), the buyer will see "Made to Order" with the production time.</Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
-
-            {/* Discounts */}
-            <View style={styles.section}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Discounts (Optional)</Text>
-                    <TextInput style={styles.textArea} placeholder="Enter here..." placeholderTextColor="#666666" multiline />
-                </View>
-                <TouchableOpacity style={styles.aiButton}>
-                    <Text style={styles.buttonText}>Add Variant Discount</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Variant Editor */}
-            <View style={styles.section}>
-                <View style={styles.valuesHeader}>
-                    <Text style={styles.sectionTitle}>Variant Editor</Text>
-                    <Text style={styles.tipText}>Select if different from the first variant sku/B2C/DISCOUNTS/made to order</Text>
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Size</Text>
-                    <TextInput style={styles.input} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Stock</Text>
-                    <TextInput style={styles.input} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Wholesale price</Text>
-                    <TextInput style={styles.input} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-
-                <View style={styles.photoRow}>
-                    <TouchableOpacity style={styles.photoButton}>
-                        <Ionicons name="camera-outline" size={16} color="#666666" />
-                        <Text style={styles.photoButtonText}>Take photo (app)</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteButton}>
-                        <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Size and Weight</Text>
-                    <View style={styles.gridInputs}>
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                    </View>
-                </View>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            {/* Second Variant Editor */}
-            <View style={styles.section}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Size</Text>
-                    <TextInput style={styles.input} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Stock</Text>
-                    <TextInput style={styles.input} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Wholesale price</Text>
-                    <TextInput style={styles.input} placeholder="Enter here..." placeholderTextColor="#666666" />
-                </View>
-
-                <View style={styles.photoRow}>
-                    <TouchableOpacity style={styles.photoButton}>
-                        <Ionicons name="camera-outline" size={16} color="#666666" />
-                        <Text style={styles.photoButtonText}>Take photo (app)</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteButton}>
-                        <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Size and Weight</Text>
-                    <View style={styles.gridInputs}>
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                        <TextInput style={styles.gridInput} placeholder="Enter here..." placeholderTextColor="#666666" />
-                    </View>
-                </View>
-            </View>
+            ))}
 
             {/* Footer */}
             <View style={styles.footer}>
-                <Text style={styles.tipText}>The photo is optional. If not, the product cover is used.</Text>
                 <TouchableOpacity style={styles.publishButton}>
-                    <Text style={styles.publishButtonText}>Apply</Text>
+                    <Text style={styles.publishButtonText}>Apply Changes</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Option Creation Modal */}
+            <InputModal
+                visible={showOptionModal}
+                onClose={() => setShowOptionModal(false)}
+                onSubmit={handleAddVariantOption}
+                title={`Add ${targetAttributeId ? attributes.find(a => a.id.toString() === targetAttributeId)?.admin_name : 'Option'}`}
+                placeholder="Option name..."
+                submitButtonText="Add Option"
+                isLoading={isAddingOption}
+            />
         </View>
     );
 });
@@ -307,20 +382,16 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 3,
         borderRadius: 16,
+        marginBottom: 80, // Extra space at bottom for scrolling
     },
     cardTitle: {
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 20,
-        lineHeight: 24,
+        marginBottom: 8,
         color: '#000000',
     },
     section: {
-        flexDirection: 'column',
-        gap: 8,
-        width: '100%',
-    },
-    inputGroup: {
         flexDirection: 'column',
         gap: 8,
         width: '100%',
@@ -329,19 +400,29 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 16,
-        lineHeight: 19,
         color: '#000000',
+    },
+    valuesHeader: {
+        marginBottom: 4,
     },
     tipText: {
         fontFamily: 'Inter',
         fontWeight: '400',
         fontSize: 14,
-        lineHeight: 20,
         color: '#666666',
     },
-    valuesHeader: {
-        flexDirection: 'column',
-        gap: 4,
+    inputGroup: {
+        gap: 8,
+    },
+    input: {
+        width: '100%',
+        height: 40,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        fontFamily: 'Inter',
+        fontSize: 16,
+        color: '#000000',
     },
     chipsContainer: {
         flexDirection: 'row',
@@ -349,12 +430,11 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     chip: {
-        paddingVertical: 12,
+        paddingVertical: 8,
         paddingHorizontal: 16,
-        height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
-        justifyContent: 'center',
+        minWidth: 40,
         alignItems: 'center',
     },
     chipActive: {
@@ -364,131 +444,37 @@ const styles = StyleSheet.create({
     },
     chipText: {
         fontFamily: 'Inter',
-        fontWeight: '400',
-        fontSize: 16,
-        lineHeight: 16,
-        color: '#666666',
+        fontSize: 14,
+        color: '#000000',
     },
     addChipButton: {
         width: 40,
-        height: 40,
+        height: 36, // Approximate height to match chips
         backgroundColor: COLORS.primary,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    variantRow: {
+    multiSelectContainer: {
+        gap: 12,
+        padding: 12,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+    },
+    addButton: {
         flexDirection: 'row',
-        gap: 8,
-    },
-    variantChip: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
-        justifyContent: 'center',
         alignItems: 'center',
-    },
-    iconButton: {
-        width: 40,
-        height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
         justifyContent: 'center',
-        alignItems: 'center',
-    },
-    deleteButton: {
-        width: 40,
-        height: 40,
         backgroundColor: COLORS.primary,
+        padding: 10,
         borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    gridInputs: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
         gap: 8,
+        marginTop: 8,
     },
-    gridInput: {
-        width: '48.5%',
-        height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+    addButtonText: {
+        color: '#FFF',
+        fontWeight: '600',
         fontFamily: 'Inter',
-        fontSize: 16,
-        color: '#000000',
-    },
-    input: {
-        width: '100%',
-        height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        fontFamily: 'Inter',
-        fontSize: 16,
-        color: '#000000',
-    },
-    textArea: {
-        width: '100%',
-        height: 56,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        fontFamily: 'Inter',
-        fontSize: 16,
-        color: '#000000',
-        textAlignVertical: 'top',
-    },
-    halfInput: {
-        flex: 1,
-        height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    rowInputs: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    borderedSection: {
-        flexDirection: 'column',
-        padding: 8,
-        gap: 16,
-        borderWidth: 1,
-        borderColor: '#EEEEEF',
-        borderRadius: 8,
-    },
-    checkboxRow: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    checkbox: {
-        width: 16,
-        height: 16,
-        backgroundColor: '#EEEEEF',
-        borderWidth: 1,
-        borderColor: '#666666',
-        borderRadius: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    checkboxChecked: {
-        width: 10,
-        height: 10,
-        backgroundColor: COLORS.primary,
-        borderRadius: 2,
-    },
-    checkboxContent: {
-        flex: 1,
-        gap: 4,
     },
     aiButton: {
         flexDirection: 'row',
@@ -506,54 +492,68 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '400',
         fontSize: 16,
-        lineHeight: 16,
         color: '#000000',
     },
-    photoRow: {
+    variantChipsContainer: {
         flexDirection: 'row',
-        gap: 8,
+        flexWrap: 'wrap',
+        gap: 8
     },
-    photoButton: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 12,
-        gap: 10,
-        height: 40,
-        backgroundColor: '#EEEEEF',
+    variantChip: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: '#F3F4F6',
         borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
-    photoButtonText: {
-        fontFamily: 'Inter',
-        fontWeight: '400',
+    variantEditorCard: {
+        padding: 12,
+        backgroundColor: '#FAFAFA',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#EEEEEE',
+        gap: 12,
+    },
+    variantHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    variantTitle: {
+        fontWeight: '600',
         fontSize: 16,
-        lineHeight: 16,
-        color: '#666666',
+        color: '#1F2937',
     },
-    divider: {
-        width: '100%',
-        height: 1,
-        backgroundColor: '#EEEEEF',
+    rowInputs: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    halfInputContainer: {
+        flex: 1,
+        gap: 8,
     },
     footer: {
-        flexDirection: 'column',
-        gap: 8,
+        marginTop: 16,
     },
     publishButton: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 12,
-        height: 40,
+        height: 44,
         backgroundColor: COLORS.primary,
         borderRadius: 8,
     },
     publishButtonText: {
         fontFamily: 'Inter',
-        fontWeight: '400',
+        fontWeight: '600',
         fontSize: 16,
-        lineHeight: 16,
         color: '#F5F5F5',
     },
+    label: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#374151',
+    }
 });

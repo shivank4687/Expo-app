@@ -51,12 +51,12 @@ export default function AddProductScreen() {
         }, [])
     );
 
-    // Fetch product attributes on mount
+    // Fetch product attributes on mount and tab change
     const fetchAttributes = async () => {
         try {
             setIsInitialLoading(true);
             setFetchError(null);
-            const data = await productAttributesApi.getProductAttributes('simple');
+            const data = await productAttributesApi.getProductAttributes(activeTab);
             setAttributes(data.attributes);
             setAttributeFamilyId(data.attribute_family.id);
         } catch (err) {
@@ -69,7 +69,7 @@ export default function AddProductScreen() {
 
     React.useEffect(() => {
         fetchAttributes();
-    }, []);
+    }, [activeTab]);
 
     const handleSaveDraftLocal = () => {
         handleSaveDraft({
@@ -176,6 +176,8 @@ export default function AddProductScreen() {
                     <PriceStockVariantsCard
                         ref={priceStockVariantsCardRef}
                         key={`price-stock-variants-${resetKey}`}
+                        attributes={attributes}
+                        onAttributesRefresh={fetchAttributes}
                     />
                 )}
 

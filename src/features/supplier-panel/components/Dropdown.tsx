@@ -11,19 +11,56 @@ interface DropdownOption {
 interface DropdownProps {
     placeholder?: string;
     options: DropdownOption[];
-    value: string;
-    onSelect: (value: string) => void;
+    value: string | string[];
+    onSelect: (value: any) => void;
     style?: any;
+    multiple?: boolean;
 }
 
-export default function Dropdown({ placeholder = 'Select...', options, value, onSelect, style }: DropdownProps) {
+export default function Dropdown({ placeholder = 'Select...', options, value, onSelect, style, multiple = false }: DropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    const selectedOption = options.find(opt => opt.value === value);
+    const getSelectedLabel = () => {
+        if (multiple) {
+            const selectedValues = Array.isArray(value) ? value : [];
+            if (selectedValues.length === 0) return placeholder;
+
+            const labels = options
+                .filter(opt => selectedValues.includes(opt.value))
+                .map(opt => opt.label);
+
+            if (labels.length === 0) return placeholder;
+            return labels.join(', ');
+        } else {
+            const selectedOption = options.find(opt => opt.value === value);
+            return selectedOption ? selectedOption.label : placeholder;
+        }
+    };
 
     const handleSelect = (optionValue: string) => {
-        onSelect(optionValue);
-        setIsOpen(false);
+        if (multiple) {
+            const currentValues = Array.isArray(value) ? [...value] : [];
+            const index = currentValues.indexOf(optionValue);
+
+            let newValues;
+            if (index >= 0) {
+                newValues = currentValues.filter(v => v !== optionValue);
+            } else {
+                newValues = [...currentValues, optionValue];
+            }
+            onSelect(newValues);
+            // Don't close modal for multiple selection
+        } else {
+            onSelect(optionValue);
+            setIsOpen(false);
+        }
+    };
+
+    const isSelected = (optionValue: string) => {
+        if (multiple) {
+            return Array.isArray(value) && value.includes(optionValue);
+        }
+        return value === optionValue;
     };
 
     return (
@@ -34,8 +71,14 @@ export default function Dropdown({ placeholder = 'Select...', options, value, on
                 onPress={() => setIsOpen(true)}
                 activeOpacity={0.7}
             >
-                <Text style={[styles.triggerText, !selectedOption && styles.placeholderText]}>
-                    {selectedOption ? selectedOption.label : placeholder}
+                <Text
+                    style={[
+                        styles.triggerText,
+                        ((multiple && (!value || (Array.isArray(value) && value.length === 0))) || (!multiple && !value)) && styles.placeholderText
+                    ]}
+                    numberOfLines={1}
+                >
+                    {getSelectedLabel()}
                 </Text>
                 <Ionicons name="chevron-down" size={16} color="#666666" />
             </TouchableOpacity>
@@ -54,33 +97,44 @@ export default function Dropdown({ placeholder = 'Select...', options, value, on
                 >
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Option</Text>
-                            <TouchableOpacity onPress={() => setIsOpen(false)}>
-                                <Ionicons name="close" size={24} color="#000000" />
-                            </TouchableOpacity>
+                            <Text style={styles.modalTitle}>
+                                {multiple ? 'Select Options' : 'Select Option'}
+                            </Text>
+                            {multiple ? (
+                                <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.doneButton}>
+                                    <Text style={styles.doneButtonText}>Done</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity onPress={() => setIsOpen(false)}>
+                                    <Ionicons name="close" size={24} color="#000000" />
+                                </TouchableOpacity>
+                            )}
                         </View>
 
                         <ScrollView style={styles.optionsList}>
-                            {options.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.option,
-                                        option.value === value && styles.optionSelected
-                                    ]}
-                                    onPress={() => handleSelect(option.value)}
-                                >
-                                    <Text style={[
-                                        styles.optionText,
-                                        option.value === value && styles.optionTextSelected
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                    {option.value === value && (
-                                        <Ionicons name="checkmark" size={20} color={COLORS.primary} />
-                                    )}
-                                </TouchableOpacity>
-                            ))}
+                            {options.map((option) => {
+                                const selected = isSelected(option.value);
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.option,
+                                            selected && styles.optionSelected
+                                        ]}
+                                        onPress={() => handleSelect(option.value)}
+                                    >
+                                        <Text style={[
+                                            styles.optionText,
+                                            selected && styles.optionTextSelected
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                        {selected && (
+                                            <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </ScrollView>
                     </View>
                 </TouchableOpacity>
@@ -111,6 +165,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 16,
         color: '#000000',
+        marginRight: 8,
     },
     placeholderText: {
         color: '#666666',
@@ -144,6 +199,16 @@ const styles = StyleSheet.create({
         fontSize: 18,
         lineHeight: 22,
         color: '#000000',
+    },
+    doneButton: {
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    doneButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 16,
+        color: COLORS.primary,
     },
     optionsList: {
         maxHeight: 400,
