@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
-import { EssentialCard, PriceStockCard, DetailsCard, SettingsCard } from '../add/components';
+import { EssentialCard, PriceStockCard, PriceStockVariantsCard, DetailsCard, SettingsCard } from '../add/components';
 import { productAttributesApi, ProductAttribute } from '../add/api/product-attributes.api';
 import productsApi from '@/services/api/products.api';
 import { EssentialCardRef } from '../add/components/EssentialCard';
 import { PriceStockCardRef } from '../add/components/PriceStockCard';
+import { PriceStockVariantsCardRef } from '../add/components/PriceStockVariantsCard';
 import { DetailsCardRef } from '../add/components/DetailsCard';
 import { SettingsCardRef } from '../add/components/SettingsCard';
 import { useToast } from '@/shared/components/Toast';
@@ -24,12 +25,14 @@ export default function EditProductScreen() {
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [productName, setProductName] = useState('');
     const [productData, setProductData] = useState<any>(null);
+    const [productType, setProductType] = useState<'simple' | 'configurable'>('simple');
 
     const { showToast } = useToast();
 
     // Card Refs
     const essentialCardRef = useRef<EssentialCardRef>(null);
     const priceStockCardRef = useRef<PriceStockCardRef>(null);
+    const priceStockVariantsCardRef = useRef<PriceStockVariantsCardRef>(null);
     const detailsCardRef = useRef<DetailsCardRef>(null);
     const settingsCardRef = useRef<SettingsCardRef>(null);
 
@@ -43,18 +46,28 @@ export default function EditProductScreen() {
             }
 
             try {
+                // Reset all state before fetching new data
                 setIsInitialLoading(true);
                 setFetchError(null);
+                setProductData(null);
+                setProductName('');
+                setAttributes([]);
+                setAttributeFamilyId(null);
+                setProductType('simple');
 
-                // Fetch attributes
-                const attributesData = await productAttributesApi.getProductAttributes('simple');
-                setAttributes(attributesData.attributes);
-                setAttributeFamilyId(attributesData.attribute_family.id);
-
-                // Fetch product data
+                // Fetch product data first to determine type
                 const product = await productsApi.getSupplierProductById(productId);
                 setProductData(product);
                 setProductName(product.name || '');
+
+                // Determine product type
+                const type = product.type === 'configurable' ? 'configurable' : 'simple';
+                setProductType(type);
+
+                // Fetch attributes based on product type
+                const attributesData = await productAttributesApi.getProductAttributes(type);
+                setAttributes(attributesData.attributes);
+                setAttributeFamilyId(attributesData.attribute_family.id);
 
                 // Populate card components with product data
                 setTimeout(() => {
@@ -71,7 +84,7 @@ export default function EditProductScreen() {
                         });
                     }
 
-                    if (priceStockCardRef.current) {
+                    if (product.type === 'simple' && priceStockCardRef.current) {
                         // Calculate discount from special_price if applicable
                         let discountValue = '';
                         let discountType: 'percentage' | 'price' = 'percentage';
@@ -121,6 +134,18 @@ export default function EditProductScreen() {
                             discounts: discountValue,
                             discount_type: discountType,
                         });
+                    } else if (product.type === 'configurable' && priceStockVariantsCardRef.current) {
+                        priceStockVariantsCardRef.current.updateFields({
+                            sku: product.sku || '',
+                            variants: product.variants || [],
+                            super_attributes: product.super_attributes || [],
+                            immediate_shipping: product.immediate_shipping || false,
+                            made_to_order: product.made_to_order || false,
+                            in_order_qty: product.in_order_qty?.toString() || '',
+                            in_order_qty_type: product.in_order_qty_type || '',
+                            made_to_order_qty: product.made_to_order_qty?.toString() || '',
+                            made_to_order_days: product.made_to_order_days?.toString() || '',
+                        });
                     }
 
                     if (detailsCardRef.current) {
@@ -162,9 +187,11 @@ export default function EditProductScreen() {
         setIsSubmitting(true);
 
         try {
-            // Validate all cards
+            // Validate all cards - use correct price/stock card based on product type
             const essentialValid = await essentialCardRef.current?.validate();
-            const priceStockValid = await priceStockCardRef.current?.validate();
+            const priceStockValid = productType === 'simple'
+                ? await priceStockCardRef.current?.validate()
+                : await priceStockVariantsCardRef.current?.validate();
 
             if (!essentialValid || !priceStockValid) {
                 Alert.alert('Validation Error', 'Please fill in all required fields correctly.');
@@ -172,9 +199,11 @@ export default function EditProductScreen() {
                 return;
             }
 
-            // Collect data from all cards
+            // Collect data from all cards - use correct price/stock card based on product type
             const essentialData = essentialCardRef.current?.getData() || {};
-            const priceStockData = priceStockCardRef.current?.getData() || {};
+            const priceStockData = productType === 'simple'
+                ? (priceStockCardRef.current?.getData() || {})
+                : (priceStockVariantsCardRef.current?.getData() || {});
             const detailsData = detailsCardRef.current?.getData() || {};
             const settingsData = settingsCardRef.current?.getData() || {};
 
@@ -187,6 +216,11 @@ export default function EditProductScreen() {
                 type: productData.type,
                 attribute_family_id: attributeFamilyId,
             };
+
+            // Remove price field for configurable products (only variants have prices)
+            if (productType === 'configurable' && 'price' in updateData) {
+                delete updateData.price;
+            }
 
             // Update product
             await productsApi.updateSupplierProduct(productId, updateData);
@@ -245,12 +279,20 @@ export default function EditProductScreen() {
                     onAIGenerateClick={() => { }}
                 />
 
-                {/* Price & Stock Card */}
-                <PriceStockCard
-                    ref={priceStockCardRef}
-                    productName={productName}
-                    attributes={attributes}
-                />
+                {/* Price & Stock Card - Conditional based on product type */}
+                {productType === 'simple' ? (
+                    <PriceStockCard
+                        ref={priceStockCardRef}
+                        productName={productName}
+                        attributes={attributes}
+                    />
+                ) : (
+                    <PriceStockVariantsCard
+                        ref={priceStockVariantsCardRef}
+                        productName={productName}
+                        attributes={attributes}
+                    />
+                )}
 
                 {/* Details Card */}
                 <DetailsCard
@@ -301,11 +343,11 @@ export default function EditProductScreen() {
                 {/* Disabled Tabs - Visual Only */}
                 {!fetchError && !isInitialLoading && (
                     <View style={styles.tabsContainer}>
-                        <View style={[styles.tab, styles.tabDisabled]}>
-                            <Text style={[styles.tabText, styles.tabTextDisabled]}>Simple Product</Text>
+                        <View style={[styles.tab, productType === 'simple' && styles.tabActive]}>
+                            <Text style={[styles.tabText, productType === 'simple' && styles.tabTextActive]}>Simple Product</Text>
                         </View>
-                        <View style={styles.tab}>
-                            <Text style={styles.tabText}>Product with Variants</Text>
+                        <View style={[styles.tab, productType === 'configurable' && styles.tabActive]}>
+                            <Text style={[styles.tabText, productType === 'configurable' && styles.tabTextActive]}>Product with Variants</Text>
                         </View>
                     </View>
                 )}
@@ -402,10 +444,13 @@ const styles = StyleSheet.create({
         height: 34,
         borderRadius: 4,
     },
-    tabDisabled: {
+    tabActive: {
         backgroundColor: COLORS.primaryLight,
         borderWidth: 1,
         borderColor: COLORS.primary,
+    },
+    tabTextActive: {
+        color: '#000000',
     },
     tabText: {
         fontFamily: 'Inter',

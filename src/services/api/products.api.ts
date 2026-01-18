@@ -194,11 +194,19 @@ export const productsApi = {
      * Update an existing supplier product
      */
     async updateSupplierProduct(id: number, data: any): Promise<any> {
-        const hasFiles = (data.images && data.images.length > 0) || data.video;
+        // Check if there are actual FILES to upload (not just URLs from existing images)
+        // File URIs start with 'file://' or are blob URLs
+        const hasNewImages = data.images && Array.isArray(data.images) &&
+            data.images.some((img: string) => img.startsWith('file://') || img.startsWith('blob:'));
+        const hasNewVideo = data.video && (data.video.startsWith('file://') || data.video.startsWith('blob:'));
+        const hasFiles = hasNewImages || hasNewVideo;
 
         const url = API_ENDPOINTS.SUPPLIER_PRODUCT_UPDATE.replace(':id', id.toString());
 
         if (!hasFiles) {
+            // No new files to upload, use regular JSON request
+            console.log('📤 Sending update via JSON (no new files)');
+            console.log('Update data:', JSON.stringify(data, null, 2));
             const response = await restApiClient.put<{ data: any, message: string }>(
                 url,
                 data
@@ -206,7 +214,8 @@ export const productsApi = {
             return response.data;
         }
 
-        // Use FormData for multipart upload
+        // Use FormData for multipart upload when there are new files
+        console.log('📤 Sending update via FormData (has new files)');
         const formData = new FormData();
 
         const appendToFormData = (data: any, rootKey: string) => {
@@ -261,11 +270,17 @@ export const productsApi = {
 
     /**
      * Check if a SKU already exists
+     * @param sku - The SKU to check
+     * @param productId - Optional product ID to exclude (for edit mode)
      */
-    async checkSkuExists(sku: string): Promise<boolean> {
+    async checkSkuExists(sku: string, productId?: number): Promise<boolean> {
+        const params: any = { sku };
+        if (productId) {
+            params.product_id = productId;
+        }
         const response = await restApiClient.get<{ exists: boolean }>(
             API_ENDPOINTS.SUPPLIER_CHECK_SKU,
-            { params: { sku } }
+            { params }
         );
         return response.exists;
     },

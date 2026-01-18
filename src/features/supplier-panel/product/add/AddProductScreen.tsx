@@ -29,6 +29,12 @@ export default function AddProductScreen() {
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [productName, setProductName] = useState('');
 
+    // Master product size attributes (for passing to variants when size is not a variant attribute)
+    const [masterHeight, setMasterHeight] = useState('');
+    const [masterWeight, setMasterWeight] = useState('');
+    const [masterLength, setMasterLength] = useState('');
+    const [masterWidth, setMasterWidth] = useState('');
+
     // AI Generation state
     const [showAIModal, setShowAIModal] = useState(false);
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -87,6 +93,15 @@ export default function AddProductScreen() {
     };
 
     const handlePublishLocal = async () => {
+        // Sync size data from EssentialCard before publishing
+        if (essentialCardRef.current) {
+            const data = essentialCardRef.current.getData();
+            setMasterHeight(data.height || '');
+            setMasterWeight(data.weight || '');
+            setMasterLength(data.length || '');
+            setMasterWidth(data.width || '');
+        }
+
         await handlePublish(
             {
                 refs: {
@@ -176,8 +191,13 @@ export default function AddProductScreen() {
                     <PriceStockVariantsCard
                         ref={priceStockVariantsCardRef}
                         key={`price-stock-variants-${resetKey}`}
+                        productName={productName}
                         attributes={attributes}
                         onAttributesRefresh={fetchAttributes}
+                        masterHeight={masterHeight}
+                        masterWeight={masterWeight}
+                        masterLength={masterLength}
+                        masterWidth={masterWidth}
                     />
                 )}
 

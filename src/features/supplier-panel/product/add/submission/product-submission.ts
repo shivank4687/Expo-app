@@ -108,10 +108,17 @@ export const handlePublish = async (
     const isEssentialValid = refs.essentialCardRef.current?.validate();
     const isPriceStockValid = activeTab === 'simple'
         ? refs.priceStockCardRef.current?.validate()
-        : true;
+        : refs.priceStockVariantsCardRef.current?.validate();
+
+    console.log('=== VALIDATION RESULTS ===');
+    console.log('Active Tab:', activeTab);
+    console.log('Essential Valid:', isEssentialValid);
+    console.log('Price/Stock Valid:', isPriceStockValid);
+    console.log('========================');
 
     // Check if any validation failed
     if (!isEssentialValid || !isPriceStockValid) {
+        console.log('❌ Validation failed - stopping publish');
         // const errorSections = [];
         // if (!isEssentialValid) errorSections.push('Essential');
         // if (!isPriceStockValid) errorSections.push('Price & Stock');
@@ -130,6 +137,10 @@ export const handlePublish = async (
     //     return;
     // }
 
+    console.log('=== PRODUCT DATA TO SUBMIT ===');
+    console.log(JSON.stringify(fullProductData, null, 2));
+    console.log('==============================');
+
     try {
         setIsSubmitting(true);
         const defaultAttributes = {
@@ -138,10 +149,13 @@ export const handlePublish = async (
             ...settingsData, // Use dynamic settings from the card
             status: 1
         };
+
+        console.log('🚀 Calling API...');
         await productsApi.createSupplierProduct({ ...fullProductData, ...defaultAttributes });
+        console.log('✅ API call successful');
         Alert.alert('Success', 'Product published successfully!');
     } catch (err: any) {
-        console.error('Error publishing product:', err);
+        console.error('❌ Error publishing product:', err);
         Alert.alert('Error', err.response?.data?.message || 'Failed to publish product. Please check your inputs.');
     } finally {
         setIsSubmitting(false);

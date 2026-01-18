@@ -25,7 +25,8 @@ import { useAppSelector } from '@/store/hooks';
 import { ProductAttribute } from '../api/product-attributes.api';
 
 interface PriceTier {
-    id: string;
+    id: string; // UI ID for React key
+    dbId?: number; // Database ID for existing prices
     qty: string;
     price: string;
 }
@@ -86,12 +87,13 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
     const [generalTierError, setGeneralTierError] = useState<string | null>(null);
     const [isSkuChecking, setIsSkuChecking] = useState(false);
     const [skuExists, setSkuExists] = useState(false);
+    const [originalSku, setOriginalSku] = useState<string>(''); // Track original SKU for edit mode
 
     // Form validation
     const { errors, validate, clearError, setError } = useFormValidation({
         price: [
             { type: 'required', message: 'Price is required' },
-            { type: 'pattern', value: /^\d+(\.\d{1,2})?$/, message: 'Price must be a valid number' }
+            { type: 'pattern', value: /^\d+(\.\d+)?$/, message: 'Price must be a valid number' }
         ],
         sku: [
             { type: 'required', message: 'SKU is required' }
@@ -145,9 +147,17 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
     const validateSkuUniqueness = async (sku: string) => {
         if (!sku) return true;
 
+        const fullSku = getSkuPrefix() + sku;
+
+        // Skip validation if SKU hasn't changed from original (edit mode)
+        if (originalSku && fullSku === originalSku) {
+            clearError('sku');
+            setSkuExists(false);
+            return true;
+        }
+
         setIsSkuChecking(true);
         try {
-            const fullSku = getSkuPrefix() + sku;
             const exists = await productsApi.checkSkuExists(fullSku);
             setSkuExists(exists);
             if (exists) {
@@ -225,7 +235,9 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             const validTiers = priceTiers.filter(tier => tier.qty && tier.price);
 
             validTiers.forEach((tier, index) => {
-                customerGroupPrices[`price_${index}`] = {
+                // Use existing database ID if available, otherwise use price_* prefix for new tiers
+                const key = tier.dbId ? tier.dbId.toString() : `price_${index}`;
+                customerGroupPrices[key] = {
                     customer_group_id: '', // Empty = applies to all customer groups
                     qty: tier.qty,
                     value_type: 'fixed',
@@ -289,7 +301,12 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
         },
         updateFields: (data) => {
             if (data.price !== undefined) setFormData(prev => ({ ...prev, price: data.price }));
-            if (data.sku !== undefined) setFormData(prev => ({ ...prev, sku: data.sku.replace(getSkuPrefix(), '') }));
+            if (data.sku !== undefined) {
+                const skuWithoutPrefix = data.sku.replace(getSkuPrefix(), '');
+                setFormData(prev => ({ ...prev, sku: skuWithoutPrefix }));
+                // Store original SKU when loading product data (edit mode)
+                setOriginalSku(data.sku);
+            }
             if (data.in_order_qty !== undefined) setFormData(prev => ({ ...prev, inOrOrderQty: data.in_order_qty }));
             if (data.in_order_qty_type !== undefined) setFormData(prev => ({ ...prev, inOrderQtyUnit: data.in_order_qty_type }));
             if (data.made_to_order_qty !== undefined) setFormData(prev => ({ ...prev, madeToOrderQuantity: data.made_to_order_qty }));
@@ -299,7 +316,8 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             if (data.inventory_qty !== undefined) setFormData(prev => ({ ...prev, inventoryQty: data.inventory_qty }));
             if (data.price_tiers && Array.isArray(data.price_tiers)) {
                 const tiers: PriceTier[] = data.price_tiers.map((tier: any, index: number) => ({
-                    id: (index + 1).toString(),
+                    id: (index + 1).toString(), // UI ID for React
+                    dbId: tier.id, // Preserve database ID
                     qty: tier.qty?.toString() || '',
                     price: tier.value?.toString() || ''
                 }));

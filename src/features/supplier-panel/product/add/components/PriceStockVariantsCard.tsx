@@ -1,5 +1,5 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
@@ -7,20 +7,56 @@ import { AiIcon } from '@/assets/icons';
 import { ProductAttribute, productAttributesApi } from '../api/product-attributes.api';
 import { InputModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
+import * as ImagePicker from 'expo-image-picker';
+import { AttachIcon } from '@/assets/icons';
+import { useFormValidation } from '@/shared/hooks/useFormValidation';
+import { productsApi } from '@/services/api/products.api';
+import { useAppSelector } from '@/store/hooks';
 
 export interface PriceStockVariantsCardProps {
+    productName: string;
     attributes?: ProductAttribute[];
     onAttributesRefresh?: () => Promise<void>;
+    masterHeight?: string;
+    masterWeight?: string;
+    masterLength?: string;
+    masterWidth?: string;
 }
 
 export interface PriceStockVariantsCardRef {
     getData: () => any;
+    validate: () => boolean;
+    updateFields: (data: any) => void;
 }
 
-const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockVariantsCardProps>(({ attributes = [], onAttributesRefresh }, ref) => {
+const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockVariantsCardProps>(({
+    productName,
+    attributes = [],
+    onAttributesRefresh,
+    masterHeight = '',
+    masterWeight = '',
+    masterLength = '',
+    masterWidth = ''
+}, ref) => {
+    const { supplier } = useAppSelector((state) => state.supplierAuth);
+    const shopName = supplier?.company_name || '';
+
+    // Helper to get SKU prefix
+    const getSkuPrefix = () => {
+        const shop = shopName.substring(0, 3).toUpperCase().padEnd(3, 'X');
+        const prod = productName.substring(0, 2).toUpperCase().padEnd(2, 'X');
+        return `${shop}-${prod}-`;
+    };
+
     // Selected attributes for configuration (e.g. Color, Size)
     // Storing IDs as strings
     const [selectedVariantAttributes, setSelectedVariantAttributes] = useState<string[]>([]);
+
+    // Check if Size attribute is selected
+    const isSizeVariant = selectedVariantAttributes.some(id => {
+        const attr = attributes.find(a => a.id.toString() === id);
+        return attr?.code === 'size';
+    });
 
     // Generated Variants
     // Structure: { id: string, attributes: { [attrId]: optionId }, price: string, stock: string, ... }
@@ -37,7 +73,35 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [targetAttributeId, setTargetAttributeId] = useState<string | null>(null);
 
+    // Stock and Order States
+    const [immediateShipping, setImmediateShipping] = useState(false);
+    const [inOrderQty, setInOrderQty] = useState('');
+    const [inOrderQtyUnit, setInOrderQtyUnit] = useState('');
+    const [madeToOrderQty, setMadeToOrderQty] = useState('');
+    const [productionTime, setProductionTime] = useState('');
+
+    // Discount States
+    const [discounts, setDiscounts] = useState('');
+    const [discountType, setDiscountType] = useState<'percentage' | 'price'>('percentage');
+
+    // SKU States
+    const [sku, setSku] = useState('');
+    const [isSkuChecking, setIsSkuChecking] = useState(false);
+    const [skuExists, setSkuExists] = useState(false);
+    const [originalSku, setOriginalSku] = useState<string>(''); // Track original SKU for edit mode
+
+    // Variant validation errors
+    // Structure: { variant_0: { price: 'Required', weight: 'Required' }, variant_1: { ... } }
+    const [variantErrors, setVariantErrors] = useState<Record<string, Record<string, string>>>({});
+
     const { showToast } = useToast();
+
+    // Form validation
+    const { errors, validate, clearError, setError } = useFormValidation({
+        sku: [
+            { type: 'required', message: 'SKU is required' }
+        ],
+    });
 
     // Filter relevant attributes for variants (select/multiselect types)
     // Strictly filtering for Color and Size as per user request to match web app
@@ -45,23 +109,302 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         ['color', 'size'].includes(a.code)
     );
 
+    // Unit options from attributes
+    const dynamicUnitOptions = attributes.find(a => a.code === 'in_order_qty_type')?.options?.map(o => ({
+        label: o.admin_name,
+        value: o.id.toString()
+    })) || [];
+
+    // Helper to filter numeric input only
+    const filterNumericInput = (value: string): string => {
+        return value.replace(/[^0-9.]/g, '').replace(/(\\.*)\\./g, '$1');
+    };
+
+
+    // Validate SKU uniqueness
+    const validateSkuUniqueness = async (skuValue: string) => {
+        if (!skuValue) return true;
+
+        const fullSku = getSkuPrefix() + skuValue;
+
+        // Skip validation if SKU hasn't changed from original (edit mode)
+        if (originalSku && fullSku === originalSku) {
+            clearError('sku');
+            setSkuExists(false);
+            return true;
+        }
+
+        setIsSkuChecking(true);
+        try {
+            const exists = await productsApi.checkSkuExists(fullSku);
+            setSkuExists(exists);
+            if (exists) {
+                setError('sku', 'This SKU is already taken');
+                return false;
+            } else {
+                clearError('sku');
+                return true;
+            }
+        } catch (error) {
+            console.error('Error checking SKU uniqueness:', error);
+            return true; // Assume valid on error
+        } finally {
+            setIsSkuChecking(false);
+        }
+    };
+
+    // Re-check SKU if productName changes (affects prefix)
+    useEffect(() => {
+        if (sku) {
+            validateSkuUniqueness(sku);
+        }
+    }, [productName]);
+
     useImperativeHandle(ref, () => ({
-        getData: () => ({
-            super_attributes: selectedVariantAttributes.map(id => {
-                const attr = attributes.find(a => a.id.toString() === id);
-                return {
-                    attribute_code: attr?.code,
-                    attribute_id: attr?.id,
+        getData: () => {
+            const masterSku = getSkuPrefix() + sku;
+
+            // Format super_attributes as object with attribute codes as keys
+            // Example: { color: [48], size: [6, 47] }
+            const superAttributesObj: Record<string, number[]> = {};
+            selectedVariantAttributes.forEach(attrId => {
+                const attr = attributes.find(a => a.id.toString() === attrId);
+                if (attr) {
+                    // Get all unique option IDs for this attribute from variants
+                    const optionIds = new Set<number>();
+                    variants.forEach(v => {
+                        if (v.attributes[attrId]) {
+                            optionIds.add(parseInt(v.attributes[attrId]));
+                        }
+                    });
+                    superAttributesObj[attr.code] = Array.from(optionIds);
+                }
+            });
+
+            // Format variants with proper structure
+            const formattedVariants: Record<string, any> = {};
+            variants.forEach((variant, index) => {
+                // Get attribute option labels for name generation
+                const variantLabels: string[] = [];
+                const variantAttributeValues: Record<string, number> = {};
+
+                selectedVariantAttributes.forEach(attrId => {
+                    const attr = attributes.find(a => a.id.toString() === attrId);
+                    if (attr && variant.attributes[attrId]) {
+                        const optionId = variant.attributes[attrId];
+                        const option = attr.options?.find(o => o.id.toString() === optionId);
+                        if (option) {
+                            variantLabels.push(option.admin_name);
+                        }
+                        // Store attribute code with option ID for variant
+                        variantAttributeValues[attr.code] = parseInt(optionId);
+                    }
+                });
+
+                // Generate variant SKU: masterSKU-variant-color-size
+                const variantSkuSuffix = selectedVariantAttributes
+                    .map(attrId => variant.attributes[attrId])
+                    .join('-');
+                const generatedSku = variant.sku || `${masterSku}-variant-${variantSkuSuffix}`;
+
+                // Generate variant name: "Variant Red Small" or use custom name
+                const generatedName = variant.name || `Variant ${variantLabels.join(' ')}`;
+
+                // Use actual variant ID for existing variants (edit mode)
+                // Use variant_0, variant_1, etc. for new variants (create mode)
+                // Check if variant.id is a database ID (numeric string like "265") vs timestamp (13+ digits)
+                const isExistingVariant = variant.id && variant.id.length < 13;
+                const variantKey = isExistingVariant ? variant.id : `variant_${index}`;
+
+                formattedVariants[variantKey] = {
+                    sku: generatedSku,
+                    name: generatedName,
+                    price: variant.price || '',
+                    weight: variant.weight || '0',
+                    status: 1,
+                    ...variantAttributeValues, // Add color: 48, size: 6, etc.
+                    inventories: variant.stock ? { 1: variant.stock } : {},
+                    // If size is a variant attribute, use variant-specific dimensions
+                    // Otherwise, use master product dimensions
+                    ...(isSizeVariant ? {
+                        // Size variant: use variant-specific values
+                        ...(variant.length && { length: variant.length }),
+                        ...(variant.width && { width: variant.width }),
+                        ...(variant.height && { height: variant.height }),
+                    } : {
+                        // Not a size variant: use master product values
+                        ...(masterLength && { length: masterLength }),
+                        ...(masterWidth && { width: masterWidth }),
+                        ...(masterHeight && { height: masterHeight }),
+                        ...(masterWeight && { weight: masterWeight }),
+                    }),
+                    // Image will be handled separately if needed
+                    ...(variant.image && { image: variant.image }),
                 };
-            }),
-            variants: variants.map(v => ({
-                ...v,
-                manage_stock: inStockEnabled ? 1 : 0,
+            });
+
+            return {
+                sku: masterSku,
+                super_attributes: superAttributesObj,
+                variants: formattedVariants,
+                immediate_shipping: immediateShipping ? 1 : 0,
+                in_order_qty: inOrderQty,
+                in_order_qty_type: inOrderQtyUnit,
                 made_to_order: madeToOrderEnabled ? 1 : 0,
-            })),
-            main_variant_id: mainVariantId,
-        })
-    }));
+                made_to_order_qty: madeToOrderQty,
+                made_to_order_days: productionTime,
+                discounts: discounts,
+                discount_type: discountType,
+            };
+        },
+        validate: () => {
+            console.log('🔍 PriceStockVariantsCard validate() called');
+            console.log('Variants count:', variants.length);
+            console.log('SKU:', sku);
+            console.log('SKU exists:', skuExists);
+            console.log('Is size variant:', isSizeVariant);
+
+            const formData = { sku };
+            const isFormValid = validate(formData);
+            console.log('SKU form valid:', isFormValid);
+
+            // Check if SKU already exists
+            if (skuExists) {
+                setError('sku', 'This SKU is already taken');
+            }
+
+            // Validate all variants
+            const newVariantErrors: Record<string, Record<string, string>> = {};
+            let hasVariantError = false;
+
+            variants.forEach((variant, index) => {
+                const variantKey = `variant_${index}`;
+                const errors: Record<string, string> = {};
+
+                console.log(`Validating variant ${index}:`, {
+                    price: variant.price,
+                    weight: variant.weight,
+                    stock: variant.stock,
+                    isSizeVariant
+                });
+
+                // Always required fields
+                if (!variant.price || variant.price.trim() === '') {
+                    errors.price = 'Price is required';
+                    hasVariantError = true;
+                    console.log(`❌ Variant ${index}: Price missing`);
+                }
+                if (!variant.stock || variant.stock.trim() === '') {
+                    errors.stock = 'Stock is required';
+                    hasVariantError = true;
+                    console.log(`❌ Variant ${index}: Stock missing`);
+                }
+
+                // Weight is only required if size attribute is selected
+                if (isSizeVariant) {
+                    if (!variant.weight || variant.weight.trim() === '') {
+                        errors.weight = 'Weight is required';
+                        hasVariantError = true;
+                        console.log(`❌ Variant ${index}: Weight missing (size variant)`);
+                    }
+                }
+
+                // Optional dimension fields - only validate if size variant is selected
+                if (isSizeVariant) {
+                    // Dimensions are optional, no validation needed
+                }
+
+                if (Object.keys(errors).length > 0) {
+                    newVariantErrors[variantKey] = errors;
+                }
+            });
+
+            setVariantErrors(newVariantErrors);
+
+            const finalResult = isFormValid && !skuExists && !hasVariantError;
+            console.log('Final validation result:', finalResult);
+            console.log('Has variant errors:', hasVariantError);
+
+            return finalResult;
+        },
+        updateFields: (data: any) => {
+            console.log('📦 PriceStockVariantsCard updateFields called', data);
+
+            // Reset all state first to prevent stale data
+            setSku('');
+            setOriginalSku('');
+            setImmediateShipping(false);
+            setMadeToOrderEnabled(false);
+            setInOrderQty('');
+            setInOrderQtyUnit('');
+            setMadeToOrderQty('');
+            setProductionTime('');
+            setDiscounts('');
+            setDiscountType('percentage');
+            setSelectedVariantAttributes([]);
+            setVariants([]);
+            setSkuExists(false);
+            clearError('sku');
+
+            // Now populate with new data
+            if (data.sku !== undefined) {
+                const skuWithoutPrefix = data.sku.replace(getSkuPrefix(), '');
+                setSku(skuWithoutPrefix);
+                // Store original SKU when loading product data (edit mode)
+                setOriginalSku(data.sku);
+            }
+
+            if (data.immediate_shipping !== undefined) setImmediateShipping(!!data.immediate_shipping);
+            if (data.made_to_order !== undefined) setMadeToOrderEnabled(!!data.made_to_order);
+            if (data.in_order_qty !== undefined) setInOrderQty(data.in_order_qty);
+            if (data.in_order_qty_type !== undefined) setInOrderQtyUnit(data.in_order_qty_type);
+            if (data.made_to_order_qty !== undefined) setMadeToOrderQty(data.made_to_order_qty);
+            if (data.made_to_order_days !== undefined) setProductionTime(data.made_to_order_days);
+            if (data.discounts !== undefined) setDiscounts(data.discounts);
+            if (data.discount_type !== undefined) setDiscountType(data.discount_type);
+
+            if (data.super_attributes && Array.isArray(data.super_attributes)) {
+                const variantAttrIds = data.super_attributes.map((attr: any) => attr.id.toString());
+                setSelectedVariantAttributes(variantAttrIds);
+            } else if (data.variants && Array.isArray(data.variants) && data.variants.length > 0) {
+                // Fallback: Determine which attributes are variant attributes by looking at the first variant
+                const firstVariant = data.variants[0];
+                const variantAttrIds: string[] = [];
+                attributes.forEach(attr => {
+                    if (firstVariant[attr.code] !== undefined) {
+                        variantAttrIds.push(attr.id.toString());
+                    }
+                });
+                setSelectedVariantAttributes(variantAttrIds);
+            }
+
+            if (data.variants && Array.isArray(data.variants)) {
+                const mappedVariants = data.variants.map((v: any, index: number) => {
+                    const variantAttrs: Record<string, string> = {};
+                    attributes.forEach(attr => {
+                        if (v[attr.code] !== undefined && v[attr.code] !== null) {
+                            variantAttrs[attr.id.toString()] = v[attr.code].toString();
+                        }
+                    });
+
+                    return {
+                        id: v.id.toString(),
+                        sku: v.sku,
+                        name: v.name,
+                        price: v.price?.toString() || '',
+                        stock: v.inventories?.[0]?.qty?.toString() || v.stock?.toString() || '0',
+                        weight: v.weight?.toString() || '0',
+                        length: v.length?.toString() || '',
+                        width: v.width?.toString() || '',
+                        height: v.height?.toString() || '',
+                        attributes: variantAttrs,
+                        image: v.images?.[0]?.url || v.base_image?.original_image_url || null
+                    };
+                });
+                setVariants(mappedVariants);
+            }
+        }
+    }), [sku, variants, selectedVariantAttributes, attributes, immediateShipping, inOrderQty, inOrderQtyUnit, madeToOrderEnabled, madeToOrderQty, productionTime, discounts, discountType, skuExists, originalSku]);
 
     // Reset variants when variant group changes
     useEffect(() => {
@@ -127,6 +470,11 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 sku: '',
                 price: '',
                 stock: '',
+                weight: '',
+                length: '',
+                width: '',
+                height: '',
+                image: null,
             };
             setVariants(prev => [...prev, newVariant]);
             if (!mainVariantId) setMainVariantId(newVariant.id);
@@ -157,6 +505,11 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             sku: '',
             price: '',
             stock: '',
+            weight: '',
+            length: '',
+            width: '',
+            height: '',
+            image: null,
         };
 
         setVariants(prev => [...prev, newVariant]);
@@ -172,6 +525,58 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         setVariants(prev => prev.map(v =>
             v.id === id ? { ...v, [field]: value } : v
         ));
+    };
+
+    const pickVariantImage = async (variantId: string) => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please grant permission to access your media library.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1], // Square aspect ratio for variant images
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                updateVariantField(variantId, 'image', result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image.');
+        }
+    };
+
+    const takeVariantPhoto = async (variantId: string) => {
+        try {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please grant permission to access your camera.');
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                updateVariantField(variantId, 'image', result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            Alert.alert('Error', 'Failed to take photo.');
+        }
+    };
+
+    const removeVariantImage = (variantId: string) => {
+        updateVariantField(variantId, 'image', ''); // Or null
     };
 
     const isOptionSelected = (attrId: string, optionId: string) => {
@@ -190,6 +595,32 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         <View style={styles.card}>
             {/* Card Title */}
             <Text style={styles.cardTitle}>2) Price & Stock & Variants</Text>
+
+            {/* SKU Section */}
+            <View style={styles.section}>
+                <View style={styles.inputGroup}>
+                    <Text style={styles.sectionTitle}>SKU Reference Code</Text>
+                    <View style={[styles.skuInputContainer, errors.sku && styles.inputError]}>
+                        <View style={styles.skuPrefix}>
+                            <Text style={styles.skuPrefixText}>{getSkuPrefix()}</Text>
+                        </View>
+                        <TextInput
+                            style={styles.skuInput}
+                            placeholder="sku"
+                            placeholderTextColor="#666666"
+                            value={sku}
+                            onChangeText={(val) => {
+                                setSku(val);
+                                if (skuExists) setSkuExists(false);
+                                if (errors.sku) clearError('sku');
+                            }}
+                            onBlur={() => validateSkuUniqueness(sku)}
+                        />
+                    </View>
+                    {isSkuChecking && <Text style={styles.checkingText}>Checking SKU availability...</Text>}
+                    {errors.sku && <Text style={styles.errorText}>{errors.sku}</Text>}
+                </View>
+            </View>
 
             {/* Variant Group Section */}
             <View style={styles.section}>
@@ -281,7 +712,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 {/* AI Suggestion */}
                 <TouchableOpacity style={styles.aiButton}>
                     <AiIcon width={16} height={16} color="#000000" />
-                    <Text style={styles.buttonText}>Suggest values with AI</Text>
+                    <Text style={styles.buttonText}>Auto-generate information</Text>
                 </TouchableOpacity>
             </View>
 
@@ -311,7 +742,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             )}
 
             {/* Generated Variants Editors */}
-            {variants.map((variant) => (
+            {variants.map((variant, index) => (
                 <View key={variant.id} style={styles.variantEditorCard}>
                     <View style={styles.variantHeader}>
                         <Text style={styles.variantTitle}>{getVariantLabel(variant)}</Text>
@@ -325,26 +756,310 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                         <View style={styles.halfInputContainer}>
                             <Text style={styles.sectionTitle}>Price</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[
+                                    styles.input,
+                                    variantErrors[`variant_${index}`]?.price && styles.inputError
+                                ]}
                                 placeholder="Price"
+                                placeholderTextColor="#666666"
                                 keyboardType="numeric"
                                 value={variant.price}
-                                onChangeText={v => updateVariantField(variant.id, 'price', v)}
+                                onChangeText={v => {
+                                    const filtered = filterNumericInput(v);
+                                    updateVariantField(variant.id, 'price', filtered);
+                                    // Clear error
+                                    if (variantErrors[`variant_${index}`]?.price) {
+                                        setVariantErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            if (newErrors[`variant_${index}`]) {
+                                                delete newErrors[`variant_${index}`].price;
+                                                if (Object.keys(newErrors[`variant_${index}`]).length === 0) {
+                                                    delete newErrors[`variant_${index}`];
+                                                }
+                                            }
+                                            return newErrors;
+                                        });
+                                    }
+                                }}
                             />
+                            {variantErrors[`variant_${index}`]?.price && (
+                                <Text style={styles.errorText}>{variantErrors[`variant_${index}`].price}</Text>
+                            )}
                         </View>
                         <View style={styles.halfInputContainer}>
                             <Text style={styles.sectionTitle}>Stock</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[
+                                    styles.input,
+                                    variantErrors[`variant_${index}`]?.stock && styles.inputError
+                                ]}
                                 placeholder="Qty"
+                                placeholderTextColor="#666666"
                                 keyboardType="numeric"
                                 value={variant.stock}
-                                onChangeText={v => updateVariantField(variant.id, 'stock', v)}
+                                onChangeText={v => {
+                                    const filtered = filterNumericInput(v);
+                                    updateVariantField(variant.id, 'stock', filtered);
+                                    // Clear error
+                                    if (variantErrors[`variant_${index}`]?.stock) {
+                                        setVariantErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            if (newErrors[`variant_${index}`]) {
+                                                delete newErrors[`variant_${index}`].stock;
+                                                if (Object.keys(newErrors[`variant_${index}`]).length === 0) {
+                                                    delete newErrors[`variant_${index}`];
+                                                }
+                                            }
+                                            return newErrors;
+                                        });
+                                    }
+                                }}
                             />
+                            {variantErrors[`variant_${index}`]?.stock && (
+                                <Text style={styles.errorText}>{variantErrors[`variant_${index}`].stock}</Text>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Size and Weight Inputs - Only if Size attribute is selected */}
+                    {isSizeVariant && (
+                        <View style={styles.sizeWeightSection}>
+                            <Text style={styles.subSectionTitle}>Size and Weight</Text>
+                            <View style={styles.gridInputs}>
+                                <View style={styles.inputWrapper}>
+                                    <TextInput
+                                        style={styles.gridInput}
+                                        placeholder="Length (cm)"
+                                        placeholderTextColor="#666666"
+                                        keyboardType="numeric"
+                                        value={variant.length}
+                                        onChangeText={v => updateVariantField(variant.id, 'length', filterNumericInput(v))}
+                                    />
+                                </View>
+                                <View style={styles.inputWrapper}>
+                                    <TextInput
+                                        style={styles.gridInput}
+                                        placeholder="Width (cm)"
+                                        placeholderTextColor="#666666"
+                                        keyboardType="numeric"
+                                        value={variant.width}
+                                        onChangeText={v => updateVariantField(variant.id, 'width', filterNumericInput(v))}
+                                    />
+                                </View>
+                                <View style={styles.inputWrapper}>
+                                    <TextInput
+                                        style={styles.gridInput}
+                                        placeholder="Height (cm)"
+                                        placeholderTextColor="#666666"
+                                        keyboardType="numeric"
+                                        value={variant.height}
+                                        onChangeText={v => updateVariantField(variant.id, 'height', filterNumericInput(v))}
+                                    />
+                                </View>
+                                <View style={styles.inputWrapper}>
+                                    <TextInput
+                                        style={[
+                                            styles.gridInput,
+                                            variantErrors[`variant_${index}`]?.weight && styles.inputError
+                                        ]}
+                                        placeholder="Weight (kg)"
+                                        placeholderTextColor="#666666"
+                                        keyboardType="numeric"
+                                        value={variant.weight}
+                                        onChangeText={v => {
+                                            const filtered = filterNumericInput(v);
+                                            updateVariantField(variant.id, 'weight', filtered);
+                                            // Clear error
+                                            if (variantErrors[`variant_${index}`]?.weight) {
+                                                setVariantErrors(prev => {
+                                                    const newErrors = { ...prev };
+                                                    if (newErrors[`variant_${index}`]) {
+                                                        delete newErrors[`variant_${index}`].weight;
+                                                        if (Object.keys(newErrors[`variant_${index}`]).length === 0) {
+                                                            delete newErrors[`variant_${index}`];
+                                                        }
+                                                    }
+                                                    return newErrors;
+                                                });
+                                            }
+                                        }}
+                                    />
+                                    {variantErrors[`variant_${index}`]?.weight && (
+                                        <Text style={styles.errorText}>{variantErrors[`variant_${index}`].weight}</Text>
+                                    )}
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Variant Image Section */}
+                    <View style={styles.imageSection}>
+                        <View style={styles.imageButtonsContainer}>
+                            <TouchableOpacity
+                                style={styles.uploadButton}
+                                onPress={() => pickVariantImage(variant.id)}
+                            >
+                                <AttachIcon width={16} height={16} />
+                                <Text style={styles.uploadButtonText}>Select Photo</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.uploadButton}
+                                onPress={() => takeVariantPhoto(variant.id)}
+                            >
+                                <Ionicons name="camera" size={16} color="#000000" />
+                                <Text style={styles.uploadButtonText}>Take Photo</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.imagePreviewContainer}>
+                            {variant.image ? (
+                                <View style={styles.previewWrapper}>
+                                    <Image source={{ uri: variant.image }} style={styles.previewImage} />
+                                    <TouchableOpacity
+                                        style={styles.removeImageButton}
+                                        onPress={() => removeVariantImage(variant.id)}
+                                    >
+                                        <Ionicons name="close-circle" size={20} color="#DC2626" />
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <View style={styles.placeholderWrapper}>
+                                    <Ionicons name="image-outline" size={30} color="#CCCCCC" />
+                                    <Text style={styles.placeholderText}>No Image</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </View>
             ))}
+
+            {/* In Stock (Immediate Shipping) Section */}
+            <View style={styles.borderedSection}>
+                <View style={styles.checkboxRow}>
+                    <TouchableOpacity
+                        style={styles.checkbox}
+                        onPress={() => setImmediateShipping(!immediateShipping)}
+                    >
+                        {immediateShipping && <View style={styles.checkboxChecked} />}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.checkboxContent}
+                        onPress={() => setImmediateShipping(!immediateShipping)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.sectionTitle}>In Stock (Immediate Shipping)</Text>
+                        <Text style={styles.tipText}>
+                            A "4" icon will be displayed on the photo when Quantity {'>'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.sectionTitle}>Quantity in Stock</Text>
+                    <View style={styles.rowInputs}>
+                        <TextInput
+                            style={styles.halfInput}
+                            placeholder="Quantity"
+                            placeholderTextColor="#666666"
+                            value={inOrderQty}
+                            onChangeText={(val) => setInOrderQty(filterNumericInput(val))}
+                            keyboardType="decimal-pad"
+                        />
+                        <View style={{ flex: 1 }}>
+                            <Dropdown
+                                placeholder="Unit"
+                                options={dynamicUnitOptions}
+                                value={inOrderQtyUnit}
+                                onSelect={setInOrderQtyUnit}
+                            />
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            {/* Made to Order Section */}
+            <View style={styles.borderedSection}>
+                <View style={styles.checkboxRow}>
+                    <TouchableOpacity
+                        style={styles.checkbox}
+                        onPress={() => setMadeToOrderEnabled(!madeToOrderEnabled)}
+                    >
+                        {madeToOrderEnabled && <View style={styles.checkboxChecked} />}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.checkboxContent}
+                        onPress={() => setMadeToOrderEnabled(!madeToOrderEnabled)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.sectionTitle}>Made to Order (Made to Order) if necessary</Text>
+                        <Text style={styles.tipText}>
+                            If Quantity in Stock = 0 (or is insufficient), the buyer will see "Made to Order, production time." with the
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.sectionTitle}>Quantity (Made to Order)</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Quantity"
+                        placeholderTextColor="#666666"
+                        value={madeToOrderQty}
+                        onChangeText={(val) => setMadeToOrderQty(filterNumericInput(val))}
+                        keyboardType="decimal-pad"
+                    />
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.sectionTitle}>Production Time (days)</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Production Time"
+                        placeholderTextColor="#666666"
+                        value={productionTime}
+                        onChangeText={(val) => setProductionTime(filterNumericInput(val))}
+                        keyboardType="decimal-pad"
+                    />
+                </View>
+            </View>
+
+            {/* Discounts Section */}
+            <View style={styles.section}>
+                <View style={styles.inputGroup}>
+                    <Text style={styles.sectionTitle}>Discounts (Optional)</Text>
+                    <View style={styles.discountInputContainer}>
+                        <TextInput
+                            style={styles.discountInput}
+                            placeholder="Enter discount value"
+                            placeholderTextColor="#666666"
+                            value={discounts}
+                            onChangeText={(val) => setDiscounts(filterNumericInput(val))}
+                            keyboardType="decimal-pad"
+                        />
+                        <TouchableOpacity
+                            style={styles.discountToggle}
+                            onPress={() => {
+                                const newType = discountType === 'percentage' ? 'price' : 'percentage';
+                                setDiscountType(newType);
+                            }}
+                        >
+                            <Text style={styles.discountToggleText}>
+                                {discountType === 'percentage' ? '%' : '$'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <TouchableOpacity style={styles.aiButton}>
+                    <AiIcon width={16} height={16} color="#000000" />
+                    <Text style={styles.buttonText}>Standard Price</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.tipText}>
+                    We recommend applying a progressive price based on quantities to encourage larger and recurring orders.
+                </Text>
+            </View>
 
             {/* Footer */}
             <View style={styles.footer}>
@@ -363,7 +1078,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 submitButtonText="Add Option"
                 isLoading={isAddingOption}
             />
-        </View>
+        </View >
     );
 });
 
@@ -382,7 +1097,7 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 3,
         borderRadius: 16,
-        marginBottom: 80, // Extra space at bottom for scrolling
+
     },
     cardTitle: {
         fontFamily: 'Inter',
@@ -412,7 +1127,10 @@ const styles = StyleSheet.create({
         color: '#666666',
     },
     inputGroup: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
         gap: 8,
+        width: '100%',
     },
     input: {
         width: '100%',
@@ -420,6 +1138,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
         paddingHorizontal: 16,
+        paddingVertical: 10,
         fontFamily: 'Inter',
         fontSize: 16,
         color: '#000000',
@@ -490,8 +1209,10 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         fontFamily: 'Inter',
+        fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 16,
+        lineHeight: 16,
         color: '#000000',
     },
     variantChipsContainer: {
@@ -555,5 +1276,236 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         color: '#374151',
-    }
+    },
+    sizeWeightSection: {
+        marginTop: 8,
+        gap: 8,
+    },
+    subSectionTitle: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 16,
+        color: '#000000',
+    },
+    gridInputs: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    inputWrapper: {
+        width: '48%', // Approx half with gap
+        minWidth: 140,
+        flexGrow: 1,
+    },
+    gridInput: {
+        width: '100%',
+        height: 40,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        fontFamily: 'Inter',
+        fontSize: 16,
+        color: '#000000',
+    },
+    imageSection: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 8,
+        height: 100, // Fixed height for the image section
+    },
+    imageButtonsContainer: {
+        flex: 1,
+        flexDirection: 'column', // Buttons stacked vertically as requested ("half width left side button...")
+        justifyContent: 'space-between',
+        gap: 8,
+    },
+    uploadButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        paddingHorizontal: 8,
+        gap: 6,
+    },
+    uploadButtonText: {
+        fontFamily: 'Inter',
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#000000',
+    },
+    imagePreviewContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        overflow: 'hidden',
+    },
+    previewWrapper: {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+    },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    removeImageButton: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+    },
+    placeholderWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+    },
+    placeholderText: {
+        fontFamily: 'Inter',
+        fontSize: 12,
+        color: '#9CA3AF',
+    },
+    borderedSection: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 8,
+        gap: 16,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#EEEEEF',
+        borderRadius: 8,
+    },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        width: '100%',
+    },
+    checkbox: {
+        width: 16,
+        height: 16,
+        backgroundColor: '#EEEEEF',
+        borderWidth: 1,
+        borderColor: '#666666',
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxChecked: {
+        width: 10,
+        height: 10,
+        backgroundColor: COLORS.primary,
+        borderRadius: 2,
+    },
+    checkboxContent: {
+        flex: 1,
+        flexDirection: 'column',
+        gap: 4,
+    },
+    halfInput: {
+        flex: 1,
+        height: 40,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 16,
+        color: '#000000',
+    },
+    discountInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        height: 40,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    discountInput: {
+        flex: 1,
+        height: '100%',
+        paddingHorizontal: 16,
+        fontFamily: 'Inter',
+        fontSize: 16,
+        color: '#000000',
+    },
+    discountToggle: {
+        paddingHorizontal: 20,
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary,
+        borderLeftWidth: 1,
+        borderLeftColor: '#D1D1D1',
+    },
+    discountToggleText: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 18,
+        color: '#FFFFFF',
+    },
+    skuInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        height: 40,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    skuPrefix: {
+        paddingHorizontal: 12,
+        height: '100%',
+        justifyContent: 'center',
+        backgroundColor: '#E5E5E5',
+        borderRightWidth: 1,
+        borderRightColor: '#D1D1D1',
+    },
+    skuPrefixText: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#666666',
+    },
+    skuInput: {
+        flex: 1,
+        height: '100%',
+        paddingHorizontal: 12,
+        fontFamily: 'Inter',
+        fontSize: 16,
+        color: '#000000',
+    },
+    inputError: {
+        borderWidth: 1,
+        borderColor: '#EF4444',
+    },
+    errorText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 12,
+        lineHeight: 16,
+        color: '#DC2626',
+        marginTop: 4,
+    },
+    checkingText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 12,
+        lineHeight: 16,
+        color: COLORS.primary,
+        marginTop: 4,
+    },
 });
