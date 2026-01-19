@@ -1,13 +1,101 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+type DrawerOption = 'profile' | 'marketing';
 
 export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+    const [selectedOption, setSelectedOption] = useState<DrawerOption>('profile');
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const drawerHeight = useRef(new Animated.Value(0)).current;
+
+    // Tracking previous focus state to handle auto-opening
+    const prevIsMoreTabFocused = useRef(false);
+
+    // Check if More tab or its sub-screens are focused
+    const focusedRouteName = state.routes[state.index].name;
+    const isMoreTabFocused = ['profile', 'marketing'].includes(focusedRouteName);
+
+    // Sync drawer selection with route
+    useEffect(() => {
+        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing') {
+            setSelectedOption(focusedRouteName as DrawerOption);
+        }
+    }, [focusedRouteName]);
+
+    // Handle drawer visibility based on focus and manual toggle
+    useEffect(() => {
+        if (isMoreTabFocused) {
+            // Ensure drawer is open when entering "More" screens
+            // Use a slight check to avoid re-triggering if already open (manual toggle handled separately)
+            setIsDrawerOpen(true);
+        } else {
+            // Aggressively close drawer when leaving "More" screens
+            setIsDrawerOpen(false);
+        }
+    }, [isMoreTabFocused]);
+
+    // Animation trigger
+    useEffect(() => {
+        // Use timing for more predictable close/open during tab switches
+        Animated.timing(drawerHeight, {
+            toValue: isDrawerOpen ? 60 : 0,
+            duration: 200,
+            useNativeDriver: false,
+        }).start();
+    }, [isDrawerOpen]);
+
+    const handleDrawerOptionPress = (option: DrawerOption) => {
+        setSelectedOption(option);
+        navigation.navigate(option);
+    };
+
     return (
         <View style={styles.container}>
+            {/* Drawer */}
+            <Animated.View style={[styles.drawer, { height: drawerHeight }]}>
+                <View style={styles.drawerContent}>
+                    <TouchableOpacity
+                        style={[
+                            styles.drawerOption,
+                            selectedOption === 'profile' && styles.drawerOptionActive
+                        ]}
+                        onPress={() => handleDrawerOptionPress('profile')}
+                    >
+                        <Text style={[
+                            styles.drawerOptionText,
+                            selectedOption === 'profile' && styles.drawerOptionTextActive
+                        ]}>
+                            Profile
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.drawerOption,
+                            selectedOption === 'marketing' && styles.drawerOptionActive
+                        ]}
+                        onPress={() => handleDrawerOptionPress('marketing')}
+                    >
+                        <Text style={[
+                            styles.drawerOptionText,
+                            selectedOption === 'marketing' && styles.drawerOptionTextActive
+                        ]}>
+                            Marketing
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </Animated.View>
+
+            {/* Tab Bar */}
             <View style={styles.navbar}>
                 {state.routes.map((route, index) => {
+                    // Show Profile as the "More" tab, but hide Marketing and old Settings
+                    if (route.name === 'marketing' || route.name === 'settings') {
+                        return null;
+                    }
+
                     const { options } = descriptors[route.key];
                     const label =
                         options.tabBarLabel !== undefined
@@ -16,7 +104,12 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                                 ? options.title
                                 : route.name;
 
-                    const isFocused = state.index === index;
+                    let isFocused = state.index === index;
+
+                    // Special case: Highlight More tab (profile) if marketing is focused
+                    if (route.name === 'profile' && focusedRouteName === 'marketing') {
+                        isFocused = true;
+                    }
 
                     const onPress = () => {
                         const event = navigation.emit({
@@ -25,8 +118,20 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             canPreventDefault: true,
                         });
 
+                        if (route.name === 'profile') {
+                            if (isFocused) {
+                                // Already on More screen, toggle drawer visibility
+                                setIsDrawerOpen(prev => !prev);
+                            } else {
+                                // Navigating to More screen - useEffect will handle opening
+                                navigation.navigate(route.name);
+                            }
+                            return;
+                        }
+
                         if (!isFocused && !event.defaultPrevented) {
                             navigation.navigate(route.name);
+                            // useEffect will handle closing
                         }
                     };
 
@@ -46,9 +151,9 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                                 return 'receipt-outline';
                             case 'products':
                                 return 'cube-outline';
-                            case 'messages':
+                            case 'shop':
                                 return 'storefront-outline';
-                            case 'settings':
+                            case 'profile':
                                 return 'settings-outline';
                             default:
                                 return 'home-outline';
@@ -90,8 +195,47 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         width: '100%',
-        height: 96,
         backgroundColor: '#FCF7EA',
+    },
+    drawer: {
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        overflow: 'hidden',
+    },
+    drawerContent: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        gap: 8,
+    },
+    drawerOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        backgroundColor: '#F5F5F5',
+    },
+    drawerOptionActive: {
+        backgroundColor: '#E0FFFE',
+        borderWidth: 1,
+        borderColor: '#00615E',
+    },
+    drawerOptionText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '500',
+        fontSize: 12,
+        color: '#666666',
+    },
+    drawerOptionTextActive: {
+        color: '#00615E',
+        fontWeight: '600',
     },
     navbar: {
         flexDirection: 'row',

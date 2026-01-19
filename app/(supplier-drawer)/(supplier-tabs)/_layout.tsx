@@ -19,9 +19,17 @@ export default function SupplierTabsLayout() {
       name: "shop",
       title: "Shop"
     },
-    {
+    /* {
       name: "settings",
       title: "More"
+    }, */
+    {
+      name: "profile",
+      title: "More"
+    },
+    {
+      name: "marketing",
+      title: "Marketing"
     },
   ];
   return (

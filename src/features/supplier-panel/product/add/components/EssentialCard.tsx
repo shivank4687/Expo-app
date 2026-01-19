@@ -11,6 +11,8 @@ import { useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useFormValidation } from '@/shared/hooks/useFormValidation';
 import { RichTextEditor, InputModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
+import ImageSelectionModal from './ImageSelectionModal';
+import PhotoRoomEditModal from './PhotoRoomEditModal';
 
 // Fallback material types if attributes are not yet loaded
 const DEFAULT_MATERIAL_TYPES = [
@@ -73,6 +75,13 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     const [description, setDescription] = useState('');
     const [isAddingMaterial, setIsAddingMaterial] = useState(false);
     const [showMaterialModal, setShowMaterialModal] = useState(false);
+
+    // PhotoRoom editing states
+    const [editedImageIndices, setEditedImageIndices] = useState<number[]>([]);
+    const [showImageSelectionModal, setShowImageSelectionModal] = useState(false);
+    const [showPhotoRoomEditModal, setShowPhotoRoomEditModal] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+    const MAX_EDITS = 2;
 
     // Toast notifications
     const { showToast } = useToast();
@@ -425,6 +434,45 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
         setCoverImageIndex(index);
     };
 
+    // PhotoRoom editing handlers
+    const handleImageSelect = (index: number) => {
+        setSelectedImageIndex(index);
+        setShowImageSelectionModal(false);
+        setShowPhotoRoomEditModal(true);
+    };
+
+    const handleEditSave = (editedImageUri: string) => {
+        if (selectedImageIndex === null) return;
+
+        // Update image in array
+        const updatedImages = [...images];
+        updatedImages[selectedImageIndex] = {
+            ...updatedImages[selectedImageIndex],
+            uri: editedImageUri,
+        };
+        setImages(updatedImages);
+
+        // Track edited image
+        if (!editedImageIndices.includes(selectedImageIndex)) {
+            setEditedImageIndices([...editedImageIndices, selectedImageIndex]);
+        }
+
+        // Close modal and reset
+        setShowPhotoRoomEditModal(false);
+        setSelectedImageIndex(null);
+
+        // Show success toast
+        showToast({
+            message: 'Image edited successfully!',
+            type: 'success',
+        });
+    };
+
+    const handleEditCancel = () => {
+        setShowPhotoRoomEditModal(false);
+        setSelectedImageIndex(null);
+    };
+
     return (
         <View style={styles.card}>
             {/* Card Title */}
@@ -512,6 +560,12 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                                         >
                                             <Ionicons name="close-circle" size={24} color="#DC2626" />
                                         </TouchableOpacity>
+
+                                        {editedImageIndices.includes(index) && (
+                                            <View style={styles.editedBadge}>
+                                                <Text style={styles.editedBadgeText}>EDITED</Text>
+                                            </View>
+                                        )}
                                     </>
                                 ) : (
                                     <>
@@ -554,8 +608,17 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     Max. 5 images. Max. 1 video (25 s). Only 2 images can be retouched (center, size, background, light).
                 </Text>
                 <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.secondaryButton}>
-                        <Text style={styles.buttonText}>Edit (2/2)</Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.secondaryButton,
+                            images.length === 0 && styles.buttonDisabled
+                        ]}
+                        onPress={() => setShowImageSelectionModal(true)}
+                        disabled={images.length === 0}
+                    >
+                        <Text style={styles.buttonText}>
+                            Edit ({editedImageIndices.length}/{MAX_EDITS})
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -739,6 +802,23 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 placeholder="Enter material type name..."
                 submitButtonText="Add Material"
                 isLoading={isAddingMaterial}
+            />
+
+            {/* PhotoRoom Editing Modals */}
+            <ImageSelectionModal
+                visible={showImageSelectionModal}
+                images={images}
+                editedImageIndices={editedImageIndices}
+                maxEdits={MAX_EDITS}
+                onClose={() => setShowImageSelectionModal(false)}
+                onSelectImage={handleImageSelect}
+            />
+
+            <PhotoRoomEditModal
+                visible={showPhotoRoomEditModal}
+                image={selectedImageIndex !== null ? images[selectedImageIndex] : null}
+                onClose={handleEditCancel}
+                onSave={handleEditSave}
             />
         </View>
     );
@@ -989,6 +1069,26 @@ const styles = StyleSheet.create({
     },
     uploadButtonDisabled: {
         opacity: 0.5,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    editedBadge: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        backgroundColor: '#10B981',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderTopRightRadius: 8,
+        borderBottomLeftRadius: 6,
+        zIndex: 5,
+    },
+    editedBadgeText: {
+        fontFamily: 'Inter',
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '700',
     },
     resolutionNote: {
         fontFamily: 'Inter',
