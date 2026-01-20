@@ -23,6 +23,7 @@ const DEFAULT_MATERIAL_TYPES = [
 // Categories will be loaded from API
 
 interface MediaFile {
+    id?: number;
     uri: string;
     type: 'image' | 'video';
     fileName: string;
@@ -55,8 +56,8 @@ export interface EssentialCardRef {
         weight?: string;
         material_type?: any;
         manufacturing_origin?: any;
-        images?: string[];
-        video?: string | null;
+        images?: any[];
+        video?: any | null;
     }) => void;
 }
 
@@ -178,8 +179,14 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
             return {
                 name,
-                images: rearrangedImages.map(img => img.uri),
-                video: video?.uri,
+                images: rearrangedImages.map(img => ({
+                    id: img.id,
+                    uri: img.uri,
+                })),
+                video: video ? {
+                    id: video.id,
+                    uri: video.uri,
+                } : null,
                 height,
                 weight,
                 length,
@@ -229,18 +236,26 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 setSelectedMaterials(materialIds);
             }
             if (data.images !== undefined && Array.isArray(data.images)) {
-                // Convert image URLs to MediaFile format
-                const imageFiles: MediaFile[] = data.images.map((url, index) => ({
-                    uri: url,
-                    type: 'image' as const,
-                    fileName: `image_${index}.jpg`,
-                    fileSize: 0,
-                }));
+                // Convert image data to MediaFile format
+                const imageFiles: MediaFile[] = data.images.map((img, index) => {
+                    const uri = typeof img === 'object' ? img.url || img.uri : img;
+                    const id = typeof img === 'object' ? img.id : undefined;
+                    return {
+                        id,
+                        uri,
+                        type: 'image' as const,
+                        fileName: `image_${index}.png`,
+                        fileSize: 0,
+                    };
+                });
                 setImages(imageFiles);
             }
             if (data.video !== undefined && data.video) {
+                const videoUri = typeof data.video === 'object' ? data.video.url || data.video.uri : data.video;
+                const videoId = typeof data.video === 'object' ? data.video.id : undefined;
                 setVideo({
-                    uri: data.video,
+                    id: videoId,
+                    uri: videoUri,
                     type: 'video',
                     fileName: 'video.mp4',
                     fileSize: 0,

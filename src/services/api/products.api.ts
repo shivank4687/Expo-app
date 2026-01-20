@@ -118,7 +118,22 @@ export const productsApi = {
      * Create a new product as a supplier
      */
     async createSupplierProduct(data: any): Promise<any> {
-        const hasFiles = (data.images && data.images.length > 0) || data.video;
+        // Broaden hasFiles check to include variants
+        const hasVariantImages = data.variants && Object.values(data.variants).some((v: any) =>
+            v.images && Array.isArray(v.images) && v.images.some((img: any) => {
+                const uri = typeof img === 'object' ? img.uri : img;
+                return typeof uri === 'string' && uri.startsWith('file://');
+            })
+        );
+        const hasFiles = (data.images && data.images.some((img: any) => {
+            const uri = typeof img === 'object' ? img.uri : img;
+            return typeof uri === 'string' && uri.startsWith('file://');
+        })) ||
+            (data.video && (() => {
+                const uri = typeof data.video === 'object' ? data.video.uri : data.video;
+                return typeof uri === 'string' && uri.startsWith('file://');
+            })()) ||
+            hasVariantImages;
 
         if (!hasFiles) {
             const response = await restApiClient.post<{ data: any, message: string }>(
@@ -135,22 +150,55 @@ export const productsApi = {
             if (data === null || data === undefined) return;
 
             if (rootKey === 'images' && Array.isArray(data)) {
-                data.forEach((uri: string, index: number) => {
-                    formData.append(`images[files][${index}]`, {
-                        uri,
-                        name: `image_${index}.png`,
-                        type: 'image/png',
-                    } as any);
+                data.forEach((img: any, index: number) => {
+                    const uri = typeof img === 'object' ? img.uri : img;
+                    const id = typeof img === 'object' ? img.id : null;
+
+                    if (typeof uri === 'string' && uri.startsWith('file://')) {
+                        formData.append(`images[files][${index}]`, {
+                            uri,
+                            name: `image_${index}.png`,
+                            type: 'image/png',
+                        } as any);
+                    } else if (id) {
+                        formData.append(`images[files][${id}]`, id);
+                    }
                 });
                 return;
             }
 
             if (rootKey === 'video' && data) {
-                formData.append('videos[files][0]', {
-                    uri: data,
-                    name: 'video.mp4',
-                    type: 'video/mp4',
-                } as any);
+                const uri = typeof data === 'object' ? data.uri : data;
+                const id = typeof data === 'object' ? data.id : null;
+
+                if (typeof uri === 'string' && uri.startsWith('file://')) {
+                    formData.append('videos[files][0]', {
+                        uri,
+                        name: 'video.mp4',
+                        type: 'video/mp4',
+                    } as any);
+                } else if (id) {
+                    formData.append('videos[files][0]', id);
+                }
+                return;
+            }
+
+            // Handle variant images - check if we're processing a variant's images array
+            if (rootKey.includes('variants[') && rootKey.endsWith('][images]') && Array.isArray(data)) {
+                data.forEach((img: any, index: number) => {
+                    const uri = typeof img === 'object' ? img.uri : img;
+                    const id = typeof img === 'object' ? img.id : null;
+
+                    if (typeof uri === 'string' && uri.startsWith('file://')) {
+                        formData.append(`${rootKey}[files][${index}]`, {
+                            uri,
+                            name: `variant_image_${index}.png`,
+                            type: 'image/png',
+                        } as any);
+                    } else if (id) {
+                        formData.append(`${rootKey}[files][${id}]`, id);
+                    }
+                });
                 return;
             }
 
@@ -194,19 +242,35 @@ export const productsApi = {
      * Update an existing supplier product
      */
     async updateSupplierProduct(id: number, data: any): Promise<any> {
-        // Check if there are actual FILES to upload (not just URLs from existing images)
-        // File URIs start with 'file://' or are blob URLs
-        const hasNewImages = data.images && Array.isArray(data.images) &&
-            data.images.some((img: string) => img.startsWith('file://') || img.startsWith('blob:'));
-        const hasNewVideo = data.video && (data.video.startsWith('file://') || data.video.startsWith('blob:'));
-        const hasFiles = hasNewImages || hasNewVideo;
+        // Check if there are images or variants (always use FormData if they are present
+        // to ensure existing images are preserved via their IDs)
+        const hasImagesOrVariants = (data.images && Array.isArray(data.images) && data.images.length > 0) ||
+            (data.variants && Object.keys(data.variants).length > 0) ||
+            (data.video);
 
+        // Check if there are actual NEW FILES to upload
+        const hasVariantFiles = data.variants && Object.values(data.variants).some((v: any) =>
+            v.images && Array.isArray(v.images) && v.images.some((img: any) => {
+                const uri = typeof img === 'object' ? img.uri || img.url : img;
+                return typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'));
+            })
+        );
+        const hasNewImageFiles = data.images && Array.isArray(data.images) &&
+            data.images.some((img: any) => {
+                const uri = typeof img === 'object' ? img.uri || img.url : img;
+                return typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'));
+            });
+        const hasNewVideoFile = data.video && (() => {
+            const uri = typeof data.video === 'object' ? data.video.uri || data.video.url : data.video;
+            return typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'));
+        })();
+
+        const hasFiles = hasNewImageFiles || hasNewVideoFile || hasVariantFiles;
         const url = API_ENDPOINTS.SUPPLIER_PRODUCT_UPDATE.replace(':id', id.toString());
 
-        if (!hasFiles) {
-            // No new files to upload, use regular JSON request
-            console.log('📤 Sending update via JSON (no new files)');
-            console.log('Update data:', JSON.stringify(data, null, 2));
+        // If no images/variants at all, use JSON
+        if (!hasImagesOrVariants) {
+            console.log('📤 Sending update via JSON (no media/variants)');
             const response = await restApiClient.put<{ data: any, message: string }>(
                 url,
                 data
@@ -214,30 +278,72 @@ export const productsApi = {
             return response.data;
         }
 
-        // Use FormData for multipart upload when there are new files
-        console.log('📤 Sending update via FormData (has new files)');
+        // Use FormData for multipart upload when there are images or variants
+        // IMPORTANT: For Laravel/Bagisto, multipart requests with PUT often fail.
+        // We use POST and add _method: 'PUT' to simulate a PUT request.
+        console.log(`📤 Sending update via FormData (POST with _method=PUT) (${hasFiles ? 'has new files' : 'existing media only'})`);
         const formData = new FormData();
+        formData.append('_method', 'PUT');
 
         const appendToFormData = (data: any, rootKey: string) => {
             if (data === null || data === undefined) return;
 
+            // Handle images array (main product)
             if (rootKey === 'images' && Array.isArray(data)) {
-                data.forEach((uri: string, index: number) => {
-                    formData.append(`images[files][${index}]`, {
-                        uri,
-                        name: `image_${index}.png`,
-                        type: 'image/png',
-                    } as any);
+                data.forEach((img: any, index: number) => {
+                    const uri = typeof img === 'object' ? img.uri || img.url : img;
+                    const id = typeof img === 'object' ? img.id : null;
+
+                    if (typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'))) {
+                        // New local file - use a unique string key to avoid clashing with existing IDs
+                        formData.append(`images[files][new_${index}]`, {
+                            uri,
+                            name: `image_${index}.png`,
+                            type: 'image/png',
+                        } as any);
+                    } else if (id) {
+                        // Existing file - send its ID as the key
+                        formData.append(`images[files][${id}]`, id);
+                    }
                 });
                 return;
             }
 
+            // Handle video (main product)
             if (rootKey === 'video' && data) {
-                formData.append('videos[files][0]', {
-                    uri: data,
-                    name: 'video.mp4',
-                    type: 'video/mp4',
-                } as any);
+                const uri = typeof data === 'object' ? data.uri || data.url : data;
+                const id = typeof data === 'object' ? data.id : null;
+
+                if (typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'))) {
+                    formData.append('videos[files][new_0]', {
+                        uri,
+                        name: 'video.mp4',
+                        type: 'video/mp4',
+                    } as any);
+                } else if (id) {
+                    formData.append('videos[files][0]', id);
+                }
+                return;
+            }
+
+            // Handle variant images
+            if (rootKey.includes('variants[') && rootKey.endsWith('][images]') && Array.isArray(data)) {
+                data.forEach((img: any, index: number) => {
+                    const uri = typeof img === 'object' ? img.uri || img.url : img;
+                    const id = typeof img === 'object' ? img.id : null;
+
+                    if (typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'))) {
+                        // New local file for variant
+                        formData.append(`${rootKey}[files][new_${index}]`, {
+                            uri,
+                            name: `variant_image_${index}.png`,
+                            type: 'image/png',
+                        } as any);
+                    } else if (id) {
+                        // Existing file for variant
+                        formData.append(`${rootKey}[files][${id}]`, id);
+                    }
+                });
                 return;
             }
 
@@ -256,7 +362,8 @@ export const productsApi = {
 
         appendToFormData(data, '');
 
-        const response = await restApiClient.put<{ data: any, message: string }>(
+        // Use POST with _method=PUT
+        const response = await restApiClient.post<{ data: any, message: string }>(
             url,
             formData,
             {

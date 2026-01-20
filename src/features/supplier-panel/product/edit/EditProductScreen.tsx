@@ -79,8 +79,8 @@ export default function EditProductScreen() {
                             weight: product.weight?.toString() || '',
                             material_type: product.material_type || '',
                             manufacturing_origin: product.manufacturing_origin || '',
-                            images: product.images?.map((img: any) => img.url) || [],
-                            video: product.videos?.[0]?.url || null,
+                            images: product.images || [],
+                            video: product.videos?.[0] || null,
                         });
                     }
 
@@ -215,6 +215,7 @@ export default function EditProductScreen() {
                 ...settingsData,
                 type: productData.type,
                 attribute_family_id: attributeFamilyId,
+                product_locale: 'all', // Enable translation to all locales
             };
 
             // Remove price field for configurable products (only variants have prices)

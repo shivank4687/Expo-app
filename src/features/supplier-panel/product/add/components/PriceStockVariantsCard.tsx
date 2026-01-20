@@ -238,8 +238,14 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                         ...(masterHeight && { height: masterHeight }),
                         ...(masterWeight && { weight: masterWeight }),
                     }),
-                    // Image will be handled separately if needed
-                    ...(variant.image && { image: variant.image }),
+                    // Send all variant images to the API
+                    // Map image objects to include uri and id for the API
+                    ...(variant.images && variant.images.length > 0 && {
+                        images: variant.images.map((img: any) => ({
+                            id: img.id,
+                            uri: img.uri
+                        }))
+                    }),
                 };
             });
 
@@ -398,7 +404,9 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                         width: v.width?.toString() || '',
                         height: v.height?.toString() || '',
                         attributes: variantAttrs,
-                        image: v.images?.[0]?.url || v.base_image?.original_image_url || null
+                        images: v.images?.length > 0
+                            ? v.images.map((img: any) => ({ uri: img.url, id: img.id }))
+                            : (v.base_image ? [{ uri: v.base_image.original_image_url }] : [])
                     };
                 });
                 setVariants(mappedVariants);
@@ -474,7 +482,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 length: '',
                 width: '',
                 height: '',
-                image: null,
+                images: [],
             };
             setVariants(prev => [...prev, newVariant]);
             if (!mainVariantId) setMainVariantId(newVariant.id);
@@ -521,7 +529,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         if (mainVariantId === id) setMainVariantId(null);
     };
 
-    const updateVariantField = (id: string, field: string, value: string) => {
+    const updateVariantField = (id: string, field: string, value: any) => {
         setVariants(prev => prev.map(v =>
             v.id === id ? { ...v, [field]: value } : v
         ));
@@ -543,7 +551,19 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
-                updateVariantField(variantId, 'image', result.assets[0].uri);
+                const newImage = { uri: result.assets[0].uri };
+                setVariants(prev => prev.map(v => {
+                    if (v.id === variantId) {
+                        const newImages = [...(v.images || [])];
+                        if (newImages.length > 0) {
+                            newImages[0] = newImage;
+                        } else {
+                            newImages.push(newImage);
+                        }
+                        return { ...v, images: newImages };
+                    }
+                    return v;
+                }));
             }
         } catch (error) {
             console.error('Error picking image:', error);
@@ -567,7 +587,19 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
-                updateVariantField(variantId, 'image', result.assets[0].uri);
+                const newImage = { uri: result.assets[0].uri };
+                setVariants(prev => prev.map(v => {
+                    if (v.id === variantId) {
+                        const newImages = [...(v.images || [])];
+                        if (newImages.length > 0) {
+                            newImages[0] = newImage;
+                        } else {
+                            newImages.push(newImage);
+                        }
+                        return { ...v, images: newImages };
+                    }
+                    return v;
+                }));
             }
         } catch (error) {
             console.error('Error taking photo:', error);
@@ -576,7 +608,16 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     };
 
     const removeVariantImage = (variantId: string) => {
-        updateVariantField(variantId, 'image', ''); // Or null
+        setVariants(prev => prev.map(v => {
+            if (v.id === variantId) {
+                const newImages = [...(v.images || [])];
+                if (newImages.length > 0) {
+                    newImages.splice(0, 1); // Remove only the first photo as requested
+                }
+                return { ...v, images: newImages };
+            }
+            return v;
+        }));
     };
 
     const isOptionSelected = (attrId: string, optionId: string) => {
@@ -913,9 +954,9 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                         </View>
 
                         <View style={styles.imagePreviewContainer}>
-                            {variant.image ? (
+                            {variant.images && variant.images.length > 0 ? (
                                 <View style={styles.previewWrapper}>
-                                    <Image source={{ uri: variant.image }} style={styles.previewImage} />
+                                    <Image source={{ uri: variant.images[0].uri }} style={styles.previewImage} />
                                     <TouchableOpacity
                                         style={styles.removeImageButton}
                                         onPress={() => removeVariantImage(variant.id)}
