@@ -92,6 +92,10 @@ export const useProductsList = () => {
         loadProducts(1, true, true);
     }, [loadProducts]);
 
+    const reloadWithLoading = useCallback(() => {
+        loadProducts(1, true, false);
+    }, [loadProducts]);
+
     return {
         products,
         loading,
@@ -101,5 +105,6 @@ export const useProductsList = () => {
         hasMore,
         loadMore,
         refresh,
+        reloadWithLoading,
     };
 };

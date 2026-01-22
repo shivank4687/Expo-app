@@ -576,11 +576,11 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                                             <Ionicons name="close-circle" size={24} color="#DC2626" />
                                         </TouchableOpacity>
 
-                                        {editedImageIndices.includes(index) && (
+                                        {/* {editedImageIndices.includes(index) && (
                                             <View style={styles.editedBadge}>
                                                 <Text style={styles.editedBadgeText}>EDITED</Text>
                                             </View>
-                                        )}
+                                        )} */}
                                     </>
                                 ) : (
                                     <>

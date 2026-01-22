@@ -64,6 +64,7 @@ const PhotoRoomEditModal: React.FC<PhotoRoomEditModalProps> = ({
     const [currentEditedUri, setCurrentEditedUri] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
     const [previewDimensions, setPreviewDimensions] = useState({ width: 0, height: 0 });
     const [showCropOverlay, setShowCropOverlay] = useState(true);
 
@@ -90,6 +91,7 @@ const PhotoRoomEditModal: React.FC<PhotoRoomEditModalProps> = ({
             setPreviewUri(image.uri);
             setCurrentEditedUri(image.uri);
             setHasChanges(false);
+            setHasAppliedFilters(false);
             setShowCropOverlay(true);
             setSettings({
                 background: undefined,
@@ -202,6 +204,7 @@ const PhotoRoomEditModal: React.FC<PhotoRoomEditModalProps> = ({
             setPreviewUri(newUri);
             setCurrentEditedUri(newUri);
             setHasChanges(false);
+            setHasAppliedFilters(true);
         } catch (error: any) {
             console.error('Error applying edits:', error);
             Alert.alert('Error', 'Failed to apply edits. Please try again.');
@@ -601,10 +604,10 @@ const PhotoRoomEditModal: React.FC<PhotoRoomEditModalProps> = ({
                             style={[
                                 styles.button,
                                 styles.saveButton,
-                                isProcessing && styles.buttonDisabled
+                                (isProcessing || !hasAppliedFilters) && styles.buttonDisabled
                             ]}
                             onPress={handleSave}
-                            disabled={isProcessing}
+                            disabled={isProcessing || !hasAppliedFilters}
                         >
                             <Text style={styles.saveButtonText}>Save</Text>
                         </TouchableOpacity>

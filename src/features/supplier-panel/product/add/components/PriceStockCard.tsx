@@ -63,10 +63,10 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
         retailPrice: '',
         price: '',
         sku: '',
-        immediateShipping: false,
+        immediateShipping: true,
         inOrOrderQty: '',
         inOrderQtyUnit: '',
-        madeToOrderEnabled: false,
+        madeToOrderEnabled: true,
         madeToOrderQuantity: '',
         productionTime: '',
         discounts: '',
@@ -393,7 +393,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                             onBlur={() => validateSkuUniqueness(formData.sku)}
                         />
                     </View>
-                    {isSkuChecking && <Text style={styles.checkingText}>Checking SKU availability...</Text>}
+                    {/* {isSkuChecking && <Text style={styles.checkingText}>Checking SKU availability...</Text>} */}
                     {errors.sku && <Text style={styles.errorText}>{errors.sku}</Text>}
                 </View>
             </View>
@@ -419,27 +419,29 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Quantity in Stock</Text>
-                    <View style={styles.rowInputs}>
-                        <TextInput
-                            style={styles.halfInput}
-                            placeholder="Quantity"
-                            placeholderTextColor="#666666"
-                            value={formData.inOrOrderQty}
-                            onChangeText={(val) => updateField('inOrOrderQty', filterNumericInput(val))}
-                            keyboardType="decimal-pad"
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Dropdown
-                                placeholder="Unit"
-                                options={dynamicUnitOptions}
-                                value={formData.inOrderQtyUnit}
-                                onSelect={(val) => updateField('inOrderQtyUnit', val)}
+                {formData.immediateShipping && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.sectionTitle}>Quantity in Stock</Text>
+                        <View style={styles.rowInputs}>
+                            <TextInput
+                                style={styles.halfInput}
+                                placeholder="Quantity"
+                                placeholderTextColor="#666666"
+                                value={formData.inOrOrderQty}
+                                onChangeText={(val) => updateField('inOrOrderQty', filterNumericInput(val))}
+                                keyboardType="decimal-pad"
                             />
+                            <View style={{ flex: 1 }}>
+                                <Dropdown
+                                    placeholder="Unit"
+                                    options={dynamicUnitOptions}
+                                    value={formData.inOrderQtyUnit}
+                                    onSelect={(val) => updateField('inOrderQtyUnit', val)}
+                                />
+                            </View>
                         </View>
                     </View>
-                </View>
+                )}
             </View>
 
             {/* Made to Order Section */}
@@ -463,29 +465,33 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Quantity (Made to Order)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Quantity"
-                        placeholderTextColor="#666666"
-                        value={formData.madeToOrderQuantity}
-                        onChangeText={(val) => updateField('madeToOrderQuantity', filterNumericInput(val))}
-                        keyboardType="decimal-pad"
-                    />
-                </View>
+                {formData.madeToOrderEnabled && (
+                    <>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.sectionTitle}>Quantity (Made to Order)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Quantity"
+                                placeholderTextColor="#666666"
+                                value={formData.madeToOrderQuantity}
+                                onChangeText={(val) => updateField('madeToOrderQuantity', filterNumericInput(val))}
+                                keyboardType="decimal-pad"
+                            />
+                        </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Production Time (days)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Production Time"
-                        placeholderTextColor="#666666"
-                        value={formData.productionTime}
-                        onChangeText={(val) => updateField('productionTime', filterNumericInput(val))}
-                        keyboardType="decimal-pad"
-                    />
-                </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.sectionTitle}>Production Time (days)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Production Time"
+                                placeholderTextColor="#666666"
+                                value={formData.productionTime}
+                                onChangeText={(val) => updateField('productionTime', filterNumericInput(val))}
+                                keyboardType="decimal-pad"
+                            />
+                        </View>
+                    </>
+                )}
             </View>
 
             {/* Manage Stock Section */}
@@ -509,17 +515,19 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Inventory Quantity</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Stock Quantity"
-                        placeholderTextColor="#666666"
-                        value={formData.inventoryQty}
-                        onChangeText={(val) => updateField('inventoryQty', filterNumericInput(val))}
-                        keyboardType="decimal-pad"
-                    />
-                </View>
+                {formData.manageStock && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.sectionTitle}>Inventory Quantity</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Stock Quantity"
+                            placeholderTextColor="#666666"
+                            value={formData.inventoryQty}
+                            onChangeText={(val) => updateField('inventoryQty', filterNumericInput(val))}
+                            keyboardType="decimal-pad"
+                        />
+                    </View>
+                )}
             </View>
 
             {/* Discounts Section */}

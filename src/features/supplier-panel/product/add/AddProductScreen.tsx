@@ -115,7 +115,8 @@ export default function AddProductScreen() {
                 attributeFamilyId,
                 attributes,
             },
-            setIsSubmitting
+            setIsSubmitting,
+            showToast
         );
     };
 

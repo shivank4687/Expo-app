@@ -68,13 +68,13 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
 
     // UI States
     const [inStockEnabled, setInStockEnabled] = useState(false);
-    const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(false);
+    const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(true);
     const [isAddingOption, setIsAddingOption] = useState(false);
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [targetAttributeId, setTargetAttributeId] = useState<string | null>(null);
 
     // Stock and Order States
-    const [immediateShipping, setImmediateShipping] = useState(false);
+    const [immediateShipping, setImmediateShipping] = useState(true);
     const [inOrderQty, setInOrderQty] = useState('');
     const [inOrderQtyUnit, setInOrderQtyUnit] = useState('');
     const [madeToOrderQty, setMadeToOrderQty] = useState('');
@@ -339,8 +339,8 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             // Reset all state first to prevent stale data
             setSku('');
             setOriginalSku('');
-            setImmediateShipping(false);
-            setMadeToOrderEnabled(false);
+            setImmediateShipping(true);
+            setMadeToOrderEnabled(true);
             setInOrderQty('');
             setInOrderQtyUnit('');
             setMadeToOrderQty('');
@@ -658,7 +658,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                             onBlur={() => validateSkuUniqueness(sku)}
                         />
                     </View>
-                    {isSkuChecking && <Text style={styles.checkingText}>Checking SKU availability...</Text>}
+                    {/* {isSkuChecking && <Text style={styles.checkingText}>Checking SKU availability...</Text>} */}
                     {errors.sku && <Text style={styles.errorText}>{errors.sku}</Text>}
                 </View>
             </View>
@@ -996,27 +996,29 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Quantity in Stock</Text>
-                    <View style={styles.rowInputs}>
-                        <TextInput
-                            style={styles.halfInput}
-                            placeholder="Quantity"
-                            placeholderTextColor="#666666"
-                            value={inOrderQty}
-                            onChangeText={(val) => setInOrderQty(filterNumericInput(val))}
-                            keyboardType="decimal-pad"
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Dropdown
-                                placeholder="Unit"
-                                options={dynamicUnitOptions}
-                                value={inOrderQtyUnit}
-                                onSelect={setInOrderQtyUnit}
+                {immediateShipping && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.sectionTitle}>Quantity in Stock</Text>
+                        <View style={styles.rowInputs}>
+                            <TextInput
+                                style={styles.halfInput}
+                                placeholder="Quantity"
+                                placeholderTextColor="#666666"
+                                value={inOrderQty}
+                                onChangeText={(val) => setInOrderQty(filterNumericInput(val))}
+                                keyboardType="decimal-pad"
                             />
+                            <View style={{ flex: 1 }}>
+                                <Dropdown
+                                    placeholder="Unit"
+                                    options={dynamicUnitOptions}
+                                    value={inOrderQtyUnit}
+                                    onSelect={setInOrderQtyUnit}
+                                />
+                            </View>
                         </View>
                     </View>
-                </View>
+                )}
             </View>
 
             {/* Made to Order Section */}
@@ -1040,29 +1042,33 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Quantity (Made to Order)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Quantity"
-                        placeholderTextColor="#666666"
-                        value={madeToOrderQty}
-                        onChangeText={(val) => setMadeToOrderQty(filterNumericInput(val))}
-                        keyboardType="decimal-pad"
-                    />
-                </View>
+                {madeToOrderEnabled && (
+                    <>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.sectionTitle}>Quantity (Made to Order)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Quantity"
+                                placeholderTextColor="#666666"
+                                value={madeToOrderQty}
+                                onChangeText={(val) => setMadeToOrderQty(filterNumericInput(val))}
+                                keyboardType="decimal-pad"
+                            />
+                        </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Production Time (days)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Production Time"
-                        placeholderTextColor="#666666"
-                        value={productionTime}
-                        onChangeText={(val) => setProductionTime(filterNumericInput(val))}
-                        keyboardType="decimal-pad"
-                    />
-                </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.sectionTitle}>Production Time (days)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Production Time"
+                                placeholderTextColor="#666666"
+                                value={productionTime}
+                                onChangeText={(val) => setProductionTime(filterNumericInput(val))}
+                                keyboardType="decimal-pad"
+                            />
+                        </View>
+                    </>
+                )}
             </View>
 
             {/* Discounts Section */}

@@ -85,7 +85,8 @@ export const handleSaveDraft = (params: SubmissionParams): void => {
  */
 export const handlePublish = async (
     params: SubmissionParams,
-    setIsSubmitting: (value: boolean) => void
+    setIsSubmitting: (value: boolean) => void,
+    showToast?: (options: { message: string; type: 'success' | 'error' | 'info' }) => void
 ): Promise<void> => {
     const { refs, activeTab, attributeFamilyId, attributes } = params;
 
@@ -153,10 +154,28 @@ export const handlePublish = async (
         console.log('🚀 Calling API...');
         await productsApi.createSupplierProduct({ ...fullProductData, ...defaultAttributes });
         console.log('✅ API call successful');
-        Alert.alert('Success', 'Product published successfully!');
+
+        // Use toast notification instead of Alert
+        if (showToast) {
+            showToast({
+                message: 'Product published successfully!',
+                type: 'success',
+            });
+        } else {
+            Alert.alert('Success', 'Product published successfully!');
+        }
     } catch (err: any) {
         console.error('❌ Error publishing product:', err);
-        Alert.alert('Error', err.response?.data?.message || 'Failed to publish product. Please check your inputs.');
+
+        // Use toast notification for errors
+        if (showToast) {
+            showToast({
+                message: err.response?.data?.message || 'Failed to publish product. Please check your inputs.',
+                type: 'error',
+            });
+        } else {
+            Alert.alert('Error', err.response?.data?.message || 'Failed to publish product. Please check your inputs.');
+        }
     } finally {
         setIsSubmitting(false);
     }

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAppSelector } from '@/store/hooks';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { ListIcon, GridIcon } from '@/assets/icons';
@@ -15,9 +15,23 @@ export default function ProductsScreen() {
   const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
   const [viewMode, setViewMode] = useState<ViewMode>('grid'); // Default to grid
   const router = useRouter();
+  const isFirstFocus = useRef(true);
 
   // Fetch products from API with infinite scroll
-  const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh } = useProductsList();
+  const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading } = useProductsList();
+
+  // Reload products when screen comes into focus (after adding/editing products)
+  // Skip the first focus to avoid double-loading on initial mount
+  // Use reloadWithLoading to show full loading state like first time
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
+      reloadWithLoading();
+    }, [reloadWithLoading])
+  );
 
   if (!isAuthenticated || !supplier) {
     return (
@@ -120,31 +134,51 @@ export default function ProductsScreen() {
       </View>
 
       {/* Products List */}
-      <FlatList
-        key={viewMode} // Force re-render when view mode changes
-        data={products}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={viewMode === 'grid' ? 2 : 1}
-        columnWrapperStyle={viewMode === 'grid' && products.length > 0 ? styles.productsRow : undefined}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={renderFooter}
-        ListEmptyComponent={renderEmpty}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={refresh}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
-          />
-        }
-        renderItem={({ item }: { item: Product }) => {
-          if (viewMode === 'grid') {
-            return (
-              <View style={styles.productItem}>
-                <ProductCard
+      {loading ? (
+        // Show loading screen when reloading (feels like fresh load)
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.stateText}>Loading products...</Text>
+        </View>
+      ) : (
+        <FlatList
+          key={viewMode} // Force re-render when view mode changes
+          data={products}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={viewMode === 'grid' ? 2 : 1}
+          columnWrapperStyle={viewMode === 'grid' && products.length > 0 ? styles.productsRow : undefined}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={renderEmpty}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={refresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
+          renderItem={({ item }: { item: Product }) => {
+            if (viewMode === 'grid') {
+              return (
+                <View style={styles.productItem}>
+                  <ProductCard
+                    id={item.id}
+                    name={item.name}
+                    price={item.formatted_price}
+                    status={item.status}
+                    stock={item.stock}
+                    imageUrl={item.image_url}
+                    onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
+                  />
+                </View>
+              );
+            } else {
+              return (
+                <ProductListCard
                   id={item.id}
                   name={item.name}
                   price={item.formatted_price}
@@ -153,23 +187,11 @@ export default function ProductsScreen() {
                   imageUrl={item.image_url}
                   onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
                 />
-              </View>
-            );
-          } else {
-            return (
-              <ProductListCard
-                id={item.id}
-                name={item.name}
-                price={item.formatted_price}
-                status={item.status}
-                stock={item.stock}
-                imageUrl={item.image_url}
-                onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
-              />
-            );
-          }
-        }}
-      />
+              );
+            }
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -199,7 +221,7 @@ const styles = StyleSheet.create({
   // List Content
   listContent: {
     padding: 16,
-    paddingTop: 16,
+    paddingTop: 8,
   },
 
   // Header Styles
