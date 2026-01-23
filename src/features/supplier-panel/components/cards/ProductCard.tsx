@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { COLORS } from '../../styles/colors';
 import { EditIcon } from '@/assets/icons';
 import { ProductImage } from '@/shared/components/LazyImage';
+import { ToggleSlider } from '@/shared/components/ToggleSlider';
 
 export interface ProductCardProps {
     id: number;
@@ -14,6 +15,8 @@ export interface ProductCardProps {
     stock: number;
     imageUrl?: string | null;
     onEdit?: () => void;
+    onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
+    onSave?: (id: number, price: string, stock: number) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -24,8 +27,46 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     stock,
     imageUrl,
     onEdit,
+    onToggleStatus,
+    onSave,
 }) => {
     const router = useRouter();
+
+    // Extract numeric value from price (remove currency symbols and formatting)
+    const numericPrice = price.replace(/[^0-9.]/g, '');
+
+    const [editablePrice, setEditablePrice] = useState(numericPrice);
+    const [editableStock, setEditableStock] = useState(stock.toString());
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // Reset state when props change (e.g., on pull-to-refresh)
+    useEffect(() => {
+        const newNumericPrice = price.replace(/[^0-9.]/g, '');
+        setEditablePrice(newNumericPrice);
+        setEditableStock(stock.toString());
+        setHasChanges(false);
+    }, [id, price, stock]);
+
+    const handlePriceChange = (value: string) => {
+        // Only allow numeric input with decimal point
+        const numericValue = value.replace(/[^0-9.]/g, '');
+        setEditablePrice(numericValue);
+        setHasChanges(true);
+    };
+
+    const handleStockChange = (value: string) => {
+        // Only allow numeric input
+        const numericValue = value.replace(/[^0-9]/g, '');
+        setEditableStock(numericValue);
+        setHasChanges(true);
+    };
+
+    const handleSave = () => {
+        if (onSave && hasChanges) {
+            onSave(id, editablePrice, parseInt(editableStock) || 0);
+            setHasChanges(false);
+        }
+    };
 
     const handleImagePress = () => {
         router.push({
@@ -49,47 +90,80 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     priority="low"
                 />
 
+                {/* Edit Icon - Top Right */}
+                {onEdit && (
+                    <TouchableOpacity
+                        style={styles.editIconButton}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            onEdit();
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <EditIcon width={16} height={16} color={COLORS.black} />
+                    </TouchableOpacity>
+                )}
+
                 {/* Price Badge - Bottom Left */}
                 <View style={styles.priceBadge}>
                     <Text style={styles.priceText}>{price}</Text>
                 </View>
+
+                {/* Status Toggle Slider - Bottom Right */}
+                {onToggleStatus && (
+                    <View style={styles.statusToggleButton}>
+                        <ToggleSlider
+                            isActive={status === 'active'}
+                            onToggle={() => onToggleStatus(id, status)}
+                            size={24}
+                        />
+                    </View>
+                )}
             </TouchableOpacity>
 
             {/* Product Info */}
             <View style={styles.infoContainer}>
-                {/* Title Section */}
-                <View style={styles.titleSection}>
-                    {/* Product Name */}
-                    <Text style={styles.productName} numberOfLines={1}>
-                        {name}
-                    </Text>
+                {/* Product Name */}
+                <Text style={styles.productName} numberOfLines={1}>
+                    {name}
+                </Text>
 
-                    {/* Status and Stock Row */}
-                    <View style={styles.statusRow}>
-                        {/* Status Badge */}
-                        <View style={styles.statusBadge}>
-                            <View
-                                style={[
-                                    styles.statusDot,
-                                    status === 'active' ? styles.statusDotActive : styles.statusDotInactive
-                                ]}
-                            />
-                            <Text style={styles.statusText}>
-                                {status === 'active' ? 'Active' : 'Inactive'}
-                            </Text>
+                {/* Price and Stock Input Row */}
+                <View style={styles.inputsSection}>
+                    <View style={styles.priceStockRow}>
+                        <View style={styles.inputWrapper}>
+                            <Text style={styles.inputLabel}>Price</Text>
+                            <View style={styles.priceInputContainer}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                    style={styles.priceInput}
+                                    value={editablePrice}
+                                    onChangeText={handlePriceChange}
+                                    placeholder="0.00"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    keyboardType="decimal-pad"
+                                />
+                            </View>
                         </View>
-
-                        {/* Stock Count */}
-                        <Text style={styles.stockText}>In Stock: {stock}</Text>
+                        <View style={styles.inputWrapper}>
+                            <Text style={styles.inputLabel}>Stock</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={editableStock}
+                                onChangeText={handleStockChange}
+                                placeholder="0"
+                                placeholderTextColor={COLORS.textSecondary}
+                                keyboardType="numeric"
+                            />
+                        </View>
                     </View>
-                </View>
 
-                {/* Edit Button Section */}
-                <View style={styles.buttonSection}>
-                    <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-                        <EditIcon width={16} height={16} color={COLORS.black} />
-                        <Text style={styles.editButtonText}>Edit</Text>
-                    </TouchableOpacity>
+                    {/* Save Button - Only show when there are changes */}
+                    {hasChanges && (
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <Text style={styles.saveButtonText}>Save</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
         </View>
@@ -103,7 +177,7 @@ const styles = StyleSheet.create({
         padding: 8,
         gap: 8,
         width: '100%',
-        height: 276,
+        height: 'auto', // Changed to auto to accommodate dynamic save button
         backgroundColor: COLORS.white,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -143,6 +217,31 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: 4,
     },
+    statusToggleButton: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    editIconButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 28,
+        height: 28,
+        backgroundColor: COLORS.white,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 3,
+    },
     priceText: {
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -155,16 +254,9 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         alignItems: 'flex-start',
         padding: 0,
-        gap: 16,
-        width: '100%',
-        flex: 1,
-    },
-    titleSection: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: 0,
         gap: 8,
         width: '100%',
+        flex: 1,
     },
     productName: {
         width: '100%',
@@ -172,79 +264,100 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '600',
         fontSize: 16,
-        lineHeight: 16,
+        lineHeight: 20,
         color: COLORS.black,
     },
-    statusRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 0,
-        gap: 8,
+    inputsSection: {
         width: '100%',
+        flexDirection: 'column',
+        gap: 8,
     },
-    statusBadge: {
+    priceStockRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        padding: 4,
-        paddingHorizontal: 8,
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        width: '100%',
+        gap: 8,
+    },
+    inputWrapper: {
+        flex: 1,
+        flexDirection: 'column',
         gap: 4,
-        backgroundColor: COLORS.primaryLight,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        borderRadius: 80,
     },
-    statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-    },
-    statusDotActive: {
-        backgroundColor: COLORS.primary,
-    },
-    statusDotInactive: {
-        backgroundColor: COLORS.textSecondary,
-    },
-    statusText: {
+    inputLabel: {
         fontFamily: 'Inter',
         fontStyle: 'normal',
-        fontWeight: '400',
-        fontSize: 12,
-        lineHeight: 14,
+        fontWeight: '500',
+        fontSize: 10,
+        lineHeight: 12,
+        color: COLORS.textSecondary,
+    },
+    input: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 16,
         color: COLORS.black,
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 6,
+    },
+    priceInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 6,
+        paddingHorizontal: 8,
+    },
+    currencySymbol: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 16,
+        color: COLORS.textSecondary,
+        marginRight: 4,
+    },
+    priceInput: {
+        flex: 1,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 16,
+        color: COLORS.black,
+        paddingVertical: 6,
+    },
+    saveButton: {
+        width: '100%',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: COLORS.primary,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 4,
+    },
+    saveButtonText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 16,
+        color: COLORS.white,
     },
     stockText: {
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
-        fontSize: 14,
-        lineHeight: 17,
-        color: COLORS.black,
-    },
-    buttonSection: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: 0,
-        width: '100%',
-    },
-    editButton: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 12,
-        gap: 8,
-        width: '100%',
-        height: 40,
-        backgroundColor: COLORS.white,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        borderRadius: 8,
-    },
-    editButtonText: {
-        fontFamily: 'Inter',
-        fontStyle: 'normal',
-        fontWeight: '400',
-        fontSize: 16,
-        lineHeight: 16,
-        color: COLORS.black,
+        fontSize: 12,
+        lineHeight: 14,
+        color: COLORS.textSecondary,
     },
 });

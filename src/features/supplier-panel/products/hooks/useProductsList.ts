@@ -16,6 +16,7 @@ export const useProductsList = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [hasMore, setHasMore] = useState<boolean>(true);
+    const [refreshKey, setRefreshKey] = useState<number>(0);
 
     // Use refs to track loading state to prevent duplicate requests
     const isLoadingRef = useRef(false);
@@ -89,12 +90,33 @@ export const useProductsList = () => {
     }, [isLoadingMore, hasMore, loading, currentPage, loadProducts]);
 
     const refresh = useCallback(() => {
+        setRefreshKey(prev => prev + 1);
         loadProducts(1, true, true);
     }, [loadProducts]);
 
     const reloadWithLoading = useCallback(() => {
         loadProducts(1, true, false);
     }, [loadProducts]);
+
+    const updateProductStatus = useCallback(async (productId: number, newStatus: 'active' | 'inactive') => {
+        // Optimistically update the UI
+        const previousProducts = [...products];
+        setProducts((prev) =>
+            prev.map((product) =>
+                product.id === productId ? { ...product, status: newStatus } : product
+            )
+        );
+
+        try {
+            await productsApi.updateProductStatus(productId, newStatus);
+            return { success: true };
+        } catch (error) {
+            // Revert on error
+            setProducts(previousProducts);
+            console.error('Error updating product status:', error);
+            return { success: false, error };
+        }
+    }, [products]);
 
     return {
         products,
@@ -106,5 +128,7 @@ export const useProductsList = () => {
         loadMore,
         refresh,
         reloadWithLoading,
+        updateProductStatus,
+        refreshKey,
     };
 };

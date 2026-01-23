@@ -25,4 +25,20 @@ export const productsApi = {
             throw error;
         }
     },
+
+    /**
+     * Update product status
+     * @param productId - Product ID
+     * @param status - New status (active/inactive)
+     * @returns Promise<void>
+     */
+    async updateProductStatus(productId: number, status: 'active' | 'inactive'): Promise<void> {
+        try {
+            const endpoint = API_ENDPOINTS.SUPPLIER_PRODUCT_UPDATE.replace(':id', productId.toString());
+            await restApiClient.put(endpoint, { status });
+        } catch (error) {
+            console.error('Error updating product status:', error);
+            throw error;
+        }
+    },
 };

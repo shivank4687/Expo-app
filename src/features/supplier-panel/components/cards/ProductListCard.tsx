@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { COLORS } from '../../styles/colors';
 import { EditIcon } from '@/assets/icons';
 import { ProductImage } from '@/shared/components/LazyImage';
+import { ToggleSlider } from '@/shared/components/ToggleSlider';
 
 export interface ProductListCardProps {
     id: number;
@@ -14,6 +15,7 @@ export interface ProductListCardProps {
     stock: number;
     imageUrl?: string | null;
     onEdit?: () => void;
+    onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
 }
 
 export const ProductListCard: React.FC<ProductListCardProps> = ({
@@ -24,6 +26,7 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
     stock,
     imageUrl,
     onEdit,
+    onToggleStatus,
 }) => {
     const router = useRouter();
 
@@ -48,6 +51,16 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
                     recyclingKey={id?.toString()}
                     priority="low"
                 />
+                {/* Status Toggle Slider - Bottom Right */}
+                {onToggleStatus && (
+                    <View style={styles.statusToggleButton}>
+                        <ToggleSlider
+                            isActive={status === 'active'}
+                            onToggle={() => onToggleStatus(id, status)}
+                            size={24}
+                        />
+                    </View>
+                )}
             </View>
 
             {/* Product Info */}
@@ -112,6 +125,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#F3F4F6',
         borderRadius: 8,
         overflow: 'hidden',
+        position: 'relative',
+    },
+    statusToggleButton: {
+        position: 'absolute',
+        bottom: 4,
+        right: 4,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     productImage: {
         width: '100%',

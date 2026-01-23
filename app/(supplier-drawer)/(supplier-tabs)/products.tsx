@@ -8,6 +8,7 @@ import { ListIcon, GridIcon } from '@/assets/icons';
 import { ProductCard, ProductListCard } from '@/features/supplier-panel/components';
 import { useProductsList } from '@/features/supplier-panel/products/hooks/useProductsList';
 import type { Product } from '@/features/supplier-panel/products/types/products.types';
+import { useToast } from '@/shared/components/Toast';
 
 type ViewMode = 'list' | 'grid';
 
@@ -16,9 +17,10 @@ export default function ProductsScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid'); // Default to grid
   const router = useRouter();
   const isFirstFocus = useRef(true);
+  const { showToast } = useToast();
 
   // Fetch products from API with infinite scroll
-  const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading } = useProductsList();
+  const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading, updateProductStatus, refreshKey } = useProductsList();
 
   // Reload products when screen comes into focus (after adding/editing products)
   // Skip the first focus to avoid double-loading on initial mount
@@ -32,6 +34,26 @@ export default function ProductsScreen() {
       reloadWithLoading();
     }, [reloadWithLoading])
   );
+
+  // Handle product status toggle
+  const handleToggleStatus = async (productId: number, currentStatus: 'active' | 'inactive') => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const result = await updateProductStatus(productId, newStatus);
+
+    if (result.success) {
+      showToast({
+        type: 'success',
+        message: `Product ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`,
+        duration: 3000,
+      });
+    } else {
+      showToast({
+        type: 'error',
+        message: 'Failed to update product status',
+        duration: 3000,
+      });
+    }
+  };
 
   if (!isAuthenticated || !supplier) {
     return (
@@ -166,6 +188,7 @@ export default function ProductsScreen() {
               return (
                 <View style={styles.productItem}>
                   <ProductCard
+                    key={`${item.id}-${refreshKey}`}
                     id={item.id}
                     name={item.name}
                     price={item.formatted_price}
@@ -173,6 +196,7 @@ export default function ProductsScreen() {
                     stock={item.stock}
                     imageUrl={item.image_url}
                     onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
+                    onToggleStatus={handleToggleStatus}
                   />
                 </View>
               );
@@ -186,6 +210,7 @@ export default function ProductsScreen() {
                   stock={item.stock}
                   imageUrl={item.image_url}
                   onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
+                  onToggleStatus={handleToggleStatus}
                 />
               );
             }
