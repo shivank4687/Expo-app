@@ -104,7 +104,6 @@ export const handlePublish = async (
         ...priceStockData,
         ...detailsData,
     };
-
     // Validate required fields in both cards
     const isEssentialValid = refs.essentialCardRef.current?.validate();
     const isPriceStockValid = activeTab === 'simple'

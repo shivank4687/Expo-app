@@ -216,29 +216,27 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 // Check if variant.id is a database ID (numeric string like "265") vs timestamp (13+ digits)
                 const isExistingVariant = variant.id && variant.id.length < 13;
                 const variantKey = isExistingVariant ? variant.id : `variant_${index}`;
-
+                const sizeAttributes = isSizeVariant ? {
+                    length: variant.length,
+                    width: variant.width,
+                    height: variant.height,
+                    weight: variant.weight,
+                } : {
+                    length: masterLength,
+                    width: masterWidth,
+                    height: masterHeight,
+                    weight: masterWeight,
+                };
                 formattedVariants[variantKey] = {
                     sku: generatedSku,
                     name: generatedName,
                     price: variant.price || '',
-                    weight: variant.weight || '0',
                     status: 1,
                     ...variantAttributeValues, // Add color: 48, size: 6, etc.
                     inventories: variant.stock ? { 1: variant.stock } : {},
                     // If size is a variant attribute, use variant-specific dimensions
                     // Otherwise, use master product dimensions
-                    ...(isSizeVariant ? {
-                        // Size variant: use variant-specific values
-                        ...(variant.length && { length: variant.length }),
-                        ...(variant.width && { width: variant.width }),
-                        ...(variant.height && { height: variant.height }),
-                    } : {
-                        // Not a size variant: use master product values
-                        ...(masterLength && { length: masterLength }),
-                        ...(masterWidth && { width: masterWidth }),
-                        ...(masterHeight && { height: masterHeight }),
-                        ...(masterWeight && { weight: masterWeight }),
-                    }),
+                    ...sizeAttributes,
                     // Send all variant images to the API
                     // Map image objects to include uri and id for the API
                     ...(variant.images && variant.images.length > 0 && {
