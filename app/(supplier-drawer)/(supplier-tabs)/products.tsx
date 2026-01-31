@@ -9,18 +9,20 @@ import { ProductCard, ProductListCard } from '@/features/supplier-panel/componen
 import { useProductsList } from '@/features/supplier-panel/products/hooks/useProductsList';
 import type { Product } from '@/features/supplier-panel/products/types/products.types';
 import { useToast } from '@/shared/components/Toast';
+import { productsApi } from '@/services/api/products.api';
 
 type ViewMode = 'list' | 'grid';
 
 export default function ProductsScreen() {
   const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
   const [viewMode, setViewMode] = useState<ViewMode>('grid'); // Default to grid
+  const [duplicatingProductId, setDuplicatingProductId] = useState<number | null>(null);
   const router = useRouter();
   const isFirstFocus = useRef(true);
   const { showToast } = useToast();
 
   // Fetch products from API with infinite scroll
-  const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading, updateProductStatus, refreshKey } = useProductsList();
+  const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading, quickUpdateProduct, refreshKey } = useProductsList();
 
   // Reload products when screen comes into focus (after adding/editing products)
   // Skip the first focus to avoid double-loading on initial mount
@@ -38,7 +40,7 @@ export default function ProductsScreen() {
   // Handle product status toggle
   const handleToggleStatus = async (productId: number, currentStatus: 'active' | 'inactive') => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    const result = await updateProductStatus(productId, newStatus);
+    const result = await quickUpdateProduct(productId, { status: newStatus });
 
     if (result.success) {
       showToast({
@@ -50,6 +52,72 @@ export default function ProductsScreen() {
       showToast({
         type: 'error',
         message: 'Failed to update product status',
+        duration: 3000,
+      });
+    }
+  };
+
+  // Handle product duplication
+  const handleDuplicate = async (productId: number) => {
+    try {
+      setDuplicatingProductId(productId);
+      showToast({
+        type: 'info',
+        message: 'Duplicating product...',
+        duration: 2000,
+      });
+
+      const result = await productsApi.duplicateSupplierProduct(productId);
+
+      showToast({
+        type: 'success',
+        message: 'Product duplicated successfully',
+        duration: 3000,
+      });
+
+      // Navigate to edit screen with the new product
+      router.push(`/(supplier-drawer)/edit-product?id=${result.marketplace_product_id}`);
+    } catch (error: any) {
+      console.error('Error duplicating product:', error);
+
+      // Extract error message from various possible locations
+      let errorMessage = 'Failed to duplicate product';
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showToast({
+        type: 'error',
+        message: errorMessage,
+        duration: 4000,
+      });
+    } finally {
+      setDuplicatingProductId(null);
+    }
+  };
+
+  // Handle quick updates (price and stock) from ProductCard
+  const handleQuickUpdate = async (id: number, price: string, stock: number) => {
+    const result = await quickUpdateProduct(id, {
+      price: parseFloat(price),
+      stock: stock,
+    });
+
+    if (result.success) {
+      showToast({
+        type: 'success',
+        message: 'Product updated successfully',
+        duration: 3000,
+      });
+    } else {
+      showToast({
+        type: 'error',
+        message: 'Failed to update product',
         duration: 3000,
       });
     }
@@ -197,6 +265,8 @@ export default function ProductsScreen() {
                     imageUrl={item.image_url}
                     onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
                     onToggleStatus={handleToggleStatus}
+                    onSave={handleQuickUpdate}
+                    onDuplicate={handleDuplicate}
                   />
                 </View>
               );
@@ -211,6 +281,7 @@ export default function ProductsScreen() {
                   imageUrl={item.image_url}
                   onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
                   onToggleStatus={handleToggleStatus}
+                  onDuplicate={handleDuplicate}
                 />
               );
             }

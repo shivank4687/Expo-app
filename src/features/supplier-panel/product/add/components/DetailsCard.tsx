@@ -46,16 +46,32 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
             manufacturing_value: selectedFeatures,
         }),
         updateFields: (data) => {
-            if (data.features !== undefined) {
-                const featureIds = Array.isArray(data.features)
-                    ? data.features.map((f: any) => f.toString())
-                    : [data.features.toString()];
+            if (data.manufacturing_value !== undefined && data.manufacturing_value !== null && data.manufacturing_value !== '') {
+                // Handle multiple formats: array, comma-separated string, or single value
+                let featureIds: string[] = [];
+
+                if (Array.isArray(data.manufacturing_value)) {
+                    featureIds = data.manufacturing_value.map((f: any) => f.toString());
+                } else if (typeof data.manufacturing_value === 'string' && data.manufacturing_value.includes(',')) {
+                    featureIds = data.manufacturing_value.split(',').map((f: string) => f.trim()).filter((f: string) => f);
+                } else if (data.manufacturing_value) {
+                    featureIds = [data.manufacturing_value.toString()];
+                }
+
                 setSelectedFeatures(featureIds);
             }
-            if (data.manufacturing_origin !== undefined) {
-                const originIds = Array.isArray(data.manufacturing_origin)
-                    ? data.manufacturing_origin.map((o: any) => o.toString())
-                    : [data.manufacturing_origin.toString()];
+            if (data.manufacturing_origin !== undefined && data.manufacturing_origin !== null && data.manufacturing_origin !== '') {
+                // Handle multiple formats: array, comma-separated string, or single value
+                let originIds: string[] = [];
+
+                if (Array.isArray(data.manufacturing_origin)) {
+                    originIds = data.manufacturing_origin.map((o: any) => o.toString());
+                } else if (typeof data.manufacturing_origin === 'string' && data.manufacturing_origin.includes(',')) {
+                    originIds = data.manufacturing_origin.split(',').map((o: string) => o.trim()).filter((o: string) => o);
+                } else if (data.manufacturing_origin) {
+                    originIds = [data.manufacturing_origin.toString()];
+                }
+
                 setSelectedOrigins(originIds);
             }
         }

@@ -27,17 +27,24 @@ export const productsApi = {
     },
 
     /**
-     * Update product status
+     * Quick update product (status, price, stock)
      * @param productId - Product ID
-     * @param status - New status (active/inactive)
+     * @param updates - Fields to update (status, price, stock)
      * @returns Promise<void>
      */
-    async updateProductStatus(productId: number, status: 'active' | 'inactive'): Promise<void> {
+    async quickUpdateProduct(
+        productId: number,
+        updates: {
+            status?: 'active' | 'inactive';
+            price?: number;
+            stock?: number;
+        }
+    ): Promise<void> {
         try {
-            const endpoint = API_ENDPOINTS.SUPPLIER_PRODUCT_UPDATE.replace(':id', productId.toString());
-            await restApiClient.put(endpoint, { status });
+            const endpoint = API_ENDPOINTS.SUPPLIER_PRODUCT_QUICK_UPDATE.replace(':id', productId.toString());
+            await restApiClient.patch(endpoint, updates);
         } catch (error) {
-            console.error('Error updating product status:', error);
+            console.error('Error quick updating product:', error);
             throw error;
         }
     },

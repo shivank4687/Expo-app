@@ -98,22 +98,39 @@ export const useProductsList = () => {
         loadProducts(1, true, false);
     }, [loadProducts]);
 
-    const updateProductStatus = useCallback(async (productId: number, newStatus: 'active' | 'inactive') => {
+    const quickUpdateProduct = useCallback(async (
+        productId: number,
+        updates: {
+            status?: 'active' | 'inactive';
+            price?: number;
+            stock?: number;
+        }
+    ) => {
         // Optimistically update the UI
         const previousProducts = [...products];
         setProducts((prev) =>
             prev.map((product) =>
-                product.id === productId ? { ...product, status: newStatus } : product
+                product.id === productId
+                    ? {
+                        ...product,
+                        ...(updates.status !== undefined && { status: updates.status }),
+                        ...(updates.price !== undefined && {
+                            price: updates.price,
+                            formatted_price: `$${updates.price.toFixed(2)}`
+                        }),
+                        ...(updates.stock !== undefined && { stock: updates.stock }),
+                    }
+                    : product
             )
         );
 
         try {
-            await productsApi.updateProductStatus(productId, newStatus);
+            await productsApi.quickUpdateProduct(productId, updates);
             return { success: true };
         } catch (error) {
             // Revert on error
             setProducts(previousProducts);
-            console.error('Error updating product status:', error);
+            console.error('Error quick updating product:', error);
             return { success: false, error };
         }
     }, [products]);
@@ -128,7 +145,7 @@ export const useProductsList = () => {
         loadMore,
         refresh,
         reloadWithLoading,
-        updateProductStatus,
+        quickUpdateProduct,
         refreshKey,
     };
 };

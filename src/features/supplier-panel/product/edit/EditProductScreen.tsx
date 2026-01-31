@@ -77,10 +77,14 @@ export default function EditProductScreen() {
                             description: product.description || '',
                             short_description: product.short_description || '',
                             weight: product.weight?.toString() || '',
+                            length: product.length?.toString() || '',
+                            width: product.width?.toString() || '',
+                            height: product.height?.toString() || '',
                             material_type: product.material_type || '',
                             manufacturing_origin: product.manufacturing_origin || '',
                             images: product.images || [],
                             video: product.videos?.[0] || null,
+                            categories: product.categories || [],
                         });
                     }
 
@@ -150,8 +154,8 @@ export default function EditProductScreen() {
 
                     if (detailsCardRef.current) {
                         detailsCardRef.current.updateFields({
-                            features: product.features || '',
-                            categories: product.categories || [],
+                            manufacturing_value: product.manufacturing_value || '',
+                            manufacturing_origin: product.manufacturing_origin || '',
                             meta_title: product.meta_title || '',
                             meta_keywords: product.meta_keywords || '',
                             meta_description: product.meta_description || '',
@@ -164,6 +168,7 @@ export default function EditProductScreen() {
                             featured: product.featured || false,
                             guest_checkout: product.guest_checkout || false,
                             visible_individually: product.visible_individually !== false,
+                            status: product.status || false,
                         });
                     }
                 }, 100);

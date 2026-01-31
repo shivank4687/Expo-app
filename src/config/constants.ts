@@ -96,6 +96,8 @@ export const API_ENDPOINTS = {
     SUPPLIER_PRODUCTS_LIST: '/supplier-app/products',
     SUPPLIER_PRODUCT_DETAIL: '/supplier-app/products/:id',
     SUPPLIER_PRODUCT_UPDATE: '/supplier-app/products/:id',
+    SUPPLIER_PRODUCT_QUICK_UPDATE: '/supplier-app/products/:id/quick-update',
+    SUPPLIER_PRODUCT_COPY: '/supplier-app/products/:id/copy',
     SUPPLIER_PRODUCT_ATTRIBUTES: '/supplier-app/products/attributes',
     SUPPLIER_PRODUCT_CATEGORIES: '/supplier-app/products/categories',
     SUPPLIER_CHECK_SKU: '/supplier-app/products/check-sku',

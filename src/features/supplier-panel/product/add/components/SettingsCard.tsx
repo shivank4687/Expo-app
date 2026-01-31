@@ -19,10 +19,11 @@ const SettingsCard = forwardRef<SettingsCardRef, {}>((props, ref) => {
     const [isFeatured, setIsFeatured] = useState(true);
     const [allowGuestCheckout, setAllowGuestCheckout] = useState(true);
     const [visibleIndividually, setVisibleIndividually] = useState(true);
+    const [status, setStatus] = useState(false);
 
     useImperativeHandle(ref, () => ({
         getData: () => ({
-            status: 0, // Always published when using this form
+            status: status ? 1 : 0,
             new: isNewProduct ? 1 : 0,
             featured: isFeatured ? 1 : 0,
             guest_checkout: allowGuestCheckout ? 1 : 0,
@@ -33,6 +34,7 @@ const SettingsCard = forwardRef<SettingsCardRef, {}>((props, ref) => {
             if (data.featured !== undefined) setIsFeatured(!!data.featured);
             if (data.guest_checkout !== undefined) setAllowGuestCheckout(!!data.guest_checkout);
             if (data.visible_individually !== undefined) setVisibleIndividually(!!data.visible_individually);
+            if (data.status !== undefined) setStatus(!!data.status);
         }
     }));
 

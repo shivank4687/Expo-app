@@ -16,6 +16,7 @@ export interface ProductListCardProps {
     imageUrl?: string | null;
     onEdit?: () => void;
     onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
+    onDuplicate?: (productId: number) => void;
 }
 
 export const ProductListCard: React.FC<ProductListCardProps> = ({
@@ -27,6 +28,7 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
     imageUrl,
     onEdit,
     onToggleStatus,
+    onDuplicate,
 }) => {
     const router = useRouter();
 
@@ -93,11 +95,27 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
                         <Text style={styles.stockText}>Stock: {stock}</Text>
                     </View>
 
-                    {/* Edit Button */}
-                    <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-                        <EditIcon width={14} height={14} color={COLORS.black} />
-                        <Text style={styles.editButtonText}>Edit</Text>
-                    </TouchableOpacity>
+                    {/* Action Buttons */}
+                    <View style={styles.actionButtons}>
+                        {/* Duplicate Button */}
+                        {onDuplicate && (
+                            <TouchableOpacity
+                                style={styles.duplicateButton}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    onDuplicate(id);
+                                }}
+                            >
+                                <Ionicons name="copy-outline" size={14} color={COLORS.black} />
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Edit Button */}
+                        <TouchableOpacity style={styles.editButton} onPress={onEdit}>
+                            <EditIcon width={14} height={14} color={COLORS.black} />
+                            <Text style={styles.editButtonText}>Edit</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </TouchableOpacity>
@@ -210,6 +228,21 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 14,
         color: COLORS.black,
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center',
+    },
+    duplicateButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 8,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderRadius: 6,
     },
     editButton: {
         flexDirection: 'row',

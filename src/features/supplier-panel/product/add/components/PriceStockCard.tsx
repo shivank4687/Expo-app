@@ -27,6 +27,7 @@ import { ProductAttribute } from '../api/product-attributes.api';
 interface PriceTier {
     id: string; // UI ID for React key
     dbId?: number; // Database ID for existing prices
+    customer_group_id?: number;
     qty: string;
     price: string;
 }
@@ -238,7 +239,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 // Use existing database ID if available, otherwise use price_* prefix for new tiers
                 const key = tier.dbId ? tier.dbId.toString() : `price_${index}`;
                 customerGroupPrices[key] = {
-                    customer_group_id: '', // Empty = applies to all customer groups
+                    customer_group_id: tier.customer_group_id || '', // Empty = applies to all customer groups
                     qty: tier.qty,
                     value_type: 'fixed',
                     value: tier.price
@@ -308,7 +309,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 setOriginalSku(data.sku);
             }
             if (data.in_order_qty !== undefined) setFormData(prev => ({ ...prev, inOrOrderQty: data.in_order_qty }));
-            if (data.in_order_qty_type !== undefined) setFormData(prev => ({ ...prev, inOrderQtyUnit: data.in_order_qty_type }));
+            if (data.in_order_qty_type !== undefined) setFormData(prev => ({ ...prev, inOrderQtyUnit: data.in_order_qty_type?.toString() || '' }));
             if (data.made_to_order_qty !== undefined) setFormData(prev => ({ ...prev, madeToOrderQuantity: data.made_to_order_qty }));
             if (data.made_to_order_days !== undefined) setFormData(prev => ({ ...prev, productionTime: data.made_to_order_days }));
             if (data.immediate_shipping !== undefined) setFormData(prev => ({ ...prev, immediateShipping: !!data.immediate_shipping }));
@@ -318,6 +319,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 const tiers: PriceTier[] = data.price_tiers.map((tier: any, index: number) => ({
                     id: (index + 1).toString(), // UI ID for React
                     dbId: tier.id, // Preserve database ID
+                    customer_group_id: tier.customer_group_id,
                     qty: tier.qty?.toString() || '',
                     price: tier.value?.toString() || ''
                 }));
@@ -584,26 +586,29 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 </View>
 
                 {/* Tier Rows */}
-                {priceTiers.map((tier, index) => (
-                    <View key={tier.id} style={styles.tierContainer}>
+                {priceTiers.map((tier, index) => {
+                    const disabledInput = !(tier.customer_group_id == undefined || tier.customer_group_id == null);
+                    return (<View key={tier.id} style={styles.tierContainer}>
                         <View style={styles.tierRow}>
                             <TextInput
-                                style={[styles.tierInput, tierErrors[tier.id]?.qty && styles.inputError]}
+                                style={[styles.tierInput, disabledInput && styles.disabledInput, tierErrors[tier.id]?.qty && styles.inputError]}
                                 placeholder="Quantity"
                                 placeholderTextColor="#666666"
                                 value={tier.qty}
                                 onChangeText={(val) => updateTier(tier.id, 'qty', filterNumericInput(val))}
                                 keyboardType="decimal-pad"
+                                editable={!disabledInput}
                             />
                             <TextInput
-                                style={[styles.tierInput, tierErrors[tier.id]?.price && styles.inputError]}
+                                style={[styles.tierInput, disabledInput && styles.disabledInput, tierErrors[tier.id]?.price && styles.inputError]}
                                 placeholder="Unit Price Wholesale"
                                 placeholderTextColor="#666666"
                                 value={tier.price}
                                 onChangeText={(val) => updateTier(tier.id, 'price', filterNumericInput(val))}
                                 keyboardType="decimal-pad"
+                                editable={!disabledInput}
                             />
-                            {priceTiers.length > 1 && (
+                            {priceTiers.length > 1 && !disabledInput && (
                                 <TouchableOpacity
                                     style={styles.removeTierButton}
                                     onPress={() => removeTier(tier.id)}
@@ -612,8 +617,8 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                                 </TouchableOpacity>
                             )}
                         </View>
-                    </View>
-                ))}
+                    </View>)
+                })}
 
                 {generalTierError && (
                     <Text style={styles.errorText}>{generalTierError}</Text>
@@ -921,5 +926,8 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 18,
         color: '#FFFFFF',
+    },
+    disabledInput: {
+        opacity: 1,
     },
 });

@@ -54,10 +54,14 @@ export interface EssentialCardRef {
         description?: string;
         short_description?: string;
         weight?: string;
+        length?: string;
+        width?: string;
+        height?: string;
         material_type?: any;
         manufacturing_origin?: any;
         images?: any[];
         video?: any | null;
+        categories?: number[];
     }) => void;
 }
 
@@ -128,6 +132,9 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     const [subcategoryId, setSubcategoryId] = useState('');
     const [subSubcategoryId, setSubSubcategoryId] = useState('');
 
+    // Pending category IDs to apply once categories are loaded
+    const [pendingCategoryIds, setPendingCategoryIds] = useState<string[]>([]);
+
     // Fetch root categories on mount
     useEffect(() => {
         const fetchCategories = async () => {
@@ -140,6 +147,36 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
         };
         fetchCategories();
     }, []);
+
+    // Apply pending category selections once categories are loaded
+    useEffect(() => {
+        if (categories.length > 0 && pendingCategoryIds.length > 0) {
+            const [parentId, subId, subSubId] = pendingCategoryIds;
+
+            if (parentId) {
+                setCategoryId(parentId);
+                const selectedCat = categories.find(c => c.id.toString() === parentId);
+                if (selectedCat && selectedCat.children) {
+                    setSubcategories(selectedCat.children);
+
+                    if (subId) {
+                        setSubcategoryId(subId);
+                        const selectedSub = selectedCat.children.find(c => c.id.toString() === subId);
+                        if (selectedSub && selectedSub.children) {
+                            setSubSubcategories(selectedSub.children);
+
+                            if (subSubId) {
+                                setSubSubcategoryId(subSubId);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Clear pending IDs after applying
+            setPendingCategoryIds([]);
+        }
+    }, [categories, pendingCategoryIds]);
 
     const handleCategorySelect = (id: string) => {
         setCategoryId(id);
@@ -228,12 +265,38 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 setWeight(data.weight);
                 clearError('weight');
             }
-            if (data.material_type !== undefined) {
-                // Handle both array of IDs and single ID
-                const materialIds = Array.isArray(data.material_type)
-                    ? data.material_type.map((m: any) => m.toString())
-                    : [data.material_type.toString()];
+            if (data.length !== undefined) {
+                setLength(data.length);
+            }
+            if (data.width !== undefined) {
+                setWidth(data.width);
+            }
+            if (data.height !== undefined) {
+                setHeight(data.height);
+            }
+            if (data.material_type !== undefined && data.material_type !== null && data.material_type !== '') {
+                // Handle multiple formats: array, comma-separated string, or single value
+                let materialIds: string[] = [];
+
+                if (Array.isArray(data.material_type)) {
+                    // Already an array
+                    materialIds = data.material_type.map((m: any) => m.toString());
+                } else if (typeof data.material_type === 'string' && data.material_type.includes(',')) {
+                    // Comma-separated string
+                    materialIds = data.material_type.split(',').map((m: string) => m.trim()).filter((m: string) => m);
+                } else if (data.material_type) {
+                    // Single value
+                    materialIds = [data.material_type.toString()];
+                }
+
                 setSelectedMaterials(materialIds);
+            }
+            if (data.categories !== undefined && Array.isArray(data.categories)) {
+                // Store category IDs to be applied once categories are loaded
+                if (data.categories.length > 0) {
+                    const categoryIds = data.categories.map((c: any) => c.toString());
+                    setPendingCategoryIds(categoryIds);
+                }
             }
             if (data.images !== undefined && Array.isArray(data.images)) {
                 // Convert image data to MediaFile format

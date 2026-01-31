@@ -72,6 +72,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     const [isAddingOption, setIsAddingOption] = useState(false);
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [targetAttributeId, setTargetAttributeId] = useState<string | null>(null);
+    const [applyToAll, setApplyToAll] = useState(false);
 
     // Stock and Order States
     const [immediateShipping, setImmediateShipping] = useState(true);
@@ -261,6 +262,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 made_to_order_days: productionTime,
                 discounts: discounts,
                 discount_type: discountType,
+                apply_to_all_variants: applyToAll ? 1 : 0,
             };
         },
         validate: () => {
@@ -363,11 +365,12 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             if (data.immediate_shipping !== undefined) setImmediateShipping(!!data.immediate_shipping);
             if (data.made_to_order !== undefined) setMadeToOrderEnabled(!!data.made_to_order);
             if (data.in_order_qty !== undefined) setInOrderQty(data.in_order_qty);
-            if (data.in_order_qty_type !== undefined) setInOrderQtyUnit(data.in_order_qty_type);
+            if (data.in_order_qty_type !== undefined) setInOrderQtyUnit(data.in_order_qty_type?.toString() || '');
             if (data.made_to_order_qty !== undefined) setMadeToOrderQty(data.made_to_order_qty);
             if (data.made_to_order_days !== undefined) setProductionTime(data.made_to_order_days);
             if (data.discounts !== undefined) setDiscounts(data.discounts);
             if (data.discount_type !== undefined) setDiscountType(data.discount_type);
+            if (data.apply_to_all_variants !== undefined) setApplyToAll(!!data.apply_to_all_variants);
 
             if (data.super_attributes && Array.isArray(data.super_attributes)) {
                 const variantAttrIds = data.super_attributes.map((attr: any) => attr.id.toString());
@@ -412,7 +415,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 setVariants(mappedVariants);
             }
         }
-    }), [sku, variants, selectedVariantAttributes, attributes, immediateShipping, inOrderQty, inOrderQtyUnit, madeToOrderEnabled, madeToOrderQty, productionTime, discounts, discountType, skuExists, originalSku]);
+    }), [sku, variants, selectedVariantAttributes, attributes, immediateShipping, inOrderQty, inOrderQtyUnit, madeToOrderEnabled, madeToOrderQty, productionTime, discounts, discountType, skuExists, originalSku, applyToAll]);
 
     // Reset variants when variant group changes
     useEffect(() => {
@@ -1110,8 +1113,19 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
 
             {/* Footer */}
             <View style={styles.footer}>
+                <TouchableOpacity
+                    style={styles.checkboxRow}
+                    onPress={() => setApplyToAll(!applyToAll)}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.checkbox}>
+                        {applyToAll && <View style={styles.checkboxChecked} />}
+                    </View>
+                    <Text style={styles.applyToAllText}>Apply to all variants</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.publishButton}>
-                    <Text style={styles.publishButtonText}>Apply Changes</Text>
+                    <Text style={styles.publishButtonText}>Save</Text>
                 </TouchableOpacity>
             </View>
 
@@ -1303,6 +1317,13 @@ const styles = StyleSheet.create({
     },
     footer: {
         marginTop: 16,
+        gap: 12,
+    },
+    applyToAllText: {
+        fontFamily: 'Inter',
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#000000',
     },
     publishButton: {
         flexDirection: 'row',

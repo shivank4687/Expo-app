@@ -391,6 +391,30 @@ export const productsApi = {
         );
         return response.exists;
     },
+
+    /**
+     * Duplicate a supplier product
+     * @param productId - The product ID to duplicate
+     * @returns The duplicated product's marketplace ID and details
+     */
+    async duplicateSupplierProduct(productId: number): Promise<{
+        marketplace_product_id: number;
+        product_id: number;
+        name: string;
+        sku: string;
+    }> {
+        const url = API_ENDPOINTS.SUPPLIER_PRODUCT_COPY.replace(':id', productId.toString());
+        const response = await restApiClient.post<{
+            data: {
+                marketplace_product_id: number;
+                product_id: number;
+                name: string;
+                sku: string;
+            };
+            message: string;
+        }>(url, {});
+        return response.data;
+    },
 };
 
 export default productsApi;

@@ -17,6 +17,7 @@ export interface ProductCardProps {
     onEdit?: () => void;
     onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
     onSave?: (id: number, price: string, stock: number) => void;
+    onDuplicate?: (productId: number) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -29,6 +30,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     onEdit,
     onToggleStatus,
     onSave,
+    onDuplicate,
 }) => {
     const router = useRouter();
 
@@ -101,6 +103,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                         activeOpacity={0.7}
                     >
                         <EditIcon width={16} height={16} color={COLORS.black} />
+                    </TouchableOpacity>
+                )}
+
+                {/* Duplicate Icon - Below Edit Icon */}
+                {onDuplicate && (
+                    <TouchableOpacity
+                        style={styles.duplicateIconButton}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            onDuplicate(id);
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="copy-outline" size={16} color={COLORS.black} />
                     </TouchableOpacity>
                 )}
 
@@ -229,6 +245,22 @@ const styles = StyleSheet.create({
     editIconButton: {
         position: 'absolute',
         top: 8,
+        right: 8,
+        width: 28,
+        height: 28,
+        backgroundColor: COLORS.white,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 3,
+    },
+    duplicateIconButton: {
+        position: 'absolute',
+        top: 44, // 8px (initial top) + 28px (edit button height) + 8px (gap)
         right: 8,
         width: 28,
         height: 28,
