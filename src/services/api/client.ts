@@ -101,6 +101,12 @@ class ApiClient {
                 // Currency is handled the same way for both
                 config.headers['X-Currency'] = currency;
 
+                // If the request data is FormData, remove Content-Type header
+                // Let axios set it automatically with the correct boundary
+                if (config.data instanceof FormData) {
+                    delete config.headers['Content-Type'];
+                }
+
                 return config;
             },
             (error) => {

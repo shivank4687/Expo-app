@@ -8,6 +8,7 @@ import {
     FlatList,
     TextInput,
     Platform,
+    KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
@@ -40,8 +41,8 @@ export const PickerModal: React.FC<PickerModalProps> = ({
 
     const filteredItems = searchable
         ? items.filter((item) =>
-              item.label.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+            item.label.toLowerCase().includes(searchQuery.toLowerCase())
+        )
         : items;
 
     const handleSelect = (value: string) => {
@@ -62,7 +63,15 @@ export const PickerModal: React.FC<PickerModalProps> = ({
             animationType="slide"
             onRequestClose={handleClose}
         >
-            <View style={styles.overlay}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.overlay}
+            >
+                <TouchableOpacity
+                    style={styles.overlayTouchable}
+                    activeOpacity={1}
+                    onPress={handleClose}
+                />
                 <View style={styles.modalContainer}>
                     {/* Header */}
                     <View style={styles.header}>
@@ -149,9 +158,10 @@ export const PickerModal: React.FC<PickerModalProps> = ({
                             </View>
                         )}
                         contentContainerStyle={styles.listContainer}
+                        keyboardShouldPersistTaps="handled"
                     />
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -161,6 +171,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
+    },
+    overlayTouchable: {
+        flex: 1,
     },
     modalContainer: {
         backgroundColor: theme.colors.white,

@@ -76,7 +76,7 @@ export const coreApi = {
             const defaultChannel = channels[0];
 
             // Use the channel's default locale and currency if available
-            const defaultLocale = defaultChannel?.default_locale 
+            const defaultLocale = defaultChannel?.default_locale
                 ? locales.find(l => l.id === defaultChannel.default_locale?.id) || locales[0]
                 : locales[0];
 
@@ -117,11 +117,21 @@ export const coreApi = {
     },
 
     /**
+     * Get all states
+     */
+    async getStates(): Promise<State[]> {
+        const response = await restApiClient.get<PaginatedResponse<State>>('/countries-states', {
+            params: { pagination: 0 },
+        });
+        return response.data || [];
+    },
+
+    /**
      * Get states by country code
      */
     async getStatesByCountry(countryCode: string): Promise<State[]> {
         const response = await restApiClient.get<PaginatedResponse<State>>('/countries-states', {
-            params: { 
+            params: {
                 pagination: 0,
                 country_code: countryCode,
             },

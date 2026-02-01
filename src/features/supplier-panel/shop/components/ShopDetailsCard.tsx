@@ -1,8 +1,58 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
-export const ShopDetailsCard = () => {
+interface ShopDetailsCardProps {
+    data: {
+        company_overview?: string;
+        logo?: string | null;
+        phone?: string;
+    };
+    onChange: (field: string, value: string | null) => void;
+}
+
+export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange }) => {
+    const pickImage = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Please allow access to your media library to upload a logo.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images',
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                onChange('logo', result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image. Please try again.');
+        }
+    };
+
+    const removeLogo = () => {
+        Alert.alert(
+            'Remove Logo',
+            'Are you sure you want to remove this logo?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: () => onChange('logo', null)
+                }
+            ]
+        );
+    };
+
     return (
         <View style={styles.container}>
             {/* Overview */}
@@ -11,10 +61,12 @@ export const ShopDetailsCard = () => {
                 <View style={styles.inputContainerLarge}>
                     <TextInput
                         style={styles.inputLarge}
-                        placeholder="Enter here..."
+                        placeholder="Overview"
                         placeholderTextColor="#666666"
                         multiline
                         textAlignVertical="top"
+                        value={data.company_overview}
+                        onChangeText={(val) => onChange('company_overview', val)}
                     />
                 </View>
                 <Text style={styles.tipText}>
@@ -22,42 +74,30 @@ export const ShopDetailsCard = () => {
                 </Text>
             </View>
 
-            {/* Country */}
-            <View style={styles.fieldContainerSmall}>
-                <Text style={styles.label}>Country</Text>
-                <View style={styles.inputContainerSmall}>
-                    <TextInput
-                        style={styles.inputSmall}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                    <Ionicons name="chevron-down" size={16} color="#666666" />
-                </View>
-            </View>
-
-            {/* City/Region */}
-            <View style={styles.fieldContainerSmall}>
-                <Text style={styles.label}>City/Region</Text>
-                <View style={styles.inputContainerSmall}>
-                    <TextInput
-                        style={styles.inputSmall}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                </View>
-            </View>
-
             {/* Logo (optional) */}
-            <View style={styles.fieldContainerSmall}>
+            <View style={styles.fieldContainerLogo}>
                 <Text style={styles.label}>Logo (optional)</Text>
-                <View style={styles.inputContainerSmall}>
-                    <Ionicons name="attach" size={16} color="#666666" />
-                    <TextInput
-                        style={styles.inputSmall}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                </View>
+                <TouchableOpacity
+                    style={styles.logoPreviewContainer}
+                    onPress={pickImage}
+                    activeOpacity={0.7}
+                >
+                    {data.logo ? (
+                        <>
+                            <Image source={{ uri: data.logo }} style={styles.logoImage} />
+                            <View style={styles.editIconOverlay}>
+                                <TouchableOpacity onPress={removeLogo} style={styles.removeButton}>
+                                    <Ionicons name="trash" size={14} color="#FFFFFF" />
+                                </TouchableOpacity>
+                                <Ionicons name="camera" size={16} color="#FFFFFF" />
+                            </View>
+                        </>
+                    ) : (
+                        <View style={styles.addLogoPlaceholder}>
+                            <Ionicons name="add" size={32} color="#666666" />
+                        </View>
+                    )}
+                </TouchableOpacity>
             </View>
 
             {/* WhatsApp (for customers) */}
@@ -68,6 +108,9 @@ export const ShopDetailsCard = () => {
                         style={styles.inputSmall}
                         placeholder="Enter here..."
                         placeholderTextColor="#666666"
+                        keyboardType="phone-pad"
+                        value={data.phone}
+                        onChangeText={(val) => onChange('phone', val)}
                     />
                 </View>
             </View>
@@ -101,6 +144,46 @@ const styles = StyleSheet.create({
         gap: 8,
         width: 329,
         height: 67,
+    },
+    fieldContainerLogo: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 8,
+        width: 329,
+    },
+    logoPreviewContainer: {
+        width: 100,
+        height: 100,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    logoImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    addLogoPlaceholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    editIconOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 4,
+        borderTopLeftRadius: 8,
+        flexDirection: 'row',
+        gap: 4,
+        alignItems: 'center',
+    },
+    removeButton: {
+        padding: 2,
     },
     label: {
         width: 329,

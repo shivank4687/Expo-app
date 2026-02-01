@@ -1,9 +1,56 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@/features/supplier-panel/styles';
+import * as ImagePicker from 'expo-image-picker';
 
-export const ShopMediaCard = () => {
+interface ShopMediaCardProps {
+    data: {
+        banner?: string | null;
+    };
+    onChange: (field: string, value: string | null) => void;
+}
+
+export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) => {
+    const pickBanner = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Please allow access to your media library to upload images.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images',
+                allowsEditing: true,
+                aspect: [16, 9],
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                onChange('banner', result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('Error picking banner:', error);
+            Alert.alert('Error', 'Failed to pick banner. Please try again.');
+        }
+    };
+
+    const removeBanner = () => {
+        Alert.alert(
+            'Remove Banner',
+            'Are you sure you want to remove this banner?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: () => onChange('banner', null)
+                }
+            ]
+        );
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Photos, Banner, and Videos</Text>
@@ -16,14 +63,30 @@ export const ShopMediaCard = () => {
                         <Text style={styles.badgeText}>Edit (app)</Text>
                     </View>
                 </View>
-                <View style={styles.inputContainer}>
-                    <Ionicons name="attach" size={16} color="#666666" />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                </View>
+
+                <TouchableOpacity
+                    style={styles.bannerPreviewContainer}
+                    onPress={pickBanner}
+                    activeOpacity={0.7}
+                >
+                    {data.banner ? (
+                        <>
+                            <Image source={{ uri: data.banner }} style={styles.bannerImage} />
+                            <View style={styles.editIconOverlay}>
+                                <TouchableOpacity onPress={removeBanner} style={styles.removeButton}>
+                                    <Ionicons name="trash" size={16} color="#FFFFFF" />
+                                </TouchableOpacity>
+                                <Ionicons name="camera" size={20} color="#FFFFFF" />
+                            </View>
+                        </>
+                    ) : (
+                        <View style={styles.addBannerPlaceholder}>
+                            <Ionicons name="add" size={40} color="#666666" />
+                            <Text style={styles.addBannerText}>Add Banner</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+
                 <Text style={styles.description}>
                     Recommended: Horizontal photo (workshop, stand, artisan at work).
                 </Text>
@@ -59,29 +122,6 @@ export const ShopMediaCard = () => {
                 </View>
             </View>
 
-            {/* Social Media */}
-            <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Social Media (Instagram / Facebook)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                </View>
-            </View>
-
-            {/* Shareable Link */}
-            <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Shareable Link</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                </View>
-            </View>
         </View>
     );
 };
@@ -113,15 +153,6 @@ const styles = StyleSheet.create({
         gap: 8,
         width: 329,
         position: 'relative',
-    },
-    fieldContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: 0,
-        gap: 8,
-        width: 329,
-        height: 67,
     },
     headerRow: {
         flexDirection: 'row',
@@ -185,6 +216,45 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
         color: '#666666',
+    },
+    bannerPreviewContainer: {
+        width: 329,
+        height: 180,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+        marginVertical: 8,
+    },
+    bannerImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    addBannerPlaceholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    addBannerText: {
+        fontFamily: 'Inter',
+        fontSize: 14,
+        color: '#666666',
+        marginTop: 8,
+    },
+    editIconOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 8,
+        borderTopLeftRadius: 12,
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center',
+    },
+    removeButton: {
+        padding: 2,
     },
     photoGrid: {
         flexDirection: 'row',
