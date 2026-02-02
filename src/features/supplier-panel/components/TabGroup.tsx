@@ -32,7 +32,12 @@ export const TabGroup: React.FC<TabGroupProps> = ({ tabs, activeTab, onTabChange
                         onPress={() => onTabChange(tab.id)}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.tabText}>{tab.label}</Text>
+                        <Text style={[
+                            styles.tabText,
+                            isActive && styles.tabTextActive,
+                        ]}>
+                            {tab.label}
+                        </Text>
                     </TouchableOpacity>
                 );
             })}
@@ -59,15 +64,18 @@ const styles = StyleSheet.create({
         height: 34,
     },
     tabActive: {
-        backgroundColor: COLORS.primaryLight,
+        backgroundColor: '#00615E',
         borderWidth: 1,
-        borderColor: COLORS.primary,
+        borderColor: '#00615E',
     },
     tabText: {
         fontFamily: 'Inter',
-        fontWeight: '400',
+        fontWeight: '500',
         fontSize: 14,
         lineHeight: 14,
         color: COLORS.black,
+    },
+    tabTextActive: {
+        color: '#FFFFFF',
     },
 });

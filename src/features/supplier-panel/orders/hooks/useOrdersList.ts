@@ -58,6 +58,8 @@ export const useOrdersList = (
 
     // Initial fetch when filter changes
     useEffect(() => {
+        // Clear orders immediately when filter changes to show loader
+        setOrders([]);
         setCurrentPage(1);
         fetchOrders(1, false);
     }, [filter, fetchOrders]);

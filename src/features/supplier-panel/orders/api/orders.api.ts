@@ -14,6 +14,7 @@ export interface Order {
     total_items: number;
     total_qty_ordered: number;
     first_product_image: string | null;
+    items?: Array<{ name: string; qty: number }> | OrderItem[];
     can_ship: boolean;
     can_invoice: boolean;
     can_cancel: boolean;
@@ -57,7 +58,7 @@ export interface OrderShipment {
     created_at: string;
 }
 
-export interface OrderDetails extends Order {
+export interface OrderDetails extends Omit<Order, 'items'> {
     items: OrderItem[];
     shipments: OrderShipment[];
 }

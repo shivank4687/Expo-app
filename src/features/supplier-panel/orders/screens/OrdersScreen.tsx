@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, FlatList, Text, ActivityIndicator, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
 import { COLORS } from '../../styles/colors';
 import { TabGroup, type Tab } from '../../components';
-import { OrdersHeader, OrderCard } from '../components';
+import { OrdersHeader, OrderCard, NewOrderCard } from '../components';
 import { useOrdersList } from '../hooks/useOrdersList';
 import { Order } from '../api/orders.api';
 
@@ -11,12 +12,13 @@ import { Order } from '../api/orders.api';
  * Displays orders with tabs for Pending, Shipped, and Issues
  */
 const OrdersScreen: React.FC = () => {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
 
     const tabs: Tab[] = [
-        { id: 'pending', label: 'Pending' },
+        { id: 'pending', label: 'New' },
         { id: 'shipped', label: 'Shipped' },
-        { id: 'issues', label: 'Issues' },
+        { id: 'issues', label: 'Dispute' },
     ];
 
     const { orders, loading, error, refetch, loadMore, hasMore } = useOrdersList(activeTab);
@@ -26,13 +28,35 @@ const OrdersScreen: React.FC = () => {
     };
 
     const handleOrderPress = (order: Order) => {
-        // TODO: Navigate to order details screen
-        console.log('Order pressed:', order.id);
+        // Navigate to order details screen
+        router.push('/(supplier-drawer)/order-details');
     };
 
-    const renderOrderCard = ({ item }: { item: Order }) => (
-        <OrderCard order={item} onPress={handleOrderPress} />
-    );
+    const handleAcceptOrder = (order: Order) => {
+        // Navigate to order details screen
+        router.push('/(supplier-drawer)/order-details');
+    };
+
+    const handleEditOrder = (order: Order) => {
+        // TODO: Implement edit order logic
+        console.log('Edit order:', order.id);
+    };
+
+    const renderOrderCard = ({ item }: { item: Order }) => {
+        // Use NewOrderCard for 'pending' (New) tab, regular OrderCard for others
+        if (activeTab === 'pending') {
+            return (
+                <NewOrderCard
+                    order={item}
+                    onPress={handleOrderPress}
+                    onAccept={handleAcceptOrder}
+                    onEdit={handleEditOrder}
+                />
+            );
+        }
+
+        return <OrderCard order={item} onPress={handleOrderPress} />;
+    };
 
     const renderEmptyState = () => {
         if (loading) {
@@ -49,15 +73,19 @@ const OrdersScreen: React.FC = () => {
     };
 
     const renderFooter = () => {
-        if (!hasMore || loading) {
+        if (loading && orders.length > 0) {
+            return (
+                <View style={styles.footer}>
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+            );
+        }
+
+        if (!hasMore) {
             return null;
         }
 
-        return (
-            <View style={styles.footer}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
-            </View>
-        );
+        return null;
     };
 
     return (
@@ -88,7 +116,7 @@ const OrdersScreen: React.FC = () => {
                     onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl
-                            refreshing={loading && orders.length > 0}
+                            refreshing={false}
                             onRefresh={refetch}
                             colors={[COLORS.primary]}
                             tintColor={COLORS.primary}
@@ -116,7 +144,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 16,
-        paddingTop: 16,
+        paddingTop: 0,
     },
     loadingContainer: {
         flex: 1,
