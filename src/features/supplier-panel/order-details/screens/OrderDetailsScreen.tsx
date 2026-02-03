@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-import { TrackingInfoCard } from '../components';
+import { TrackingInfoCard, OrderChatView } from '../components';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -14,7 +14,11 @@ interface Tab {
 
 export default function OrderDetailsScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const [activeTab, setActiveTab] = useState<TabType>('details');
+
+    // Get order ID from route params
+    const orderId = params.orderId ? parseInt(params.orderId as string) : 0;
 
     const tabs: Tab[] = [
         { id: 'details', label: 'Details' },
@@ -31,6 +35,10 @@ export default function OrderDetailsScreen() {
     const renderTabContent = () => {
         if (activeTab === 'tracking') {
             return <TrackingInfoCard onSubmit={handleTrackingSubmit} />;
+        }
+
+        if (activeTab === 'messages') {
+            return <OrderChatView supplierOrderId={orderId} />;
         }
 
         return (

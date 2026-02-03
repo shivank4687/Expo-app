@@ -28,13 +28,13 @@ const OrdersScreen: React.FC = () => {
     };
 
     const handleOrderPress = (order: Order) => {
-        // Navigate to order details screen
-        router.push('/(supplier-drawer)/order-details');
+        // Navigate to order details screen with order ID
+        router.push(`/(supplier-drawer)/order-details?orderId=${order.id}`);
     };
 
     const handleAcceptOrder = (order: Order) => {
-        // Navigate to order details screen
-        router.push('/(supplier-drawer)/order-details');
+        // Navigate to order details screen with order ID
+        router.push(`/(supplier-drawer)/order-details?orderId=${order.id}`);
     };
 
     const handleEditOrder = (order: Order) => {

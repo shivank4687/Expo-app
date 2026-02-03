@@ -471,9 +471,8 @@ export const SupplierShopScreen: React.FC = () => {
         return (
             <View style={styles.bannerContainer}>
                 <ProductImage
-                    uri={supplier.banner_url}
+                    imageUrl={supplier.banner_url}
                     style={styles.banner}
-                    contentFit="cover"
                 />
             </View>
         );
@@ -486,9 +485,8 @@ export const SupplierShopScreen: React.FC = () => {
             <View style={styles.supplierInfoContainer}>
                 <View style={styles.logoContainer}>
                     <ProductImage
-                        uri={supplier.logo_url || null}
+                        imageUrl={supplier.logo_url || undefined}
                         style={styles.logo}
-                        contentFit="cover"
                     />
                 </View>
                 <View style={styles.supplierDetails}>
@@ -585,6 +583,17 @@ export const SupplierShopScreen: React.FC = () => {
         );
     };
 
+    const renderHeader = () => {
+        return (
+            <>
+                {renderBanner()}
+                {renderSupplierInfo()}
+                {renderRFQButton()}
+                {renderTabs()}
+            </>
+        );
+    };
+
     const renderTabs = () => {
         if (!supplier) return null;
 
@@ -624,6 +633,7 @@ export const SupplierShopScreen: React.FC = () => {
                 keyExtractor={(item) => item.id.toString()}
                 columnWrapperStyle={styles.productRow}
                 contentContainerStyle={styles.productsContainer}
+                ListHeaderComponent={renderHeader()}
                 renderItem={({ item }) => (
                     <View style={styles.productItem}>
                         <ProductCard
@@ -667,61 +677,59 @@ export const SupplierShopScreen: React.FC = () => {
         const currentSection = sections.find(s => s.key === aboutSection) || sections[0];
 
         return (
-            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-                <View style={styles.aboutContainer}>
-                    {/* Section Selector - Similar to web app dropdown */}
-                    <View style={styles.aboutSelectorContainer}>
-                        <View style={styles.aboutSelector}>
-                            {sections.map((section) => (
-                                <TouchableOpacity
-                                    key={section.key}
+            <View style={styles.aboutContainer}>
+                {/* Section Selector - Similar to web app dropdown */}
+                <View style={styles.aboutSelectorContainer}>
+                    <View style={styles.aboutSelector}>
+                        {sections.map((section) => (
+                            <TouchableOpacity
+                                key={section.key}
+                                style={[
+                                    styles.aboutOption,
+                                    aboutSection === section.key && styles.aboutOptionActive,
+                                ]}
+                                onPress={() => setAboutSection(section.key as any)}
+                            >
+                                <Text
                                     style={[
-                                        styles.aboutOption,
-                                        aboutSection === section.key && styles.aboutOptionActive,
+                                        styles.aboutOptionText,
+                                        aboutSection === section.key && styles.aboutOptionTextActive,
                                     ]}
-                                    onPress={() => setAboutSection(section.key as any)}
                                 >
-                                    <Text
-                                        style={[
-                                            styles.aboutOptionText,
-                                            aboutSection === section.key && styles.aboutOptionTextActive,
-                                        ]}
-                                    >
-                                        {section.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* Content Section - Matching web app structure */}
-                    <View style={styles.aboutContent}>
-                        {currentSection && (
-                            <>
-                                {/* Section Heading */}
-                                <Text style={styles.aboutSectionHeading}>
-                                    {currentSection.label}
+                                    {section.label}
                                 </Text>
-
-                                {/* Section Content */}
-                                <View style={styles.aboutSectionContent}>
-                                    {currentSection.key === 'about-us' && currentSection.content ? (
-                                        <HTMLContent html={currentSection.content} />
-                                    ) : currentSection.content ? (
-                                        <Text style={styles.policyText}>{currentSection.content}</Text>
-                                    ) : (
-                                        <View style={styles.emptyState}>
-                                            <Text style={styles.emptyText}>
-                                                {t('supplier.noContent', 'No content available')}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </>
-                        )}
+                            </TouchableOpacity>
+                        ))}
                     </View>
                 </View>
-            </ScrollView>
+
+                {/* Content Section - Matching web app structure */}
+                <View style={styles.aboutContent}>
+                    {currentSection && (
+                        <>
+                            {/* Section Heading */}
+                            <Text style={styles.aboutSectionHeading}>
+                                {currentSection.label}
+                            </Text>
+
+                            {/* Section Content */}
+                            <View style={styles.aboutSectionContent}>
+                                {currentSection.key === 'about-us' && currentSection.content ? (
+                                    <HTMLContent html={currentSection.content} />
+                                ) : currentSection.content ? (
+                                    <Text style={styles.policyText}>{currentSection.content}</Text>
+                                ) : (
+                                    <View style={styles.emptyState}>
+                                        <Text style={styles.emptyText}>
+                                            {t('supplier.noContent', 'No content available')}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </>
+                    )}
+                </View>
+            </View>
         );
     };
 
@@ -756,96 +764,94 @@ export const SupplierShopScreen: React.FC = () => {
         if (!supplier) return null;
 
         return (
-            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-                <View style={styles.reviewsContainer}>
-                    {/* Write Review Button */}
-                    {isAuthenticated && (
-                        <View style={styles.writeReviewButtonContainer}>
-                            <TouchableOpacity
-                                style={styles.writeReviewButton}
-                                onPress={() => setIsReviewModalVisible(true)}
-                            >
-                                <Ionicons name="create-outline" size={20} color={theme.colors.primary[500]} />
-                                <Text style={styles.writeReviewButtonText}>
-                                    {t('supplier.review.writeReview', 'Write a Review')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
+            <View style={styles.reviewsContainer}>
+                {/* Write Review Button */}
+                {isAuthenticated && (
+                    <View style={styles.writeReviewButtonContainer}>
+                        <TouchableOpacity
+                            style={styles.writeReviewButton}
+                            onPress={() => setIsReviewModalVisible(true)}
+                        >
+                            <Ionicons name="create-outline" size={20} color={theme.colors.primary[500]} />
+                            <Text style={styles.writeReviewButtonText}>
+                                {t('supplier.review.writeReview', 'Write a Review')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
-                    {supplier.total_reviews > 0 ? (
-                        <>
-                            <View style={styles.reviewsSummary}>
-                                <Text style={styles.reviewsAverage}>{supplier.rating.toFixed(1)}</Text>
-                                <View style={styles.reviewsStars}>
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <Ionicons
-                                            key={star}
-                                            name={star <= Math.round(supplier.rating) ? 'star' : 'star-outline'}
-                                            size={24}
-                                            color={theme.colors.warning.main}
-                                        />
-                                    ))}
-                                </View>
-                                <Text style={styles.reviewsCount}>
-                                    {supplier.total_reviews} {supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')}
-                                </Text>
+                {supplier.total_reviews > 0 ? (
+                    <>
+                        <View style={styles.reviewsSummary}>
+                            <Text style={styles.reviewsAverage}>{supplier.rating.toFixed(1)}</Text>
+                            <View style={styles.reviewsStars}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <Ionicons
+                                        key={star}
+                                        name={star <= Math.round(supplier.rating) ? 'star' : 'star-outline'}
+                                        size={24}
+                                        color={theme.colors.warning.main}
+                                    />
+                                ))}
                             </View>
+                            <Text style={styles.reviewsCount}>
+                                {supplier.total_reviews} {supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')}
+                            </Text>
+                        </View>
 
-                            {supplier.recent_reviews && supplier.recent_reviews.length > 0 && (
-                                <View style={styles.reviewsList}>
-                                    {supplier.recent_reviews.map((review) => (
-                                        <View key={review.id} style={styles.reviewCard}>
-                                            <View style={styles.reviewCardContent}>
-                                                {/* Avatar with initials */}
-                                                <View style={styles.reviewAvatar}>
-                                                    <Text style={styles.reviewAvatarText}>
-                                                        {getInitials(review.customer_name)}
-                                                    </Text>
-                                                </View>
+                        {supplier.recent_reviews && supplier.recent_reviews.length > 0 && (
+                            <View style={styles.reviewsList}>
+                                {supplier.recent_reviews.map((review) => (
+                                    <View key={review.id} style={styles.reviewCard}>
+                                        <View style={styles.reviewCardContent}>
+                                            {/* Avatar with initials */}
+                                            <View style={styles.reviewAvatar}>
+                                                <Text style={styles.reviewAvatarText}>
+                                                    {getInitials(review.customer_name)}
+                                                </Text>
+                                            </View>
 
-                                                {/* Review content */}
-                                                <View style={styles.reviewContent}>
-                                                    <View style={styles.reviewHeader}>
-                                                        <Text style={styles.reviewTitle}>{review.title}</Text>
-                                                        <View style={styles.reviewRating}>
-                                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                                <Ionicons
-                                                                    key={star}
-                                                                    name={star <= review.rating ? 'star' : 'star-outline'}
-                                                                    size={16}
-                                                                    color={theme.colors.warning.main}
-                                                                />
-                                                            ))}
-                                                        </View>
+                                            {/* Review content */}
+                                            <View style={styles.reviewContent}>
+                                                <View style={styles.reviewHeader}>
+                                                    <Text style={styles.reviewTitle}>{review.title}</Text>
+                                                    <View style={styles.reviewRating}>
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Ionicons
+                                                                key={star}
+                                                                name={star <= review.rating ? 'star' : 'star-outline'}
+                                                                size={16}
+                                                                color={theme.colors.warning.main}
+                                                            />
+                                                        ))}
                                                     </View>
-
-                                                    <Text style={styles.reviewComment}>{review.comment}</Text>
-
-                                                    <Text style={styles.reviewAuthor}>
-                                                        {review.customer_name ? (
-                                                            <>
-                                                                {t('supplier.reviewBy', 'Review by')} <Text style={styles.reviewAuthorName}>{review.customer_name}</Text> • {formatReviewDate(review.created_at)}
-                                                            </>
-                                                        ) : (
-                                                            formatReviewDate(review.created_at)
-                                                        )}
-                                                    </Text>
                                                 </View>
+
+                                                <Text style={styles.reviewComment}>{review.comment}</Text>
+
+                                                <Text style={styles.reviewAuthor}>
+                                                    {review.customer_name ? (
+                                                        <>
+                                                            {t('supplier.reviewBy', 'Review by')} <Text style={styles.reviewAuthorName}>{review.customer_name}</Text> • {formatReviewDate(review.created_at)}
+                                                        </>
+                                                    ) : (
+                                                        formatReviewDate(review.created_at)
+                                                    )}
+                                                </Text>
                                             </View>
                                         </View>
-                                    ))}
-                                </View>
-                            )}
-                        </>
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Ionicons name="star-outline" size={64} color={theme.colors.gray[400]} />
-                            <Text style={styles.emptyText}>{t('supplier.noReviews', 'No reviews yet')}</Text>
-                        </View>
-                    )}
-                </View>
-            </ScrollView>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </>
+                ) : (
+                    <View style={styles.emptyState}>
+                        <Ionicons name="star-outline" size={64} color={theme.colors.gray[400]} />
+                        <Text style={styles.emptyText}>{t('supplier.noReviews', 'No reviews yet')}</Text>
+                    </View>
+                )}
+            </View>
         );
     };
 
@@ -870,199 +876,193 @@ export const SupplierShopScreen: React.FC = () => {
             );
         }
 
-        // Show all cart items (matching web application behavior)
-        // The web app shows all cart items, not filtered by supplier
         const supplierCartItems = cart?.items || [];
 
         return (
-            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-                <View style={styles.quickOrderContainer}>
-
-
-                    {/* Product Search */}
-                    <View style={styles.quickOrderSearchContainer}>
-                        <Text style={styles.quickOrderLabel}>
-                            {t('supplier.quickOrder.productName', 'Product Name')}
-                        </Text>
-                        <View style={styles.quickOrderSearchWrapper}>
-                            <Ionicons
-                                name="search-outline"
-                                size={20}
-                                color={theme.colors.text.secondary}
-                                style={styles.searchIcon}
-                            />
-                            <TextInput
-                                style={styles.quickOrderSearchInput}
-                                placeholder={t('supplier.quickOrder.searchPlaceholder', 'Press any key to search...')}
-                                placeholderTextColor={theme.colors.text.secondary}
-                                value={quickOrderSearch}
-                                onChangeText={setQuickOrderSearch}
-                                onFocus={() => {
-                                    if (quickOrderSearch.length >= 2) {
-                                        setIsDropdownOpen(true);
-                                    }
-                                }}
-                            />
-                            {isSearching && (
-                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            )}
-                        </View>
-
-                        {/* Search Results Dropdown */}
-                        {isDropdownOpen && quickOrderResults.length > 0 && (
-                            <View style={styles.searchResultsContainer}>
-                                {quickOrderResults.map((item) => (
-                                    <TouchableOpacity
-                                        key={item.id}
-                                        style={styles.searchResultItem}
-                                        onPress={() => handleSelectProduct(item)}
-                                    >
-                                        {item.base_image && (
-                                            <ProductImage
-                                                imageUrl={item.base_image}
-                                                style={styles.searchResultImage}
-                                            />
-                                        )}
-                                        <View style={styles.searchResultContent}>
-                                            <Text style={styles.searchResultName} numberOfLines={2}>
-                                                {item.name}
-                                            </Text>
-                                            <Text style={styles.searchResultPrice}>
-                                                {item.formated_price}
-                                            </Text>
-                                        </View>
-                                        <Ionicons
-                                            name="chevron-forward-outline"
-                                            size={20}
-                                            color={theme.colors.text.secondary}
-                                        />
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+            <View style={styles.quickOrderContainer}>
+                {/* Product Search */}
+                <View style={styles.quickOrderSearchContainer}>
+                    <Text style={styles.quickOrderLabel}>
+                        {t('supplier.quickOrder.productName', 'Product Name')}
+                    </Text>
+                    <View style={styles.quickOrderSearchWrapper}>
+                        <Ionicons
+                            name="search-outline"
+                            size={20}
+                            color={theme.colors.text.secondary}
+                            style={styles.searchIcon}
+                        />
+                        <TextInput
+                            style={styles.quickOrderSearchInput}
+                            placeholder={t('supplier.quickOrder.searchPlaceholder', 'Press any key to search...')}
+                            placeholderTextColor={theme.colors.text.secondary}
+                            value={quickOrderSearch}
+                            onChangeText={setQuickOrderSearch}
+                            onFocus={() => {
+                                if (quickOrderSearch.length >= 2) {
+                                    setIsDropdownOpen(true);
+                                }
+                            }}
+                        />
+                        {isSearching && (
+                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
                         )}
                     </View>
 
-                    {/* Quantity Field */}
-                    <View style={styles.quickOrderQuantityContainer}>
-                        <Text style={styles.quickOrderLabel}>
-                            {t('supplier.quickOrder.quantity', 'Quantity')}
-                        </Text>
-                        <TextInput
-                            style={styles.quickOrderQuantityInput}
-                            placeholder={t('supplier.quickOrder.quantityPlaceholder', 'Enter quantity')}
-                            placeholderTextColor={theme.colors.text.secondary}
-                            value={quickOrderQuantity}
-                            onChangeText={(text) => {
-                                // Only allow numbers
-                                const numericValue = text.replace(/[^0-9]/g, '');
-                                setQuickOrderQuantity(numericValue);
-                            }}
-                            keyboardType="numeric"
-                        />
-                    </View>
+                    {/* Search Results Dropdown */}
+                    {isDropdownOpen && quickOrderResults.length > 0 && (
+                        <View style={styles.searchResultsContainer}>
+                            {quickOrderResults.map((item) => (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    style={styles.searchResultItem}
+                                    onPress={() => handleSelectProduct(item)}
+                                >
+                                    {item.base_image && (
+                                        <ProductImage
+                                            imageUrl={item.base_image}
+                                            style={styles.searchResultImage}
+                                        />
+                                    )}
+                                    <View style={styles.searchResultContent}>
+                                        <Text style={styles.searchResultName} numberOfLines={2}>
+                                            {item.name}
+                                        </Text>
+                                        <Text style={styles.searchResultPrice}>
+                                            {item.formated_price}
+                                        </Text>
+                                    </View>
+                                    <Ionicons
+                                        name="chevron-forward-outline"
+                                        size={20}
+                                        color={theme.colors.text.secondary}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
+                </View>
 
-                    {/* Action Buttons */}
-                    <View style={styles.quickOrderActionsContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.addToCartButton,
-                                (!selectedProduct ||
-                                    isAddingToCart ||
-                                    !quickOrderQuantity ||
-                                    quickOrderQuantity.trim() === '' ||
-                                    isNaN(parseInt(quickOrderQuantity, 10)) ||
-                                    parseInt(quickOrderQuantity, 10) <= 0) && styles.addToCartButtonDisabled
-                            ]}
-                            onPress={handleAddToCart}
-                            disabled={
-                                !selectedProduct ||
+                {/* Quantity Field */}
+                <View style={styles.quickOrderQuantityContainer}>
+                    <Text style={styles.quickOrderLabel}>
+                        {t('supplier.quickOrder.quantity', 'Quantity')}
+                    </Text>
+                    <TextInput
+                        style={styles.quickOrderQuantityInput}
+                        placeholder={t('supplier.quickOrder.quantityPlaceholder', 'Enter quantity')}
+                        placeholderTextColor={theme.colors.text.secondary}
+                        value={quickOrderQuantity}
+                        onChangeText={(text) => {
+                            const numericValue = text.replace(/[^0-9]/g, '');
+                            setQuickOrderQuantity(numericValue);
+                        }}
+                        keyboardType="numeric"
+                    />
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.quickOrderActionsContainer}>
+                    <TouchableOpacity
+                        style={[
+                            styles.addToCartButton,
+                            (!selectedProduct ||
                                 isAddingToCart ||
                                 !quickOrderQuantity ||
                                 quickOrderQuantity.trim() === '' ||
                                 isNaN(parseInt(quickOrderQuantity, 10)) ||
-                                parseInt(quickOrderQuantity, 10) <= 0
-                            }
-                        >
-                            {isAddingToCart ? (
-                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            ) : (
-                                <>
-                                    <Ionicons
-                                        name="cart-outline"
-                                        size={18}
-                                        color={theme.colors.primary[500]}
-                                    />
-                                    <Text style={styles.addToCartButtonText}>
-                                        {t('supplier.quickOrder.addToCart', 'Add to Cart')}
-                                    </Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                        <Button
-                            title={t('supplier.quickOrder.proceedToBuy', 'Proceed to Buy')}
-                            onPress={handleProceedToBuy}
-                            disabled={!cart || !cart.items || cart.items.length === 0}
-                            variant="primary"
-                            style={styles.proceedToBuyButton}
-                        />
-                    </View>
-                    {/* Cart Items - Show by default at the top */}
-                    <View style={styles.quickOrderCartContainer}>
-                        <Text style={styles.quickOrderSectionTitle}>
-                            {t('supplier.quickOrder.cartItems', 'Cart Items')}
-                        </Text>
-
-                        {isLoadingCart ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            </View>
-                        ) : supplierCartItems.length > 0 ? (
-                            <View style={styles.cartItemsList}>
-                                {supplierCartItems.map((item) => (
-                                    <View key={item.id} style={styles.cartItem}>
-                                        {item.product?.images && item.product.images.length > 0 && (
-                                            <ProductImage
-                                                imageUrl={item.product.images[0].url}
-                                                style={styles.cartItemImage}
-                                            />
-                                        )}
-                                        <View style={styles.cartItemContent}>
-                                            <Text style={styles.cartItemName} numberOfLines={2}>
-                                                {item.name}
-                                            </Text>
-                                            <View style={styles.cartItemDetails}>
-                                                <Text style={styles.cartItemQuantity}>
-                                                    {t('supplier.quickOrder.quantity', 'Qty')}: {item.quantity}
-                                                </Text>
-                                                <Text style={styles.cartItemSubtotal}>
-                                                    {formatters.formatPrice(item.total)}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <TouchableOpacity
-                                            style={styles.removeButton}
-                                            onPress={() => handleRemoveCartItem(item.id)}
-                                        >
-                                            <Ionicons
-                                                name="trash-outline"
-                                                size={20}
-                                                color={theme.colors.error.main}
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </View>
+                                parseInt(quickOrderQuantity, 10) <= 0) && styles.addToCartButtonDisabled
+                        ]}
+                        onPress={handleAddToCart}
+                        disabled={
+                            !selectedProduct ||
+                            isAddingToCart ||
+                            !quickOrderQuantity ||
+                            quickOrderQuantity.trim() === '' ||
+                            isNaN(parseInt(quickOrderQuantity, 10)) ||
+                            parseInt(quickOrderQuantity, 10) <= 0
+                        }
+                    >
+                        {isAddingToCart ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
                         ) : (
-                            <View style={styles.emptyState}>
-                                <Ionicons name="cart-outline" size={64} color={theme.colors.gray[400]} />
-                                <Text style={styles.emptyText}>
-                                    {t('supplier.quickOrder.noItems', 'No items in cart')}
+                            <>
+                                <Ionicons
+                                    name="cart-outline"
+                                    size={18}
+                                    color={theme.colors.primary[500]}
+                                />
+                                <Text style={styles.addToCartButtonText}>
+                                    {t('supplier.quickOrder.addToCart', 'Add to Cart')}
                                 </Text>
-                            </View>
+                            </>
                         )}
-                    </View>
+                    </TouchableOpacity>
+                    <Button
+                        title={t('supplier.quickOrder.proceedToBuy', 'Proceed to Buy')}
+                        onPress={handleProceedToBuy}
+                        disabled={!cart || !cart.items || cart.items.length === 0}
+                        variant="primary"
+                        style={styles.proceedToBuyButton}
+                    />
                 </View>
-            </ScrollView>
+
+                {/* Cart Items */}
+                <View style={styles.quickOrderCartContainer}>
+                    <Text style={styles.quickOrderSectionTitle}>
+                        {t('supplier.quickOrder.cartItems', 'Cart Items')}
+                    </Text>
+
+                    {isLoadingCart ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                        </View>
+                    ) : supplierCartItems.length > 0 ? (
+                        <View style={styles.cartItemsList}>
+                            {supplierCartItems.map((item) => (
+                                <View key={item.id} style={styles.cartItem}>
+                                    {item.product?.images && item.product.images.length > 0 && (
+                                        <ProductImage
+                                            imageUrl={item.product.images[0].url}
+                                            style={styles.cartItemImage}
+                                        />
+                                    )}
+                                    <View style={styles.cartItemContent}>
+                                        <Text style={styles.cartItemName} numberOfLines={2}>
+                                            {item.name}
+                                        </Text>
+                                        <View style={styles.cartItemDetails}>
+                                            <Text style={styles.cartItemQuantity}>
+                                                {t('supplier.quickOrder.quantity', 'Qty')}: {item.quantity}
+                                            </Text>
+                                            <Text style={styles.cartItemSubtotal}>
+                                                {formatters.formatPrice(item.total)}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.removeButton}
+                                        onPress={() => handleRemoveCartItem(item.id)}
+                                    >
+                                        <Ionicons
+                                            name="trash-outline"
+                                            size={20}
+                                            color={theme.colors.error.main}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <Ionicons name="cart-outline" size={64} color={theme.colors.gray[400]} />
+                            <Text style={styles.emptyText}>
+                                {t('supplier.quickOrder.noItems', 'No items in cart')}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            </View>
         );
     };
 
@@ -1070,114 +1070,112 @@ export const SupplierShopScreen: React.FC = () => {
         if (!supplier) return null;
 
         return (
-            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-                <View style={styles.contactContainer}>
-                    {/* Action Buttons */}
-                    <View style={styles.contactActionsContainer}>
-                        <TouchableOpacity
-                            style={styles.contactActionButton}
-                            onPress={() => setIsContactModalVisible(true)}
-                        >
-                            <Ionicons name="mail-outline" size={18} color={theme.colors.primary[500]} />
-                            <Text style={styles.contactActionButtonText}>
-                                {t('supplier.contactSupplier', 'Contact Supplier')}
-                            </Text>
-                        </TouchableOpacity>
-                        {isAuthenticated && (
-                            <>
-                                <TouchableOpacity
-                                    style={styles.contactActionButton}
-                                    onPress={() => setIsMessageModalVisible(true)}
-                                >
-                                    <Ionicons name="chatbubble-outline" size={18} color={theme.colors.primary[500]} />
-                                    <Text style={styles.contactActionButtonText}>
-                                        {t('supplier.messageSupplier', 'Message Supplier')}
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.contactActionButton}
-                                    onPress={() => setIsReportModalVisible(true)}
-                                >
-                                    <Ionicons name="flag-outline" size={18} color={theme.colors.primary[500]} />
-                                    <Text style={styles.contactActionButtonText}>
-                                        {t('supplier.reportSupplier', 'Report Supplier')}
-                                    </Text>
-                                </TouchableOpacity>
-                            </>
-                        )}
-                    </View>
-
-                    {/* Contact Information */}
-                    <View style={styles.contactInfoSection}>
-                        <Text style={styles.contactInfoTitle}>
-                            {t('supplier.contactInformation', 'Contact Information')}
+            <View style={styles.contactContainer}>
+                {/* Action Buttons */}
+                <View style={styles.contactActionsContainer}>
+                    <TouchableOpacity
+                        style={styles.contactActionButton}
+                        onPress={() => setIsContactModalVisible(true)}
+                    >
+                        <Ionicons name="mail-outline" size={18} color={theme.colors.primary[500]} />
+                        <Text style={styles.contactActionButtonText}>
+                            {t('supplier.contactSupplier', 'Contact Supplier')}
                         </Text>
+                    </TouchableOpacity>
+                    {isAuthenticated && (
+                        <>
+                            <TouchableOpacity
+                                style={styles.contactActionButton}
+                                onPress={() => setIsMessageModalVisible(true)}
+                            >
+                                <Ionicons name="chatbubble-outline" size={18} color={theme.colors.primary[500]} />
+                                <Text style={styles.contactActionButtonText}>
+                                    {t('supplier.messageSupplier', 'Message Supplier')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.contactActionButton}
+                                onPress={() => setIsReportModalVisible(true)}
+                            >
+                                <Ionicons name="flag-outline" size={18} color={theme.colors.primary[500]} />
+                                <Text style={styles.contactActionButtonText}>
+                                    {t('supplier.reportSupplier', 'Report Supplier')}
+                                </Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </View>
 
+                {/* Contact Information */}
+                <View style={styles.contactInfoSection}>
+                    <Text style={styles.contactInfoTitle}>
+                        {t('supplier.contactInformation', 'Contact Information')}
+                    </Text>
+
+                    <View style={styles.contactItem}>
+                        <Ionicons name="person-outline" size={20} color={theme.colors.text.secondary} />
+                        <Text style={styles.contactLabel}>{t('supplier.name', 'Name')}:</Text>
+                        <Text style={styles.contactValue}>{supplier.first_name} {supplier.last_name}</Text>
+                    </View>
+                    <View style={styles.contactItem}>
+                        <Ionicons name="mail-outline" size={20} color={theme.colors.text.secondary} />
+                        <Text style={styles.contactLabel}>{t('supplier.email', 'Email')}:</Text>
+                        <Text style={styles.contactValue}>{supplier.email}</Text>
+                    </View>
+                    {supplier.phone && (
                         <View style={styles.contactItem}>
-                            <Ionicons name="person-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.name', 'Name')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.first_name} {supplier.last_name}</Text>
+                            <Ionicons name="call-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.phone', 'Phone')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.phone}</Text>
                         </View>
+                    )}
+                    {supplier.corporate_phone && (
+                        <View style={styles.contactItem}>
+                            <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.corporatePhone', 'Corporate Phone')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.corporate_phone}</Text>
+                        </View>
+                    )}
+                    {supplier.address1 && (
+                        <View style={styles.contactItem}>
+                            <Ionicons name="location-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.address', 'Address')}:</Text>
+                            <Text style={styles.contactValue}>
+                                {supplier.address1}
+                                {supplier.address2 ? `, ${supplier.address2}` : ''}
+                            </Text>
+                        </View>
+                    )}
+                    {supplier.city && (
+                        <View style={styles.contactItem}>
+                            <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.city', 'City')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.city}</Text>
+                        </View>
+                    )}
+                    {supplier.state && (
+                        <View style={styles.contactItem}>
+                            <Ionicons name="map-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.state', 'State')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.state}</Text>
+                        </View>
+                    )}
+                    {supplier.postcode && (
                         <View style={styles.contactItem}>
                             <Ionicons name="mail-outline" size={20} color={theme.colors.text.secondary} />
-                            <Text style={styles.contactLabel}>{t('supplier.email', 'Email')}:</Text>
-                            <Text style={styles.contactValue}>{supplier.email}</Text>
+                            <Text style={styles.contactLabel}>{t('supplier.postcode', 'Post Code')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.postcode}</Text>
                         </View>
-                        {supplier.phone && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="call-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.phone', 'Phone')}:</Text>
-                                <Text style={styles.contactValue}>{supplier.phone}</Text>
-                            </View>
-                        )}
-                        {supplier.corporate_phone && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.corporatePhone', 'Corporate Phone')}:</Text>
-                                <Text style={styles.contactValue}>{supplier.corporate_phone}</Text>
-                            </View>
-                        )}
-                        {supplier.address1 && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="location-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.address', 'Address')}:</Text>
-                                <Text style={styles.contactValue}>
-                                    {supplier.address1}
-                                    {supplier.address2 ? `, ${supplier.address2}` : ''}
-                                </Text>
-                            </View>
-                        )}
-                        {supplier.city && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="business-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.city', 'City')}:</Text>
-                                <Text style={styles.contactValue}>{supplier.city}</Text>
-                            </View>
-                        )}
-                        {supplier.state && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="map-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.state', 'State')}:</Text>
-                                <Text style={styles.contactValue}>{supplier.state}</Text>
-                            </View>
-                        )}
-                        {supplier.postcode && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="mail-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.postcode', 'Post Code')}:</Text>
-                                <Text style={styles.contactValue}>{supplier.postcode}</Text>
-                            </View>
-                        )}
-                        {supplier.country && (
-                            <View style={styles.contactItem}>
-                                <Ionicons name="globe-outline" size={20} color={theme.colors.text.secondary} />
-                                <Text style={styles.contactLabel}>{t('supplier.country', 'Country')}:</Text>
-                                <Text style={styles.contactValue}>{supplier.country}</Text>
-                            </View>
-                        )}
-                    </View>
+                    )}
+                    {supplier.country && (
+                        <View style={styles.contactItem}>
+                            <Ionicons name="globe-outline" size={20} color={theme.colors.text.secondary} />
+                            <Text style={styles.contactLabel}>{t('supplier.country', 'Country')}:</Text>
+                            <Text style={styles.contactValue}>{supplier.country}</Text>
+                        </View>
+                    )}
                 </View>
-            </ScrollView>
+            </View>
         );
     };
 
@@ -1196,30 +1194,23 @@ export const SupplierShopScreen: React.FC = () => {
 
         return (
             <View style={styles.container}>
-                <ScrollView
-                    style={styles.headerContent}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary[500]]} />
-                    }
-                    scrollEnabled={activeTab !== 'products'}
-                >
-                    {renderBanner()}
-                    {renderSupplierInfo()}
-                    {renderRFQButton()}
-                    {renderTabs()}
-                    {activeTab !== 'products' && (
+                {activeTab === 'products' ? (
+                    renderProducts()
+                ) : (
+                    <ScrollView
+                        style={styles.headerContent}
+                        refreshControl={
+                            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary[500]]} />
+                        }
+                    >
+                        {renderHeader()}
                         <View style={styles.tabContent}>
                             {activeTab === 'about' && renderAbout()}
                             {activeTab === 'quickorder' && renderQuickOrder()}
                             {activeTab === 'reviews' && renderReviews()}
                             {activeTab === 'contact' && renderContact()}
                         </View>
-                    )}
-                </ScrollView>
-                {activeTab === 'products' && (
-                    <View style={styles.tabContent}>
-                        {renderProducts()}
-                    </View>
+                    </ScrollView>
                 )}
             </View>
         );
@@ -1347,7 +1338,8 @@ export const SupplierShopScreen: React.FC = () => {
     );
 };
 
-// Styles continue in next part due to length...
+
+
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
