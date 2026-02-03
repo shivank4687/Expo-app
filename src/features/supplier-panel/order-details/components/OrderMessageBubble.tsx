@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 interface MessageBubbleProps {
     message: string;
@@ -9,84 +8,82 @@ interface MessageBubbleProps {
     timestamp: string;
 }
 
-export default function OrderMessageBubble({ message, senderType, senderName, timestamp }: MessageBubbleProps) {
+export default function OrderMessageBubble({
+    message,
+    senderType,
+}: MessageBubbleProps) {
     const isSupplier = senderType === 'supplier';
 
     return (
-        <View style={[styles.container, isSupplier ? styles.supplierContainer : styles.customerContainer]}>
-            {/* Customer Avatar (left side) */}
-            {!isSupplier && (
-                <View style={styles.avatar}>
-                    <Ionicons name="person" size={16} color="#000000" />
-                </View>
-            )}
-
-            {/* Message Bubble */}
-            <View style={[styles.bubble, isSupplier ? styles.supplierBubble : styles.customerBubble]}>
-                <Text style={[styles.messageText, isSupplier ? styles.supplierText : styles.customerText]}>
+        <View
+            style={[
+                styles.row,
+                isSupplier ? styles.supplierRow : styles.customerRow,
+            ]}
+        >
+            <View
+                style={[
+                    styles.bubble,
+                    isSupplier ? styles.supplierBubble : styles.customerBubble,
+                ]}
+            >
+                <Text
+                    style={[
+                        styles.messageText,
+                        isSupplier ? styles.supplierText : styles.customerText,
+                    ]}
+                >
                     {message}
                 </Text>
             </View>
-
-            {/* Supplier Avatar (right side - hidden) */}
-            {isSupplier && <View style={styles.avatarHidden} />}
         </View>
     );
 }
 
+
 const styles = StyleSheet.create({
-    container: {
+    row: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 4,
+        marginBottom: 6,
+        paddingHorizontal: 8,
     },
-    customerContainer: {
+
+    customerRow: {
         justifyContent: 'flex-start',
     },
-    supplierContainer: {
-        justifyContent: 'flex-end',
+
+    supplierRow: {
+        justifyContent: 'flex-end', // 🔥 stick to right
     },
-    avatar: {
-        width: 32,
-        height: 32,
-        backgroundColor: '#E0D7C2',
-        borderWidth: 1,
-        borderColor: '#E0D7C2',
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarHidden: {
-        width: 32,
-        height: 32,
-        opacity: 0,
-    },
+
     bubble: {
-        paddingHorizontal: 8,
+        maxWidth: '75%',           // 🔥 prevents full-width bubbles
+        paddingHorizontal: 12,
         paddingVertical: 8,
-        maxWidth: 200,
+        borderRadius: 12,
     },
+
     customerBubble: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 8,
         borderBottomLeftRadius: 0,
     },
+
     supplierBubble: {
         backgroundColor: '#00615E',
-        borderRadius: 8,
         borderBottomRightRadius: 0,
     },
+
     messageText: {
         fontFamily: 'Inter',
         fontSize: 16,
-        lineHeight: 19.2, // 120% of 16px
+        lineHeight: 20,
     },
+
     customerText: {
         color: '#000000',
     },
+
     supplierText: {
         color: '#FFFFFF',
-        textAlign: 'right',
     },
 });
