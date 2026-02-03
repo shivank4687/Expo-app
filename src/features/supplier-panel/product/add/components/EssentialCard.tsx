@@ -44,6 +44,7 @@ interface EssentialCardProps {
     onNameChange?: (name: string) => void;
     onAttributesRefresh?: () => Promise<void>;
     onAIGenerateClick?: () => void;
+    activeTab?: 'simple' | 'configurable';
 }
 
 export interface EssentialCardRef {
@@ -65,7 +66,7 @@ export interface EssentialCardRef {
     }) => void;
 }
 
-const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attributes, onNameChange, onAttributesRefresh, onAIGenerateClick }, ref) => {
+const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attributes, onNameChange, onAttributesRefresh, onAIGenerateClick, activeTab = 'simple' }, ref) => {
     const [name, setName] = useState('');
     const [images, setImages] = useState<MediaFile[]>([]);
     const [video, setVideo] = useState<MediaFile | null>(null);
@@ -242,7 +243,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
         validate: () => {
             return validate({
                 name,
-                weight,
+                weight: activeTab === 'simple' ? weight : '0', // Bypass validation if hidden
                 short_description: shortDescription,
                 description,
             });
@@ -701,52 +702,54 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 </View>
             </View>
 
-            {/* Size and Weight Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Size and Weight</Text>
+            {/* Size and Weight Section - Only show for Simple Product */}
+            {activeTab === 'simple' && (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Size and Weight</Text>
 
-                <View style={styles.gridInputs}>
-                    <TextInput
-                        style={styles.gridInput}
-                        placeholder="Length (cm)"
-                        placeholderTextColor="#666666"
-                        value={length}
-                        onChangeText={setLength}
-                        keyboardType="numeric"
-                    />
-                    <TextInput
-                        style={styles.gridInput}
-                        placeholder="Width (cm)"
-                        placeholderTextColor="#666666"
-                        value={width}
-                        onChangeText={setWidth}
-                        keyboardType="numeric"
-                    />
-                    <TextInput
-                        style={styles.gridInput}
-                        placeholder="Height (cm)"
-                        placeholderTextColor="#666666"
-                        value={height}
-                        onChangeText={setHeight}
-                        keyboardType="numeric"
-                    />
-                    <View style={styles.gridInputWrapper}>
+                    <View style={styles.gridInputs}>
                         <TextInput
-                            style={[styles.gridInput, styles.gridInputFull, errors.weight && styles.inputError]}
-                            placeholder="Weight (kg)"
+                            style={styles.gridInput}
+                            placeholder="Length (cm)"
                             placeholderTextColor="#666666"
-                            value={weight}
-                            onChangeText={handleWeightChange}
+                            value={length}
+                            onChangeText={setLength}
                             keyboardType="numeric"
                         />
-                        {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
+                        <TextInput
+                            style={styles.gridInput}
+                            placeholder="Width (cm)"
+                            placeholderTextColor="#666666"
+                            value={width}
+                            onChangeText={setWidth}
+                            keyboardType="numeric"
+                        />
+                        <TextInput
+                            style={styles.gridInput}
+                            placeholder="Height (cm)"
+                            placeholderTextColor="#666666"
+                            value={height}
+                            onChangeText={setHeight}
+                            keyboardType="numeric"
+                        />
+                        <View style={styles.gridInputWrapper}>
+                            <TextInput
+                                style={[styles.gridInput, styles.gridInputFull, errors.weight && styles.inputError]}
+                                placeholder="Weight (kg)"
+                                placeholderTextColor="#666666"
+                                value={weight}
+                                onChangeText={handleWeightChange}
+                                keyboardType="numeric"
+                            />
+                            {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
+                        </View>
                     </View>
-                </View>
 
-                <Text style={styles.tipText}>
-                    This improves the automatic shipping quote
-                </Text>
-            </View>
+                    <Text style={styles.tipText}>
+                        This improves the automatic shipping quote
+                    </Text>
+                </View>
+            )}
 
             {/* Material Type Section */}
             <View style={styles.section}>

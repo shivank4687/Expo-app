@@ -17,10 +17,6 @@ export interface PriceStockVariantsCardProps {
     productName: string;
     attributes?: ProductAttribute[];
     onAttributesRefresh?: () => Promise<void>;
-    masterHeight?: string;
-    masterWeight?: string;
-    masterLength?: string;
-    masterWidth?: string;
 }
 
 export interface PriceStockVariantsCardRef {
@@ -33,10 +29,6 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     productName,
     attributes = [],
     onAttributesRefresh,
-    masterHeight = '',
-    masterWeight = '',
-    masterLength = '',
-    masterWidth = ''
 }, ref) => {
     const { supplier } = useAppSelector((state) => state.supplierAuth);
     const shopName = supplier?.company_name || '';
@@ -62,6 +54,12 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     // Structure: { id: string, attributes: { [attrId]: optionId }, price: string, stock: string, ... }
     const [variants, setVariants] = useState<any[]>([]);
     const [mainVariantId, setMainVariantId] = useState<string | null>(null);
+
+    // Master Product Dimensions (locally managed for configurable products)
+    const [masterHeight, setMasterHeight] = useState('');
+    const [masterWeight, setMasterWeight] = useState('');
+    const [masterLength, setMasterLength] = useState('');
+    const [masterWidth, setMasterWidth] = useState('');
 
     // Temp state for multi-attribute selection
     const [tempSelection, setTempSelection] = useState<Record<string, string>>({});
@@ -101,6 +99,9 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     const { errors, validate, clearError, setError } = useFormValidation({
         sku: [
             { type: 'required', message: 'SKU is required' }
+        ],
+        weight: [
+            { type: 'required', message: 'Weight is required' }
         ],
     });
 
@@ -261,6 +262,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 discounts: discounts,
                 discount_type: discountType,
                 apply_to_all_variants: applyToAll ? 1 : 0,
+                height: masterHeight,
+                weight: masterWeight,
+                length: masterLength,
+                width: masterWidth,
             };
         },
         validate: () => {
@@ -270,9 +275,23 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             console.log('SKU exists:', skuExists);
             console.log('Is size variant:', isSizeVariant);
 
-            const formData = { sku };
+            const formData = {
+                sku,
+                weight: !isSizeVariant && selectedVariantAttributes.length > 0 ? masterWeight : '0' // Temporary bypass if not needed
+            };
             const isFormValid = validate(formData);
-            console.log('SKU form valid:', isFormValid);
+            console.log('Form valid:', isFormValid);
+
+            // Weight is actually required if it's the master dimension being used
+            let finalWeightValid = true;
+            if (!isSizeVariant && selectedVariantAttributes.length > 0) {
+                if (!masterWeight || masterWeight.trim() === '') {
+                    setError('weight', 'Weight is required');
+                    finalWeightValid = false;
+                } else {
+                    clearError('weight');
+                }
+            }
 
             // Check if SKU already exists
             if (skuExists) {
@@ -327,7 +346,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
 
             setVariantErrors(newVariantErrors);
 
-            const finalResult = isFormValid && !skuExists && !hasVariantError;
+            const finalResult = isFormValid && !skuExists && !hasVariantError && finalWeightValid;
             console.log('Final validation result:', finalResult);
             console.log('Has variant errors:', hasVariantError);
 
@@ -339,6 +358,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             // Reset all state first to prevent stale data
             setSku('');
             setOriginalSku('');
+            setMasterHeight('');
+            setMasterWeight('');
+            setMasterLength('');
+            setMasterWidth('');
             setImmediateShipping(true);
             setMadeToOrderEnabled(true);
             setInOrderQty('');
@@ -359,6 +382,11 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 // Store original SKU when loading product data (edit mode)
                 setOriginalSku(data.sku);
             }
+
+            if (data.height !== undefined) setMasterHeight(data.height?.toString() || '');
+            if (data.weight !== undefined) setMasterWeight(data.weight?.toString() || '');
+            if (data.length !== undefined) setMasterLength(data.length?.toString() || '');
+            if (data.width !== undefined) setMasterWidth(data.width?.toString() || '');
 
             if (data.immediate_shipping !== undefined) setImmediateShipping(!!data.immediate_shipping);
             if (data.made_to_order !== undefined) setMadeToOrderEnabled(!!data.made_to_order);
@@ -413,7 +441,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 setVariants(mappedVariants);
             }
         }
-    }), [sku, variants, selectedVariantAttributes, attributes, immediateShipping, inOrderQty, inOrderQtyUnit, madeToOrderEnabled, madeToOrderQty, productionTime, discounts, discountType, skuExists, originalSku, applyToAll]);
+    }), [sku, variants, selectedVariantAttributes, attributes, immediateShipping, inOrderQty, inOrderQtyUnit, madeToOrderEnabled, madeToOrderQty, productionTime, discounts, discountType, skuExists, originalSku, applyToAll, masterHeight, masterWeight, masterLength, masterWidth, isSizeVariant]);
 
     // Reset variants when variant group changes
     useEffect(() => {
@@ -663,6 +691,64 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     {errors.sku && <Text style={styles.errorText}>{errors.sku}</Text>}
                 </View>
             </View>
+
+            {/* Master Size and Weight Section - Only show when attributes are selected but size is NOT one of them */}
+            {selectedVariantAttributes.length > 0 && !isSizeVariant && (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Master Size and Weight</Text>
+
+                    <View style={styles.gridInputs}>
+                        <View style={styles.inputWrapper}>
+                            <TextInput
+                                style={styles.gridInput}
+                                placeholder="Length (cm)"
+                                placeholderTextColor="#666666"
+                                value={masterLength}
+                                onChangeText={setMasterLength}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={styles.inputWrapper}>
+                            <TextInput
+                                style={styles.gridInput}
+                                placeholder="Width (cm)"
+                                placeholderTextColor="#666666"
+                                value={masterWidth}
+                                onChangeText={setMasterWidth}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={styles.inputWrapper}>
+                            <TextInput
+                                style={styles.gridInput}
+                                placeholder="Height (cm)"
+                                placeholderTextColor="#666666"
+                                value={masterHeight}
+                                onChangeText={setMasterHeight}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={styles.inputWrapper}>
+                            <TextInput
+                                style={[styles.gridInput, errors.weight && styles.inputError]}
+                                placeholder="Weight (kg)"
+                                placeholderTextColor="#666666"
+                                value={masterWeight}
+                                onChangeText={(v) => {
+                                    setMasterWeight(v);
+                                    if (errors.weight) clearError('weight');
+                                }}
+                                keyboardType="numeric"
+                            />
+                            {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
+                        </View>
+                    </View>
+
+                    <Text style={styles.tipText}>
+                        This improves the automatic shipping quote.
+                    </Text>
+                </View>
+            )}
 
             {/* Variant Group Section */}
             <View style={styles.section}>

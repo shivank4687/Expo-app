@@ -76,10 +76,10 @@ export default function EditProductScreen() {
                             name: product.name || '',
                             description: product.description || '',
                             short_description: product.short_description || '',
-                            weight: product.weight?.toString() || '',
-                            length: product.length?.toString() || '',
-                            width: product.width?.toString() || '',
-                            height: product.height?.toString() || '',
+                            weight: product.type === 'simple' ? product.weight?.toString() || '' : '',
+                            length: product.type === 'simple' ? product.length?.toString() || '' : '',
+                            width: product.type === 'simple' ? product.width?.toString() || '' : '',
+                            height: product.type === 'simple' ? product.height?.toString() || '' : '',
                             material_type: product.material_type || '',
                             manufacturing_origin: product.manufacturing_origin || '',
                             images: product.images || [],
@@ -149,6 +149,10 @@ export default function EditProductScreen() {
                             in_order_qty_type: product.in_order_qty_type || '',
                             made_to_order_qty: product.made_to_order_qty?.toString() || '',
                             made_to_order_days: product.made_to_order_days?.toString() || '',
+                            height: product.height?.toString() || '',
+                            weight: product.weight?.toString() || '',
+                            length: product.length?.toString() || '',
+                            width: product.width?.toString() || '',
                         });
                     }
 
@@ -283,6 +287,7 @@ export default function EditProductScreen() {
                         setAttributes(data.attributes);
                     }}
                     onAIGenerateClick={() => { }}
+                    activeTab={productType}
                 />
 
                 {/* Price & Stock Card - Conditional based on product type */}
