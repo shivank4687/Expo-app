@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MessageInputProps {
@@ -9,6 +9,7 @@ interface MessageInputProps {
 
 export default function OrderMessageInput({ onSend, disabled = false }: MessageInputProps) {
     const [message, setMessage] = useState('');
+    const inputRef = useRef<TextInput>(null);
 
     const handleSend = () => {
         if (message.trim() && !disabled) {
@@ -18,15 +19,19 @@ export default function OrderMessageInput({ onSend, disabled = false }: MessageI
     };
 
     return (
-        <View style={styles.container}>
+        <Pressable
+            style={styles.container}
+            onPress={() => inputRef.current?.focus()}
+        >
             <TouchableOpacity style={styles.iconButton} disabled={disabled}>
-                <Ionicons name="attach-outline" size={16} color="#0A292D" />
+                <Ionicons name="attach-outline" size={20} color="#0A292D" />
             </TouchableOpacity>
 
             <TextInput
+                ref={inputRef}
                 style={styles.input}
                 placeholder="Enter here..."
-                placeholderTextColor="#0A292D"
+                placeholderTextColor="#6B7280"
                 value={message}
                 onChangeText={setMessage}
                 multiline
@@ -40,11 +45,11 @@ export default function OrderMessageInput({ onSend, disabled = false }: MessageI
             >
                 <Ionicons
                     name="send"
-                    size={16}
-                    color={disabled || !message.trim() ? '#9CA3AF' : '#0A292D'}
+                    size={20}
+                    color={disabled || !message.trim() ? '#9CA3AF' : '#00615E'}
                 />
             </TouchableOpacity>
-        </View>
+        </Pressable>
     );
 }
 
@@ -54,31 +59,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        gap: 10,
-        height: 40,
+        gap: 12,
+        minHeight: 48,
         backgroundColor: '#FFFFFF',
-        borderRadius: 8,
+        borderRadius: 24,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
             height: 1,
         },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
     iconButton: {
-        width: 16,
-        height: 16,
+        width: 24,
+        height: 24,
         justifyContent: 'center',
         alignItems: 'center',
     },
     input: {
         flex: 1,
         fontFamily: 'Inter',
-        fontSize: 16,
-        lineHeight: 16,
+        fontSize: 14,
+        lineHeight: 20,
         color: '#0A292D',
-        padding: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        maxHeight: 100,
     },
 });

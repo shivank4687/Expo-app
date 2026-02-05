@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { getOrderMessages, sendOrderMessage, OrderMessage } from '../api/order-messages.api';
 import OrderMessageBubble from './OrderMessageBubble';
 import OrderMessageInput from './OrderMessageInput';
@@ -130,7 +130,11 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
     }
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+        >
             {/* Messages List */}
             <ScrollView
                 ref={scrollViewRef}
@@ -160,7 +164,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
             <View style={styles.inputContainer}>
                 <OrderMessageInput onSend={handleSendMessage} disabled={sending} />
             </View>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -212,5 +216,6 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         paddingTop: 8,
+        paddingBottom: 24, // Add padding to avoid touching bottom edge
     },
 });

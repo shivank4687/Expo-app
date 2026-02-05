@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-import { TrackingInfoCard, OrderChatView } from '../components';
+import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
+import { getOrderDetails } from '../../orders/api/orders.api';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -26,6 +27,27 @@ export default function OrderDetailsScreen() {
         { id: 'tracking', label: 'Tracking' },
     ];
 
+    const [order, setOrder] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (orderId) {
+            fetchOrderDetails();
+        }
+    }, [orderId]);
+
+    const fetchOrderDetails = async () => {
+        try {
+            setLoading(true);
+            const response = await getOrderDetails(orderId);
+            setOrder(response.data);
+        } catch (error) {
+            console.error('Failed to fetch order details:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleTrackingSubmit = (trackingNumber: string, photoUri: string) => {
         console.log('Tracking Number:', trackingNumber);
         console.log('Photo URI:', photoUri);
@@ -33,6 +55,14 @@ export default function OrderDetailsScreen() {
     };
 
     const renderTabContent = () => {
+        if (loading) {
+            return (
+                <View style={[styles.comingSoonContainer, { backgroundColor: 'transparent' }]}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            );
+        }
+
         if (activeTab === 'tracking') {
             return <TrackingInfoCard onSubmit={handleTrackingSubmit} />;
         }
@@ -41,15 +71,7 @@ export default function OrderDetailsScreen() {
             return <OrderChatView supplierOrderId={orderId} />;
         }
 
-        return (
-            <View style={styles.comingSoonContainer}>
-                <Ionicons name="time-outline" size={64} color="#9CA3AF" />
-                <Text style={styles.comingSoonTitle}>Coming Soon</Text>
-                <Text style={styles.comingSoonText}>
-                    {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} content is under development
-                </Text>
-            </View>
-        );
+        return <OrderDetailsTab order={order} />;
     };
 
     return (
@@ -71,12 +93,8 @@ export default function OrderDetailsScreen() {
                 </View>
             </View>
 
-            {/* Content */}
-            <ScrollView
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Tabs */}
+            {/* Tabs - Moved outside ScrollView for sticky behavior and better layout control */}
+            <View style={styles.tabsWrapper}>
                 <View style={styles.tabsContainer}>
                     {tabs.map((tab) => (
                         <TouchableOpacity
@@ -99,10 +117,21 @@ export default function OrderDetailsScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
+            </View>
 
-                {/* Tab Content */}
-                {renderTabContent()}
-            </ScrollView>
+            {/* Content Area */}
+            <View style={styles.contentArea}>
+                {activeTab === 'messages' ? (
+                    <OrderChatView supplierOrderId={orderId} />
+                ) : (
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {renderTabContent()}
+                    </ScrollView>
+                )}
+            </View>
         </View>
     );
 }
@@ -148,6 +177,19 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     content: {
+        padding: 16,
+        gap: 16,
+    },
+    tabsWrapper: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        backgroundColor: COLORS.background,
+    },
+    contentArea: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+    },
+    scrollContent: {
         padding: 16,
         gap: 16,
     },

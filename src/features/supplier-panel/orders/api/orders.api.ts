@@ -9,6 +9,7 @@ export interface Order {
     customer_email: string | null;
     customer_first_name: string | null;
     customer_last_name: string | null;
+    customer_group_name: string | null;
     grand_total: number;
     base_grand_total: number;
     total_items: number;
@@ -21,6 +22,39 @@ export interface Order {
     shipments_count: number;
     created_at: string;
     updated_at: string;
+    billing_address: OrderAddress;
+    shipping_address: OrderAddress;
+    payment_method: string;
+    shipping_method: string;
+    formatted_grand_total: string;
+    sub_total: number;
+    base_sub_total: number;
+    tax_amount: number;
+    base_tax_amount: number;
+    shipping_amount: number;
+    base_shipping_amount: number;
+    discount_amount: number;
+    base_discount_amount: number;
+    supplier_total: number;
+    base_supplier_total: number;
+    commission: number;
+    base_commission: number;
+    total_paid: number;
+    total_refunded: number;
+    total_due: number;
+}
+
+export interface OrderAddress {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    address1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+    phone: string;
 }
 
 export interface OrdersResponse {
@@ -48,6 +82,9 @@ export interface OrderItem {
     base_price: number;
     total: number;
     base_total: number;
+    tax_amount: number;
+    tax_percent: number;
+    discount_amount: number;
 }
 
 export interface OrderShipment {
