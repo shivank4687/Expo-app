@@ -97,11 +97,11 @@ export const DeliveryMethodCard = () => {
             <View style={styles.buttonRow}>
                 <TouchableOpacity style={styles.primaryButton}>
                     <Ionicons name="add" size={16} color="#F5F5F5" />
-                    <Text style={styles.primaryButtonText}>Button</Text>
+                    <Text style={styles.primaryButtonText}>Add</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryButton}>
                     <Ionicons name="list" size={16} color="#000000" />
-                    <Text style={styles.secondaryButtonText}>Button</Text>
+                    <Text style={styles.secondaryButtonText}>Rules</Text>
                 </TouchableOpacity>
             </View>
         </View>

@@ -100,7 +100,11 @@ export const updateSupplierProfile = async (
         }
 
         if (value !== undefined && value !== null) {
-            formData.append(key, String(value));
+            // Serialize arrays and objects as JSON, otherwise convert to string
+            const serializedValue = typeof value === 'object'
+                ? JSON.stringify(value)
+                : String(value);
+            formData.append(key, serializedValue);
         }
     });
 

@@ -163,7 +163,11 @@ export default function ShopScreen() {
                 </View>
 
                 <View style={styles.card}>
-                    <SalesShippingCard />
+                    <SalesShippingCard
+                        data={profileData}
+                        onChange={handleInputChange}
+                        errors={errors}
+                    />
                 </View>
 
                 <View style={styles.card}>
