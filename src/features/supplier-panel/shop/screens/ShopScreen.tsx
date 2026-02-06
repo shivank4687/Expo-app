@@ -72,6 +72,41 @@ export default function ShopScreen() {
             }
         }
 
+        // Validate discount special percentage
+        if (profileData.discount_special_percentage !== null &&
+            profileData.discount_special_percentage !== undefined &&
+            profileData.discount_special_percentage > 100) {
+            newErrors['discount_special_percentage'] = 'Discount percentage cannot exceed 100%';
+        }
+
+        // Validate buyer spend discounts percentages
+        if (profileData.buyer_spend_discounts && Array.isArray(profileData.buyer_spend_discounts)) {
+            profileData.buyer_spend_discounts.forEach((discount: any, index: number) => {
+                const percentage = parseFloat(discount.discount_percentage);
+                if (!isNaN(percentage) && percentage > 100) {
+                    newErrors[`buyer_spend_discount_${index}`] = `Discount ${index + 1}: Percentage cannot exceed 100%`;
+                }
+            });
+        }
+
+        // Validate holiday period dates
+        if (profileData.holiday_start_date && profileData.holiday_end_date) {
+            const startDate = new Date(profileData.holiday_start_date);
+            const endDate = new Date(profileData.holiday_end_date);
+            if (endDate <= startDate) {
+                newErrors['holiday_end_date'] = 'Holiday end date must be after start date';
+            }
+        }
+
+        // Validate discount special time dates
+        if (profileData.discount_special_start_date && profileData.discount_special_end_date) {
+            const startDate = new Date(profileData.discount_special_start_date);
+            const endDate = new Date(profileData.discount_special_end_date);
+            if (endDate <= startDate) {
+                newErrors['discount_special_end_date'] = 'Discount end date must be after start date';
+            }
+        }
+
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length > 0) {

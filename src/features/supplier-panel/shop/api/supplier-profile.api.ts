@@ -32,6 +32,23 @@ export interface SupplierProfile {
     linked_in?: string;
     pinterest?: string;
     shareable_link?: string;
+    // Sales Shipping fields
+    minimum_order_amount?: number | null;
+    free_shipping_threshold?: number | null;
+    preparation_time_days?: number | null;
+    automatic_validation_enabled?: boolean;
+    special_price_from_wholesale?: boolean;
+    wholesale_price_multiplier?: number | null;
+    return_policy_days?: number | null;
+    custom_orders_enabled?: boolean;
+    custom_order_message?: string | null;
+    buyer_spend_discounts?: any[];
+    holiday_start_date?: string | null;
+    holiday_end_date?: string | null;
+    discount_special_percentage?: number | null;
+    discount_special_max_amount?: number | null;
+    discount_special_start_date?: string | null;
+    discount_special_end_date?: string | null;
 }
 
 export interface SupplierProfileUpdateData {
@@ -65,6 +82,23 @@ export interface SupplierProfileUpdateData {
     linked_in?: string;
     pinterest?: string;
     shareable_link?: string;
+    // Sales Shipping fields
+    minimum_order_amount?: number | null;
+    free_shipping_threshold?: number | null;
+    preparation_time_days?: number | null;
+    automatic_validation_enabled?: boolean;
+    special_price_from_wholesale?: boolean;
+    wholesale_price_multiplier?: number | null;
+    return_policy_days?: number | null;
+    custom_orders_enabled?: boolean;
+    custom_order_message?: string | null;
+    buyer_spend_discounts?: any[];
+    holiday_start_date?: string | null;
+    holiday_end_date?: string | null;
+    discount_special_percentage?: number | null;
+    discount_special_max_amount?: number | null;
+    discount_special_start_date?: string | null;
+    discount_special_end_date?: string | null;
 }
 
 /**

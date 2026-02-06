@@ -294,6 +294,9 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                                 <Text style={styles.percentageSymbol}>%</Text>
                             </View>
                         </View>
+                        {errors?.[`buyer_spend_discount_${index}`] && (
+                            <Text style={styles.errorText}>{errors[`buyer_spend_discount_${index}`]}</Text>
+                        )}
                     </View>
                 ))}
 
@@ -329,6 +332,9 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         <Ionicons name="calendar-outline" size={16} color="#666666" />
                     </TouchableOpacity>
                 </View>
+                {errors?.holiday_end_date && (
+                    <Text style={styles.errorText}>{errors.holiday_end_date}</Text>
+                )}
             </View>
 
             {/* Discount Special Time */}
@@ -360,6 +366,9 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         />
                     </View>
                 </View>
+                {errors?.discount_special_percentage && (
+                    <Text style={styles.errorText}>{errors.discount_special_percentage}</Text>
+                )}
 
                 <View style={styles.dateRowContainer}>
                     <TouchableOpacity
@@ -382,6 +391,9 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         <Ionicons name="calendar-outline" size={16} color="#666666" />
                     </TouchableOpacity>
                 </View>
+                {errors?.discount_special_end_date && (
+                    <Text style={styles.errorText}>{errors.discount_special_end_date}</Text>
+                )}
             </View>
 
             {/* Date Pickers */}
@@ -475,7 +487,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </View>
+        </View >
     );
 };
 
