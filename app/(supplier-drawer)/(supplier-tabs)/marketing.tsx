@@ -3,6 +3,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Share, Alert, ActivityIndicator, Image, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getInvitationStats, getInvitationActivity, logInvitationAction, InvitationStats, InvitationActivity } from '@/features/supplier-panel/invitations/api/invitations.api';
+import { cacheDirectory, downloadAsync } from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 
 export default function MarketingScreen() {
     const [stats, setStats] = useState<InvitationStats | null>(null);
@@ -61,8 +64,93 @@ export default function MarketingScreen() {
         }
     };
 
-    const handleDownloadQR = () => {
-        Alert.alert('Download', 'QR Code download feature will be available in the next update. You can share it for now!');
+    // Helper function to download QR code to cache
+    const downloadQRCode = async (url: string): Promise<string | null> => {
+        try {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}`;
+            const cacheDir = cacheDirectory;
+
+            if (!cacheDir) {
+                console.error('Cache directory not available');
+                return null;
+            }
+
+            const fileUri = cacheDir + 'qr-code.png';
+
+            const downloadResult = await downloadAsync(qrUrl, fileUri);
+
+            if (downloadResult.status === 200) {
+                return downloadResult.uri;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error downloading QR code:', error);
+            return null;
+        }
+    };
+
+    // Share QR code as image
+    const handleShareQR = async () => {
+        if (!stats?.referral_url) return;
+
+        try {
+            const qrUri = await downloadQRCode(stats.referral_url);
+
+            if (!qrUri) {
+                Alert.alert('Error', 'Failed to generate QR code');
+                return;
+            }
+
+            const isAvailable = await Sharing.isAvailableAsync();
+
+            if (isAvailable) {
+                await Sharing.shareAsync(qrUri, {
+                    mimeType: 'image/png',
+                    dialogTitle: 'Share QR Code',
+                    UTI: 'public.png'
+                });
+
+                await logInvitationAction('invitation_sent', 'qr');
+                fetchData(false);
+            } else {
+                Alert.alert('Error', 'Sharing is not available on this device');
+            }
+        } catch (error) {
+            console.error('Error sharing QR code:', error);
+            Alert.alert('Error', 'Failed to share QR code');
+        }
+    };
+
+    // Download QR code to gallery
+    const handleDownloadQR = async () => {
+        if (!stats?.referral_url) return;
+
+        try {
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Permission Required',
+                    'Please grant photo library access to download the QR code'
+                );
+                return;
+            }
+
+            const qrUri = await downloadQRCode(stats.referral_url);
+
+            if (!qrUri) {
+                Alert.alert('Error', 'Failed to generate QR code');
+                return;
+            }
+
+            const asset = await MediaLibrary.createAssetAsync(qrUri);
+            await MediaLibrary.createAlbumAsync('Downloads', asset, false);
+
+            Alert.alert('Success', 'QR code saved to your photo library!');
+        } catch (error) {
+            console.error('Error downloading QR code:', error);
+            Alert.alert('Error', 'Failed to download QR code');
+        }
     };
 
     const renderActivityItem = (item: InvitationActivity) => {
@@ -193,7 +281,7 @@ export default function MarketingScreen() {
 
                         {/* Frame 32 - Action Buttons */}
                         <View style={styles.actionButtons}>
-                            <TouchableOpacity style={styles.primaryButton} onPress={() => handleShare('qr')}>
+                            <TouchableOpacity style={styles.primaryButton} onPress={handleShareQR}>
                                 <Ionicons name="share-outline" size={16} color="#F5F5F5" />
                                 <Text style={styles.primaryButtonText}>Share QR code</Text>
                             </TouchableOpacity>
@@ -337,7 +425,7 @@ export default function MarketingScreen() {
                     </View>
 
                     {/* Frame 75 - Final Button Row */}
-                    <View style={styles.finalButtonRow}>
+                    {/* <View style={styles.finalButtonRow}>
                         <TouchableOpacity style={styles.finalSecondaryButton} onPress={() => fetchData()}>
                             <Ionicons name="refresh-outline" size={16} color="#0A292D" />
                             <Text style={styles.finalSecondaryButtonText}>Refresh</Text>
@@ -347,7 +435,7 @@ export default function MarketingScreen() {
                             <Ionicons name="checkmark-outline" size={16} color="#F5F5F5" />
                             <Text style={styles.finalPrimaryButtonText}>Finish</Text>
                         </TouchableOpacity>
-                    </View>
+                    </View> */}
                 </View>
             </ScrollView>
         </SafeAreaView>

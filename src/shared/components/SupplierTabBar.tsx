@@ -3,7 +3,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type DrawerOption = 'profile' | 'marketing';
+type DrawerOption = 'profile' | 'marketing' | 'reviews';
 
 export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const [selectedOption, setSelectedOption] = useState<DrawerOption>('profile');
@@ -15,11 +15,11 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
 
     // Check if More tab or its sub-screens are focused
     const focusedRouteName = state.routes[state.index].name;
-    const isMoreTabFocused = ['profile', 'marketing'].includes(focusedRouteName);
+    const isMoreTabFocused = ['profile', 'marketing', 'reviews'].includes(focusedRouteName);
 
     // Sync drawer selection with route
     useEffect(() => {
-        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing') {
+        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing' || focusedRouteName === 'reviews') {
             setSelectedOption(focusedRouteName as DrawerOption);
         }
     }, [focusedRouteName]);
@@ -85,14 +85,29 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             Marketing
                         </Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.drawerOption,
+                            selectedOption === 'reviews' && styles.drawerOptionActive
+                        ]}
+                        onPress={() => handleDrawerOptionPress('reviews')}
+                    >
+                        <Text style={[
+                            styles.drawerOptionText,
+                            selectedOption === 'reviews' && styles.drawerOptionTextActive
+                        ]}>
+                            Reviews
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </Animated.View>
 
             {/* Tab Bar */}
             <View style={styles.navbar}>
                 {state.routes.map((route, index) => {
-                    // Show Profile as the "More" tab, but hide Marketing and old Settings
-                    if (route.name === 'marketing' || route.name === 'settings') {
+                    // Show Profile as the "More" tab, but hide Marketing, Reviews and old Settings
+                    if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'settings') {
                         return null;
                     }
 
@@ -106,8 +121,8 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
 
                     let isFocused = state.index === index;
 
-                    // Special case: Highlight More tab (profile) if marketing is focused
-                    if (route.name === 'profile' && focusedRouteName === 'marketing') {
+                    // Special case: Highlight More tab (profile) if marketing or reviews is focused
+                    if (route.name === 'profile' && (focusedRouteName === 'marketing' || focusedRouteName === 'reviews')) {
                         isFocused = true;
                     }
 

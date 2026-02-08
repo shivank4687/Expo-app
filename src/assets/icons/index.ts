@@ -9,3 +9,6 @@ export { ToggleIcon } from './ToggleIcon';
 export { CopyIcon } from './CopyIcon';
 export { AttachIcon } from './AttachIcon';
 export { AiIcon } from './AiIcon';
+export { ThumbUpIcon } from './ThumbUpIcon';
+export { ThumbDownIcon } from './ThumbDownIcon';
+export { EyeViewIcon } from './EyeViewIcon';
