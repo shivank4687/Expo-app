@@ -4,10 +4,10 @@ import { Platform } from "react-native";
 //http://192.168.31.102:8000/
 
 const getBaseUrl = () => {
-  // return "https://artemayor.com";
-  return Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://192.168.31.102:8000";
+  return "https://artemayor.com";
+  // return Platform.OS === "android"
+  //   ? "http://10.0.2.2:8000"
+  //   : "http://192.168.31.102:8000";
   // : "http://192.168.1.12:8000";
   // : "http://127.0.0.1:8000"
 };
@@ -28,12 +28,14 @@ const ENV = {
     baseUrl: "https://staging.yourdomain.com",
     restApiUrl: "https://staging.yourdomain.com/api/v1",
     shopApiUrl: "https://staging.yourdomain.com/api",
+    socketUrl: "https://staging.yourdomain.com",
     timeout: 30000,
   },
   production: {
     baseUrl: "https://artemayor.com",
     restApiUrl: "https://artemayor.com/api/v1",
     shopApiUrl: "https://artemayor.com/api",
+    socketUrl: "https://artemayor.com",
     timeout: 30000,
   },
 };

@@ -64,6 +64,7 @@ export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange
                         placeholder="Overview"
                         placeholderTextColor="#666666"
                         multiline
+                        scrollEnabled={true}
                         textAlignVertical="top"
                         value={data.company_overview}
                         onChangeText={(val) => onChange('company_overview', val)}
@@ -200,9 +201,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'flex-start',
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 52,
+        paddingLeft: 16,
         gap: 10,
         width: 329,
         height: 112,
@@ -224,7 +223,7 @@ const styles = StyleSheet.create({
     },
     inputLarge: {
         flex: 1,
-        height: 48,
+        height: 112,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
@@ -232,6 +231,8 @@ const styles = StyleSheet.create({
         lineHeight: 16,
         color: '#666666',
         padding: 0,
+        paddingTop: 12,
+        paddingLeft: 4,
     },
     inputSmall: {
         flex: 1,

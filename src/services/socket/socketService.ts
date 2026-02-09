@@ -1,8 +1,9 @@
 import { io, Socket } from 'socket.io-client';
+import config from '@/config/env';
 
 class SocketService {
     private socket: Socket | null = null;
-    private readonly SOCKET_URL = 'http://192.168.31.102:3000'; // Update with your Socket.IO server URL
+    private readonly SOCKET_URL = config.socketUrl;
 
     connect() {
         if (this.socket?.connected) {

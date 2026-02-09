@@ -24,6 +24,7 @@ export const PoliciesCard: React.FC<PoliciesCardProps> = ({ data, onChange }) =>
                         placeholder="Enter shipping policy details..."
                         placeholderTextColor="#666666"
                         multiline
+                        scrollEnabled={true}
                         textAlignVertical="top"
                         value={data.shipping_policy}
                         onChangeText={(val) => onChange('shipping_policy', val)}
@@ -40,6 +41,7 @@ export const PoliciesCard: React.FC<PoliciesCardProps> = ({ data, onChange }) =>
                         placeholder="Enter privacy policy details..."
                         placeholderTextColor="#666666"
                         multiline
+                        scrollEnabled={true}
                         textAlignVertical="top"
                         value={data.privacy_policy}
                         onChangeText={(val) => onChange('privacy_policy', val)}
@@ -56,6 +58,7 @@ export const PoliciesCard: React.FC<PoliciesCardProps> = ({ data, onChange }) =>
                         placeholder="Enter return policy details..."
                         placeholderTextColor="#666666"
                         multiline
+                        scrollEnabled={true}
                         textAlignVertical="top"
                         value={data.return_policy}
                         onChangeText={(val) => onChange('return_policy', val)}
@@ -109,18 +112,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'flex-start',
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 52,
+        paddingLeft: 16,
         gap: 10,
         width: 329,
-        minHeight: 112,
+        height: 112,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
     },
     inputLarge: {
         flex: 1,
-        minHeight: 48,
+        height: 112,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
@@ -128,5 +129,7 @@ const styles = StyleSheet.create({
         lineHeight: 16,
         color: '#666666',
         padding: 0,
+        paddingTop: 12,
+        paddingLeft: 4,
     },
 });
