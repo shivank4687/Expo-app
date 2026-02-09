@@ -1,8 +1,9 @@
+import { getReviews, Review } from '@/features/supplier-panel/reviews/api/reviews.api';
+import { ReviewCard } from '@/features/supplier-panel/reviews/components';
 import { supplierTheme } from '@/theme';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { ReviewCard } from '@/features/supplier-panel/reviews/components';
-import { getReviews, Review } from '@/features/supplier-panel/reviews/api/reviews.api';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ReviewsScreen() {
     const [reviews, setReviews] = useState<Review[]>([]);

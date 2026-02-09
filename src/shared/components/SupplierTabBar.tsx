@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type DrawerOption = 'profile' | 'marketing' | 'reviews';
 
@@ -197,9 +197,11 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                     );
                 })}
             </View>
-            <View style={styles.navigationHandle}>
-                <View style={styles.handle} />
-            </View>
+            {Platform.OS === 'ios' && (
+                <View style={styles.navigationHandle}>
+                    <View style={styles.handle} />
+                </View>
+            )}
         </View>
     );
 }

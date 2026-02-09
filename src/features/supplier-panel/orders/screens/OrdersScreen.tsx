@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, FlatList, Text, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORS } from '../../styles/colors';
+import React, { useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabGroup, type Tab } from '../../components';
-import { OrdersHeader, OrderCard, NewOrderCard } from '../components';
-import { useOrdersList } from '../hooks/useOrdersList';
+import { COLORS } from '../../styles/colors';
 import { Order } from '../api/orders.api';
+import { NewOrderCard, OrderCard, OrdersHeader } from '../components';
+import { useOrdersList } from '../hooks/useOrdersList';
 
 /**
  * Orders Screen
  * Displays orders with tabs for Pending, Shipped, and Issues
  */
 const OrdersScreen: React.FC = () => {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
 
@@ -90,7 +92,7 @@ const OrdersScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 12 : 0) }]}>
                 {/* Header */}
                 <OrdersHeader />
 

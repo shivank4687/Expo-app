@@ -1,18 +1,18 @@
-import { Stack, useRouter, useSegments } from "expo-router";
-import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
-import { store, persistor } from "@/store/store";
-import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { checkAuthThunk } from "@/store/slices/authSlice";
-import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
-import { fetchCoreConfig } from "@/store/slices/coreSlice";
-import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
-import { ActivityIndicator, View } from "react-native";
 import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
-import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
 import { expoPushNotificationService } from "@/services/notifications/expo-push-notification.service";
+import { ToastContainer, ToastProvider } from "@/shared/components/Toast";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { checkAuthThunk } from "@/store/slices/authSlice";
+import { fetchCoreConfig } from "@/store/slices/coreSlice";
+import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
+import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
+import { persistor, store } from "@/store/store";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;

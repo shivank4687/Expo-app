@@ -1,11 +1,12 @@
+import { getInvitationActivity, getInvitationStats, InvitationActivity, InvitationStats, logInvitationAction } from '@/features/supplier-panel/invitations/api/invitations.api';
 import { supplierTheme } from '@/theme';
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Share, Alert, ActivityIndicator, Image, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getInvitationStats, getInvitationActivity, logInvitationAction, InvitationStats, InvitationActivity } from '@/features/supplier-panel/invitations/api/invitations.api';
 import { cacheDirectory, downloadAsync } from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Clipboard, Image, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MarketingScreen() {
     const [stats, setStats] = useState<InvitationStats | null>(null);

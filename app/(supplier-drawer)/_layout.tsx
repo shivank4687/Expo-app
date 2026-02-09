@@ -1,7 +1,7 @@
-import { Drawer } from "expo-router/drawer";
 import { SupplierDrawerContent } from "@/shared/components/SupplierDrawerContent";
 import { SupplierHeader } from "@/shared/components/SupplierHeader";
 import { supplierTheme } from "@/theme";
+import { Drawer } from "expo-router/drawer";
 
 export default function SupplierDrawerLayout() {
   return (

@@ -1,15 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useAppSelector } from '@/store/hooks';
-import { COLORS } from '@/features/supplier-panel/styles';
-import { ListIcon, GridIcon } from '@/assets/icons';
+import { GridIcon, ListIcon } from '@/assets/icons';
 import { ProductCard, ProductListCard } from '@/features/supplier-panel/components';
 import { useProductsList } from '@/features/supplier-panel/products/hooks/useProductsList';
 import type { Product } from '@/features/supplier-panel/products/types/products.types';
-import { useToast } from '@/shared/components/Toast';
+import { COLORS } from '@/features/supplier-panel/styles';
 import { productsApi } from '@/services/api/products.api';
+import { useToast } from '@/shared/components/Toast';
+import { useAppSelector } from '@/store/hooks';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ViewMode = 'list' | 'grid';
 
@@ -19,6 +20,7 @@ export default function ProductsScreen() {
   const [duplicatingProductId, setDuplicatingProductId] = useState<number | null>(null);
   const router = useRouter();
   const isFirstFocus = useRef(true);
+  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
 
   // Fetch products from API with infinite scroll
@@ -176,7 +178,7 @@ export default function ProductsScreen() {
   return (
     <View style={styles.root}>
       {/* Fixed Header with Title and View Toggle */}
-      <View style={styles.fixedHeader}>
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + (Platform.OS === 'android' ? 12 : 0) }]}>
         <View style={styles.header}>
           <Text style={styles.title}>My Products</Text>
 
@@ -308,7 +310,6 @@ const styles = StyleSheet.create({
   fixedHeader: {
     backgroundColor: COLORS.background,
     paddingHorizontal: 16,
-    paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',

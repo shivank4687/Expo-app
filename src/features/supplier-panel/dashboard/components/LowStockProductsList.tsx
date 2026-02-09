@@ -5,7 +5,7 @@ import { LowStockProductCard } from './LowStockProductCard';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
 
 interface LowStockProductsListProps {
-    onProductSave?: (productId: number, price: number, stock: number) => void;
+    onProductSave?: (productId: number, price: number, stock: number) => Promise<boolean | void> | boolean | void;
     onProductEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
     onSeeAll?: () => void;
@@ -18,6 +18,18 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
     onSeeAll,
 }) => {
     const { data: products, loading, error, refetch } = useLowStockProducts();
+
+    const handleSave = async (productId: number, price: number, stock: number) => {
+        if (!onProductSave) return;
+        try {
+            const result = await onProductSave(productId, price, stock);
+            if (result !== false) {
+                await refetch();
+            }
+        } catch {
+            // onProductSave should handle its own error UI
+        }
+    };
 
     if (loading) {
         return (
@@ -82,7 +94,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
                     <LowStockProductCard
                         key={product.id}
                         product={product}
-                        onSave={onProductSave}
+                        onSave={handleSave}
                         onEdit={onProductEdit}
                         onEditVariants={onEditVariants}
                     />

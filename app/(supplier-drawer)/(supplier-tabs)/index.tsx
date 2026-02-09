@@ -1,25 +1,28 @@
+import { createShipment } from '@/features/supplier-panel/dashboard/api/shipments.api';
+import { LowStockProductsList } from '@/features/supplier-panel/dashboard/components/LowStockProductsList';
+import { PaymentsCard } from '@/features/supplier-panel/dashboard/components/PaymentsCard';
+import { PendingOrdersCard } from '@/features/supplier-panel/dashboard/components/PendingOrdersCard';
+import { QuotesCard } from '@/features/supplier-panel/dashboard/components/QuotesCard';
+import { SalesStatsCard } from '@/features/supplier-panel/dashboard/components/SalesStatsCard';
+import { usePendingOrdersList } from '@/features/supplier-panel/dashboard/hooks/usePendingOrdersList';
+import { productsApi } from '@/features/supplier-panel/products/api/products.api';
+import { useToast } from '@/shared/components/Toast';
 import { useAppSelector } from '@/store/hooks';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { SalesStatsCard } from '@/features/supplier-panel/dashboard/components/SalesStatsCard';
-import { PendingOrdersCard } from '@/features/supplier-panel/dashboard/components/PendingOrdersCard';
-import { PaymentsCard } from '@/features/supplier-panel/dashboard/components/PaymentsCard';
-import { QuotesCard } from '@/features/supplier-panel/dashboard/components/QuotesCard';
-import { usePendingOrdersList } from '@/features/supplier-panel/dashboard/hooks/usePendingOrdersList';
-import { createShipment } from '@/features/supplier-panel/dashboard/api/shipments.api';
-import { useToast } from '@/shared/components/Toast';
-import { LowStockProductsList } from '@/features/supplier-panel/dashboard/components/LowStockProductsList';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SupplierDashboardScreen() {
   const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
   const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
   const { data: ordersData, loading: ordersLoading, error: ordersError, refetch } = usePendingOrdersList();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   // State for tracking numbers and photos per order
@@ -118,9 +121,16 @@ export default function SupplierDashboardScreen() {
   };
 
   // Handle product save
-  const handleProductSave = (productId: number, price: number, stock: number) => {
-    console.log('Save product:', productId, price, stock);
-    showToast({ message: 'Product updated successfully!', type: 'success' });
+  const handleProductSave = async (productId: number, price: number, stock: number) => {
+    try {
+      await productsApi.quickUpdateProduct(productId, { price, stock });
+      showToast({ message: 'Product updated successfully!', type: 'success' });
+      return true;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      showToast({ message: 'Failed to update product. Please try again.', type: 'error' });
+      return false;
+    }
   };
 
   // Handle product edit
@@ -144,7 +154,7 @@ export default function SupplierDashboardScreen() {
   // Handle see all products
   const handleSeeAllProducts = () => {
     console.log('See all products');
-    // Navigate to all products screen
+    router.push('/(supplier-drawer)/(supplier-tabs)/products');
   };
 
   if (!isAuthenticated || !supplier) {
@@ -163,7 +173,7 @@ export default function SupplierDashboardScreen() {
         end={{ x: 0, y: 1 }}
         style={styles.backgroundGradient}
       />
-      <ScrollView contentContainerStyle={styles.content}
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + (Platform.OS === 'android' ? 16 : 0) }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Profile Card */}
@@ -296,7 +306,9 @@ export default function SupplierDashboardScreen() {
                         </View>
                         <View style={styles.orderMeta}>
                           <Text style={styles.orderMetaText}>{order.customer_name}</Text>
+                          <Text style={styles.orderMetaSeparator}>•</Text>
                           <Text style={styles.orderMetaText}>{order.total_items} items</Text>
+                          <Text style={styles.orderMetaSeparator}>•</Text>
                           <Text style={styles.orderMetaText}>{order.formatted_amount}</Text>
                         </View>
                       </View>
@@ -537,7 +549,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: supplierTheme.spacing.xl,
+    marginBottom: supplierTheme.spacing.md,
   },
   profileContent: {
     flexDirection: 'row',
@@ -608,7 +620,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: supplierTheme.spacing.xl,
+    marginBottom: supplierTheme.spacing.md,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,
@@ -658,7 +670,7 @@ const styles = StyleSheet.create({
     padding: 0,
     gap: 9,
     width: '100%',
-    marginBottom: supplierTheme.spacing.xl,
+    marginBottom: supplierTheme.spacing.md,
   },
   metricCard: {
     flexDirection: 'column',
@@ -742,12 +754,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     gap: 16,
     width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: supplierTheme.spacing.xl,
+    marginBottom: supplierTheme.spacing.md,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
@@ -774,7 +787,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
     flex: 1,
     height: 34,
     borderRadius: 4,
@@ -788,7 +802,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    lineHeight: 14,
+    lineHeight: 18,
     color: '#000000',
   },
   ordersWarning: {
@@ -808,9 +822,10 @@ const styles = StyleSheet.create({
   orderCard: {
     flexDirection: 'column',
     alignItems: 'flex-start',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     gap: 16,
-    width: 329,
+    width: 310,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#EEEEEF',
@@ -868,6 +883,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: '#666666',
   },
+  orderMetaSeparator: {
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#333333',
+  },
   orderContent: {
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -893,7 +915,8 @@ const styles = StyleSheet.create({
   trackingInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 0,
     gap: 8,
     flex: 1,
     height: 40,
@@ -904,7 +927,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    lineHeight: 17,
+    lineHeight: 18,
     color: '#000000',
   },
   photoSelectedText: {
@@ -927,7 +950,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     gap: 4,
     height: 40,
     backgroundColor: '#E0FFFE',
@@ -961,7 +984,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     gap: 8,
     flex: 1,
     height: 40,
@@ -982,7 +1006,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     gap: 8,
     flex: 1,
     height: 40,
@@ -1028,7 +1053,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: supplierTheme.spacing.xl,
+    marginBottom: supplierTheme.spacing.md,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
@@ -1268,7 +1293,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: supplierTheme.spacing.xl,
+    marginBottom: supplierTheme.spacing.md,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
@@ -1444,6 +1469,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'stretch',
+    minHeight: 160,
     padding: 40,
     gap: 12,
   },

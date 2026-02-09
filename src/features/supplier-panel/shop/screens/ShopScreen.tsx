@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { IdentityCard, ShopDetailsCard, PoliciesCard, AddressCard, SalesShippingCard, DeliveryMethodCard, ShopMediaCard, SocialMediaCard } from '../components';
 import { COLORS } from '@/features/supplier-panel/styles';
-import { getSupplierProfile, updateSupplierProfile, SupplierProfile } from '../api/supplier-profile.api';
 import { useToast } from '@/shared/components/Toast/ToastContext';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getSupplierProfile, SupplierProfile, updateSupplierProfile } from '../api/supplier-profile.api';
+import { AddressCard, DeliveryMethodCard, IdentityCard, PoliciesCard, SalesShippingCard, ShopDetailsCard, ShopMediaCard, SocialMediaCard } from '../components';
 
 export default function ShopScreen() {
     const { showToast } = useToast();

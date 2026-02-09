@@ -53,7 +53,8 @@ const styles = StyleSheet.create({
     metricCard: {
         flexDirection: 'column',
         alignItems: 'flex-start',
-        padding: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 4,
         gap: 8,
         width: '48%',
         height: 106,

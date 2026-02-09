@@ -5,7 +5,7 @@ import { LowStockProduct } from '../api/low-stock-products.api';
 
 interface LowStockProductCardProps {
     product: LowStockProduct;
-    onSave?: (productId: number, price: number, stock: number) => void;
+    onSave?: (productId: number, price: number, stock: number) => Promise<boolean | void> | boolean | void;
     onEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
 }
@@ -18,12 +18,22 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
 }) => {
     const [price, setPrice] = useState(product.price.toString());
     const [stock, setStock] = useState(product.stock_qty.toString());
+    const [priceError, setPriceError] = useState<string | null>(null);
 
     const isConfigurable = product.type === 'configurable';
+    const hasChanges =
+        price !== product.price.toString() ||
+        stock !== product.stock_qty.toString();
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (onSave) {
-            onSave(product.id, parseFloat(price), parseInt(stock));
+            const parsedPrice = parseFloat(price);
+            if (!price || Number.isNaN(parsedPrice) || parsedPrice <= 0) {
+                setPriceError('Price is required');
+                return;
+            }
+            setPriceError(null);
+            await onSave(product.id, parsedPrice, parseInt(stock));
         }
     };
 
@@ -49,15 +59,19 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
 
             <View style={styles.productFields}>
                 <View style={styles.productField}>
-                    <Text style={styles.productFieldLabel}>B2B Price (MX$)</Text>
+                    <Text style={styles.productFieldLabel}>Price (MX$)</Text>
                     <TextInput
-                        style={styles.productFieldInput}
+                        style={[styles.productFieldInput, priceError && styles.productFieldInputError]}
                         value={price}
-                        onChangeText={setPrice}
+                        onChangeText={(value) => {
+                            setPrice(value);
+                            if (priceError) setPriceError(null);
+                        }}
                         keyboardType="numeric"
                         placeholder="0"
                         placeholderTextColor="#666666"
                     />
+                    {priceError && <Text style={styles.fieldErrorText}>{priceError}</Text>}
                 </View>
                 <View style={styles.productField}>
                     <Text style={styles.productFieldLabel}>Stock</Text>
@@ -75,8 +89,9 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
             {isConfigurable ? (
                 <View style={styles.productActionsThree}>
                     <TouchableOpacity
-                        style={styles.productActionSmallPrimary}
+                        style={[styles.productActionSmallPrimary, !hasChanges && styles.productActionDisabled]}
                         onPress={handleSave}
+                        disabled={!hasChanges}
                     >
                         <Text style={styles.productActionPrimaryText}>Save</Text>
                     </TouchableOpacity>
@@ -96,8 +111,9 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
             ) : (
                 <View style={styles.productActions}>
                     <TouchableOpacity
-                        style={styles.productActionPrimary}
+                        style={[styles.productActionPrimary, !hasChanges && styles.productActionDisabled]}
                         onPress={handleSave}
+                        disabled={!hasChanges}
                     >
                         <Text style={styles.productActionPrimaryText}>Save</Text>
                     </TouchableOpacity>
@@ -194,7 +210,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 12,
         paddingHorizontal: 16,
         alignSelf: 'stretch',
         height: 40,
@@ -205,6 +220,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 16,
         color: '#666666',
+    },
+    productFieldInputError: {
+        borderWidth: 1,
+        borderColor: '#EF4444',
+    },
+    fieldErrorText: {
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 12,
+        lineHeight: 14,
+        color: '#DC2626',
     },
     productActions: {
         flexDirection: 'row',
@@ -223,6 +249,9 @@ const styles = StyleSheet.create({
         height: 40,
         backgroundColor: '#00615E',
         borderRadius: 8,
+    },
+    productActionDisabled: {
+        opacity: 0.5,
     },
     productActionPrimaryText: {
         fontFamily: 'Inter',

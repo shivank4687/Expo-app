@@ -59,7 +59,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 0,
         borderRadius: 4,
         height: 34,
     },
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 14,
-        lineHeight: 14,
+        lineHeight: 18,
         color: COLORS.black,
     },
     tabTextActive: {
