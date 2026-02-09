@@ -87,7 +87,7 @@ export const handlePublish = async (
     params: SubmissionParams,
     setIsSubmitting: (value: boolean) => void,
     showToast?: (options: { message: string; type: 'success' | 'error' | 'info' }) => void
-): Promise<void> => {
+): Promise<boolean> => {
     const { refs, activeTab, attributeFamilyId, attributes } = params;
 
     const essentialData = refs.essentialCardRef.current?.getData();
@@ -127,7 +127,7 @@ export const handlePublish = async (
         //     'Validation Error',
         //     `Please fill in all required fields in the ${errorSections.join(' and ')} section${errorSections.length > 1 ? 's' : ''}.`
         // );
-        return;
+        return false;
     }
 
     // Validate
@@ -163,6 +163,7 @@ export const handlePublish = async (
         } else {
             Alert.alert('Success', 'Product published successfully!');
         }
+        return true;
     } catch (err: any) {
         console.error('❌ Error publishing product:', err);
 
@@ -175,6 +176,7 @@ export const handlePublish = async (
         } else {
             Alert.alert('Error', err.response?.data?.message || 'Failed to publish product. Please check your inputs.');
         }
+        return false;
     } finally {
         setIsSubmitting(false);
     }

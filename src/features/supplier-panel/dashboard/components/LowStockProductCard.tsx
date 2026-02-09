@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LowStockProduct } from '../api/low-stock-products.api';
 
@@ -18,12 +18,22 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
 }) => {
     const [price, setPrice] = useState(product.price.toString());
     const [stock, setStock] = useState(product.stock_qty.toString());
+    const [savedPrice, setSavedPrice] = useState(product.price.toString());
+    const [savedStock, setSavedStock] = useState(product.stock_qty.toString());
     const [priceError, setPriceError] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const isConfigurable = product.type === 'configurable';
-    const hasChanges =
-        price !== product.price.toString() ||
-        stock !== product.stock_qty.toString();
+    useEffect(() => {
+        const nextPrice = product.price.toString();
+        const nextStock = product.stock_qty.toString();
+        setPrice(nextPrice);
+        setStock(nextStock);
+        setSavedPrice(nextPrice);
+        setSavedStock(nextStock);
+    }, [product.id, product.price, product.stock_qty]);
+
+    const hasChanges = price !== savedPrice || stock !== savedStock;
 
     const handleSave = async () => {
         if (onSave) {
@@ -33,7 +43,15 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                 return;
             }
             setPriceError(null);
-            await onSave(product.id, parsedPrice, parseInt(stock));
+            try {
+                setIsSaving(true);
+                const marketplaceProductId = product.marketplace_product_id || product.id;
+                await onSave(marketplaceProductId, parsedPrice, parseInt(stock));
+                setSavedPrice(price);
+                setSavedStock(stock);
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -89,11 +107,15 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
             {isConfigurable ? (
                 <View style={styles.productActionsThree}>
                     <TouchableOpacity
-                        style={[styles.productActionSmallPrimary, !hasChanges && styles.productActionDisabled]}
+                        style={[styles.productActionSmallPrimary, (!hasChanges || isSaving) && styles.productActionDisabled]}
                         onPress={handleSave}
-                        disabled={!hasChanges}
+                        disabled={!hasChanges || isSaving}
                     >
-                        <Text style={styles.productActionPrimaryText}>Save</Text>
+                        {isSaving ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.productActionPrimaryText}>Save</Text>
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.productActionMediumOutline}
@@ -111,11 +133,15 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
             ) : (
                 <View style={styles.productActions}>
                     <TouchableOpacity
-                        style={[styles.productActionPrimary, !hasChanges && styles.productActionDisabled]}
+                        style={[styles.productActionPrimary, (!hasChanges || isSaving) && styles.productActionDisabled]}
                         onPress={handleSave}
-                        disabled={!hasChanges}
+                        disabled={!hasChanges || isSaving}
                     >
-                        <Text style={styles.productActionPrimaryText}>Save</Text>
+                        {isSaving ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.productActionPrimaryText}>Save</Text>
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.productActionOutline}

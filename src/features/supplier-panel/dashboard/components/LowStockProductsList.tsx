@@ -22,10 +22,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
     const handleSave = async (productId: number, price: number, stock: number) => {
         if (!onProductSave) return;
         try {
-            const result = await onProductSave(productId, price, stock);
-            if (result !== false) {
-                await refetch();
-            }
+            await onProductSave(productId, price, stock);
         } catch {
             // onProductSave should handle its own error UI
         }
@@ -92,7 +89,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
             <View style={styles.productsContainer}>
                 {displayProducts.map((product) => (
                     <LowStockProductCard
-                        key={product.id}
+                        key={product.marketplace_product_id || product.id}
                         product={product}
                         onSave={handleSave}
                         onEdit={onProductEdit}

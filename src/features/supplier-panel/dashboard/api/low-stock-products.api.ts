@@ -9,6 +9,7 @@ export interface ProductVariant {
 
 export interface LowStockProduct {
     id: number;
+    marketplace_product_id: number;
     name: string;
     sku: string;
     type: 'simple' | 'configurable';

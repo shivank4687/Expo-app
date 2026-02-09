@@ -89,7 +89,7 @@ export default function AddProductScreen() {
     };
 
     const handlePublishLocal = async () => {
-        await handlePublish(
+        const success = await handlePublish(
             {
                 refs: {
                     essentialCardRef,
@@ -105,6 +105,9 @@ export default function AddProductScreen() {
             setIsSubmitting,
             showToast
         );
+        if (success) {
+            router.replace('/(supplier-drawer)/(supplier-tabs)/products');
+        }
     };
 
     // Handle AI Content Generation
