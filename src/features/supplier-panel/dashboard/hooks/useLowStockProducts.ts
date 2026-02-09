@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { getLowStockProducts, LowStockProduct } from '../api/low-stock-products.api';
 
 export const useLowStockProducts = () => {
@@ -20,9 +21,11 @@ export const useLowStockProducts = () => {
         }
     };
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchProducts();
+        }, [])
+    );
 
     return {
         data,
