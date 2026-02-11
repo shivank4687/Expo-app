@@ -11,6 +11,7 @@ import { persistor, store } from "@/store/store";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 
@@ -191,19 +192,21 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <PersistGate
-        loading={
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <ActivityIndicator size="large" />
-          </View>
-        }
-        persistor={persistor}
-        onBeforeLift={handleBeforeLift}
-      >
-        <AppContent />
-      </PersistGate>
+      <SafeAreaProvider>
+        <PersistGate
+          loading={
+            <View
+              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            >
+              <ActivityIndicator size="large" />
+            </View>
+          }
+          persistor={persistor}
+          onBeforeLift={handleBeforeLift}
+        >
+          <AppContent />
+        </PersistGate>
+      </SafeAreaProvider>
     </Provider>
   );
 }

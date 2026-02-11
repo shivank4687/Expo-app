@@ -2,10 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type DrawerOption = 'profile' | 'marketing' | 'reviews';
 
 export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+    const insets = useSafeAreaInsets();
+    const bottomInset = Platform.OS === 'android' ? insets.bottom : 0;
     const [selectedOption, setSelectedOption] = useState<DrawerOption>('profile');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerHeight = useRef(new Animated.Value(0)).current;
@@ -52,7 +55,7 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingBottom: bottomInset }]}>
             {/* Drawer */}
             <Animated.View style={[styles.drawer, { height: drawerHeight }]}>
                 <View style={styles.drawerContent}>
@@ -104,7 +107,7 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
             </Animated.View>
 
             {/* Tab Bar */}
-            <View style={styles.navbar}>
+            <View style={[styles.navbar, { height: 72 + bottomInset, paddingBottom: Math.max(bottomInset, 8) }]}>
                 {state.routes.map((route, index) => {
                     // Show Profile as the "More" tab, but hide Marketing, Reviews and old Settings
                     if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'settings') {
