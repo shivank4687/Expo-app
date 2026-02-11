@@ -25,6 +25,8 @@ export interface PriceStockVariantsCardRef {
     updateFields: (data: any) => void;
 }
 
+const MAX_VARIANT_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+
 const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockVariantsCardProps>(({
     productName,
     attributes = [],
@@ -580,6 +582,14 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_VARIANT_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 const newImage = { uri: result.assets[0].uri };
                 setVariants(prev => prev.map(v => {
                     if (v.id === variantId) {
@@ -616,6 +626,14 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_VARIANT_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 const newImage = { uri: result.assets[0].uri };
                 setVariants(prev => prev.map(v => {
                     if (v.id === variantId) {

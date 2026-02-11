@@ -33,8 +33,8 @@ interface MediaFile {
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+const MAX_VIDEO_SIZE = 1.5 * 1024 * 1024; // 1.5MB
 const MAX_VIDEO_DURATION = 25; // 25 seconds
 const REQUIRED_IMAGE_WIDTH = 560;
 const REQUIRED_IMAGE_HEIGHT = 609;
@@ -444,7 +444,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             // Validate file size
             if (isVideo) {
                 if (fileSize > MAX_VIDEO_SIZE) {
-                    errors.push(`Video size exceeds 20MB limit.`);
+                    errors.push(`Video size exceeds 1.5MB limit.`);
                     continue;
                 }
                 const durationInSeconds = (asset.duration || 0) / 1000;
@@ -465,7 +465,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 };
             } else {
                 if (fileSize > MAX_IMAGE_SIZE) {
-                    errors.push(`Image "${asset.fileName}" exceeds 5MB limit.`);
+                    errors.push(`Image "${asset.fileName}" exceeds 1.5MB limit.`);
                     continue;
                 }
                 if (images.length + newImages.length >= MAX_IMAGES) {

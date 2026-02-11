@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useToast } from '@/shared/components/Toast/ToastContext';
 
 interface ShopMediaCardProps {
     data: {
@@ -11,6 +12,9 @@ interface ShopMediaCardProps {
 }
 
 export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) => {
+    const { showToast } = useToast();
+    const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+
     const pickBanner = async () => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -27,7 +31,15 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                 quality: 0.8,
             });
 
-            if (!result.canceled) {
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 onChange('banner', result.assets[0].uri);
             }
         } catch (error) {
