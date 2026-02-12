@@ -19,6 +19,13 @@ export default function EditProductScreen() {
     const productId = params.id ? parseInt(params.id as string) : null;
     const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
     const isFromDashboard = sourceParam === 'dashboard';
+    const navigateBack = () => {
+        if (isFromDashboard) {
+            router.replace('/(supplier-drawer)/(supplier-tabs)');
+            return;
+        }
+        router.back();
+    };
 
     const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
     const [attributeFamilyId, setAttributeFamilyId] = useState<number | null>(null);
@@ -242,10 +249,14 @@ export default function EditProductScreen() {
                 type: 'success',
             });
 
-            // Navigate back to products list
-            router.back();
+            // Navigate back to source screen
+            navigateBack();
         } catch (error: any) {
             console.error('Error updating product:', error);
+            console.error('Error code:', error?.code);
+            console.error('Error message:', error?.message);
+            console.error('Error request URL:', error?.config?.baseURL, error?.config?.url);
+            console.error('Error response:', error?.response?.data);
             Alert.alert('Error', error.message || 'Failed to update product. Please try again.');
         } finally {
             setIsSubmitting(false);
@@ -260,7 +271,7 @@ export default function EditProductScreen() {
                     <Text style={styles.errorText}>{fetchError}</Text>
                     <TouchableOpacity
                         style={styles.retryButton}
-                        onPress={() => router.back()}
+                        onPress={navigateBack}
                     >
                         <Text style={styles.retryButtonText}>Go Back</Text>
                     </TouchableOpacity>
@@ -332,7 +343,7 @@ export default function EditProductScreen() {
                 <View style={styles.headerContent}>
                     <TouchableOpacity
                         style={styles.backButton}
-                        onPress={() => router.back()}
+                        onPress={navigateBack}
                         activeOpacity={0.7}
                         disabled={isSubmitting}
                     >

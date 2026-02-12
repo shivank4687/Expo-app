@@ -11,6 +11,7 @@ import { useToast } from '@/shared/components/Toast';
 import { useAppSelector } from '@/store/hooks';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { AttachIcon, MessageIcon } from '@/assets/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -166,6 +167,46 @@ export default function SupplierDashboardScreen() {
     });
   };
 
+  const handleDuplicateProduct = async (productId: number) => {
+    try {
+      showToast({
+        type: 'info',
+        message: 'Duplicating product...',
+        duration: 2000,
+      });
+
+      const result = await productsApi.duplicateSupplierProduct(productId);
+
+      showToast({
+        type: 'success',
+        message: 'Product duplicated successfully',
+        duration: 3000,
+      });
+
+      router.push({
+        pathname: '/(supplier-drawer)/edit-product',
+        params: {
+          id: String(result.marketplace_product_id),
+          source: 'dashboard',
+        },
+      });
+    } catch (error: any) {
+      console.error('Error duplicating product:', error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to duplicate product';
+
+      showToast({
+        type: 'error',
+        message: errorMessage,
+        duration: 4000,
+      });
+    }
+  };
+
   // Handle edit variants
   const handleEditVariants = (productId: number) => {
     console.log('Edit variants:', productId);
@@ -235,7 +276,7 @@ export default function SupplierDashboardScreen() {
               style={styles.actionButton}
               onPress={() => router.push('/(supplier-drawer)/messages')}
             >
-              <Ionicons name="chatbubble-outline" size={16} color="#000000" />
+              <MessageIcon width={16} height={16} color="#000000" />
             </TouchableOpacity>
           </View>
         </View>
@@ -281,19 +322,19 @@ export default function SupplierDashboardScreen() {
               style={[styles.orderTab, activeTab === 'pending' && styles.orderTabActive]}
               onPress={() => setActiveTab('pending')}
             >
-              <Text style={styles.orderTabText}>Pending</Text>
+              <Text style={[styles.orderTabText, activeTab === 'pending' && styles.orderTabTextActive]}>Pending</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.orderTab, activeTab === 'shipped' && styles.orderTabActive]}
               onPress={() => setActiveTab('shipped')}
             >
-              <Text style={styles.orderTabText}>Shipped</Text>
+              <Text style={[styles.orderTabText, activeTab === 'shipped' && styles.orderTabTextActive]}>Shipped</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.orderTab, activeTab === 'issues' && styles.orderTabActive]}
               onPress={() => setActiveTab('issues')}
             >
-              <Text style={styles.orderTabText}>Issues</Text>
+              <Text style={[styles.orderTabText, activeTab === 'issues' && styles.orderTabTextActive]}>Issues</Text>
             </TouchableOpacity>
           </View>
 
@@ -331,7 +372,7 @@ export default function SupplierDashboardScreen() {
                         <View style={styles.orderHeaderTop}>
                           <Text style={styles.orderNumber}>{order.order_increment_id}</Text>
                           <View style={styles.orderTimeBadge}>
-                            <Ionicons name="time-outline" size={16} color="#E5A75F" />
+                            <Ionicons name="time-outline" size={16} color="#FFFFFF" />
                             <Text style={styles.orderTimeText}>18h</Text>
                           </View>
                         </View>
@@ -350,7 +391,7 @@ export default function SupplierDashboardScreen() {
                           <TextInput
                             style={styles.trackingInput}
                             placeholder="Paste the code"
-                            placeholderTextColor="#999999"
+                            placeholderTextColor="#0A292D"
                             value={trackingNumbers[order.id] || ''}
                             onChangeText={(text) => setTrackingNumbers(prev => ({ ...prev, [order.id]: text }))}
                           />
@@ -358,7 +399,7 @@ export default function SupplierDashboardScreen() {
                             style={styles.photoButton}
                             onPress={() => handlePickPhoto(order.id)}
                           >
-                            <Ionicons name="camera-outline" size={16} color="#000000" />
+                            <AttachIcon width={16} height={16} color="#0A292D" />
                             <Text style={styles.photoButtonText}>Photo</Text>
                           </TouchableOpacity>
                         </View>
@@ -383,7 +424,7 @@ export default function SupplierDashboardScreen() {
                             )}
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.orderActionSecondary}>
-                            <Ionicons name="print-outline" size={16} color="#00615E" />
+                            <Ionicons name="print-outline" size={16} color="#0A292D" />
                             <Text style={styles.orderActionSecondaryText}>Print</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
@@ -428,6 +469,7 @@ export default function SupplierDashboardScreen() {
           onProductEdit={handleProductEdit}
           onEditVariants={handleEditVariants}
           onToggleStatus={handleToggleProductStatus}
+          onDuplicate={handleDuplicateProduct}
           onSeeAll={handleSeeAllProducts}
         />
 
@@ -477,7 +519,8 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    padding: supplierTheme.spacing.lg,
+    paddingVertical: supplierTheme.spacing.lg,
+    paddingHorizontal: 12,
     paddingTop: 80, // content starts inside gradient
   },
 
@@ -523,7 +566,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 48,
     height: 48,
-    backgroundColor: '#000000',
+    backgroundColor: supplierTheme.colors.primary[500],
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -532,7 +575,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '600',
     fontSize: 20,
-    color: '#FFFFFF',
+    color: '#F5F5F5',
   },
   profileInfo: {
     flexDirection: 'column',
@@ -720,7 +763,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 16,
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FCF7EA',
     borderRadius: 16,
     marginBottom: supplierTheme.spacing.md,
     shadowColor: '#000000',
@@ -742,7 +785,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 4,
     alignSelf: 'stretch',
-    backgroundColor: '#EEEEEF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
   },
   orderTab: {
@@ -756,7 +799,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   orderTabActive: {
-    backgroundColor: '#E0FFFE',
+    backgroundColor: '#00615E',
     borderWidth: 1,
     borderColor: '#00615E',
   },
@@ -767,12 +810,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: '#000000',
   },
+  orderTabTextActive: {
+    color: '#FFFFFF',
+  },
   ordersWarning: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
     lineHeight: 20,
-    color: '#000000',
+    color: '#0A292D',
     alignSelf: 'stretch',
   },
   ordersScroll: {
@@ -788,9 +834,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 16,
     width: 310,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FCF7EA',
     borderWidth: 1,
-    borderColor: '#EEEEEF',
+    borderColor: '#E9E3D3',
     borderRadius: 16,
   },
   orderHeader: {
@@ -822,7 +868,7 @@ const styles = StyleSheet.create({
     padding: 4,
     paddingHorizontal: 8,
     gap: 4,
-    backgroundColor: '#F7EFE6',
+    backgroundColor: '#BD5626',
     borderRadius: 40,
   },
   orderTimeText: {
@@ -830,7 +876,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 17,
-    color: '#000000',
+    color: '#FFFFFF',
   },
   orderMeta: {
     flexDirection: 'row',
@@ -843,14 +889,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 13,
     lineHeight: 18,
-    color: '#666666',
+    color: '#0A292D',
   },
   orderMetaSeparator: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 13,
     lineHeight: 18,
-    color: '#333333',
+    color: '#0A292D',
   },
   orderContent: {
     flexDirection: 'column',
@@ -882,15 +928,15 @@ const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
     height: 40,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F0E7',
     borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderColor: '#F3F0E7',
     borderRadius: 8,
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
     lineHeight: 18,
-    color: '#000000',
+    color: '#0A292D',
   },
   photoSelectedText: {
     fontFamily: 'Inter',
@@ -915,9 +961,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 4,
     height: 40,
-    backgroundColor: '#E0FFFE',
+    backgroundColor: '#F3F0E7',
     borderWidth: 1,
-    borderColor: '#00615E',
+    borderColor: '#F3F0E7',
     borderRadius: 8,
   },
   photoButtonText: {
@@ -925,14 +971,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 14,
     lineHeight: 17,
-    color: '#000000',
+    color: '#0A292D',
   },
   orderHelpText: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 17,
-    color: '#666666',
+    color: '#0A292D',
     alignSelf: 'stretch',
   },
   orderActions: {
@@ -973,9 +1019,9 @@ const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
     height: 40,
-    backgroundColor: '#E0FFFE',
+    backgroundColor: '#EAECE1',
     borderWidth: 1,
-    borderColor: '#00615E',
+    borderColor: '#EAECE1',
     borderRadius: 8,
   },
   orderActionSecondaryText: {
@@ -983,7 +1029,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 16,
     lineHeight: 16,
-    color: '#000000',
+    color: '#0A292D',
   },
   orderActionOutline: {
     flexDirection: 'row',
@@ -993,8 +1039,9 @@ const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
     height: 40,
+    backgroundColor: '#EAECE1',
     borderWidth: 1,
-    borderColor: '#00615E',
+    borderColor: '#EAECE1',
     borderRadius: 8,
   },
   orderActionOutlineText: {
@@ -1002,7 +1049,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 16,
     lineHeight: 16,
-    color: '#000000',
+    color: '#0A292D',
   },
 
   // Products Section Styles
@@ -1453,6 +1500,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'stretch',
+    width: '100%',
     padding: 40,
     gap: 12,
   },
@@ -1461,11 +1510,15 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 16,
     color: '#00615E',
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   comingSoonContainer: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'stretch',
+    width: '100%',
     padding: 40,
     gap: 12,
   },
@@ -1474,6 +1527,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 18,
     color: '#000000',
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   comingSoonSubtext: {
     fontFamily: 'Inter',
@@ -1481,6 +1536,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     textAlign: 'center',
+    alignSelf: 'center',
   },
   viewAllButton: {
     flexDirection: 'row',

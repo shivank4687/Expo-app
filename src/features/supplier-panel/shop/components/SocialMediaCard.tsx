@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: 329,
+        width: "100%",
         height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         height: 67,
     },
     label: {
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,

@@ -8,7 +8,9 @@ type DrawerOption = 'profile' | 'marketing' | 'reviews';
 
 export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
-    const bottomInset = Platform.OS === 'android' ? insets.bottom : 0;
+    // Some Android devices report 0 bottom inset with 3-button navigation.
+    // Use a fallback gap to keep the tab bar above system buttons.
+    const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 28) : 0;
     const [selectedOption, setSelectedOption] = useState<DrawerOption>('profile');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerHeight = useRef(new Animated.Value(0)).current;
@@ -107,7 +109,7 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
             </Animated.View>
 
             {/* Tab Bar */}
-            <View style={[styles.navbar, { height: 72 + bottomInset, paddingBottom: Math.max(bottomInset, 8) }]}>
+            <View style={styles.navbar}>
                 {state.routes.map((route, index) => {
                     // Show Profile as the "More" tab, but hide Marketing, Reviews and old Settings
                     if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'settings') {

@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         height: 187,
     },
     fieldContainerSmall: {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         height: 67,
     },
     fieldContainerLogo: {
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
     },
     logoPreviewContainer: {
         width: 100,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
         padding: 2,
     },
     label: {
-        width: 329,
+        width: "100%",
         height: 19,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         paddingLeft: 16,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 112,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
         padding: 0,
     },
     tipText: {
-        width: 329,
+        width: "100%",
         height: 40,
         fontFamily: 'Inter',
         fontStyle: 'normal',

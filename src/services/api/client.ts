@@ -109,10 +109,17 @@ class ApiClient {
                 // Currency is handled the same way for both
                 config.headers['X-Currency'] = currency;
 
-                // If the request data is FormData, remove Content-Type header
-                // Let axios set it automatically with the correct boundary
-                if (config.data instanceof FormData) {
+                // If the request data is FormData, remove JSON Content-Type
+                // so axios/React Native can set multipart boundary correctly.
+                const isFormDataPayload =
+                    !!config.data &&
+                    typeof (config.data as any).append === 'function' &&
+                    (Object.prototype.toString.call(config.data) === '[object FormData]' ||
+                        (typeof FormData !== 'undefined' && config.data instanceof FormData));
+
+                if (isFormDataPayload) {
                     delete config.headers['Content-Type'];
+                    delete config.headers['content-type'];
                 }
 
                 return config;

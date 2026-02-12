@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     sectionContainer: {
-        width: 329,
+        width: "100%",
         minHeight: 296,
         backgroundColor: '#FCF7EA',
         borderWidth: 1,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     sectionContainerSmall: {
-        width: 329,
+        width: "100%",
         minHeight: 99,
         backgroundColor: '#FCF7EA',
         borderWidth: 1,

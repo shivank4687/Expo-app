@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     Animated,
-    Dimensions,
     TouchableOpacity,
     PanResponder,
 } from 'react-native';
@@ -12,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useToast, ToastType } from './ToastContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOAST_HEIGHT = 80;
 const SWIPE_THRESHOLD = -50;
 
@@ -171,7 +169,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         minHeight: TOAST_HEIGHT,
-        width: SCREEN_WIDTH,
+        width: '100%',
         zIndex: 9999,
         elevation: 999,
         shadowColor: '#000',
@@ -214,4 +212,3 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
 });
-

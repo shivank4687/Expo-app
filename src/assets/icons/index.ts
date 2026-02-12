@@ -12,3 +12,4 @@ export { AiIcon } from './AiIcon';
 export { ThumbUpIcon } from './ThumbUpIcon';
 export { ThumbDownIcon } from './ThumbDownIcon';
 export { EyeViewIcon } from './EyeViewIcon';
+export { MessageIcon } from './MessageIcon';

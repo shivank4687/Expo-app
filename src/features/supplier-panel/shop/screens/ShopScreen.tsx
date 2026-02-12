@@ -138,7 +138,11 @@ export default function ShopScreen() {
             });
         } catch (error: any) {
             console.error('Error updating profile:', error);
-            const errorMessage = error.response?.data?.message || 'Failed to update profile.';
+            const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message ||
+                'Failed to update profile.';
             showToast({
                 type: 'error',
                 message: errorMessage
@@ -292,7 +296,7 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 8,
         gap: 16,
-        alignItems: 'center',
+        alignItems: 'stretch',
     },
     card: {
         display: 'flex',
@@ -301,7 +305,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 16,
         gap: 16,
-        width: 361,
+        width: "100%",
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
         shadowColor: '#000000',
@@ -317,7 +321,7 @@ const styles = StyleSheet.create({
     actionRow: {
         flexDirection: 'row',
         gap: 8,
-        width: 361,
+        width: "100%",
         height: 40,
         alignSelf: 'stretch',
         marginTop: 8,

@@ -4,7 +4,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
-import { getOrderDetails } from '../../orders/api/orders.api';
+import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
+import { createShipment } from '../../dashboard/api/shipments.api';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -29,8 +30,9 @@ export default function OrderDetailsScreen() {
         { id: 'tracking', label: 'Tracking' },
     ];
 
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isSubmittingTracking, setIsSubmittingTracking] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -50,10 +52,49 @@ export default function OrderDetailsScreen() {
         }
     };
 
-    const handleTrackingSubmit = (trackingNumber: string, photoUri: string) => {
-        console.log('Tracking Number:', trackingNumber);
-        console.log('Photo URI:', photoUri);
-        // TODO: Implement API call to submit tracking information
+    const handleTrackingSubmit = async (trackingNumber: string, photoUri: string) => {
+        try {
+            setIsSubmittingTracking(true);
+
+            const shipmentData: any = {
+                track_number: trackingNumber,
+            };
+
+            if (photoUri) {
+                shipmentData.tracking_photo = {
+                    uri: photoUri,
+                    type: 'image/jpeg',
+                    name: `tracking_${orderId}.jpg`,
+                };
+            }
+
+            const response = await createShipment(orderId, shipmentData);
+
+            if (response.success && response.data) {
+                // Manually update local state to show the new shipment immediately
+                if (order) {
+                    const newShipment = {
+                        id: response.data.shipment_id,
+                        carrier_title: response.data.carrier_title,
+                        track_number: response.data.track_number || trackingNumber,
+                        total_qty: 1, // Defaulting if not in response
+                        created_at: response.data.created_at,
+                    };
+
+                    setOrder({
+                        ...order,
+                        shipments: [...(order.shipments || []), newShipment],
+                    });
+                }
+            } else {
+                alert(response.message || 'Failed to create shipment');
+            }
+        } catch (error: any) {
+            console.error('Failed to submit tracking:', error);
+            alert(error?.message || 'An error occurred while submitting tracking info');
+        } finally {
+            setIsSubmittingTracking(false);
+        }
     };
 
     const renderTabContent = () => {
@@ -66,14 +107,20 @@ export default function OrderDetailsScreen() {
         }
 
         if (activeTab === 'tracking') {
-            return <TrackingInfoCard onSubmit={handleTrackingSubmit} />;
+            return (
+                <TrackingInfoCard
+                    shipments={order?.shipments}
+                    isSubmitting={isSubmittingTracking}
+                    onSubmit={handleTrackingSubmit}
+                />
+            );
         }
 
         if (activeTab === 'messages') {
             return <OrderChatView supplierOrderId={orderId} />;
         }
 
-        return <OrderDetailsTab order={order} />;
+        return <OrderDetailsTab order={order ?? undefined} />;
     };
 
     return (
@@ -199,7 +246,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 4,
-        height: 42,
+        minHeight: 42,
         backgroundColor: COLORS.white,
         borderRadius: 8,
     },
@@ -209,8 +256,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 10,
-        paddingVertical: 10,
-        height: 34,
+        paddingVertical: 8,
+        minHeight: 34,
         borderRadius: 4,
     },
     tabActive: {
@@ -222,7 +269,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 14,
-        lineHeight: 14,
+        lineHeight: 18,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
         color: '#000000',
     },
     tabTextActive: {

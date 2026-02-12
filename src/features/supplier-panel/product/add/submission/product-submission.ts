@@ -166,6 +166,10 @@ export const handlePublish = async (
         return true;
     } catch (err: any) {
         console.error('❌ Error publishing product:', err);
+        console.error('Error code:', err?.code);
+        console.error('Error message:', err?.message);
+        console.error('Error request URL:', err?.config?.baseURL, err?.config?.url);
+        console.error('Error response:', err?.response?.data);
 
         // Use toast notification for errors
         if (showToast) {

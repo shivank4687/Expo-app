@@ -13,6 +13,11 @@ export default function MarketingScreen() {
     const [activities, setActivities] = useState<InvitationActivity[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [isQrLoading, setIsQrLoading] = useState(true);
+
+    const qrCodeUrl = stats?.referral_url
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(stats.referral_url)}`
+        : null;
 
     const fetchData = useCallback(async (showLoading = true) => {
         if (showLoading) setLoading(true);
@@ -37,6 +42,10 @@ export default function MarketingScreen() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        setIsQrLoading(!!qrCodeUrl);
+    }, [qrCodeUrl]);
 
     const handleCopyLink = () => {
         if (!stats?.referral_url) return;
@@ -269,11 +278,22 @@ export default function MarketingScreen() {
                         {/* Frame 128 - QR Container */}
                         <View style={styles.qrContainer}>
                             <View style={styles.qrPlaceholder}>
-                                {stats?.referral_url ? (
-                                    <Image
-                                        source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(stats.referral_url)}` }}
-                                        style={{ width: 100, height: 100 }}
-                                    />
+                                {qrCodeUrl ? (
+                                    <>
+                                        {isQrLoading && (
+                                            <ActivityIndicator size="small" color="#00615E" />
+                                        )}
+                                        <Image
+                                            source={{ uri: qrCodeUrl }}
+                                            style={[
+                                                styles.qrImage,
+                                                isQrLoading && styles.qrImageHidden,
+                                            ]}
+                                            onLoadStart={() => setIsQrLoading(true)}
+                                            onLoadEnd={() => setIsQrLoading(false)}
+                                            onError={() => setIsQrLoading(false)}
+                                        />
+                                    </>
                                 ) : (
                                     <Ionicons name="qr-code-outline" size={80} color="#877F6C" />
                                 )}
@@ -642,6 +662,14 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    qrImage: {
+        width: 100,
+        height: 100,
+    },
+    qrImageHidden: {
+        opacity: 0,
+        position: 'absolute',
     },
     actionButtons: {
         width: '100%',

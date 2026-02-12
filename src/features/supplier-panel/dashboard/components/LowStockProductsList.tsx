@@ -9,6 +9,7 @@ interface LowStockProductsListProps {
     onProductEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
     onToggleStatus?: (productId: number, currentStatus: 'active' | 'inactive') => Promise<boolean | void> | boolean | void;
+    onDuplicate?: (productId: number) => Promise<boolean | void> | boolean | void;
     onSeeAll?: () => void;
 }
 
@@ -17,6 +18,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
     onProductEdit,
     onEditVariants,
     onToggleStatus,
+    onDuplicate,
     onSeeAll,
 }) => {
     const { data: products, loading, error, refetch } = useLowStockProducts();
@@ -97,6 +99,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
                         onEdit={onProductEdit}
                         onEditVariants={onEditVariants}
                         onToggleStatus={onToggleStatus}
+                        onDuplicate={onDuplicate}
                     />
                 ))}
             </View>
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
         alignSelf: 'stretch',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
         shadowColor: '#000000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,

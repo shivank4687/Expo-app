@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LowStockProduct } from '../api/low-stock-products.api';
 import { ProductImage } from '@/shared/components/LazyImage';
 import { ToggleSlider } from '@/shared/components/ToggleSlider';
@@ -10,6 +11,7 @@ interface LowStockProductCardProps {
     onEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
     onToggleStatus?: (productId: number, currentStatus: 'active' | 'inactive') => Promise<boolean | void> | boolean | void;
+    onDuplicate?: (productId: number) => Promise<boolean | void> | boolean | void;
 }
 
 export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
@@ -18,6 +20,7 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
     onEdit,
     onEditVariants,
     onToggleStatus,
+    onDuplicate,
 }) => {
     const marketplaceProductId = product.marketplace_product_id || product.id;
 
@@ -38,6 +41,7 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
     const [priceError, setPriceError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+    const [isDuplicating, setIsDuplicating] = useState(false);
     const [isActive, setIsActive] = useState(product.status !== 'inactive');
 
     const isConfigurable = product.type === 'configurable';
@@ -90,6 +94,16 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
         }
     };
 
+    const handleDuplicate = async () => {
+        if (!onDuplicate || isDuplicating) return;
+        try {
+            setIsDuplicating(true);
+            await onDuplicate(marketplaceProductId);
+        } finally {
+            setIsDuplicating(false);
+        }
+    };
+
     return (
         <View style={styles.productCard}>
             <View style={styles.productHeader}>
@@ -128,7 +142,7 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                         }}
                         keyboardType="numeric"
                         placeholder="0"
-                        placeholderTextColor="#666666"
+                        placeholderTextColor="#0A292D"
                     />
                     {priceError && <Text style={styles.fieldErrorText}>{priceError}</Text>}
                 </View>
@@ -140,7 +154,7 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                         onChangeText={setStock}
                         keyboardType="numeric"
                         placeholder="0"
-                        placeholderTextColor="#666666"
+                        placeholderTextColor="#0A292D"
                     />
                 </View>
             </View>
@@ -190,6 +204,20 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                     >
                         <Text style={styles.productActionOutlineText}>Edit</Text>
                     </TouchableOpacity>
+                    {onDuplicate && (
+                        <TouchableOpacity
+                            style={[styles.duplicateActionButton, isDuplicating && styles.duplicateButtonDisabled]}
+                            onPress={handleDuplicate}
+                            disabled={isDuplicating}
+                            activeOpacity={0.7}
+                        >
+                            {isDuplicating ? (
+                                <ActivityIndicator size="small" color="#00615E" />
+                            ) : (
+                                <Ionicons name="copy-outline" size={16} color="#00615E" />
+                            )}
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
         </View>
@@ -203,9 +231,9 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
         alignSelf: 'stretch',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
         borderWidth: 1,
-        borderColor: '#EEEEEF',
+        borderColor: '#E9E3D3',
         borderRadius: 16,
     },
     productHeader: {
@@ -251,10 +279,31 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     statusToggleButton: {
-        width: 24,
-        height: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        width: 40,
+        height: 32,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        borderRadius: 8,
+        gap: 8,
+    },
+    duplicateActionButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    duplicateButtonDisabled: {
+        opacity: 0.6,
     },
     productCategory: {
         fontFamily: 'Inter',
@@ -293,13 +342,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         alignSelf: 'stretch',
         height: 40,
-        backgroundColor: '#EEEEEF',
+        backgroundColor: '#F3F0E7',
         borderRadius: 8,
         fontFamily: 'Inter',
-        fontWeight: '400',
+        fontWeight: '500',
         fontSize: 16,
         lineHeight: 16,
-        color: '#666666',
+        color: '#0A292D',
     },
     productFieldInputError: {
         borderWidth: 1,

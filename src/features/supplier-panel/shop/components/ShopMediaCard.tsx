@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: 329,
+        width: "100%",
         height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         position: 'relative',
     },
     headerRow: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
         padding: 0,
     },
     description: {
-        width: 329,
+        width: "100%",
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
         color: '#666666',
     },
     bannerPreviewContainer: {
-        width: 329,
+        width: "100%",
         height: 180,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        width: 329,
+        width: "100%",
         marginTop: 8,
     },
     photoSlot: {

@@ -56,6 +56,52 @@ const transformProduct = (data: any): Product => {
     };
 };
 
+const isLocalMediaUri = (uri?: string | null): boolean => {
+    if (!uri || typeof uri !== 'string') return false;
+
+    return (
+        uri.startsWith('file://') ||
+        uri.startsWith('content://') ||
+        uri.startsWith('blob:') ||
+        uri.startsWith('ph://') ||
+        uri.startsWith('assets-library://')
+    );
+};
+
+const inferMimeType = (uri: any, fallback: string): string => {
+    if (typeof uri !== 'string') return fallback;
+
+    const normalized = uri.split('?')[0].toLowerCase();
+
+    if (normalized.endsWith('.png')) return 'image/png';
+    if (normalized.endsWith('.gif')) return 'image/gif';
+    if (normalized.endsWith('.webp')) return 'image/webp';
+    if (normalized.endsWith('.heic')) return 'image/heic';
+    if (normalized.endsWith('.heif')) return 'image/heif';
+    if (normalized.endsWith('.mp4')) return 'video/mp4';
+    if (normalized.endsWith('.mov')) return 'video/quicktime';
+    if (normalized.endsWith('.m4v')) return 'video/x-m4v';
+    if (normalized.endsWith('.webm')) return 'video/webm';
+    if (normalized.endsWith('.avi')) return 'video/x-msvideo';
+    if (normalized.endsWith('.mkv')) return 'video/x-matroska';
+    if (normalized.endsWith('.jpg') || normalized.endsWith('.jpeg')) return 'image/jpeg';
+
+    return fallback;
+};
+
+const inferFileName = (uri: any, fallbackBase: string): string => {
+    if (typeof uri !== 'string') return fallbackBase;
+
+    const cleanUri = uri.split('?')[0];
+    const lastSegment = cleanUri.split('/').pop();
+
+    if (lastSegment && lastSegment.includes('.')) {
+        return lastSegment;
+    }
+
+    return fallbackBase;
+};
+
 export const productsApi = {
     /**
      * Get list of products with optional filters
@@ -121,17 +167,17 @@ export const productsApi = {
         // Broaden hasFiles check to include variants
         const hasVariantImages = data.variants && Object.values(data.variants).some((v: any) =>
             v.images && Array.isArray(v.images) && v.images.some((img: any) => {
-                const uri = typeof img === 'object' ? img.uri : img;
-                return typeof uri === 'string' && uri.startsWith('file://');
+                const uri = typeof img === 'object' ? img.uri || img.url : img;
+                return isLocalMediaUri(uri);
             })
         );
         const hasFiles = (data.images && data.images.some((img: any) => {
-            const uri = typeof img === 'object' ? img.uri : img;
-            return typeof uri === 'string' && uri.startsWith('file://');
+            const uri = typeof img === 'object' ? img.uri || img.url : img;
+            return isLocalMediaUri(uri);
         })) ||
             (data.video && (() => {
-                const uri = typeof data.video === 'object' ? data.video.uri : data.video;
-                return typeof uri === 'string' && uri.startsWith('file://');
+                const uri = typeof data.video === 'object' ? data.video.uri || data.video.url : data.video;
+                return isLocalMediaUri(uri);
             })()) ||
             hasVariantImages;
 
@@ -151,14 +197,16 @@ export const productsApi = {
 
             if (rootKey === 'images' && Array.isArray(data)) {
                 data.forEach((img: any, index: number) => {
-                    const uri = typeof img === 'object' ? img.uri : img;
+                    const uri = typeof img === 'object' ? img.uri || img.url : img;
                     const id = typeof img === 'object' ? img.id : null;
+                    const mimeType = (typeof img === 'object' ? (img.mimeType || img.type) : null) || inferMimeType(uri, 'image/jpeg');
+                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `image_${index}.jpg`);
 
-                    if (typeof uri === 'string' && uri.startsWith('file://')) {
+                    if (isLocalMediaUri(uri)) {
                         formData.append(`images[files][${index}]`, {
                             uri,
-                            name: `image_${index}.png`,
-                            type: 'image/png',
+                            name: fileName,
+                            type: mimeType,
                         } as any);
                     } else if (id) {
                         formData.append(`images[files][${id}]`, id);
@@ -168,14 +216,16 @@ export const productsApi = {
             }
 
             if (rootKey === 'video' && data) {
-                const uri = typeof data === 'object' ? data.uri : data;
+                const uri = typeof data === 'object' ? data.uri || data.url : data;
                 const id = typeof data === 'object' ? data.id : null;
+                const mimeType = (typeof data === 'object' ? (data.mimeType || data.type) : null) || inferMimeType(uri, 'video/mp4');
+                const fileName = (typeof data === 'object' ? data.fileName : null) || inferFileName(uri, 'video.mp4');
 
-                if (typeof uri === 'string' && uri.startsWith('file://')) {
+                if (isLocalMediaUri(uri)) {
                     formData.append('videos[files][0]', {
                         uri,
-                        name: 'video.mp4',
-                        type: 'video/mp4',
+                        name: fileName,
+                        type: mimeType,
                     } as any);
                 } else if (id) {
                     formData.append('videos[files][0]', id);
@@ -186,14 +236,16 @@ export const productsApi = {
             // Handle variant images - check if we're processing a variant's images array
             if (rootKey.includes('variants[') && rootKey.endsWith('][images]') && Array.isArray(data)) {
                 data.forEach((img: any, index: number) => {
-                    const uri = typeof img === 'object' ? img.uri : img;
+                    const uri = typeof img === 'object' ? img.uri || img.url : img;
                     const id = typeof img === 'object' ? img.id : null;
+                    const mimeType = (typeof img === 'object' ? (img.mimeType || img.type) : null) || inferMimeType(uri, 'image/jpeg');
+                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `variant_image_${index}.jpg`);
 
-                    if (typeof uri === 'string' && uri.startsWith('file://')) {
+                    if (isLocalMediaUri(uri)) {
                         formData.append(`${rootKey}[files][${index}]`, {
                             uri,
-                            name: `variant_image_${index}.png`,
-                            type: 'image/png',
+                            name: fileName,
+                            type: mimeType,
                         } as any);
                     } else if (id) {
                         formData.append(`${rootKey}[files][${id}]`, id);
@@ -219,12 +271,7 @@ export const productsApi = {
 
         const response = await restApiClient.post<{ data: any, message: string }>(
             API_ENDPOINTS.SUPPLIER_PRODUCTS_LIST,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }
+            formData
         );
         return response.data;
     },
@@ -252,17 +299,17 @@ export const productsApi = {
         const hasVariantFiles = data.variants && Object.values(data.variants).some((v: any) =>
             v.images && Array.isArray(v.images) && v.images.some((img: any) => {
                 const uri = typeof img === 'object' ? img.uri || img.url : img;
-                return typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'));
+                return isLocalMediaUri(uri);
             })
         );
         const hasNewImageFiles = data.images && Array.isArray(data.images) &&
             data.images.some((img: any) => {
                 const uri = typeof img === 'object' ? img.uri || img.url : img;
-                return typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'));
+                return isLocalMediaUri(uri);
             });
         const hasNewVideoFile = data.video && (() => {
             const uri = typeof data.video === 'object' ? data.video.uri || data.video.url : data.video;
-            return typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'));
+            return isLocalMediaUri(uri);
         })();
 
         const hasFiles = hasNewImageFiles || hasNewVideoFile || hasVariantFiles;
@@ -293,13 +340,15 @@ export const productsApi = {
                 data.forEach((img: any, index: number) => {
                     const uri = typeof img === 'object' ? img.uri || img.url : img;
                     const id = typeof img === 'object' ? img.id : null;
+                    const mimeType = (typeof img === 'object' ? (img.mimeType || img.type) : null) || inferMimeType(uri, 'image/jpeg');
+                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `image_${index}.jpg`);
 
-                    if (typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'))) {
+                    if (isLocalMediaUri(uri)) {
                         // New local file - use a unique string key to avoid clashing with existing IDs
                         formData.append(`images[files][new_${index}]`, {
                             uri,
-                            name: `image_${index}.png`,
-                            type: 'image/png',
+                            name: fileName,
+                            type: mimeType,
                         } as any);
                     } else if (id) {
                         // Existing file - send its ID as the key
@@ -313,12 +362,14 @@ export const productsApi = {
             if (rootKey === 'video' && data) {
                 const uri = typeof data === 'object' ? data.uri || data.url : data;
                 const id = typeof data === 'object' ? data.id : null;
+                const mimeType = (typeof data === 'object' ? (data.mimeType || data.type) : null) || inferMimeType(uri, 'video/mp4');
+                const fileName = (typeof data === 'object' ? data.fileName : null) || inferFileName(uri, 'video.mp4');
 
-                if (typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'))) {
+                if (isLocalMediaUri(uri)) {
                     formData.append('videos[files][new_0]', {
                         uri,
-                        name: 'video.mp4',
-                        type: 'video/mp4',
+                        name: fileName,
+                        type: mimeType,
                     } as any);
                 } else if (id) {
                     formData.append('videos[files][0]', id);
@@ -331,13 +382,15 @@ export const productsApi = {
                 data.forEach((img: any, index: number) => {
                     const uri = typeof img === 'object' ? img.uri || img.url : img;
                     const id = typeof img === 'object' ? img.id : null;
+                    const mimeType = (typeof img === 'object' ? (img.mimeType || img.type) : null) || inferMimeType(uri, 'image/jpeg');
+                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `variant_image_${index}.jpg`);
 
-                    if (typeof uri === 'string' && (uri.startsWith('file://') || uri.startsWith('blob:'))) {
+                    if (isLocalMediaUri(uri)) {
                         // New local file for variant
                         formData.append(`${rootKey}[files][new_${index}]`, {
                             uri,
-                            name: `variant_image_${index}.png`,
-                            type: 'image/png',
+                            name: fileName,
+                            type: mimeType,
                         } as any);
                     } else if (id) {
                         // Existing file for variant
@@ -365,12 +418,7 @@ export const productsApi = {
         // Use POST with _method=PUT
         const response = await restApiClient.post<{ data: any, message: string }>(
             url,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }
+            formData
         );
         return response.data;
     },

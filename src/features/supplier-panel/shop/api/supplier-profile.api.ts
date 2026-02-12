@@ -117,12 +117,45 @@ export const getSupplierProfile = async (): Promise<SupplierProfile> => {
 export const updateSupplierProfile = async (
     data: SupplierProfileUpdateData
 ): Promise<SupplierProfile> => {
-    const formData = new FormData();
-
     // Helper function to check if a value is a local file URI
     const isLocalFileUri = (uri: string | null | undefined): boolean => {
         return !!uri && (uri.startsWith('file://') || uri.startsWith('content://'));
     };
+
+    const hasImageUpload =
+        isLocalFileUri(data.banner) ||
+        isLocalFileUri(data.logo) ||
+        isLocalFileUri(data.profile);
+
+    const hasImageDelete =
+        data.banner === null ||
+        data.logo === null ||
+        data.profile === null;
+
+    const extractProfile = (response: any): SupplierProfile => {
+        return response?.data ?? response;
+    };
+
+    // Prefer JSON payload when images are unchanged.
+    // This avoids multipart issues seen in some Android release builds.
+    if (!hasImageUpload && !hasImageDelete) {
+        const payload: Record<string, any> = {};
+
+        Object.keys(data).forEach((key) => {
+            const value = data[key as keyof SupplierProfileUpdateData];
+            if (value !== undefined) {
+                payload[key] = value;
+            }
+        });
+
+        const response = await restApiClient.put<any>(
+            '/supplier-app/profile',
+            payload
+        );
+        return extractProfile(response);
+    }
+
+    const formData = new FormData();
 
     // Append all text fields to FormData
     Object.keys(data).forEach((key) => {
@@ -216,5 +249,5 @@ export const updateSupplierProfile = async (
         '/supplier-app/profile',
         formData
     );
-    return response.data;
+    return extractProfile(response);
 };

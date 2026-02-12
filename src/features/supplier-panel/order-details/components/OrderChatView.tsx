@@ -132,8 +132,8 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 24}
         >
             {/* Messages List */}
             <ScrollView
@@ -141,6 +141,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
                 style={styles.messagesContainer}
                 contentContainerStyle={styles.messagesContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 {messages.length === 0 ? (
                     <View style={styles.emptyContainer}>
