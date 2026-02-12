@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { LowStockProduct } from '../api/low-stock-products.api';
+import { ProductImage } from '@/shared/components/LazyImage';
+import { ToggleSlider } from '@/shared/components/ToggleSlider';
 
 interface LowStockProductCardProps {
     product: LowStockProduct;
     onSave?: (productId: number, price: number, stock: number) => Promise<boolean | void> | boolean | void;
     onEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
+    onToggleStatus?: (productId: number, currentStatus: 'active' | 'inactive') => Promise<boolean | void> | boolean | void;
 }
 
 export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
@@ -15,23 +17,39 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
     onSave,
     onEdit,
     onEditVariants,
+    onToggleStatus,
 }) => {
-    const [price, setPrice] = useState(product.price.toString());
+    const marketplaceProductId = product.marketplace_product_id || product.id;
+
+    const normalizePriceDisplay = (value: number | string) => {
+        const numericValue = typeof value === 'number' ? value : parseFloat(String(value));
+
+        if (Number.isNaN(numericValue)) {
+            return '0';
+        }
+
+        return numericValue.toString();
+    };
+
+    const [price, setPrice] = useState(normalizePriceDisplay(product.price));
     const [stock, setStock] = useState(product.stock_qty.toString());
-    const [savedPrice, setSavedPrice] = useState(product.price.toString());
+    const [savedPrice, setSavedPrice] = useState(normalizePriceDisplay(product.price));
     const [savedStock, setSavedStock] = useState(product.stock_qty.toString());
     const [priceError, setPriceError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+    const [isActive, setIsActive] = useState(product.status !== 'inactive');
 
     const isConfigurable = product.type === 'configurable';
     useEffect(() => {
-        const nextPrice = product.price.toString();
+        const nextPrice = normalizePriceDisplay(product.price);
         const nextStock = product.stock_qty.toString();
         setPrice(nextPrice);
         setStock(nextStock);
         setSavedPrice(nextPrice);
         setSavedStock(nextStock);
-    }, [product.id, product.price, product.stock_qty]);
+        setIsActive(product.status !== 'inactive');
+    }, [product.id, product.price, product.stock_qty, product.status]);
 
     const hasChanges = price !== savedPrice || stock !== savedStock;
 
@@ -45,7 +63,6 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
             setPriceError(null);
             try {
                 setIsSaving(true);
-                const marketplaceProductId = product.marketplace_product_id || product.id;
                 await onSave(marketplaceProductId, parsedPrice, parseInt(stock));
                 setSavedPrice(price);
                 setSavedStock(stock);
@@ -55,22 +72,46 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
         }
     };
 
+    const handleToggleStatus = async () => {
+        if (!onToggleStatus || isTogglingStatus) return;
+        const currentStatus: 'active' | 'inactive' = isActive ? 'active' : 'inactive';
+        const nextIsActive = !isActive;
+        setIsActive(nextIsActive);
+        setIsTogglingStatus(true);
+        try {
+            const result = await onToggleStatus(marketplaceProductId, currentStatus);
+            if (result === false) {
+                setIsActive(!nextIsActive);
+            }
+        } catch {
+            setIsActive(!nextIsActive);
+        } finally {
+            setIsTogglingStatus(false);
+        }
+    };
+
     return (
         <View style={styles.productCard}>
             <View style={styles.productHeader}>
                 <View style={styles.productImage}>
-                    {product.image_url ? (
-                        <Image
-                            source={{ uri: product.image_url }}
-                            style={styles.image}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <Ionicons name="image-outline" size={24} color="#666666" />
-                    )}
+                    <ProductImage
+                        imageUrl={product.image_url ?? undefined}
+                        style={styles.image}
+                        recyclingKey={product.id?.toString()}
+                        priority="low"
+                    />
                 </View>
                 <View style={styles.productInfo}>
-                    <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+                    <View style={styles.productTitleRow}>
+                        <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+                        <View style={styles.statusToggleButton}>
+                            <ToggleSlider
+                                isActive={isActive}
+                                onToggle={handleToggleStatus}
+                                size={24}
+                            />
+                        </View>
+                    </View>
                     <Text style={styles.productCategory}>{product.sku}</Text>
                 </View>
             </View>
@@ -119,13 +160,13 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.productActionMediumOutline}
-                        onPress={() => onEditVariants?.(product.id)}
+                        onPress={() => onEditVariants?.(marketplaceProductId)}
                     >
                         <Text style={styles.productActionOutlineText}>Edit Variants</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.productActionSmallOutline}
-                        onPress={() => onEdit?.(product.id)}
+                        onPress={() => onEdit?.(marketplaceProductId)}
                     >
                         <Text style={styles.productActionOutlineText}>Edit</Text>
                     </TouchableOpacity>
@@ -145,7 +186,7 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.productActionOutline}
-                        onPress={() => onEdit?.(product.id)}
+                        onPress={() => onEdit?.(marketplaceProductId)}
                     >
                         <Text style={styles.productActionOutlineText}>Edit</Text>
                     </TouchableOpacity>
@@ -194,13 +235,26 @@ const styles = StyleSheet.create({
         padding: 0,
         gap: 8,
     },
+    productTitleRow: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
     productName: {
+        flex: 1,
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 20,
         lineHeight: 24,
         color: '#000000',
-        alignSelf: 'stretch',
+    },
+    statusToggleButton: {
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     productCategory: {
         fontFamily: 'Inter',

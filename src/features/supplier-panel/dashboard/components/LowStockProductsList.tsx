@@ -8,6 +8,7 @@ interface LowStockProductsListProps {
     onProductSave?: (productId: number, price: number, stock: number) => Promise<boolean | void> | boolean | void;
     onProductEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
+    onToggleStatus?: (productId: number, currentStatus: 'active' | 'inactive') => Promise<boolean | void> | boolean | void;
     onSeeAll?: () => void;
 }
 
@@ -15,6 +16,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
     onProductSave,
     onProductEdit,
     onEditVariants,
+    onToggleStatus,
     onSeeAll,
 }) => {
     const { data: products, loading, error, refetch } = useLowStockProducts();
@@ -94,6 +96,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
                         onSave={handleSave}
                         onEdit={onProductEdit}
                         onEditVariants={onEditVariants}
+                        onToggleStatus={onToggleStatus}
                     />
                 ))}
             </View>

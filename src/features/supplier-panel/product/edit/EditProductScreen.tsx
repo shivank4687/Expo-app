@@ -17,6 +17,8 @@ export default function EditProductScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const productId = params.id ? parseInt(params.id as string) : null;
+    const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
+    const isFromDashboard = sourceParam === 'dashboard';
 
     const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
     const [attributeFamilyId, setAttributeFamilyId] = useState<number | null>(null);
@@ -338,7 +340,7 @@ export default function EditProductScreen() {
                     </TouchableOpacity>
 
                     <View style={styles.titleContainer}>
-                        <Text style={styles.headerTitle}>Edit Product</Text>
+                        <Text style={styles.headerTitle}>{isFromDashboard ? 'Dashboard' : 'Edit Product'}</Text>
                     </View>
                 </View>
             </View>

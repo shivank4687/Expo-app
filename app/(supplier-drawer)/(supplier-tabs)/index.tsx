@@ -1,4 +1,5 @@
 import { createShipment } from '@/features/supplier-panel/dashboard/api/shipments.api';
+import { DashboardReviewsSection } from '@/features/supplier-panel/dashboard/components/DashboardReviewsSection';
 import { LowStockProductsList } from '@/features/supplier-panel/dashboard/components/LowStockProductsList';
 import { PaymentsCard } from '@/features/supplier-panel/dashboard/components/PaymentsCard';
 import { PendingOrdersCard } from '@/features/supplier-panel/dashboard/components/PendingOrdersCard';
@@ -82,7 +83,7 @@ export default function SupplierDashboardScreen() {
       if (trackingPhoto) {
         shipmentData.tracking_photo = {
           uri: trackingPhoto.uri,
-          type: trackingPhoto.type || 'image/jpeg',
+          type: (trackingPhoto as any).mimeType || 'image/jpeg',
           name: trackingPhoto.fileName || `tracking_${orderId}.jpg`,
         };
       }
@@ -111,6 +112,9 @@ export default function SupplierDashboardScreen() {
       }
     } catch (error: any) {
       console.error('Error creating shipment:', error);
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+      console.error('Error request URL:', error?.config?.baseURL, error?.config?.url);
       console.error('Error response:', error?.response);
       console.error('Error response data:', error?.response?.data);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create shipment. Please try again.';
@@ -133,10 +137,33 @@ export default function SupplierDashboardScreen() {
     }
   };
 
+  const handleToggleProductStatus = async (productId: number, currentStatus: 'active' | 'inactive') => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      await productsApi.quickUpdateProduct(productId, { status: newStatus });
+      showToast({
+        type: 'success',
+        message: `Product ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`,
+        duration: 3000,
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to update product status',
+        duration: 3000,
+      });
+      return false;
+    }
+  };
+
   // Handle product edit
   const handleProductEdit = (productId: number) => {
-    console.log('Edit product:', productId);
-    // Navigate to product edit screen
+    router.push({
+      pathname: '/(supplier-drawer)/edit-product',
+      params: { id: productId.toString(), source: 'dashboard' },
+    });
   };
 
   // Handle edit variants
@@ -155,6 +182,10 @@ export default function SupplierDashboardScreen() {
   const handleSeeAllProducts = () => {
     console.log('See all products');
     router.push('/(supplier-drawer)/(supplier-tabs)/products');
+  };
+
+  const handleSeeAllReviews = () => {
+    router.push('/(supplier-drawer)/(supplier-tabs)/reviews');
   };
 
   if (!isAuthenticated || !supplier) {
@@ -197,9 +228,9 @@ export default function SupplierDashboardScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
+            {/*<TouchableOpacity style={styles.actionButton}>
               <Ionicons name="add" size={16} color="#000000" />
-            </TouchableOpacity>
+            </TouchableOpacity>*/}
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => router.push('/(supplier-drawer)/messages')}
@@ -355,7 +386,10 @@ export default function SupplierDashboardScreen() {
                             <Ionicons name="print-outline" size={16} color="#00615E" />
                             <Text style={styles.orderActionSecondaryText}>Print</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity style={styles.orderActionOutline}>
+                          <TouchableOpacity
+                            style={styles.orderActionOutline}
+                            onPress={() => router.push(`/(supplier-drawer)/order-details?orderId=${order.id}&source=dashboard`)}
+                          >
                             <Text style={styles.orderActionOutlineText}>Details</Text>
                           </TouchableOpacity>
                         </View>
@@ -393,83 +427,11 @@ export default function SupplierDashboardScreen() {
           onProductSave={handleProductSave}
           onProductEdit={handleProductEdit}
           onEditVariants={handleEditVariants}
+          onToggleStatus={handleToggleProductStatus}
           onSeeAll={handleSeeAllProducts}
         />
 
-        {/* My Reviews Section */}
-        <View style={styles.reviewsSection}>
-          <View style={styles.reviewsSectionHeader}>
-            <Text style={styles.reviewsSectionTitle}>My reviews</Text>
-            <Text style={styles.reviewsSectionSubtitle}>Your reputation sells for you</Text>
-          </View>
-
-          <View style={styles.reviewsContainer}>
-            {/* Review Card 1 */}
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewContent}>
-                <View style={styles.reviewStars}>
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                </View>
-                <Text style={styles.reviewText}>
-                  Fast delivery and excellent quality.
-                </Text>
-                <Text style={styles.reviewAuthor}>- Downtown Store (PRO)</Text>
-              </View>
-              <TouchableOpacity style={styles.reviewCheckButton}>
-                <Ionicons name="checkmark" size={16} color="#00615E" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Review Card 2 */}
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewContent}>
-                <View style={styles.reviewStars}>
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                </View>
-                <Text style={styles.reviewText}>
-                  Good product, packaging could be improved.
-                </Text>
-                <Text style={styles.reviewAuthor}>- Maria (B2C)</Text>
-              </View>
-              <TouchableOpacity style={styles.reviewCheckButton}>
-                <Ionicons name="checkmark" size={16} color="#00615E" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Review Card 3 */}
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewContent}>
-                <View style={styles.reviewStars}>
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                  <Ionicons name="star" size={16} color="#00615E" />
-                </View>
-                <Text style={styles.reviewText}>
-                  Very professional, we will buy again.
-                </Text>
-                <Text style={styles.reviewAuthor}>- Importer (PRO)</Text>
-              </View>
-              <TouchableOpacity style={styles.reviewCheckButton}>
-                <Ionicons name="checkmark" size={16} color="#00615E" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* See All Button */}
-          <TouchableOpacity style={styles.seeAllButton}>
-            <Text style={styles.seeAllButtonText}>See All</Text>
-          </TouchableOpacity>
-        </View>
+        <DashboardReviewsSection onSeeAll={handleSeeAllReviews} />
 
         {/* <View style={styles.infoSection}>
           <View style={styles.infoCard}>

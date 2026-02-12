@@ -17,6 +17,8 @@ export default function OrderDetailsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const [activeTab, setActiveTab] = useState<TabType>('details');
+    const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
+    const isFromDashboard = sourceParam === 'dashboard';
 
     // Get order ID from route params
     const orderId = params.orderId ? parseInt(params.orderId as string) : 0;
@@ -88,7 +90,7 @@ export default function OrderDetailsScreen() {
                     </TouchableOpacity>
 
                     <View style={styles.titleContainer}>
-                        <Text style={styles.headerTitle}>Orders</Text>
+                        <Text style={styles.headerTitle}>{isFromDashboard ? 'Dashboard' : 'Orders'}</Text>
                     </View>
                 </View>
             </View>

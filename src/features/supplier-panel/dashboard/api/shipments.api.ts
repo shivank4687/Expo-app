@@ -31,30 +31,35 @@ export const createShipment = async (
     orderId: number,
     data: CreateShipmentRequest
 ): Promise<CreateShipmentResponse> => {
+    const endpoint = `/supplier-app/shipments/create/${orderId}`;
+
+    // When no photo is included, prefer JSON payload to avoid multipart issues in some builds/devices.
+    if (!data.tracking_photo) {
+        const response = await restApiClient.post<CreateShipmentResponse>(
+            endpoint,
+            {
+                ...(data.track_number ? { track_number: data.track_number } : {}),
+            }
+        );
+
+        return response;
+    }
+
     const formData = new FormData();
 
-    // Add tracking number if provided
     if (data.track_number) {
         formData.append('track_number', data.track_number);
     }
 
-    // Add tracking photo if provided
-    if (data.tracking_photo) {
-        formData.append('tracking_photo', {
-            uri: data.tracking_photo.uri,
-            type: data.tracking_photo.type,
-            name: data.tracking_photo.name,
-        } as any);
-    }
+    formData.append('tracking_photo', {
+        uri: data.tracking_photo.uri,
+        type: data.tracking_photo.type || 'image/jpeg',
+        name: data.tracking_photo.name || 'tracking.jpg',
+    } as any);
 
     const response = await restApiClient.post<CreateShipmentResponse>(
-        `/supplier-app/shipments/create/${orderId}`,
-        formData,
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        }
+        endpoint,
+        formData
     );
 
     return response;
