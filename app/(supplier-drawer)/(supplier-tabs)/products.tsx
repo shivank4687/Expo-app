@@ -125,6 +125,24 @@ export default function ProductsScreen() {
     }
   };
 
+  const formatPriceDisplay = (value: number | string) => {
+    if (value === null || value === undefined || value === '') {
+      return '$0';
+    }
+
+    const numericValue = typeof value === 'number'
+      ? value
+      : parseFloat(String(value).replace(/[^0-9.]/g, ''));
+
+    if (Number.isNaN(numericValue)) {
+      return '$0';
+    }
+
+    const normalized = numericValue.toString();
+
+    return `$${normalized}`;
+  };
+
   if (!isAuthenticated || !supplier) {
     return (
       <View style={styles.container}>
@@ -261,7 +279,7 @@ export default function ProductsScreen() {
                     key={`${item.id}-${refreshKey}`}
                     id={item.id}
                     name={item.name}
-                    price={item.formatted_price}
+                    price={formatPriceDisplay(item.price)}
                     status={item.status}
                     stock={item.stock}
                     imageUrl={item.image_url}
@@ -277,7 +295,7 @@ export default function ProductsScreen() {
                 <ProductListCard
                   id={item.id}
                   name={item.name}
-                  price={item.formatted_price}
+                  price={formatPriceDisplay(item.price)}
                   status={item.status}
                   stock={item.stock}
                   imageUrl={item.image_url}

@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 import { config } from '@/config/env';
 import { STORAGE_KEYS } from '@/config/constants';
 import { secureStorage } from '../storage/secureStorage';
+import { isTokenExpired } from '@/shared/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Global token setter for Redux to update
@@ -70,6 +71,13 @@ class ApiClient {
                     }
 
                     if (token) {
+                        // Check if token is expired before sending request
+                        if (isTokenExpired(token)) {
+                            console.log('🚨 Token is expired, triggering logout before request:', config.url);
+                            await this.handleUnauthorized();
+                            return Promise.reject(new Error('Token expired'));
+                        }
+
                         config.headers.Authorization = `Bearer ${token}`;
                         console.log('✅ Token added to request:', config.url);
                     } else {
