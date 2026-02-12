@@ -6,7 +6,7 @@ import { PendingOrdersCard } from '@/features/supplier-panel/dashboard/component
 import { QuotesCard } from '@/features/supplier-panel/dashboard/components/QuotesCard';
 import { SalesStatsCard } from '@/features/supplier-panel/dashboard/components/SalesStatsCard';
 import { usePendingOrdersList } from '@/features/supplier-panel/dashboard/hooks/usePendingOrdersList';
-import { productsApi } from '@/features/supplier-panel/products/api/products.api';
+import { productsApi } from '@/services/api/products.api';
 import { useToast } from '@/shared/components/Toast';
 import { useAppSelector } from '@/store/hooks';
 import { supplierTheme } from '@/theme';
