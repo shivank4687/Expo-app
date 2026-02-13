@@ -29,8 +29,6 @@ export default function AddProductScreen() {
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [productName, setProductName] = useState('');
 
-    const [attributeRefreshKey, setAttributeRefreshKey] = useState(0);
-
     // AI Generation state
     const [showAIModal, setShowAIModal] = useState(false);
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -49,9 +47,22 @@ export default function AddProductScreen() {
     useFocusEffect(
         React.useCallback(() => {
             setActiveTab('simple');
+            setProductName('');
             setResetKey(prev => prev + 1); // Force remount of all components
         }, [])
     );
+
+    const handleTabSwitch = (tab: TabType) => {
+        if (tab === activeTab || isSubmitting) {
+            return;
+        }
+
+        Keyboard.dismiss();
+        setActiveTab(tab);
+        setProductName('');
+        // Remount cards so previous tab validation errors and field state do not persist.
+        setResetKey(prev => prev + 1);
+    };
 
     // Fetch product attributes on mount and tab change
     const fetchAttributes = async () => {
@@ -238,7 +249,7 @@ export default function AddProductScreen() {
                     <View style={styles.tabsContainer}>
                         <TouchableOpacity
                             style={[styles.tab, activeTab === 'simple' && styles.tabActive]}
-                            onPress={() => setActiveTab('simple')}
+                            onPress={() => handleTabSwitch('simple')}
                             activeOpacity={0.7}
                             disabled={isSubmitting}
                         >
@@ -247,7 +258,7 @@ export default function AddProductScreen() {
 
                         <TouchableOpacity
                             style={[styles.tab, activeTab === 'configurable' && styles.tabActive]}
-                            onPress={() => setActiveTab('configurable')}
+                            onPress={() => handleTabSwitch('configurable')}
                             activeOpacity={0.7}
                             disabled={isSubmitting}
                         >

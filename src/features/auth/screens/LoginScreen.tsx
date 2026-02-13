@@ -1,33 +1,30 @@
-import React, { useState, useCallback } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    KeyboardAvoidingView,
-    Platform,
-    TouchableOpacity,
-    Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { loginThunk } from '@/store/slices/authSlice';
-import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
-import { Input } from '@/shared/components/Input';
+import { Country } from '@/services/api/core.api';
 import { Button } from '@/shared/components/Button';
 import { CountryCodeDropdown } from '@/shared/components/CountryCodeDropdown';
-import { validation } from '@/shared/utils/validation';
-import { theme } from '@/theme';
-import { useTranslation } from 'react-i18next';
+import { Input } from '@/shared/components/Input';
 import { useToast } from '@/shared/components/Toast';
-import { Country } from '@/services/api/core.api';
+import { validation } from '@/shared/utils/validation';
+import { useAppDispatch } from '@/store/hooks';
+import { loginThunk } from '@/store/slices/authSlice';
+import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
+import { theme } from '@/theme';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 export const LoginScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { isLoading: authIsLoading } = useAppSelector((state) => state.auth);
-    const { isLoading: supplierAuthIsLoading } = useAppSelector((state) => state.supplierAuth);
     const { showToast } = useToast();
 
     const [userType, setUserType] = useState<'customer' | 'supplier'>('customer');
@@ -146,105 +143,120 @@ export const LoginScreen: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View style={styles.header}>
-                    <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
-                    <Text style={styles.subtitle}>{t('auth.signInToContinue')}</Text>
-                </View>
+            <View style={styles.topPanel}>
+                <Text style={styles.topTitle}>{t('auth.signIn')}</Text>
+            </View>
 
-                {/* User Type Toggle */}
-                <View style={styles.toggleContainer}>
-                    <TouchableOpacity
-                        style={[
-                            styles.toggleButton,
-                            userType === 'customer' && styles.toggleButtonActive,
-                        ]}
-                        onPress={() => setUserType('customer')}
-                    >
-                        <Text
-                            style={[
-                                styles.toggleButtonText,
-                                userType === 'customer' && styles.toggleButtonTextActive,
-                            ]}
-                        >
-                            {t('auth.customer', 'Customer')}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.toggleButton,
-                            userType === 'supplier' && styles.toggleButtonActive,
-                        ]}
-                        onPress={() => setUserType('supplier')}
-                    >
-                        <Text
-                            style={[
-                                styles.toggleButtonText,
-                                userType === 'supplier' && styles.toggleButtonTextActive,
-                            ]}
-                        >
-                            {t('auth.supplier', 'Supplier')}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.form}>
-                    <View style={styles.inputWrapper}>
-                        <Input
-                            label={t('auth.emailOrPhone')}
-                            placeholder={t('auth.enterYourEmailOrPhone')}
-                            value={emailOrPhone}
-                            onChangeText={handleEmailOrPhoneChange}
-                            error={errors.emailOrPhone}
-                            leftIcon={!isPhoneInput ? "mail" : undefined}
-                            leftPrefix={
-                                isPhoneInput ? (
-                                    <CountryCodeDropdown
-                                        onCountrySelect={handleCountrySelect}
-                                        selectedCountry={selectedCountry}
-                                    />
-                                ) : undefined
-                            }
-                            keyboardType={isPhoneInput ? "phone-pad" : "email-address"}
-                            autoCapitalize="none"
-                            autoComplete={isPhoneInput ? "tel" : "email"}
-                        />
+            <View style={styles.bottomSheet}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
+                        <Text style={styles.subtitle}>{t('auth.signInToContinue')}</Text>
                     </View>
 
-                    <Input
-                        label={t('auth.password')}
-                        placeholder={t('auth.enterYourPassword')}
-                        value={password}
-                        onChangeText={handlePasswordChange}
-                        error={errors.password}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password"
-                    />
-
-                    <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/forgot-password')}>
-                        <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
-                    </TouchableOpacity>
-
-                    <Button
-                        title={t('auth.signIn')}
-                        onPress={handleLogin}
-                        loading={isLoggingIn}
-                        fullWidth
-                        size="large"
-                    />
-
-                    <View style={styles.signupContainer}>
-                        <Text style={styles.signupText}>{t('auth.dontHaveAccount')} </Text>
-                        <TouchableOpacity onPress={handleSignupPress}>
-                            <Text style={styles.signupLink}>{t('auth.signup')}</Text>
+                    <View style={styles.toggleContainer}>
+                        <TouchableOpacity
+                            style={[
+                                styles.toggleButton,
+                                userType === 'customer' && styles.toggleButtonActive,
+                            ]}
+                            onPress={() => setUserType('customer')}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.toggleButtonText,
+                                    userType === 'customer' && styles.toggleButtonTextActive,
+                                ]}
+                            >
+                                {t('auth.customer', 'Customer')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.toggleButton,
+                                userType === 'supplier' && styles.toggleButtonActive,
+                            ]}
+                            onPress={() => setUserType('supplier')}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.toggleButtonText,
+                                    userType === 'supplier' && styles.toggleButtonTextActive,
+                                ]}
+                            >
+                                {t('auth.supplier', 'Supplier')}
+                            </Text>
                         </TouchableOpacity>
                     </View>
-                </View>
-            </ScrollView>
+
+                    <View style={styles.form}>
+                        <View style={styles.inputWrapper}>
+                            <Input
+                                label={t('auth.emailOrPhone')}
+                                placeholder={t('auth.enterYourEmailOrPhone')}
+                                value={emailOrPhone}
+                                onChangeText={handleEmailOrPhoneChange}
+                                error={errors.emailOrPhone}
+                                leftIcon={!isPhoneInput ? "mail" : undefined}
+                                leftPrefix={
+                                    isPhoneInput ? (
+                                        <CountryCodeDropdown
+                                            onCountrySelect={handleCountrySelect}
+                                            selectedCountry={selectedCountry}
+                                        />
+                                    ) : undefined
+                                }
+                                keyboardType={isPhoneInput ? "phone-pad" : "email-address"}
+                                autoCapitalize="none"
+                                autoComplete={isPhoneInput ? "tel" : "email"}
+                                containerStyle={styles.inputContainer}
+                                inputContainerStyle={styles.inputField}
+                                style={styles.inputText}
+                            />
+                        </View>
+
+                        <Input
+                            label={t('auth.password')}
+                            placeholder={t('auth.enterYourPassword')}
+                            value={password}
+                            onChangeText={handlePasswordChange}
+                            error={errors.password}
+                            leftIcon="lock-closed"
+                            secureTextEntry
+                            autoComplete="password"
+                            containerStyle={styles.inputContainer}
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                        />
+
+                        <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/forgot-password')}>
+                            <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
+                        </TouchableOpacity>
+
+                        <Button
+                            title={t('auth.signIn')}
+                            onPress={handleLogin}
+                            loading={isLoggingIn}
+                            fullWidth
+                            size="large"
+                            style={styles.signInButton}
+                        />
+
+                        <View style={styles.signupContainer}>
+                            <Text style={styles.signupText}>{t('auth.dontHaveAccount')} </Text>
+                            <TouchableOpacity onPress={handleSignupPress}>
+                                <Text style={styles.signupLink}>{t('auth.signup')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </ScrollView>
+            </View>
         </KeyboardAvoidingView>
     );
 };
@@ -252,55 +264,84 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background.default,
+        backgroundColor: '#00615E',
+    },
+    topPanel: {
+        paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.xl,
+        alignItems: 'center',
+    },
+    topTitle: {
+        fontSize: 24,
+        lineHeight: 29,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        fontFamily: 'Inter',
+    },
+    bottomSheet: {
+        flex: 1,
+        backgroundColor: '#FFFDF4',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        overflow: 'hidden',
     },
     scrollContent: {
         flexGrow: 1,
-        padding: theme.spacing.xl,
-        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.lg,
+        paddingBottom: theme.spacing.xl,
     },
     header: {
         marginBottom: theme.spacing.xl,
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
     toggleContainer: {
         flexDirection: 'row',
-        backgroundColor: theme.colors.background.paper,
-        borderRadius: theme.borderRadius.md,
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
         padding: 4,
-        marginBottom: theme.spacing.xl,
-        borderWidth: 1,
-        borderColor: theme.colors.border.light,
+        marginBottom: theme.spacing.lg,
     },
     toggleButton: {
         flex: 1,
-        paddingVertical: theme.spacing.md,
-        paddingHorizontal: theme.spacing.lg,
-        borderRadius: theme.borderRadius.sm,
-        alignItems: 'center',
+        flexDirection: 'row',
         justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        borderRadius: 4,
+        height: 34,
     },
     toggleButtonActive: {
-        backgroundColor: theme.colors.primary[500],
+        backgroundColor: '#00615E',
+        borderWidth: 1,
+        borderColor: '#00615E',
     },
     toggleButtonText: {
-        fontSize: theme.typography.fontSize.base,
-        fontWeight: theme.typography.fontWeight.medium,
-        color: theme.colors.text.secondary,
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 14,
+        lineHeight: 18,
+        color: '#000000',
     },
     toggleButtonTextActive: {
-        color: theme.colors.white,
-        fontWeight: theme.typography.fontWeight.semiBold,
+        color: '#FFFFFF',
     },
     title: {
-        fontSize: theme.typography.fontSize['3xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
+        fontSize: 32,
+        lineHeight: 38,
+        fontWeight: '500',
+        color: '#000000',
+        marginBottom: theme.spacing.xs,
+        fontFamily: 'Inter',
     },
     subtitle: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontSize: 16,
+        lineHeight: 26,
+        fontWeight: '400',
+        color: '#090A0A',
+        fontFamily: 'Inter',
     },
     form: {
         width: '100%',
@@ -308,28 +349,51 @@ const styles = StyleSheet.create({
     inputWrapper: {
         width: '100%',
     },
+    inputContainer: {
+        marginBottom: theme.spacing.sm,
+    },
+    inputField: {
+        backgroundColor: '#F3F0E7',
+        borderWidth: 0,
+        borderRadius: 8,
+        minHeight: 40,
+    },
+    inputText: {
+        color: '#0A292D',
+        fontSize: 14,
+        fontWeight: '500',
+    },
     forgotPassword: {
         alignSelf: 'flex-end',
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.md,
     },
     forgotPasswordText: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.medium,
+        fontSize: 14,
+        color: '#00615E',
+        fontWeight: '500',
+        fontFamily: 'Inter',
+    },
+    signInButton: {
+        backgroundColor: '#00615E',
+        borderRadius: 8,
     },
     signupContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: theme.spacing.xl,
+        marginTop: theme.spacing.lg,
     },
     signupText: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#72777A',
+        fontFamily: 'Inter',
     },
     signupLink: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.semiBold,
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#000000',
+        fontWeight: '600',
+        fontFamily: 'Inter',
     },
 });
 

@@ -17,6 +17,7 @@ interface InputProps extends TextInputProps {
     rightIcon?: keyof typeof Ionicons.glyphMap;
     onRightIconPress?: () => void;
     containerStyle?: any;
+    inputContainerStyle?: any;
     leftPrefix?: React.ReactNode;
 }
 
@@ -27,6 +28,7 @@ export const Input: React.FC<InputProps> = ({
     rightIcon,
     onRightIconPress,
     containerStyle,
+    inputContainerStyle,
     style,
     secureTextEntry,
     leftPrefix,
@@ -48,6 +50,7 @@ export const Input: React.FC<InputProps> = ({
             <View
                 style={[
                     styles.inputContainer,
+                    inputContainerStyle,
                     error && styles.inputContainerError,
                 ]}
             >
