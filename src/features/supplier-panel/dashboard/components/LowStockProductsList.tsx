@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LowStockProductCard } from './LowStockProductCard';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
+import { LowStockProductCard } from './LowStockProductCard';
 
 interface LowStockProductsListProps {
     onProductSave?: (productId: number, price: number, stock: number) => Promise<boolean | void> | boolean | void;
@@ -11,6 +11,7 @@ interface LowStockProductsListProps {
     onToggleStatus?: (productId: number, currentStatus: 'active' | 'inactive') => Promise<boolean | void> | boolean | void;
     onDuplicate?: (productId: number) => Promise<boolean | void> | boolean | void;
     onSeeAll?: () => void;
+    productsData?: any;
 }
 
 export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
@@ -20,8 +21,10 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
     onToggleStatus,
     onDuplicate,
     onSeeAll,
+    productsData,
 }) => {
-    const { data: products, loading, error, refetch } = useLowStockProducts();
+    const hookData = useLowStockProducts();
+    const { data: products, loading, error, refetch } = productsData || hookData;
 
     const handleSave = async (productId: number, price: number, stock: number) => {
         if (!onProductSave) return;
@@ -91,7 +94,7 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
             </View>
 
             <View style={styles.productsContainer}>
-                {displayProducts.map((product) => (
+                {displayProducts.map((product: any) => (
                     <LowStockProductCard
                         key={product.marketplace_product_id || product.id}
                         product={product}

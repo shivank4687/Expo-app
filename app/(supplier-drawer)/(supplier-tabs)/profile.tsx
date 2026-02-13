@@ -2,12 +2,17 @@ import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
+    const insets = useSafeAreaInsets();
+
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom }]}
+            >
                 {/* Frame 134 - Header Container */}
                 <View style={styles.headerContainer}>
                     {/* My data - Title */}
@@ -425,8 +430,9 @@ const styles = StyleSheet.create({
     contentContainer: {
         paddingHorizontal: 16,
         paddingTop: 20,
-        paddingBottom: 40,
+        paddingBottom: 0,
         gap: 8,
+        flexGrow: 1,
     },
     headerContainer: {
         flexDirection: 'column',

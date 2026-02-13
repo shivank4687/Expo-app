@@ -8,6 +8,7 @@ import { fetchCoreConfig } from "@/store/slices/coreSlice";
 import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
 import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
 import { persistor, store } from "@/store/store";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
@@ -83,8 +84,33 @@ function AppContent() {
         <Stack.Screen
           name="login"
           options={{
-            title: "Login",
+            title: "",
             headerBackTitle: "Back",
+            headerStyle: {
+              backgroundColor: '#00615E',
+              shadowColor: 'transparent',
+              elevation: 0,
+            },
+            headerTintColor: '#FFFFFF',
+            headerTitleStyle: {
+              color: '#FFFFFF',
+              fontWeight: '600',
+            },
+            headerBackImage: () => (
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginLeft: 4,
+                }}
+              >
+                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+              </View>
+            ),
           }}
         />
         <Stack.Screen

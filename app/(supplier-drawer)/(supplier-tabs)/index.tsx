@@ -1,3 +1,4 @@
+import { AttachIcon, MessageIcon } from '@/assets/icons';
 import { createShipment } from '@/features/supplier-panel/dashboard/api/shipments.api';
 import { DashboardReviewsSection } from '@/features/supplier-panel/dashboard/components/DashboardReviewsSection';
 import { LowStockProductsList } from '@/features/supplier-panel/dashboard/components/LowStockProductsList';
@@ -5,13 +6,13 @@ import { PaymentsCard } from '@/features/supplier-panel/dashboard/components/Pay
 import { PendingOrdersCard } from '@/features/supplier-panel/dashboard/components/PendingOrdersCard';
 import { QuotesCard } from '@/features/supplier-panel/dashboard/components/QuotesCard';
 import { SalesStatsCard } from '@/features/supplier-panel/dashboard/components/SalesStatsCard';
+import { useLowStockProducts } from '@/features/supplier-panel/dashboard/hooks/useLowStockProducts';
 import { usePendingOrdersList } from '@/features/supplier-panel/dashboard/hooks/usePendingOrdersList';
 import { productsApi } from '@/services/api/products.api';
 import { useToast } from '@/shared/components/Toast';
 import { useAppSelector } from '@/store/hooks';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { AttachIcon, MessageIcon } from '@/assets/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -23,6 +24,7 @@ export default function SupplierDashboardScreen() {
   const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
   const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
   const { data: ordersData, loading: ordersLoading, error: ordersError, refetch } = usePendingOrdersList();
+  const lowStockProducts = useLowStockProducts();
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -128,9 +130,13 @@ export default function SupplierDashboardScreen() {
   // Handle product save
   const handleProductSave = async (productId: number, price: number, stock: number) => {
     try {
-      await productsApi.quickUpdateProduct(productId, { price, stock });
-      showToast({ message: 'Product updated successfully!', type: 'success' });
-      return true;
+      const result = await lowStockProducts.quickUpdateProduct(productId, { price, stock });
+      if (result.success) {
+        showToast({ message: 'Product updated successfully!', type: 'success' });
+        return true;
+      } else {
+        throw result.error;
+      }
     } catch (error) {
       console.error('Error updating product:', error);
       showToast({ message: 'Failed to update product. Please try again.', type: 'error' });
@@ -141,13 +147,17 @@ export default function SupplierDashboardScreen() {
   const handleToggleProductStatus = async (productId: number, currentStatus: 'active' | 'inactive') => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     try {
-      await productsApi.quickUpdateProduct(productId, { status: newStatus });
-      showToast({
-        type: 'success',
-        message: `Product ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`,
-        duration: 3000,
-      });
-      return true;
+      const result = await lowStockProducts.quickUpdateProduct(productId, { status: newStatus });
+      if (result.success) {
+        showToast({
+          type: 'success',
+          message: `Product ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`,
+          duration: 3000,
+        });
+        return true;
+      } else {
+        throw result.error;
+      }
     } catch (error) {
       console.error('Error updating product status:', error);
       showToast({
@@ -471,6 +481,7 @@ export default function SupplierDashboardScreen() {
           onToggleStatus={handleToggleProductStatus}
           onDuplicate={handleDuplicateProduct}
           onSeeAll={handleSeeAllProducts}
+          productsData={lowStockProducts}
         />
 
         <DashboardReviewsSection onSeeAll={handleSeeAllReviews} />

@@ -6,7 +6,7 @@ import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Clipboard, Image, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MarketingScreen() {
     const [stats, setStats] = useState<InvitationStats | null>(null);
@@ -14,6 +14,7 @@ export default function MarketingScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [isQrLoading, setIsQrLoading] = useState(true);
+    const insets = useSafeAreaInsets();
 
     const qrCodeUrl = stats?.referral_url
         ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(stats.referral_url)}`
@@ -220,8 +221,11 @@ export default function MarketingScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom }]}
+            >
                 {/* Frame 24 - Main Container */}
                 <View style={styles.mainCard}>
                     {/* Header Section */}
@@ -478,8 +482,9 @@ const styles = StyleSheet.create({
     contentContainer: {
         paddingHorizontal: 16,
         paddingTop: 20,
-        paddingBottom: 40,
+        paddingBottom: 0,
         gap: 8,
+        flexGrow: 1,
     },
     mainCard: {
         width: '100%',
