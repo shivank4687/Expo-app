@@ -1,4 +1,5 @@
 import { restApiClient } from '@/services/api/client';
+import { formatFileUri, multipartFetch } from '@/services/api/fetchClient';
 
 export interface CreateShipmentRequest {
     track_number?: string;
@@ -26,6 +27,9 @@ export interface CreateShipmentResponse {
 
 /**
  * Create a shipment for a specific order
+ * 
+ * NOTE: This function uses `multipartFetch` (fetch fallback) for uploads with images
+ * to avoid "Network Error" issues in standalone Android builds.
  */
 export const createShipment = async (
     orderId: number,
@@ -33,18 +37,15 @@ export const createShipment = async (
 ): Promise<CreateShipmentResponse> => {
     const endpoint = `/supplier-app/shipments/create/${orderId}`;
 
-    // When no photo is included, prefer JSON payload to avoid multipart issues in some builds/devices.
+    // CASE 1 — No image: Use Axios
     if (!data.tracking_photo) {
-        const response = await restApiClient.post<CreateShipmentResponse>(
+        return await restApiClient.post<CreateShipmentResponse>(
             endpoint,
-            {
-                ...(data.track_number ? { track_number: data.track_number } : {}),
-            }
+            { ...(data.track_number ? { track_number: data.track_number } : {}) }
         );
-
-        return response;
     }
 
+    // CASE 2 — Image present: Use fetch fallback
     const formData = new FormData();
 
     if (data.track_number) {
@@ -52,15 +53,10 @@ export const createShipment = async (
     }
 
     formData.append('tracking_photo', {
-        uri: data.tracking_photo.uri,
+        uri: formatFileUri(data.tracking_photo.uri),
         type: data.tracking_photo.type || 'image/jpeg',
         name: data.tracking_photo.name || 'tracking.jpg',
     } as any);
 
-    const response = await restApiClient.post<CreateShipmentResponse>(
-        endpoint,
-        formData
-    );
-
-    return response;
+    return await multipartFetch<CreateShipmentResponse>(endpoint, formData);
 };

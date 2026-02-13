@@ -1,7 +1,8 @@
-import { restApiClient } from './client';
 import { API_ENDPOINTS } from '@/config/constants';
 import { Product, ProductFilters } from '@/features/product/types/product.types';
 import { PaginatedResponse } from '@/types/global.types';
+import { restApiClient } from './client';
+import { formatFileUri, multipartFetch } from './fetchClient';
 
 /**
  * Products API Service
@@ -204,7 +205,7 @@ export const productsApi = {
 
                     if (isLocalMediaUri(uri)) {
                         formData.append(`images[files][${index}]`, {
-                            uri,
+                            uri: formatFileUri(uri),
                             name: fileName,
                             type: mimeType,
                         } as any);
@@ -223,7 +224,7 @@ export const productsApi = {
 
                 if (isLocalMediaUri(uri)) {
                     formData.append('videos[files][0]', {
-                        uri,
+                        uri: formatFileUri(uri),
                         name: fileName,
                         type: mimeType,
                     } as any);
@@ -243,7 +244,7 @@ export const productsApi = {
 
                     if (isLocalMediaUri(uri)) {
                         formData.append(`${rootKey}[files][${index}]`, {
-                            uri,
+                            uri: formatFileUri(uri),
                             name: fileName,
                             type: mimeType,
                         } as any);
@@ -269,7 +270,7 @@ export const productsApi = {
 
         appendToFormData(data, '');
 
-        const response = await restApiClient.post<{ data: any, message: string }>(
+        const response = await multipartFetch<{ data: any, message: string }>(
             API_ENDPOINTS.SUPPLIER_PRODUCTS_LIST,
             formData
         );
@@ -346,7 +347,7 @@ export const productsApi = {
                     if (isLocalMediaUri(uri)) {
                         // New local file - use a unique string key to avoid clashing with existing IDs
                         formData.append(`images[files][new_${index}]`, {
-                            uri,
+                            uri: formatFileUri(uri),
                             name: fileName,
                             type: mimeType,
                         } as any);
@@ -367,7 +368,7 @@ export const productsApi = {
 
                 if (isLocalMediaUri(uri)) {
                     formData.append('videos[files][new_0]', {
-                        uri,
+                        uri: formatFileUri(uri),
                         name: fileName,
                         type: mimeType,
                     } as any);
@@ -388,7 +389,7 @@ export const productsApi = {
                     if (isLocalMediaUri(uri)) {
                         // New local file for variant
                         formData.append(`${rootKey}[files][new_${index}]`, {
-                            uri,
+                            uri: formatFileUri(uri),
                             name: fileName,
                             type: mimeType,
                         } as any);
@@ -415,8 +416,8 @@ export const productsApi = {
 
         appendToFormData(data, '');
 
-        // Use POST with _method=PUT
-        const response = await restApiClient.post<{ data: any, message: string }>(
+        // Use POST with _method=PUT via multipartFetch
+        const response = await multipartFetch<{ data: any, message: string }>(
             url,
             formData
         );
