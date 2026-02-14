@@ -52,7 +52,7 @@ export default function OrderDetailsScreen() {
         }
     };
 
-    const handleTrackingSubmit = async (trackingNumber: string, photoUri: string) => {
+    const handleTrackingSubmit = async (trackingNumber: string, photoUri: string | null) => {
         try {
             setIsSubmittingTracking(true);
 
@@ -77,6 +77,7 @@ export default function OrderDetailsScreen() {
                         id: response.data.shipment_id,
                         carrier_title: response.data.carrier_title,
                         track_number: response.data.track_number || trackingNumber,
+                        tracking_photo_url: response.data.tracking_photo_url || photoUri,
                         total_qty: 1, // Defaulting if not in response
                         created_at: response.data.created_at,
                     };

@@ -257,12 +257,14 @@ export const OtpVerificationScreen: React.FC = () => {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.container}
         >
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                showsVerticalScrollIndicator={false}
             >
                 <View style={styles.header}>
                     <Text style={styles.title}>{t('auth.verifyOtp', 'Verify OTP')}</Text>
@@ -285,27 +287,47 @@ export const OtpVerificationScreen: React.FC = () => {
                         editable={!isLoading}
                     />
 
-                    <View style={styles.otpContainer}>
-                        {otp.map((digit, index) => (
-                            <TextInput
-                                key={index}
-                                ref={(ref) => (otpInputRefs.current[index] = ref)}
-                                style={[
-                                    styles.otpInput,
-                                    digit ? styles.otpInputFilled : null,
-                                    isLoading ? styles.otpInputDisabled : null,
-                                ]}
-                                value={digit}
-                                onChangeText={(value) => handleOtpChange(index, value)}
-                                onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-                                keyboardType="number-pad"
-                                maxLength={index === 0 ? 6 : 1}
-                                selectTextOnFocus
-                                editable={!isLoading}
-                                textContentType={index === 0 ? 'oneTimeCode' : 'none'}
-                                autoComplete={index === 0 && Platform.OS === 'android' ? 'sms-otp' : 'off'}
-                            />
-                        ))}
+                    <View style={styles.otpWrapper}>
+                        <View style={styles.otpContainer}>
+                            {otp.map((digit, index) => (
+                                <React.Fragment key={index}>
+                                    <TextInput
+                                        ref={(ref) => (otpInputRefs.current[index] = ref)}
+                                        style={styles.otpInput}
+                                        value={digit}
+                                        onChangeText={(value) => handleOtpChange(index, value)}
+                                        onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
+                                        keyboardType="number-pad"
+                                        maxLength={index === 0 ? 6 : 1}
+                                        selectTextOnFocus
+                                        editable={!isLoading}
+                                        textContentType={index === 0 ? 'oneTimeCode' : 'none'}
+                                        autoComplete={index === 0 && Platform.OS === 'android' ? 'sms-otp' : 'off'}
+                                    />
+                                    {index < 5 && <View style={styles.otpDivider} />}
+                                </React.Fragment>
+                            ))}
+                        </View>
+
+                        <View style={styles.resendContainer}>
+                            <Text style={styles.resendText}>
+                                {t('auth.didntReceiveCode', "Didn't receive a code?")}{' '}
+                            </Text>
+                            {resendCooldown > 0 ? (
+                                <Text style={styles.cooldownText}>
+                                    {t('auth.resendIn', 'Resend in')} {resendCooldown}s
+                                </Text>
+                            ) : (
+                                <TouchableOpacity
+                                    onPress={handleResendOtp}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={styles.resendLink}>
+                                        {t('auth.resendOtp', 'Resend')}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
 
                     {error && (
@@ -320,30 +342,6 @@ export const OtpVerificationScreen: React.FC = () => {
                         size="large"
                         style={styles.verifyButton}
                     />
-
-                    <View style={styles.resendContainer}>
-                        <Text style={styles.resendText}>
-                            {t('auth.didntReceiveCode', "Didn't receive the code?")}{' '}
-                        </Text>
-                        {resendCooldown > 0 ? (
-                            <Text style={styles.cooldownText}>
-                                {t('auth.resendIn', 'Resend in')} {resendCooldown}s
-                            </Text>
-                        ) : (
-                            <TouchableOpacity
-                                onPress={handleResendOtp}
-                                disabled={isLoading}
-                                style={isLoading ? styles.resendDisabled : undefined}
-                            >
-                                <Text style={[
-                                    styles.resendLink,
-                                    isLoading ? styles.resendLinkDisabled : null,
-                                ]}>
-                                    {t('auth.resendOtp', 'Resend OTP')}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
 
                     {/* <TouchableOpacity
                         style={styles.backButton}
@@ -371,22 +369,32 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         padding: theme.spacing.xl,
-        justifyContent: 'center',
+        paddingTop: 0,
     },
     header: {
-        marginBottom: theme.spacing['2xl'],
-        alignItems: 'center',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        paddingTop: 40,
+        paddingHorizontal: 24,
+        paddingBottom: 10,
+        gap: 8,
+        alignSelf: 'stretch',
     },
     title: {
-        fontSize: theme.typography.fontSize['3xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 24,
+        lineHeight: 29, // 120% of 24px
+        color: '#000000',
+        alignSelf: 'stretch',
     },
     subtitle: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
-        textAlign: 'center',
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 16,
+        lineHeight: 26, // 160% of 16px
+        color: '#090A0A',
+        alignSelf: 'stretch',
     },
     form: {
         width: '100%',
@@ -397,61 +405,78 @@ const styles = StyleSheet.create({
         width: 0,
         height: 0,
     },
+    otpWrapper: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        paddingVertical: 20,
+        paddingHorizontal: 24,
+        gap: 10,
+        alignSelf: 'stretch',
+    },
     otpContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: theme.spacing.xl,
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 10,
+        gap: 10,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E3E5E6',
+        borderRadius: 10,
+        height: 54,
+        alignSelf: 'stretch',
     },
     otpInput: {
-        width: 50,
-        height: 60,
-        borderWidth: 2,
-        borderColor: theme.colors.border.light,
-        borderRadius: theme.borderRadius.md,
-        fontSize: theme.typography.fontSize['2xl'],
-        fontWeight: theme.typography.fontWeight.bold,
+        flex: 1,
+        height: 26,
+        fontFamily: 'Rubik',
+        fontWeight: '400',
+        fontSize: 16,
         textAlign: 'center',
-        color: theme.colors.text.primary,
-        backgroundColor: theme.colors.background.paper,
+        textAlignVertical: 'center',
+        color: '#181818',
+        padding: 0,
+        margin: 0,
+        includeFontPadding: false,
     },
-    otpInputFilled: {
-        borderColor: theme.colors.primary[500],
-        backgroundColor: theme.colors.primary[50],
-    },
-    otpInputDisabled: {
-        opacity: 0.6,
-        backgroundColor: theme.colors.background.default,
+    otpDivider: {
+        width: 1,
+        height: 26,
+        backgroundColor: '#E3E5E6',
+        alignSelf: 'stretch',
     },
     errorText: {
-        color: theme.colors.error[500],
+        color: theme.colors.error.main,
         fontSize: theme.typography.fontSize.sm,
         marginBottom: theme.spacing.md,
         textAlign: 'center',
     },
     verifyButton: {
         marginBottom: theme.spacing.lg,
+        backgroundColor: '#00615E',
+        borderRadius: 8,
+        height: 40,
+        paddingVertical: 0,
     },
     resendContainer: {
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: theme.spacing.xl,
+        alignSelf: 'stretch',
     },
     resendText: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#000000',
     },
     resendLink: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.semiBold,
-    },
-    resendLinkDisabled: {
-        opacity: 0.5,
-        color: theme.colors.text.secondary,
-    },
-    resendDisabled: {
-        opacity: 0.5,
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#00615E',
+        textDecorationLine: 'underline',
     },
     cooldownText: {
         fontSize: theme.typography.fontSize.base,

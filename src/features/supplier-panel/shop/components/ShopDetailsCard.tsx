@@ -80,6 +80,8 @@ export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange
                         textAlignVertical="top"
                         value={data.company_overview}
                         onChangeText={(val) => onChange('company_overview', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 <Text style={styles.tipText}>
@@ -124,6 +126,8 @@ export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange
                         keyboardType="phone-pad"
                         value={data.phone}
                         onChangeText={(val) => onChange('phone', val)}
+                        textContentType="telephoneNumber"
+                        autoComplete="tel"
                     />
                 </View>
             </View>
@@ -226,7 +230,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
         width: "100%",
         height: 40,

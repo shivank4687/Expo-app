@@ -12,6 +12,7 @@ import { theme } from '@/theme';
 
 interface InputProps extends TextInputProps {
     label?: string;
+    labelStyle?: any;
     error?: string;
     leftIcon?: keyof typeof Ionicons.glyphMap;
     rightIcon?: keyof typeof Ionicons.glyphMap;
@@ -23,6 +24,7 @@ interface InputProps extends TextInputProps {
 
 export const Input: React.FC<InputProps> = ({
     label,
+    labelStyle,
     error,
     leftIcon,
     rightIcon,
@@ -45,7 +47,7 @@ export const Input: React.FC<InputProps> = ({
 
     return (
         <View style={[styles.container, containerStyle]}>
-            {label && <Text style={styles.label}>{label}</Text>}
+            {label && <Text style={[styles.label, labelStyle]}>{label}</Text>}
 
             <View
                 style={[

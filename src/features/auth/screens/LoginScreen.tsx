@@ -20,6 +20,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { GoogleIcon } from '@/assets/icons/GoogleIcon';
+import { Ionicons } from '@expo/vector-icons';
 
 export const LoginScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -235,18 +237,35 @@ export const LoginScreen: React.FC = () => {
                             style={styles.inputText}
                         />
 
-                        <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/forgot-password')}>
-                            <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
-                        </TouchableOpacity>
+                        <View style={styles.actionContainer}>
+                            <Button
+                                title={t('auth.signIn')}
+                                onPress={handleLogin}
+                                loading={isLoggingIn}
+                                fullWidth
+                                size="medium"
+                                style={styles.signInButton}
+                            />
 
-                        <Button
-                            title={t('auth.signIn')}
-                            onPress={handleLogin}
-                            loading={isLoggingIn}
-                            fullWidth
-                            size="large"
-                            style={styles.signInButton}
-                        />
+                            <TouchableOpacity
+                                style={styles.secondaryButton}
+                                activeOpacity={0.7}
+                                onPress={() => router.push('/forgot-password')}
+                            >
+                                <Text style={styles.secondaryButtonText}>{t('auth.forgotPassword')}</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.orText}>{t('auth.or', 'or')}</Text>
+
+                            <TouchableOpacity
+                                style={styles.googleButton}
+                                activeOpacity={1}
+                                onPress={() => { }}
+                            >
+                                <GoogleIcon width={18} height={18} />
+                                <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle', 'Continue with Google')}</Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.signupContainer}>
                             <Text style={styles.signupText}>{t('auth.dontHaveAccount')} </Text>
@@ -376,6 +395,58 @@ const styles = StyleSheet.create({
     signInButton: {
         backgroundColor: '#00615E',
         borderRadius: 8,
+        height: 40,
+        paddingVertical: 0, // Ensure fixed height doesn't clip with Button's default padding
+    },
+    actionContainer: {
+        marginTop: theme.spacing.md,
+        paddingHorizontal: 24,
+        gap: 10,
+    },
+    secondaryButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 12,
+        backgroundColor: '#EAECE1',
+        borderRadius: 8,
+        height: 40,
+        width: '100%',
+    },
+    secondaryButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 16,
+        color: '#0A292D',
+    },
+    orText: {
+        fontFamily: 'Inter',
+        fontSize: 16,
+        lineHeight: 26,
+        textAlign: 'center',
+        color: '#72777A',
+        marginVertical: 4,
+    },
+    googleButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 10,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E3E5E6',
+        borderRadius: 10,
+        height: 48,
+        width: '100%',
+        gap: 10,
+    },
+    googleIcon: {
+        marginRight: 10,
+    },
+    googleButtonText: {
+        fontFamily: 'Inter',
+        fontSize: 16,
+        color: '#000000',
     },
     signupContainer: {
         flexDirection: 'row',

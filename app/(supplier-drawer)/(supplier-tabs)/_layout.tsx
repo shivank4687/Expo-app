@@ -31,6 +31,14 @@ export default function SupplierTabsLayout() {
       name: "marketing",
       title: "Marketing"
     },
+    {
+      name: "reviews",
+      title: "Reviews"
+    },
+    {
+      name: "transactions",
+      title: "Transactions"
+    },
   ];
   return (
     <Tabs

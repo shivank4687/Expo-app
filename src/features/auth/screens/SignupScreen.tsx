@@ -51,7 +51,7 @@ export const SignupScreen: React.FC = () => {
         email?: boolean;
         phone?: boolean;
     }>({});
-    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const updateField = useCallback((field: keyof typeof formData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -156,7 +156,7 @@ export const SignupScreen: React.FC = () => {
             // Clear previous phone error
             setErrors(prev => ({ ...prev, phone: undefined }));
             // Validate phone with new country immediately (no debounce)
-            validatePhone(formData.phone, country.id);
+            validatePhone(formData.phone, Number(country.id));
         } else if (formData.phone) {
             // If phone format is invalid, just clear the country-related error
             setErrors(prev => {
@@ -192,7 +192,7 @@ export const SignupScreen: React.FC = () => {
             }
             // Debounce validation by 500ms
             validationTimeoutRef.current = setTimeout(() => {
-                validatePhone(formData.phone, selectedCountry?.id);
+                validatePhone(formData.phone, Number(selectedCountry?.id));
             }, 500);
         }
     }, [formData.phone, selectedCountry, validatePhone]);
@@ -237,7 +237,7 @@ export const SignupScreen: React.FC = () => {
         } else if (!selectedCountry) {
             newErrors.phone = t('auth.countryRequired', 'Please select a country code');
         } else if (errors.phone && (
-            errors.phone.includes('already registered') || 
+            errors.phone.includes('already registered') ||
             errors.phone.includes('already exists')
         )) {
             // Preserve existing "already exists" error if present
@@ -292,7 +292,7 @@ export const SignupScreen: React.FC = () => {
                 const phoneResponse = await authApi.checkDuplicate({
                     type: 'phone',
                     value: formData.phone,
-                    phone_country_id: selectedCountry.id,
+                    phone_country_id: Number(selectedCountry.id),
                 });
                 if (!phoneResponse.available) {
                     setErrors(prev => ({
@@ -337,7 +337,7 @@ export const SignupScreen: React.FC = () => {
             // Check if OTP verification is required
             if (result.requiresOtp && result.verificationToken) {
                 // Navigate to OTP verification screen
-                const phoneWithCode = selectedCountry 
+                const phoneWithCode = selectedCountry
                     ? `${selectedCountry.dial_code}${formData.phone}`
                     : formData.phone;
 
@@ -383,115 +383,138 @@ export const SignupScreen: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View style={styles.header}>
-                    <Text style={styles.title}>{t('auth.createAccount')}</Text>
-                    <Text style={styles.subtitle}>{t('auth.signUpToGetStarted')}</Text>
-                </View>
+            <View style={styles.topPanel}>
+                <Text style={styles.topTitle}>{t('auth.signUp')}</Text>
+            </View>
 
-                <View style={styles.form}>
-                    <Input
-                        label={t('auth.firstName')}
-                        placeholder={t('auth.enterFirstName', 'Enter your first name')}
-                        value={formData.first_name}
-                        onChangeText={(text) => updateField('first_name', text)}
-                        error={errors.first_name}
-                        leftIcon="person"
-                        autoComplete="given-name"
-                    />
+            <View style={styles.bottomSheet}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{t('auth.createAccount')}</Text>
+                        <Text style={styles.subtitle}>{t('auth.signUpToGetStarted')}</Text>
+                    </View>
 
-                    <Input
-                        label={t('auth.lastName')}
-                        placeholder={t('auth.enterLastName', 'Enter your last name')}
-                        value={formData.last_name}
-                        onChangeText={(text) => updateField('last_name', text)}
-                        error={errors.last_name}
-                        leftIcon="person"
-                        autoComplete="family-name"
-                    />
-
-                    <View style={styles.inputWrapper}>
-                        <Input
-                            label={t('auth.phone')}
-                            placeholder={t('auth.enterPhone', 'Enter your phone number')}
-                            value={formData.phone}
-                            onChangeText={(text) => updateField('phone', text)}
-                            onBlur={handlePhoneBlur}
-                            error={errors.phone}
-                            leftPrefix={
-                                <CountryCodeDropdown
-                                    onCountrySelect={handleCountrySelect}
-                                    selectedCountry={selectedCountry}
+                    <View style={styles.form}>
+                        <View style={styles.row}>
+                            <View style={styles.flex1}>
+                                <Input
+                                    label={t('auth.firstName')}
+                                    placeholder={t('auth.enterFirstName')}
+                                    value={formData.first_name}
+                                    onChangeText={(text) => updateField('first_name', text)}
+                                    error={errors.first_name}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
                                 />
-                            }
-                            keyboardType="phone-pad"
+                            </View>
+                            <View style={styles.spacingHorizontal} />
+                            <View style={styles.flex1}>
+                                <Input
+                                    label={t('auth.lastName')}
+                                    placeholder={t('auth.enterLastName')}
+                                    value={formData.last_name}
+                                    onChangeText={(text) => updateField('last_name', text)}
+                                    error={errors.last_name}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.inputWrapper}>
+                            <Input
+                                label={t('auth.phone')}
+                                placeholder={t('auth.enterPhone')}
+                                value={formData.phone}
+                                onChangeText={(text) => updateField('phone', text)}
+                                onBlur={handlePhoneBlur}
+                                error={errors.phone}
+                                leftPrefix={
+                                    <View style={styles.countryPickerWrapper}>
+                                        <CountryCodeDropdown
+                                            onCountrySelect={handleCountrySelect}
+                                            selectedCountry={selectedCountry}
+                                        />
+                                    </View>
+                                }
+                                keyboardType="phone-pad"
+                                autoCapitalize="none"
+                                autoComplete="tel"
+                                editable={!validating.phone}
+                                inputContainerStyle={styles.inputField}
+                                style={styles.inputText}
+                                labelStyle={styles.inputLabel}
+                            />
+                        </View>
+
+                        <Input
+                            label={`${t('auth.email')} ${t('common.optional')}`}
+                            placeholder={t('auth.enterYourEmail')}
+                            value={formData.email}
+                            onChangeText={(text) => updateField('email', text)}
+                            onBlur={handleEmailBlur}
+                            error={errors.email}
+                            keyboardType="email-address"
                             autoCapitalize="none"
-                            autoComplete="tel"
-                            editable={!validating.phone}
+                            autoComplete="email"
+                            editable={!validating.email}
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
                         />
+
+                        <Input
+                            label={t('auth.password')}
+                            placeholder={t('auth.createAPassword')}
+                            value={formData.password}
+                            onChangeText={(text) => updateField('password', text)}
+                            error={errors.password}
+                            secureTextEntry
+                            autoComplete="password-new"
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
+
+                        <Input
+                            label={t('auth.confirmPassword')}
+                            placeholder={t('auth.confirmYourPassword')}
+                            value={formData.confirmPassword}
+                            onChangeText={(text) => updateField('confirmPassword', text)}
+                            error={errors.confirmPassword}
+                            secureTextEntry
+                            autoComplete="password-new"
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
+
+                        <View style={styles.actionContainer}>
+                            <Button
+                                title={t('auth.signUp')}
+                                onPress={handleSignup}
+                                loading={isLoading}
+                                fullWidth
+                                size="medium"
+                                style={styles.signUpButton}
+                            />
+
+                            <View style={styles.loginContainer}>
+                                <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
+                                <TouchableOpacity onPress={handleLoginPress}>
+                                    <Text style={styles.loginLink}>{t('auth.signIn')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
-
-                    <Input
-                        label={`${t('auth.email')} ${t('common.optional')}`}
-                        placeholder={t('auth.enterYourEmail')}
-                        value={formData.email}
-                        onChangeText={(text) => updateField('email', text)}
-                        onBlur={handleEmailBlur}
-                        error={errors.email}
-                        leftIcon="mail"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoComplete="email"
-                        editable={!validating.email}
-                    />
-
-                    <Input
-                        label={t('auth.password')}
-                        placeholder={t('auth.createAPassword')}
-                        value={formData.password}
-                        onChangeText={(text) => updateField('password', text)}
-                        error={errors.password}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password-new"
-                    />
-
-                    <Input
-                        label={t('auth.confirmPassword')}
-                        placeholder={t('auth.confirmYourPassword')}
-                        value={formData.confirmPassword}
-                        onChangeText={(text) => updateField('confirmPassword', text)}
-                        error={errors.confirmPassword}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password-new"
-                    />
-
-                    {/* <Text style={styles.termsText}>
-                        {t('auth.termsAgreement')}{' '}
-                        <Text style={styles.termsLink}>{t('auth.termsOfService')}</Text> {t('auth.and')}{' '}
-                        <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
-                    </Text> */}
-
-                    <Button
-                        title={t('auth.signUp')}
-                        onPress={handleSignup}
-                        loading={isLoading}
-                        fullWidth
-                        size="large"
-                    />
-
-                    <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
-                        <TouchableOpacity onPress={handleLoginPress}>
-                            <Text style={styles.loginLink}>{t('auth.signIn')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </View>
         </KeyboardAvoidingView>
     );
 };
@@ -499,57 +522,120 @@ export const SignupScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background.default,
+        backgroundColor: '#00615E',
+    },
+    topPanel: {
+        paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.xl,
+        alignItems: 'center',
+    },
+    topTitle: {
+        fontSize: 24,
+        lineHeight: 29,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        fontFamily: 'Inter',
+    },
+    bottomSheet: {
+        flex: 1,
+        backgroundColor: '#FFFDF4',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        overflow: 'hidden',
     },
     scrollContent: {
         flexGrow: 1,
-        padding: theme.spacing.xl,
-        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.lg,
+        paddingBottom: theme.spacing.xl,
     },
     header: {
-        marginBottom: theme.spacing['2xl'],
-        alignItems: 'center',
+        marginBottom: theme.spacing.xl,
+        alignItems: 'flex-start',
     },
     title: {
-        fontSize: theme.typography.fontSize['3xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
+        fontSize: 32,
+        lineHeight: 38,
+        fontWeight: '500',
+        color: '#000000',
+        marginBottom: theme.spacing.xs,
+        fontFamily: 'Inter',
     },
     subtitle: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontSize: 16,
+        lineHeight: 26,
+        fontWeight: '400',
+        color: '#090A0A',
+        fontFamily: 'Inter',
     },
     form: {
         width: '100%',
     },
+    row: {
+        flexDirection: 'row',
+        width: '100%',
+    },
+    flex1: {
+        flex: 1,
+    },
+    spacingHorizontal: {
+        width: theme.spacing.md,
+    },
     inputWrapper: {
         width: '100%',
     },
-    termsText: {
-        fontSize: theme.typography.fontSize.xs,
-        color: theme.colors.text.secondary,
-        textAlign: 'center',
-        marginBottom: theme.spacing.lg,
-        lineHeight: theme.typography.lineHeight.relaxed * theme.typography.fontSize.xs,
+    inputField: {
+        backgroundColor: '#F3F0E7',
+        borderWidth: 0,
+        borderRadius: 8,
+        minHeight: 40,
     },
-    termsLink: {
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.medium,
+    inputText: {
+        color: '#0A292D',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    inputLabel: {
+        color: '#72777A',
+        fontSize: 14,
+        marginBottom: 4,
+        fontFamily: 'Inter',
+    },
+    countryPickerWrapper: {
+        paddingRight: 8,
+        borderRightWidth: 1,
+        borderRightColor: '#EAECE1',
+        marginRight: 8,
+    },
+    actionContainer: {
+        marginTop: theme.spacing.md,
+        paddingHorizontal: 24,
+        gap: 10,
+    },
+    signUpButton: {
+        backgroundColor: '#00615E',
+        borderRadius: 8,
+        height: 40,
+        paddingVertical: 0,
     },
     loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: theme.spacing.xl,
+        marginTop: theme.spacing.lg,
     },
     loginText: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#72777A',
+        fontFamily: 'Inter',
     },
     loginLink: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.semiBold,
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#000000',
+        fontWeight: '600',
+        fontFamily: 'Inter',
     },
 });
 

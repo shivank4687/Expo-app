@@ -84,6 +84,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         keyboardType="numeric"
                         value={data?.minimum_order_amount?.toString() || ''}
                         onChangeText={(value) => onChange('minimum_order_amount', value ? parseFloat(value) : null)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 <Text style={styles.description}>Set a minimum order amount required to place an order</Text>
@@ -100,6 +102,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         keyboardType="numeric"
                         value={data?.free_shipping_threshold?.toString() || ''}
                         onChangeText={(value) => onChange('free_shipping_threshold', value ? parseFloat(value) : null)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 <Text style={styles.description}>Free shipping applies when cart total reaches this amount</Text>
@@ -121,6 +125,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                             if (numValue && numValue > 10) return;
                             onChange('preparation_time_days', numValue);
                         }}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors?.preparation_time_days && (
@@ -200,6 +206,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                                 keyboardType="numeric"
                                 value={data?.wholesale_price_multiplier?.toString() || ''}
                                 onChangeText={(value) => onChange('wholesale_price_multiplier', value ? parseFloat(value) : null)}
+                                textContentType="none"
+                                autoComplete="off"
                             />
                         </View>
                     </View>
@@ -241,14 +249,17 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                 </TouchableOpacity>
 
                 {data?.custom_orders_enabled && (
-                    <View style={[styles.inputContainer, { marginTop: 8 }]}>
+                    <View style={[styles.inputContainerLarge, { marginTop: 8 }]}>
                         <TextInput
-                            style={styles.input}
+                            style={styles.inputLarge}
                             placeholder="Enter custom order message"
                             placeholderTextColor="#666666"
                             value={data?.custom_order_message || ''}
                             onChangeText={(value) => onChange('custom_order_message', value)}
                             multiline
+                            textAlignVertical="top"
+                            textContentType="none"
+                            autoComplete="off"
                         />
                     </View>
                 )}
@@ -279,6 +290,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                                     keyboardType="numeric"
                                     value={discount.amount}
                                     onChangeText={(value) => handleDiscountChange(discount.id, 'amount', value)}
+                                    textContentType="none"
+                                    autoComplete="off"
                                 />
                             </View>
 
@@ -290,6 +303,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                                     keyboardType="numeric"
                                     value={discount.discount_percentage}
                                     onChangeText={(value) => handleDiscountChange(discount.id, 'discount_percentage', value)}
+                                    textContentType="none"
+                                    autoComplete="off"
                                 />
                                 <Text style={styles.percentageSymbol}>%</Text>
                             </View>
@@ -351,6 +366,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                             keyboardType="numeric"
                             value={data?.discount_special_percentage?.toString() || ''}
                             onChangeText={(value) => onChange('discount_special_percentage', value ? parseFloat(value) : null)}
+                            textContentType="none"
+                            autoComplete="off"
                         />
                         <Text style={styles.percentageSymbol}>%</Text>
                     </View>
@@ -363,6 +380,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                             keyboardType="numeric"
                             value={data?.discount_special_max_amount?.toString() || ''}
                             onChangeText={(value) => onChange('discount_special_max_amount', value ? parseFloat(value) : null)}
+                            textContentType="none"
+                            autoComplete="off"
                         />
                     </View>
                 </View>
@@ -543,10 +562,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
         width: "100%",
         height: 40,
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+    },
+    inputContainerLarge: {
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 10,
+        width: "100%",
+        minHeight: 112,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
     },
@@ -556,9 +587,18 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 16,
-        lineHeight: 20,
         color: '#666666',
         padding: 0,
+    },
+    inputLarge: {
+        flex: 1,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 16,
+        color: '#666666',
+        padding: 0,
+        minHeight: 88,
     },
     percentageSymbol: {
         fontFamily: 'Inter',
@@ -653,7 +693,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
         width: "100%",
         height: 40,
@@ -694,7 +733,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
         width: "100%",
         height: 40,
@@ -714,7 +752,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 12,
-        paddingVertical: 12,
         gap: 8,
         height: 40,
         backgroundColor: '#EEEEEF',
@@ -809,7 +846,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 12,
-        paddingVertical: 12,
         gap: 8,
         height: 40,
         backgroundColor: '#EEEEEF',

@@ -52,7 +52,7 @@ function AppContent() {
     const isLoading = isCustomerLoading || isSupplierLoading;
     if (isLoading) return;
 
-    const isAuthScreen = segments[0] === 'login' || segments[0] === 'signup' || segments[0] === 'otp-verification' || segments[0] === 'index';
+    const isAuthScreen = (segments[0] as any) === 'login' || (segments[0] as any) === 'signup' || (segments[0] as any) === 'otp-verification' || (segments[0] as any) === 'index';
     const isOnSupplierDashboard = segments[0] === '(supplier-drawer)';
     const isOnCustomerDashboard = segments[0] === '(drawer)';
 
@@ -74,6 +74,36 @@ function AppContent() {
     // Customer dashboard (shop) is accessible without authentication, so no redirect needed
   }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, segments, router]);
 
+  const commonHeaderOptions = {
+    title: "",
+    headerBackTitle: "Back",
+    headerStyle: {
+      backgroundColor: '#00615E',
+      shadowColor: 'transparent',
+      elevation: 0,
+    },
+    headerTintColor: '#FFFFFF',
+    headerTitleStyle: {
+      color: '#FFFFFF',
+      fontWeight: '600' as const,
+    },
+    headerBackImage: () => (
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginLeft: 4,
+        }}
+      >
+        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+      </View>
+    ),
+  };
+
   return (
     <ToastProvider>
       <LocaleSync />
@@ -83,55 +113,29 @@ function AppContent() {
         <Stack.Screen name="(supplier-drawer)" options={{ headerShown: false }} />
         <Stack.Screen
           name="login"
-          options={{
-            title: "",
-            headerBackTitle: "Back",
-            headerStyle: {
-              backgroundColor: '#00615E',
-              shadowColor: 'transparent',
-              elevation: 0,
-            },
-            headerTintColor: '#FFFFFF',
-            headerTitleStyle: {
-              color: '#FFFFFF',
-              fontWeight: '600',
-            },
-            headerBackImage: () => (
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginLeft: 4,
-                }}
-              >
-                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              </View>
-            ),
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="signup"
-          options={{
-            title: "Sign Up",
-            headerBackTitle: "Back",
-          }}
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="otp-verification"
-          options={{
-            title: "Verify OTP",
-            headerBackTitle: "Back",
-          }}
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="forgot-password"
+          options={commonHeaderOptions}
+        />
+        <Stack.Screen
+          name="reset-password"
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="contact-us"
           options={{
+            ...commonHeaderOptions,
             title: "Contact Us",
-            headerBackTitle: "Back",
           }}
         />
         <Stack.Screen

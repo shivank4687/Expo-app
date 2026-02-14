@@ -19,6 +19,7 @@ export interface CreateShipmentResponse {
         track_number: string | null;
         carrier_title: string;
         status: string;
+        tracking_photo_url: string | null;
         created_at: string;
     };
     errors?: Record<string, string[]>;

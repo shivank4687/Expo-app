@@ -62,6 +62,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         placeholderTextColor="#666666"
                         value={data.address1}
                         onChangeText={(val) => onChange('address1', val)}
+                        textContentType="streetAddressLine1"
+                        autoComplete="address-line1"
                     />
                 </View>
                 {errors.address1 && <Text style={styles.errorText}>{errors.address1}</Text>}
@@ -77,6 +79,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         placeholderTextColor="#666666"
                         value={data.city}
                         onChangeText={(val) => onChange('city', val)}
+                        textContentType="addressCity"
+                        autoComplete="address-line2"
                     />
                 </View>
                 {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
@@ -112,6 +116,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         placeholderTextColor="#666666"
                         value={data.state}
                         onChangeText={(val) => onChange('state', val)}
+                        textContentType="addressState"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
@@ -128,6 +134,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         keyboardType="numeric"
                         value={data.postcode}
                         onChangeText={(val) => onChange('postcode', val)}
+                        textContentType="postalCode"
+                        autoComplete="postal-code"
                     />
                 </View>
                 {errors.postcode && <Text style={styles.errorText}>{errors.postcode}</Text>}
@@ -197,7 +205,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
         width: "100%",
         height: 40,

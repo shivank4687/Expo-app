@@ -91,6 +91,7 @@ export interface OrderShipment {
     id: number;
     carrier_title: string;
     track_number: string;
+    tracking_photo_url?: string | null;
     total_qty: number;
     created_at: string;
 }
