@@ -14,6 +14,7 @@ export interface ProductCardProps {
     status: 'active' | 'inactive';
     stock: number;
     imageUrl?: string | null;
+    type?: string;
     onEdit?: () => void;
     onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
     onSave?: (id: number, price: string, stock: number) => void;
@@ -27,6 +28,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     status,
     stock,
     imageUrl,
+    type,
     onEdit,
     onToggleStatus,
     onSave,
@@ -145,7 +147,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </Text>
 
                 {/* Price and Stock Input Row */}
-                <View style={styles.inputsSection}>
+                <View style={[
+                    styles.inputsSection,
+                    type === 'configurable' && { opacity: 0, pointerEvents: 'none' }
+                ]}>
                     <View style={styles.priceStockRow}>
                         <View style={styles.inputWrapper}>
                             <Text style={styles.inputLabel}>Price</Text>

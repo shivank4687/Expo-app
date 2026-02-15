@@ -283,6 +283,7 @@ export function ProductsScreen() {
                                         status={item.status}
                                         stock={item.stock}
                                         imageUrl={item.image_url}
+                                        type={item.type}
                                         onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
                                         onToggleStatus={handleToggleStatus}
                                         onSave={handleQuickUpdate}
@@ -299,6 +300,7 @@ export function ProductsScreen() {
                                     status={item.status}
                                     stock={item.stock}
                                     imageUrl={item.image_url}
+                                    type={item.type}
                                     onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
                                     onToggleStatus={handleToggleStatus}
                                     onDuplicate={handleDuplicate}

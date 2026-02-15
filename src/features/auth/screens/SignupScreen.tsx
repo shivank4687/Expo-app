@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     topPanel: {
         paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
         paddingHorizontal: theme.spacing.lg,
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: theme.spacing.md,
         alignItems: 'center',
     },
     topTitle: {
@@ -547,11 +547,11 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
         paddingBottom: theme.spacing.xl,
     },
     header: {
-        marginBottom: theme.spacing.xl,
+        marginBottom: theme.spacing.lg,
         alignItems: 'flex-start',
     },
     title: {

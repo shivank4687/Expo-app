@@ -14,6 +14,7 @@ export interface ProductListCardProps {
     status: 'active' | 'inactive';
     stock: number;
     imageUrl?: string | null;
+    type?: string;
     onEdit?: () => void;
     onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
     onDuplicate?: (productId: number) => void;
@@ -26,6 +27,7 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
     status,
     stock,
     imageUrl,
+    type,
     onEdit,
     onToggleStatus,
     onDuplicate,
@@ -72,7 +74,10 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
                     <Text style={styles.productName} numberOfLines={2}>
                         {name}
                     </Text>
-                    <Text style={styles.priceText}>{price}</Text>
+                    <Text style={[
+                        styles.priceText,
+                        type === 'configurable' && { opacity: 0 }
+                    ]}>{price}</Text>
                 </View>
 
                 {/* Status and Stock Row */}
@@ -92,7 +97,10 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
                         </View>
 
                         {/* Stock Count */}
-                        <Text style={styles.stockText}>Stock: {stock}</Text>
+                        <Text style={[
+                            styles.stockText,
+                            type === 'configurable' && { opacity: 0 }
+                        ]}>Stock: {stock}</Text>
                     </View>
 
                     {/* Action Buttons */}
