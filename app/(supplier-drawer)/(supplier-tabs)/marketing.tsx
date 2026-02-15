@@ -226,21 +226,24 @@ export default function MarketingScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom }]}
             >
+                {/* Frame 134 - Header Container */}
+                <View style={styles.headerContainer}>
+                    {/* Marketing - Title */}
+                    <Text style={styles.headerTitle}>Marketing</Text>
+
+                    {/* Frame 71 - Invitation Program Chip */}
+                    <View style={styles.invitationChip}>
+                        <Text style={styles.invitationText}>Invitation Program</Text>
+                    </View>
+
+                    {/* Subtitle */}
+                    <Text style={styles.subtitle}>
+                        Invite your contacts to install the app. Share your QR or your link in seconds.
+                    </Text>
+                </View>
+
                 {/* Frame 24 - Main Container */}
                 <View style={styles.mainCard}>
-                    {/* Header Section */}
-                    <View style={styles.headerRow}>
-                        <View style={styles.headerTextContainer}>
-                            <Text style={styles.title}>Marketing</Text>
-                            {/* Frame 71 - Invitation Program Chip */}
-                            <View style={styles.invitationChip}>
-                                <Text style={styles.invitationText}>Invitation Program</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.subtitle}>
-                            Invite your contacts to install the app. Share your QR or your link in seconds.
-                        </Text>
-                    </View>
 
                     {/* Frame 66 - Commission Card */}
                     <View style={styles.commissionCard}>
@@ -387,21 +390,20 @@ export default function MarketingScreen() {
                     </Text>
                 </View>
 
+                {/* Frame 132 - How it works Header */}
+                <View style={styles.headerContainer}>
+                    <Text style={styles.headerTitle}>How it works</Text>
+                    {/* Frame 71 - Benefit Chip */}
+                    <View style={styles.benefitChip}>
+                        <Text style={styles.benefitText}>Benefit</Text>
+                    </View>
+                    <Text style={styles.subtitle}>
+                        Clear rules and metrics for you to get the most out of it.
+                    </Text>
+                </View>
+
                 {/* Frame 34 - How it works Card */}
                 <View style={styles.howItWorksCard}>
-                    {/* Frame 132 - Header */}
-                    <View style={styles.howItWorksHeader}>
-                        <View style={styles.headerTitleRow}>
-                            <Text style={styles.title}>How it works</Text>
-                            {/* Frame 71 - Benefit Chip */}
-                            <View style={styles.benefitChip}>
-                                <Text style={styles.benefitText}>Benefit</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.subtitle}>
-                            Clear rules and metrics for you to get the most out of it.
-                        </Text>
-                    </View>
 
                     {/* Frame 66 - Bonus Detail */}
                     <View style={styles.bonusCard}>
@@ -418,7 +420,7 @@ export default function MarketingScreen() {
 
                     {/* Frame 72 - Recent Activity */}
                     <View style={styles.activityCard}>
-                        <View style={styles.activityHeader}>
+                        <View style={styles.cardHeader}>
                             <Text style={styles.activityTitle}>Recent activity</Text>
                             {activities.length === 0 && (
                                 <View style={styles.demoChip}>
@@ -486,6 +488,33 @@ const styles = StyleSheet.create({
         gap: 8,
         flexGrow: 1,
     },
+    headerContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 8,
+        width: '100%',
+        minHeight: 52,
+        position: 'relative',
+    },
+    headerTitle: {
+        width: '100%',
+        height: 24,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '700',
+        fontSize: 24,
+        lineHeight: 24,
+        color: '#000000',
+    },
+    cardHeader: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 8,
+        width: '100%',
+        position: 'relative',
+    },
     mainCard: {
         width: '100%',
         backgroundColor: '#FFFFFF',
@@ -527,6 +556,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 4,
         paddingHorizontal: 8,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         backgroundColor: '#BB5625',
         borderRadius: 70,
     },
@@ -829,6 +861,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 4,
         paddingHorizontal: 8,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         backgroundColor: '#BB5625',
         borderRadius: 70,
     },
@@ -881,7 +916,7 @@ const styles = StyleSheet.create({
         borderColor: '#EEEEEF',
         borderRadius: 8,
         padding: 8,
-        gap: 16,
+        gap: 8,
         position: 'relative',
     },
     activityHeader: {
@@ -903,6 +938,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 4,
         paddingHorizontal: 8,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         backgroundColor: '#BB5625',
         borderRadius: 70,
     },

@@ -524,7 +524,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         // Check if all selected attributes have a value in tempSelection
         const allSelected = selectedVariantAttributes.every(id => tempSelection[id]);
         if (!allSelected) {
-            Alert.alert('Selection Missing', 'Please select values for all attributes.');
+            showToast({
+                message: 'Please select values for all attributes.',
+                type: 'warning',
+            });
             return;
         }
 
@@ -534,7 +537,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         );
 
         if (isDuplicate) {
-            Alert.alert('Duplicate', 'This variant already exists.');
+            showToast({
+                message: 'This variant already exists.',
+                type: 'warning',
+            });
             return;
         }
 
@@ -570,7 +576,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your media library.');
+                showToast({
+                    message: 'Please grant permission to access your media library.',
+                    type: 'warning',
+                });
                 return;
             }
 
@@ -606,7 +615,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             }
         } catch (error) {
             console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick image.');
+            showToast({
+                message: 'Failed to pick image.',
+                type: 'error',
+            });
         }
     };
 
@@ -614,7 +626,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         try {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your camera.');
+                showToast({
+                    message: 'Please grant permission to access your camera.',
+                    type: 'warning',
+                });
                 return;
             }
 
@@ -650,7 +665,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             }
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take photo.');
+            showToast({
+                message: 'Failed to take photo.',
+                type: 'error',
+            });
         }
     };
 
@@ -818,7 +836,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                                     </TouchableOpacity>
                                 );
                             })}
-                            <TouchableOpacity
+                            {/* <TouchableOpacity
                                 style={styles.addChipButton}
                                 onPress={() => {
                                     setTargetAttributeId(attrId);
@@ -826,7 +844,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                                 }}
                             >
                                 <Ionicons name="add" size={24} color="#FFFFFF" />
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </View>
                     );
                 })()}
