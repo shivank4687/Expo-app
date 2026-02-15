@@ -856,10 +856,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 )}
 
                 {/* AI Suggestion */}
-                <TouchableOpacity style={styles.aiButton}>
+                {/* <TouchableOpacity style={styles.aiButton}>
                     <AiIcon width={16} height={16} color="#000000" />
                     <Text style={styles.buttonText}>Auto-generate information</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
             {/* Main Variant Selector */}
@@ -1203,10 +1203,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.aiButton}>
+                {/* <TouchableOpacity style={styles.aiButton}>
                     <AiIcon width={16} height={16} color="#000000" />
                     <Text style={styles.buttonText}>Standard Price</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <Text style={styles.tipText}>
                     We recommend applying a progressive price based on quantities to encourage larger and recurring orders.
@@ -1226,9 +1226,9 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     <Text style={styles.applyToAllText}>Apply to all variants</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.publishButton}>
+                {/* <TouchableOpacity style={styles.publishButton}>
                     <Text style={styles.publishButtonText}>Save</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
             {/* Option Creation Modal */}

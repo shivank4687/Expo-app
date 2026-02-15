@@ -220,8 +220,9 @@ const styles = StyleSheet.create({
         gap: 8,
         alignSelf: 'stretch',
         height: 40,
+        backgroundColor: '#EAECE1',
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: '#EAECE1',
         borderRadius: 8,
     },
     seeAllButtonText: {

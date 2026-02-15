@@ -212,9 +212,9 @@ export const LowStockProductCard: React.FC<LowStockProductCardProps> = ({
                             activeOpacity={0.7}
                         >
                             {isDuplicating ? (
-                                <ActivityIndicator size="small" color="#00615E" />
+                                <ActivityIndicator size="small" color="#0A292D" />
                             ) : (
-                                <Ionicons name="copy-outline" size={16} color="#00615E" />
+                                <Ionicons name="copy-outline" size={16} color="#0A292D" />
                             )}
                         </TouchableOpacity>
                     )}
@@ -295,9 +295,9 @@ const styles = StyleSheet.create({
     duplicateActionButton: {
         width: 40,
         height: 40,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#EAECE1',
         borderWidth: 1,
-        borderColor: '#E9E3D3',
+        borderColor: '#EAECE1',
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
@@ -397,8 +397,9 @@ const styles = StyleSheet.create({
         gap: 8,
         flex: 1,
         height: 40,
+        backgroundColor: '#EAECE1',
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: '#EAECE1',
         borderRadius: 8,
     },
     productActionOutlineText: {
@@ -434,8 +435,9 @@ const styles = StyleSheet.create({
         gap: 8,
         width: 131,
         height: 40,
+        backgroundColor: '#EAECE1',
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: '#EAECE1',
         borderRadius: 8,
     },
     productActionSmallOutline: {
@@ -446,8 +448,9 @@ const styles = StyleSheet.create({
         gap: 8,
         width: 75,
         height: 40,
+        backgroundColor: '#EAECE1',
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: '#EAECE1',
         borderRadius: 8,
     },
 });

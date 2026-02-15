@@ -292,7 +292,18 @@ const PhotoRoomEditModal: React.FC<PhotoRoomEditModalProps> = ({
 
     const renderBackgroundTab = () => (
         <View style={styles.tabContent}>
-            <Text style={styles.sectionTitle}>Background Type</Text>
+            <Text style={styles.sectionTitle}>AI Background</Text>
+            <TextInput
+                style={styles.textInput}
+                placeholder="e.g., tropical beach scene, modern studio..."
+                value={settings.aiBackgroundPrompt}
+                onChangeText={(text) => updateSetting('aiBackgroundPrompt', text)}
+                multiline
+                numberOfLines={2}
+            />
+            <Text style={styles.helperText}>Generate custom backgrounds with AI</Text>
+
+            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Background Type</Text>
             <View style={styles.chipRow}>
                 <TouchableOpacity
                     style={[styles.chip, settings.background === 'transparent' && styles.chipSelected]}
@@ -319,17 +330,6 @@ const PhotoRoomEditModal: React.FC<PhotoRoomEditModalProps> = ({
                     </Text>
                 </TouchableOpacity>
             </View>
-
-            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>AI Background</Text>
-            <TextInput
-                style={styles.textInput}
-                placeholder="e.g., tropical beach scene, modern studio..."
-                value={settings.aiBackgroundPrompt}
-                onChangeText={(text) => updateSetting('aiBackgroundPrompt', text)}
-                multiline
-                numberOfLines={2}
-            />
-            <Text style={styles.helperText}>Generate custom backgrounds with AI</Text>
         </View>
     );
 

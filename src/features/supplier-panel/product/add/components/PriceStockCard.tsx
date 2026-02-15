@@ -337,7 +337,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
 
             {/* Pricing Section */}
             <View style={styles.section}>
-                <View style={styles.inputGroup}>
+                {/* <View style={styles.inputGroup}>
                     <Text style={styles.sectionTitle}>Wholesale Price</Text>
                     <Dropdown
                         placeholder="Select currency..."
@@ -355,7 +355,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                         value={formData.retailPrice}
                         onSelect={(val) => updateField('retailPrice', val)}
                     />
-                </View>
+                </View> */}
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.sectionTitle}>Price</Text>
@@ -565,9 +565,9 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                     {errors.discounts && <Text style={styles.errorText}>{errors.discounts}</Text>}
                 </View>
 
-                <TouchableOpacity style={styles.aiButton}>
+                {/* <TouchableOpacity style={styles.aiButton}>
                     <Text style={styles.buttonText}>Standard Price</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <Text style={styles.tipText}>
                     We recommend applying a progressive price based on quantities to encourage larger and recurring orders.

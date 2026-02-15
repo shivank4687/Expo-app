@@ -95,7 +95,6 @@ const styles = StyleSheet.create({
         padding: 0,
         gap: 8,
         width: "100%",
-        minHeight: 187,
     },
     label: {
         width: "100%",

@@ -869,10 +869,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             </View>
 
             {/* Add Custom Category Button */}
-            <TouchableOpacity style={styles.aiButton}>
+            {/* <TouchableOpacity style={styles.aiButton}>
                 <Ionicons name="add" size={16} color="#000000" />
                 <Text style={styles.buttonText}>Add custom category</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {/* Material Input Modal */}
             <InputModal

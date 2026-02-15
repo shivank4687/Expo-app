@@ -71,10 +71,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     };
 
     const handleImagePress = () => {
-        router.push({
-            pathname: '/(supplier-drawer)/product-view',
-            params: { id: id.toString(), name },
-        });
+        // router.push({
+        //     pathname: '/(supplier-drawer)/product-view',
+        //     params: { id: id.toString(), name },
+        // });
     };
 
     return (
