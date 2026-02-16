@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
@@ -380,7 +380,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your media library.');
+                showToast({
+                    message: 'Please grant permission to access your media library.',
+                    type: 'error',
+                });
                 return;
             }
 
@@ -396,7 +399,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             }
         } catch (error) {
             console.error('Error picking files:', error);
-            Alert.alert('Error', 'Failed to select files. Please try again.');
+            showToast({
+                message: 'Failed to select files. Please try again.',
+                type: 'error',
+            });
         }
     };
 
@@ -406,7 +412,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your camera.');
+                showToast({
+                    message: 'Please grant permission to access your camera.',
+                    type: 'error',
+                });
                 return;
             }
 
@@ -422,7 +431,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             }
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take photo. Please try again.');
+            showToast({
+                message: 'Failed to take photo. Please try again.',
+                type: 'error',
+            });
         }
     };
 
@@ -491,7 +503,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
         // Show errors if any
         if (errors.length > 0) {
-            Alert.alert('Validation Errors', errors.join('\n'));
+            showToast({
+                message: errors.join('\n'),
+                type: 'error',
+            });
         }
     };
 

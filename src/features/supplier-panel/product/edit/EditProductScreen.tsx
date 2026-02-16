@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { EssentialCard, PriceStockCard, PriceStockVariantsCard, DetailsCard, SettingsCard } from '../add/components';
@@ -45,160 +45,186 @@ export default function EditProductScreen() {
     const detailsCardRef = useRef<DetailsCardRef>(null);
     const settingsCardRef = useRef<SettingsCardRef>(null);
 
-    // Fetch product attributes and product data on mount
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!productId) {
-                setFetchError('Invalid product ID');
-                setIsInitialLoading(false);
-                return;
-            }
+    // Fetch product attributes and product data on focus
+    useFocusEffect(
+        React.useCallback(() => {
+            let isMounted = true;
 
-            try {
-                // Reset all state before fetching new data
-                setIsInitialLoading(true);
-                setFetchError(null);
-                setProductData(null);
-                setProductName('');
-                setAttributes([]);
-                setAttributeFamilyId(null);
-                setProductType('simple');
+            const fetchData = async () => {
+                if (!productId) {
+                    if (isMounted) {
+                        setFetchError('Invalid product ID');
+                        setIsInitialLoading(false);
+                    }
+                    return;
+                }
 
-                // Fetch product data first to determine type
-                const product = await productsApi.getSupplierProductById(productId);
-                setProductData(product);
-                setProductName(product.name || '');
-
-                // Determine product type
-                const type = product.type === 'configurable' ? 'configurable' : 'simple';
-                setProductType(type);
-
-                // Fetch attributes based on product type
-                const attributesData = await productAttributesApi.getProductAttributes(type);
-                setAttributes(attributesData.attributes);
-                setAttributeFamilyId(attributesData.attribute_family.id);
-
-                // Populate card components with product data
-                setTimeout(() => {
-                    if (essentialCardRef.current) {
-                        essentialCardRef.current.updateFields({
-                            name: product.name || '',
-                            description: product.description || '',
-                            short_description: product.short_description || '',
-                            weight: product.type === 'simple' ? product.weight?.toString() || '' : '',
-                            length: product.type === 'simple' ? product.length?.toString() || '' : '',
-                            width: product.type === 'simple' ? product.width?.toString() || '' : '',
-                            height: product.type === 'simple' ? product.height?.toString() || '' : '',
-                            material_type: product.material_type || '',
-                            manufacturing_origin: product.manufacturing_origin || '',
-                            images: product.images || [],
-                            video: product.videos?.[0] || null,
-                            categories: product.categories || [],
-                        });
+                try {
+                    // Reset all state before fetching new data
+                    if (isMounted) {
+                        setIsInitialLoading(true);
+                        setFetchError(null);
+                        setProductData(null);
+                        setProductName('');
+                        setAttributes([]);
+                        setAttributeFamilyId(null);
+                        setProductType('simple');
                     }
 
-                    if (product.type === 'simple' && priceStockCardRef.current) {
-                        // Calculate discount from special_price if applicable
-                        let discountValue = '';
-                        let discountType: 'percentage' | 'price' = 'percentage';
+                    // Fetch product data first to determine type
+                    const product = await productsApi.getSupplierProductById(productId);
+                    if (!isMounted) return;
 
-                        if (product.special_price && product.price) {
-                            const today = new Date();
-                            const specialPriceFrom = product.special_price_from ? new Date(product.special_price_from) : null;
-                            const specialPriceTo = product.special_price_to ? new Date(product.special_price_to) : null;
+                    setProductData(product);
+                    setProductName(product.name || '');
 
-                            // Check if special price is currently active
-                            const isSpecialPriceActive =
-                                (!specialPriceFrom || specialPriceFrom <= today) &&
-                                (!specialPriceTo || specialPriceTo >= today);
+                    // Determine product type
+                    const type = product.type === 'configurable' ? 'configurable' : 'simple';
+                    setProductType(type);
 
-                            if (isSpecialPriceActive) {
-                                const price = parseFloat(product.price);
-                                const specialPrice = parseFloat(product.special_price);
+                    // Fetch attributes based on product type
+                    const attributesData = await productAttributesApi.getProductAttributes(type);
+                    if (!isMounted) return;
 
-                                // Calculate discount as price difference
-                                const priceDifference = price - specialPrice;
+                    setAttributes(attributesData.attributes);
+                    setAttributeFamilyId(attributesData.attribute_family.id);
 
-                                // Calculate as percentage
-                                const percentageDiscount = (priceDifference / price) * 100;
+                    // Stop loading before populating cards so refs are available
+                    setIsInitialLoading(false);
 
-                                // Use percentage if it's a round number, otherwise use price
-                                if (Math.abs(percentageDiscount - Math.round(percentageDiscount)) < 0.01) {
-                                    discountValue = Math.round(percentageDiscount).toString();
-                                    discountType = 'percentage';
-                                } else {
-                                    discountValue = priceDifference.toFixed(2);
-                                    discountType = 'price';
-                                }
-                            }
+                    // Populate card components with product data
+                    // Use a slightly longer timeout to ensure the components have rendered after setIsInitialLoading(false)
+                    setTimeout(() => {
+                        if (!isMounted) return;
+
+                        if (essentialCardRef.current) {
+                            essentialCardRef.current.updateFields({
+                                name: product.name || '',
+                                description: product.description || '',
+                                short_description: product.short_description || '',
+                                weight: product.type === 'simple' ? product.weight?.toString() || '' : '',
+                                length: product.type === 'simple' ? product.length?.toString() || '' : '',
+                                width: product.type === 'simple' ? product.width?.toString() || '' : '',
+                                height: product.type === 'simple' ? product.height?.toString() || '' : '',
+                                material_type: product.material_type || '',
+                                manufacturing_origin: product.manufacturing_origin || '',
+                                images: product.images || [],
+                                video: product.videos?.[0] || null,
+                                categories: product.categories || [],
+                            });
                         }
 
-                        priceStockCardRef.current.updateFields({
-                            price: product.price?.toString() || '',
-                            sku: product.sku || '',
-                            in_order_qty: product.in_order_qty?.toString() || '',
-                            in_order_qty_type: product.in_order_qty_type || '',
-                            made_to_order_qty: product.made_to_order_qty?.toString() || '',
-                            made_to_order_days: product.made_to_order_days?.toString() || '',
-                            immediate_shipping: product.immediate_shipping || false,
-                            made_to_order: product.made_to_order || false,
-                            inventory_qty: product.inventories?.[0]?.qty?.toString() || '',
-                            price_tiers: product.customer_group_prices || [],
-                            discounts: discountValue,
-                            discount_type: discountType,
-                        });
-                    } else if (product.type === 'configurable' && priceStockVariantsCardRef.current) {
-                        priceStockVariantsCardRef.current.updateFields({
-                            sku: product.sku || '',
-                            variants: product.variants || [],
-                            super_attributes: product.super_attributes || [],
-                            immediate_shipping: product.immediate_shipping || false,
-                            made_to_order: product.made_to_order || false,
-                            in_order_qty: product.in_order_qty?.toString() || '',
-                            in_order_qty_type: product.in_order_qty_type || '',
-                            made_to_order_qty: product.made_to_order_qty?.toString() || '',
-                            made_to_order_days: product.made_to_order_days?.toString() || '',
-                            height: product.height?.toString() || '',
-                            weight: product.weight?.toString() || '',
-                            length: product.length?.toString() || '',
-                            width: product.width?.toString() || '',
-                        });
-                    }
+                        if (product.type === 'simple' && priceStockCardRef.current) {
+                            // Calculate discount from special_price if applicable
+                            let discountValue = '';
+                            let discountType: 'percentage' | 'price' = 'percentage';
 
-                    if (detailsCardRef.current) {
-                        detailsCardRef.current.updateFields({
-                            manufacturing_value: product.manufacturing_value || '',
-                            manufacturing_origin: product.manufacturing_origin || '',
-                            meta_title: product.meta_title || '',
-                            meta_keywords: product.meta_keywords || '',
-                            meta_description: product.meta_description || '',
-                        });
-                    }
+                            if (product.special_price && product.price) {
+                                const today = new Date();
+                                const specialPriceFrom = product.special_price_from ? new Date(product.special_price_from) : null;
+                                const specialPriceTo = product.special_price_to ? new Date(product.special_price_to) : null;
 
-                    if (settingsCardRef.current) {
-                        settingsCardRef.current.updateFields({
-                            new: product.new || false,
-                            featured: product.featured || false,
-                            guest_checkout: product.guest_checkout || false,
-                            visible_individually: product.visible_individually !== false,
-                            status: product.status || false,
-                        });
-                    }
-                }, 100);
-            } catch (err) {
-                console.error('Error fetching product data:', err);
-                setFetchError('Failed to load product data. Please try again.');
-            } finally {
-                setIsInitialLoading(false);
-            }
-        };
+                                // Check if special price is currently active
+                                const isSpecialPriceActive =
+                                    (!specialPriceFrom || specialPriceFrom <= today) &&
+                                    (!specialPriceTo || specialPriceTo >= today);
 
-        fetchData();
-    }, [productId]);
+                                if (isSpecialPriceActive) {
+                                    const price = parseFloat(product.price);
+                                    const specialPrice = parseFloat(product.special_price);
+
+                                    // Calculate discount as price difference
+                                    const priceDifference = price - specialPrice;
+
+                                    // Calculate as percentage
+                                    const percentageDiscount = (priceDifference / price) * 100;
+
+                                    // Use percentage if it's a round number, otherwise use price
+                                    if (Math.abs(percentageDiscount - Math.round(percentageDiscount)) < 0.01) {
+                                        discountValue = Math.round(percentageDiscount).toString();
+                                        discountType = 'percentage';
+                                    } else {
+                                        discountValue = priceDifference.toFixed(2);
+                                        discountType = 'price';
+                                    }
+                                }
+                            }
+
+                            priceStockCardRef.current.updateFields({
+                                price: product.price?.toString() || '',
+                                sku: product.sku || '',
+                                in_order_qty: product.in_order_qty?.toString() || '',
+                                in_order_qty_type: product.in_order_qty_type || '',
+                                made_to_order_qty: product.made_to_order_qty?.toString() || '',
+                                made_to_order_days: product.made_to_order_days?.toString() || '',
+                                immediate_shipping: product.immediate_shipping || false,
+                                made_to_order: product.made_to_order || false,
+                                inventory_qty: product.inventories?.[0]?.qty?.toString() || '',
+                                price_tiers: product.customer_group_prices || [],
+                                discounts: discountValue,
+                                discount_type: discountType,
+                            });
+                        } else if (product.type === 'configurable' && priceStockVariantsCardRef.current) {
+                            priceStockVariantsCardRef.current.updateFields({
+                                sku: product.sku || '',
+                                variants: product.variants || [],
+                                super_attributes: product.super_attributes || [],
+                                immediate_shipping: product.immediate_shipping || false,
+                                made_to_order: product.made_to_order || false,
+                                in_order_qty: product.in_order_qty?.toString() || '',
+                                in_order_qty_type: product.in_order_qty_type || '',
+                                made_to_order_qty: product.made_to_order_qty?.toString() || '',
+                                made_to_order_days: product.made_to_order_days?.toString() || '',
+                                height: product.height?.toString() || '',
+                                weight: product.weight?.toString() || '',
+                                length: product.length?.toString() || '',
+                                width: product.width?.toString() || '',
+                            });
+                        }
+
+                        if (detailsCardRef.current) {
+                            detailsCardRef.current.updateFields({
+                                manufacturing_value: product.manufacturing_value || '',
+                                manufacturing_origin: product.manufacturing_origin || '',
+                                meta_title: product.meta_title || '',
+                                meta_keywords: product.meta_keywords || '',
+                                meta_description: product.meta_description || '',
+                            });
+                        }
+
+                        if (settingsCardRef.current) {
+                            settingsCardRef.current.updateFields({
+                                new: product.new || false,
+                                featured: product.featured || false,
+                                guest_checkout: product.guest_checkout || false,
+                                visible_individually: product.visible_individually !== false,
+                                status: product.status || false,
+                            });
+                        }
+                    }, 100);
+                } catch (err) {
+                    console.error('Error fetching product data:', err);
+                    if (isMounted) {
+                        setFetchError('Failed to load product data. Please try again.');
+                        setIsInitialLoading(false);
+                    }
+                }
+            };
+
+            fetchData();
+
+            return () => {
+                isMounted = false;
+            };
+        }, [productId])
+    );
 
     const handleSave = async () => {
         if (!productId) {
-            Alert.alert('Error', 'Invalid product ID');
+            showToast({
+                message: 'Invalid product ID',
+                type: 'error',
+            });
             return;
         }
 
@@ -212,7 +238,10 @@ export default function EditProductScreen() {
                 : await priceStockVariantsCardRef.current?.validate();
 
             if (!essentialValid || !priceStockValid) {
-                Alert.alert('Validation Error', 'Please fill in all required fields correctly.');
+                showToast({
+                    message: 'Please fill in all required fields correctly.',
+                    type: 'error',
+                });
                 setIsSubmitting(false);
                 return;
             }
@@ -253,11 +282,10 @@ export default function EditProductScreen() {
             navigateBack();
         } catch (error: any) {
             console.error('Error updating product:', error);
-            console.error('Error code:', error?.code);
-            console.error('Error message:', error?.message);
-            console.error('Error request URL:', error?.config?.baseURL, error?.config?.url);
-            console.error('Error response:', error?.response?.data);
-            Alert.alert('Error', error.message || 'Failed to update product. Please try again.');
+            showToast({
+                message: error.message || 'Failed to update product. Please try again.',
+                type: 'error',
+            });
         } finally {
             setIsSubmitting(false);
         }
