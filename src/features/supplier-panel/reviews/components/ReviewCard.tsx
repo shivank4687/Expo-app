@@ -51,7 +51,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
     return (
         <View style={styles.card}>
             <TouchableOpacity style={styles.eyeButton}>
-                <EyeViewIcon width={20} height={20} color="#00615E" />
+                <EyeViewIcon width={16} height={16} color="#00615E" />
             </TouchableOpacity>
             <View style={styles.cardContent}>
                 <StarRow rating={review.rating} />
@@ -75,9 +75,9 @@ export function ReviewCard({ review }: ReviewCardProps) {
 const styles = StyleSheet.create({
     card: {
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
         borderWidth: 1,
-        borderColor: '#EEEEEF',
+        borderColor: '#E9E3D3',
         borderRadius: 16,
         padding: 12,
     },

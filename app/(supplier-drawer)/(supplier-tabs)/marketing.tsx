@@ -714,14 +714,14 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         width: '100%',
-        height: 40,
         backgroundColor: '#00615E',
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 8,
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     primaryButtonText: {
         fontFamily: 'Inter',
@@ -732,14 +732,14 @@ const styles = StyleSheet.create({
     },
     secondaryButton: {
         width: '100%',
-        height: 40,
         backgroundColor: '#EAECE1',
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 8,
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     secondaryButtonText: {
         fontFamily: 'Inter',

@@ -1,5 +1,6 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabGroup, type Tab } from '../../components';
@@ -24,6 +25,13 @@ const OrdersScreen: React.FC = () => {
     ];
 
     const { orders, loading, error, refetch, loadMore, hasMore } = useOrdersList(activeTab);
+
+    // Refresh orders when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            refetch();
+        }, [refetch])
+    );
 
     const handleTabChange = (tabId: string) => {
         setActiveTab(tabId as 'pending' | 'shipped' | 'issues');

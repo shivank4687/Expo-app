@@ -369,7 +369,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
         height: 44,
         backgroundColor: '#F3F0E7',
@@ -382,6 +381,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontSize: 16,
         color: '#0A292D',
+        paddingVertical: 0,
     },
     photoPreviewContainer: {
         position: 'relative',

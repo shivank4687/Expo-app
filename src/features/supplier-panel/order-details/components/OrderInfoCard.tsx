@@ -68,9 +68,9 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
             </View>
 
             {/* Items List */}
-            <View style={styles.sectionHeader}>
+            {/* <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Order Items ({items?.length || 0})</Text>
-            </View>
+            </View> */}
 
             <View style={styles.itemsContainer}>
                 {items && items.map((item, index) => (
@@ -152,7 +152,7 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
             </View>
 
             {/* User Info Section */}
-            <View style={styles.userInfoContainer}>
+            {/* <View style={styles.userInfoContainer}>
                 <View style={styles.infoRow}>
                     <Feather name="user" size={16} color="#0A292D" />
                     <Text style={styles.infoText}>{fullName}</Text>
@@ -162,15 +162,15 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
                     <Ionicons name="location-outline" size={16} color="#0A292D" />
                     <Text style={styles.infoText}>{location}</Text>
                 </View>
-            </View>
+            </View> */}
 
             {/* Action Buttons */}
-            <View style={styles.actionsContainer}>
+            {/* <View style={styles.actionsContainer}>
                 <TouchableOpacity style={styles.modifyButton}>
                     <Feather name="edit-2" size={14} color="#AC790A" />
                     <Text style={styles.modifyText}>Modify</Text>
                 </TouchableOpacity>
-            </View>
+            </View> */}
         </View>
     );
 };

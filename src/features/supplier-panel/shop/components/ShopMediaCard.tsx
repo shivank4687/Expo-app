@@ -171,7 +171,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
-        height: 22,
     },
     label: {
         fontFamily: 'Inter',
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
     },
     badge: {
         paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingVertical: 2,
         backgroundColor: '#E0FFFE',
         borderWidth: 1,
         borderColor: '#00615E',

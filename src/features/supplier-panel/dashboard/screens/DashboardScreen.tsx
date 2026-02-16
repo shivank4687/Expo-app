@@ -25,7 +25,7 @@ export function DashboardScreen() {
     const { supplier, isAuthenticated } = useAppSelector((state) => state.supplierAuth);
     const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
     const { data: ordersData, loading: ordersLoading, error: ordersError, refetch } = usePendingOrdersList();
-    const { orders: shippedOrders, loading: shippedLoading, error: shippedError } = useOrdersList('shipped');
+    const { orders: shippedOrders, loading: shippedLoading, error: shippedError, refetch: refetchShipped } = useOrdersList('shipped');
     const lowStockProducts = useLowStockProducts();
     const { showToast } = useToast();
     const insets = useSafeAreaInsets();
@@ -112,6 +112,7 @@ export function DashboardScreen() {
 
                 // Refresh the orders list
                 refetch();
+                refetchShipped();
             } else {
                 showToast({ message: response.message || 'Failed to create shipment', type: 'error' });
             }
@@ -631,7 +632,9 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
         borderRadius: 16,
         marginBottom: supplierTheme.spacing.md,
         shadowColor: '#000000',
@@ -641,11 +644,11 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.15,
         shadowRadius: 6,
-        elevation: 3,
+        elevation: 6,
     },
     infoImagePlaceholder: {
         width: 104,
-        backgroundColor: '#E2E2E2',
+        backgroundColor: '#F3F0E7',
         borderRadius: 8,
         alignSelf: 'stretch',
         flex: 1,
