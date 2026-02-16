@@ -9,7 +9,7 @@ import { loginThunk } from '@/store/slices/authSlice';
 import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
 import { theme } from '@/theme';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     KeyboardAvoidingView,
@@ -22,20 +22,29 @@ import {
 } from 'react-native';
 import { GoogleIcon } from '@/assets/icons/GoogleIcon';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppSelector } from '@/store/hooks';
 
 export const LoginScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
+    const { lastSelectedCountry } = useAppSelector(state => state.core);
 
     const [userType, setUserType] = useState<'customer' | 'supplier'>('customer');
     const [emailOrPhone, setEmailOrPhone] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ emailOrPhone?: string; password?: string }>({});
     const [isPhoneInput, setIsPhoneInput] = useState(false);
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+    // Update selectedCountry if lastSelectedCountry changes (e.g. from another screen)
+    useEffect(() => {
+        if (lastSelectedCountry && !selectedCountry) {
+            setSelectedCountry(lastSelectedCountry);
+        }
+    }, [lastSelectedCountry]);
 
     const handleEmailOrPhoneChange = useCallback((text: string) => {
         setEmailOrPhone(text);
@@ -146,7 +155,7 @@ export const LoginScreen: React.FC = () => {
             style={styles.container}
         >
             <View style={styles.topPanel}>
-                <Text style={styles.topTitle}>{t('auth.signIn')}</Text>
+                {/* <Text style={styles.topTitle}>{t('auth.signIn')}</Text> */}
             </View>
 
             <View style={styles.bottomSheet}>
@@ -407,7 +416,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 12,
         backgroundColor: '#EAECE1',
         borderRadius: 8,
         height: 40,

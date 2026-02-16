@@ -25,6 +25,7 @@ export const SignupScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const { lastSelectedCountry } = useAppSelector(state => state.core);
     const { isLoading } = useAppSelector((state) => state.auth);
     const { showToast } = useToast();
 
@@ -46,7 +47,14 @@ export const SignupScreen: React.FC = () => {
         confirmPassword?: string;
     }>({});
 
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
+
+    // Update selectedCountry if lastSelectedCountry changes
+    useEffect(() => {
+        if (lastSelectedCountry && !selectedCountry) {
+            setSelectedCountry(lastSelectedCountry);
+        }
+    }, [lastSelectedCountry]);
     const [validating, setValidating] = useState<{
         email?: boolean;
         phone?: boolean;
@@ -603,10 +611,10 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
     },
     countryPickerWrapper: {
-        paddingRight: 8,
+        paddingRight: 4,
         borderRightWidth: 1,
         borderRightColor: '#EAECE1',
-        marginRight: 8,
+        marginRight: 4,
     },
     actionContainer: {
         marginTop: theme.spacing.md,

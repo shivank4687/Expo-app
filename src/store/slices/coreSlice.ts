@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
     SELECTED_LOCALE: 'selected_locale',
     SELECTED_CURRENCY: 'selected_currency',
     SELECTED_CHANNEL: 'selected_channel',
+    LAST_SELECTED_COUNTRY: 'last_selected_country',
 };
 
 // State interface
@@ -17,6 +18,7 @@ interface CoreState {
     selectedLocale: Locale | null;
     selectedCurrency: Currency | null;
     selectedChannel: Channel | null;
+    lastSelectedCountry: any | null; // Using any for now to avoid circular or complex imports if Country isn't fully defined here, but better to use the type if possible. Wait, Country is imported.
     isLoading: boolean;
     error: string | null;
 }
@@ -29,6 +31,7 @@ const initialState: CoreState = {
     selectedLocale: null,
     selectedCurrency: null,
     selectedChannel: null,
+    lastSelectedCountry: null,
     isLoading: false,
     error: null,
 };
@@ -39,16 +42,16 @@ export const fetchCoreConfig = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const config = await coreApi.getCoreConfig();
-            
+
             // Load saved preferences from storage
             const savedLocaleCode = await AsyncStorage.getItem(STORAGE_KEYS.SELECTED_LOCALE);
             const savedCurrencyCode = await AsyncStorage.getItem(STORAGE_KEYS.SELECTED_CURRENCY);
-            
+
             // Find saved locale or use default from channel
             const selectedLocale = savedLocaleCode
                 ? config.locales.find(l => l.code === savedLocaleCode) || config.defaultLocale
                 : config.defaultLocale;
-            
+
             // Find saved currency or use default from channel
             const selectedCurrency = savedCurrencyCode
                 ? config.currencies.find(c => c.code === savedCurrencyCode) || config.defaultCurrency
@@ -59,17 +62,22 @@ export const fetchCoreConfig = createAsyncThunk(
                 await AsyncStorage.setItem(STORAGE_KEYS.SELECTED_LOCALE, selectedLocale.code);
                 console.log('Saved default locale to storage:', selectedLocale.code);
             }
-            
+
             if (!savedCurrencyCode && selectedCurrency) {
                 await AsyncStorage.setItem(STORAGE_KEYS.SELECTED_CURRENCY, selectedCurrency.code);
                 console.log('Saved default currency to storage:', selectedCurrency.code);
             }
+
+            // Load last selected country
+            const savedCountryJson = await AsyncStorage.getItem(STORAGE_KEYS.LAST_SELECTED_COUNTRY);
+            const lastSelectedCountry = savedCountryJson ? JSON.parse(savedCountryJson) : null;
 
             return {
                 ...config,
                 selectedLocale: selectedLocale || null,
                 selectedCurrency: selectedCurrency || null,
                 selectedChannel: config.defaultChannel || null,
+                lastSelectedCountry,
             };
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch core configuration');
@@ -113,6 +121,18 @@ export const setChannel = createAsyncThunk(
     }
 );
 
+export const setLastSelectedCountry = createAsyncThunk(
+    'core/setLastSelectedCountry',
+    async (country: any, { rejectWithValue }) => {
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.LAST_SELECTED_COUNTRY, JSON.stringify(country));
+            return country;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to save country');
+        }
+    }
+);
+
 // Slice
 const coreSlice = createSlice({
     name: 'core',
@@ -137,6 +157,7 @@ const coreSlice = createSlice({
                 state.selectedLocale = action.payload.selectedLocale;
                 state.selectedCurrency = action.payload.selectedCurrency;
                 state.selectedChannel = action.payload.selectedChannel;
+                state.lastSelectedCountry = action.payload.lastSelectedCountry;
             })
             .addCase(fetchCoreConfig.rejected, (state, action) => {
                 state.isLoading = false;
@@ -167,6 +188,15 @@ const coreSlice = createSlice({
                 state.selectedChannel = action.payload;
             })
             .addCase(setChannel.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // Set last selected country
+        builder
+            .addCase(setLastSelectedCountry.fulfilled, (state, action) => {
+                state.lastSelectedCountry = action.payload;
+            })
+            .addCase(setLastSelectedCountry.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
     },

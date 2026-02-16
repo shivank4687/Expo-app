@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -18,16 +18,25 @@ import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
+import { useAppSelector } from '@/store/hooks';
 
 export const ForgotPasswordScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const { showToast } = useToast();
+    const { lastSelectedCountry } = useAppSelector(state => state.core);
 
     const [phone, setPhone] = useState('');
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
     const [error, setError] = useState<string | undefined>();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Update selectedCountry if lastSelectedCountry changes
+    useEffect(() => {
+        if (lastSelectedCountry && !selectedCountry) {
+            setSelectedCountry(lastSelectedCountry);
+        }
+    }, [lastSelectedCountry]);
 
     const handlePhoneChange = useCallback((text: string) => {
         setPhone(text);
@@ -121,7 +130,7 @@ export const ForgotPasswordScreen: React.FC = () => {
             style={styles.container}
         >
             <View style={styles.topPanel}>
-                <Text style={styles.topTitle}>{t('auth.forgotPasswordTitle')}</Text>
+                {/* <Text style={styles.topTitle}>{t('auth.forgotPasswordTitle')}</Text> */}
             </View>
 
             <View style={styles.bottomSheet}>
@@ -257,10 +266,10 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
     },
     countryPickerWrapper: {
-        paddingRight: 8,
+        paddingRight: 4,
         borderRightWidth: 1,
         borderRightColor: '#EAECE1',
-        marginRight: 8,
+        marginRight: 4,
     },
     actionContainer: {
         marginTop: theme.spacing.md,

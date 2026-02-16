@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
 import { Country } from '@/services/api/core.api';
 import { coreApi } from '@/services/api/core.api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setLastSelectedCountry } from '@/store/slices/coreSlice';
 
 interface CountryCodeDropdownProps {
     onCountrySelect: (country: Country) => void;
@@ -28,10 +30,12 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
     defaultCode = '+52',
     selectedCountry,
 }) => {
+    const dispatch = useAppDispatch();
+    const { lastSelectedCountry } = useAppSelector(state => state.core);
     const [isVisible, setIsVisible] = useState(false);
     const [countries, setCountries] = useState<Country[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [currentCountry, setCurrentCountry] = useState<Country | null>(selectedCountry || null);
+    const [currentCountry, setCurrentCountry] = useState<Country | null>(selectedCountry || lastSelectedCountry || null);
 
     useEffect(() => {
         loadCountries();
@@ -49,10 +53,10 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
             // Filter countries that have dial_code
             const countriesWithDialCode = data.filter(c => c.dial_code);
             setCountries(countriesWithDialCode);
-            
+
             // Set default country if not already set
             if (!currentCountry) {
-                const defaultCountry = countriesWithDialCode.find(
+                const defaultCountry = lastSelectedCountry || countriesWithDialCode.find(
                     c => c.dial_code === defaultCode
                 ) || countriesWithDialCode[0];
                 if (defaultCountry) {
@@ -78,6 +82,7 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
     const handleSelectCountry = (country: Country) => {
         setCurrentCountry(country);
         onCountrySelect(country);
+        dispatch(setLastSelectedCountry(country));
         setIsVisible(false);
         setSearchTerm('');
     };

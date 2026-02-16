@@ -15,11 +15,13 @@ import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
+import { useTranslation } from "react-i18next";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;
 
 function AppContent() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const segments = useSegments();
@@ -113,19 +115,31 @@ function AppContent() {
         <Stack.Screen name="(supplier-drawer)" options={{ headerShown: false }} />
         <Stack.Screen
           name="login"
-          options={commonHeaderOptions}
+          options={{
+            ...commonHeaderOptions,
+            title: t('auth.signIn'),
+          }}
         />
         <Stack.Screen
           name="signup"
-          options={commonHeaderOptions}
+          options={{
+            ...commonHeaderOptions,
+            title: t('auth.signUp'),
+          }}
         />
         <Stack.Screen
           name="otp-verification"
-          options={commonHeaderOptions}
+          options={{
+            ...commonHeaderOptions,
+            title: t('auth.verifyOtp', 'Verify OTP'),
+          }}
         />
         <Stack.Screen
           name="forgot-password"
-          options={commonHeaderOptions}
+          options={{
+            ...commonHeaderOptions,
+            title: t('auth.forgotPassword'),
+          }}
         />
         <Stack.Screen
           name="reset-password"
