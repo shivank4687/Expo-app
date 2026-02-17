@@ -25,6 +25,7 @@ interface AuthState {
     error: string | null;
     verificationToken: string | null;
     pendingRegistration: SignupRequest | null;
+    selectedUserType: 'customer' | 'supplier';
 }
 
 const initialState: AuthState = {
@@ -35,6 +36,7 @@ const initialState: AuthState = {
     error: null,
     verificationToken: null,
     pendingRegistration: null,
+    selectedUserType: 'customer',
 };
 
 // Async Thunks
@@ -311,6 +313,9 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
         },
+        setSelectedUserType: (state, action: PayloadAction<'customer' | 'supplier'>) => {
+            state.selectedUserType = action.payload;
+        },
         clearError: (state) => {
             state.error = null;
         },
@@ -447,5 +452,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { setUser, clearError, clearVerification } = authSlice.actions;
+export const { setUser, setSelectedUserType, clearError, clearVerification } = authSlice.actions;
 export default authSlice.reducer;

@@ -5,7 +5,7 @@ import { Input } from '@/shared/components/Input';
 import { useToast } from '@/shared/components/Toast';
 import { validation } from '@/shared/utils/validation';
 import { useAppDispatch } from '@/store/hooks';
-import { loginThunk } from '@/store/slices/authSlice';
+import { loginThunk, setSelectedUserType } from '@/store/slices/authSlice';
 import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
 import { theme } from '@/theme';
 import { useRouter } from 'expo-router';
@@ -30,8 +30,8 @@ export const LoginScreen: React.FC = () => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const { lastSelectedCountry } = useAppSelector(state => state.core);
+    const selectedUserType = useAppSelector(state => state.auth.selectedUserType ?? 'customer');
 
-    const [userType, setUserType] = useState<'customer' | 'supplier'>('customer');
     const [emailOrPhone, setEmailOrPhone] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ emailOrPhone?: string; password?: string }>({});
@@ -99,7 +99,7 @@ export const LoginScreen: React.FC = () => {
                 loginPayload.phone_country_id = selectedCountry.id;
             }
 
-            if (userType === 'supplier') {
+            if (selectedUserType === 'supplier') {
                 // Supplier login
                 await dispatch(supplierLoginThunk(loginPayload)).unwrap();
 
@@ -173,15 +173,15 @@ export const LoginScreen: React.FC = () => {
                         <TouchableOpacity
                             style={[
                                 styles.toggleButton,
-                                userType === 'customer' && styles.toggleButtonActive,
+                                selectedUserType === 'customer' && styles.toggleButtonActive,
                             ]}
-                            onPress={() => setUserType('customer')}
+                            onPress={() => dispatch(setSelectedUserType('customer'))}
                             activeOpacity={0.8}
                         >
                             <Text
                                 style={[
                                     styles.toggleButtonText,
-                                    userType === 'customer' && styles.toggleButtonTextActive,
+                                    selectedUserType === 'customer' && styles.toggleButtonTextActive,
                                 ]}
                             >
                                 {t('auth.customer', 'Customer')}
@@ -190,15 +190,15 @@ export const LoginScreen: React.FC = () => {
                         <TouchableOpacity
                             style={[
                                 styles.toggleButton,
-                                userType === 'supplier' && styles.toggleButtonActive,
+                                selectedUserType === 'supplier' && styles.toggleButtonActive,
                             ]}
-                            onPress={() => setUserType('supplier')}
+                            onPress={() => dispatch(setSelectedUserType('supplier'))}
                             activeOpacity={0.8}
                         >
                             <Text
                                 style={[
                                     styles.toggleButtonText,
-                                    userType === 'supplier' && styles.toggleButtonTextActive,
+                                    selectedUserType === 'supplier' && styles.toggleButtonTextActive,
                                 ]}
                             >
                                 {t('auth.supplier', 'Supplier')}

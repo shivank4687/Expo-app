@@ -18,13 +18,16 @@ import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setSelectedUserType } from '@/store/slices/authSlice';
 
 export const ForgotPasswordScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const { showToast } = useToast();
+    const dispatch = useAppDispatch();
     const { lastSelectedCountry } = useAppSelector(state => state.core);
+    const selectedUserType = useAppSelector(state => state.auth.selectedUserType ?? 'customer');
 
     const [phone, setPhone] = useState('');
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
@@ -144,6 +147,43 @@ export const ForgotPasswordScreen: React.FC = () => {
                         <Text style={styles.subtitle}>{t('auth.forgotPasswordSubtitle')}</Text>
                     </View>
 
+                    <View style={styles.toggleContainer}>
+                        <TouchableOpacity
+                            style={[
+                                styles.toggleButton,
+                                selectedUserType === 'customer' && styles.toggleButtonActive,
+                            ]}
+                            onPress={() => dispatch(setSelectedUserType('customer'))}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.toggleButtonText,
+                                    selectedUserType === 'customer' && styles.toggleButtonTextActive,
+                                ]}
+                            >
+                                {t('auth.customer', 'Customer')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.toggleButton,
+                                selectedUserType === 'supplier' && styles.toggleButtonActive,
+                            ]}
+                            onPress={() => dispatch(setSelectedUserType('supplier'))}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.toggleButtonText,
+                                    selectedUserType === 'supplier' && styles.toggleButtonTextActive,
+                                ]}
+                            >
+                                {t('auth.supplier', 'Supplier')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
                     <View style={styles.form}>
                         <View style={styles.inputWrapper}>
                             <Input
@@ -226,6 +266,38 @@ const styles = StyleSheet.create({
     header: {
         marginBottom: theme.spacing.xl,
         alignItems: 'flex-start',
+    },
+    toggleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        padding: 4,
+        marginBottom: theme.spacing.lg,
+    },
+    toggleButton: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        borderRadius: 4,
+        height: 34,
+    },
+    toggleButtonActive: {
+        backgroundColor: '#00615E',
+        borderWidth: 1,
+        borderColor: '#00615E',
+    },
+    toggleButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 14,
+        lineHeight: 18,
+        color: '#000000',
+    },
+    toggleButtonTextActive: {
+        color: '#FFFFFF',
     },
     title: {
         fontSize: 32,
