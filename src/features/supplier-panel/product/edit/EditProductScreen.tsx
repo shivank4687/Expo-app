@@ -219,6 +219,20 @@ export default function EditProductScreen() {
         }, [productId])
     );
 
+    const refreshAttributes = async () => {
+        try {
+            const attributesData = await productAttributesApi.getProductAttributes(productType);
+            setAttributes(attributesData.attributes);
+            setAttributeFamilyId(attributesData.attribute_family.id);
+        } catch (error) {
+            console.error('Error refreshing attributes:', error);
+            showToast({
+                message: 'Failed to refresh attributes.',
+                type: 'error',
+            });
+        }
+    };
+
     const handleSave = async () => {
         if (!productId) {
             showToast({
@@ -323,10 +337,7 @@ export default function EditProductScreen() {
                     ref={essentialCardRef}
                     attributes={attributes}
                     onNameChange={setProductName}
-                    onAttributesRefresh={async () => {
-                        const data = await productAttributesApi.getProductAttributes('simple');
-                        setAttributes(data.attributes);
-                    }}
+                    onAttributesRefresh={refreshAttributes}
                     onAIGenerateClick={() => { }}
                     activeTab={productType}
                 />
@@ -343,6 +354,7 @@ export default function EditProductScreen() {
                         ref={priceStockVariantsCardRef}
                         productName={productName}
                         attributes={attributes}
+                        onAttributesRefresh={refreshAttributes}
                     />
                 )}
 
@@ -350,10 +362,7 @@ export default function EditProductScreen() {
                 <DetailsCard
                     ref={detailsCardRef}
                     attributes={attributes}
-                    onAttributesRefresh={async () => {
-                        const data = await productAttributesApi.getProductAttributes('simple');
-                        setAttributes(data.attributes);
-                    }}
+                    onAttributesRefresh={refreshAttributes}
                 />
 
                 {/* Settings Card */}

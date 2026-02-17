@@ -836,7 +836,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                                     </TouchableOpacity>
                                 );
                             })}
-                            {/* <TouchableOpacity
+                            <TouchableOpacity
                                 style={styles.addChipButton}
                                 onPress={() => {
                                     setTargetAttributeId(attrId);
@@ -844,7 +844,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                                 }}
                             >
                                 <Ionicons name="add" size={24} color="#FFFFFF" />
-                            </TouchableOpacity> */}
+                            </TouchableOpacity>
                         </View>
                     );
                 })()}

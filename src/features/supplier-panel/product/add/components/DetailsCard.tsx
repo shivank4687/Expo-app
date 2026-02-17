@@ -101,11 +101,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 originName
             );
 
-            setSelectedOrigins(prev => [...prev, newOption.id.toString()]);
-
             if (onAttributesRefresh) {
                 await onAttributesRefresh();
             }
+
+            setSelectedOrigins(prev => [...prev, newOption.id.toString()]);
 
             showToast({
                 message: `Origin "${originName}" has been added!`,
@@ -131,11 +131,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 featureName
             );
 
-            setSelectedFeatures(prev => [...prev, newOption.id.toString()]);
-
             if (onAttributesRefresh) {
                 await onAttributesRefresh();
             }
+
+            setSelectedFeatures(prev => [...prev, newOption.id.toString()]);
 
             showToast({
                 message: `Feature "${featureName}" has been added!`,

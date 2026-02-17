@@ -182,6 +182,7 @@ export default function AddProductScreen() {
                         key={`price-stock-variants-${resetKey}`}
                         productName={productName}
                         attributes={attributes}
+                        onAttributesRefresh={fetchAttributes}
                     />
                 )}
 
