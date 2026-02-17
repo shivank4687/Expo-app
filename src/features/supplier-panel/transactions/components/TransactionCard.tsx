@@ -31,10 +31,10 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
         borderWidth: 1,
         borderColor: '#E9E3D3',
-        borderRadius: 8,
+        borderRadius: 16,
         padding: 12,
         gap: 8,
     },
