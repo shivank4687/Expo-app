@@ -62,7 +62,7 @@ export interface AuthResponse {
 export interface OtpVerificationRequest {
     verification_token: string;
     otp: string;
-    type?: 'customer' | 'supplier';
+    type?: 'customer' | 'supplier' | 'password_reset';
     device_name: string;
 }
 
@@ -72,7 +72,7 @@ export interface OtpVerificationResponse extends AuthResponse {
 
 export interface ResendOtpRequest {
     verification_token: string;
-    type?: 'customer' | 'supplier';
+    type?: 'customer' | 'supplier' | 'password_reset';
 }
 
 export interface ResendOtpResponse {

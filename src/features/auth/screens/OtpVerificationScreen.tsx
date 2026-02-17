@@ -16,6 +16,7 @@ import { verifyOtpThunk, resendOtpThunk, clearVerification } from '@/store/slice
 import { Button } from '@/shared/components/Button';
 import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
+import { authApi } from '@/services/api/auth.api';
 
 interface OtpVerificationParams {
     verificationToken: string;
@@ -32,6 +33,7 @@ export const OtpVerificationScreen: React.FC = () => {
     const { showToast } = useToast();
 
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [localLoading, setLocalLoading] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
     const otpInputRefs = useRef<(TextInput | null)[]>([]);
     const autofillInputRef = useRef<TextInput | null>(null);
@@ -68,17 +70,29 @@ export const OtpVerificationScreen: React.FC = () => {
         }
 
         try {
-            // For password reset, we don't use the Redux thunk
+            // For password reset, we first verify the OTP via API
             if (verificationType === 'password_reset') {
-                // Navigate to reset password screen with verification token and OTP
-                router.push({
-                    pathname: '/reset-password',
-                    params: {
-                        verificationToken: token,
+                setLocalLoading(true);
+                try {
+                    await authApi.verifyOtp({
+                        verification_token: token,
                         otp: otpCode,
-                    },
-                } as any);
-                return;
+                        type: 'password_reset',
+                        device_name: 'mobile_app',
+                    });
+
+                    // On success, navigate to reset password screen
+                    router.push({
+                        pathname: '/reset-password',
+                        params: {
+                            verificationToken: token,
+                            otp: otpCode,
+                        },
+                    } as any);
+                    return;
+                } finally {
+                    setLocalLoading(false);
+                }
             }
 
             // For customer registration, use the Redux thunk
@@ -103,8 +117,19 @@ export const OtpVerificationScreen: React.FC = () => {
                 router.replace('/(drawer)/(tabs)');
             }, 500);
         } catch (err: any) {
+            // Extract error message from different possible error structures
+            let errorMessage = t('auth.otpVerificationFailed', 'OTP verification failed. Please try again.');
+
+            if (err?.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err?.message) {
+                errorMessage = err.message;
+            } else if (typeof err === 'string') {
+                errorMessage = err;
+            }
+
             showToast({
-                message: err || t('auth.otpVerificationFailed', 'OTP verification failed. Please try again.'),
+                message: errorMessage,
                 type: 'error',
                 duration: 4000,
             });
@@ -210,7 +235,7 @@ export const OtpVerificationScreen: React.FC = () => {
         try {
             await dispatch(resendOtpThunk({
                 verification_token: token,
-                type: 'customer',
+                type: verificationType as any,
             })).unwrap();
 
             showToast({
@@ -222,8 +247,19 @@ export const OtpVerificationScreen: React.FC = () => {
             // Set cooldown (30 seconds)
             setResendCooldown(30);
         } catch (err: any) {
+            // Extract error message from different possible error structures
+            let errorMessage = t('auth.resendOtpFailed', 'Failed to resend OTP. Please try again.');
+
+            if (err?.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err?.message) {
+                errorMessage = err.message;
+            } else if (typeof err === 'string') {
+                errorMessage = err;
+            }
+
             showToast({
-                message: err || t('auth.resendOtpFailed', 'Failed to resend OTP. Please try again.'),
+                message: errorMessage,
                 type: 'error',
                 duration: 4000,
             });
@@ -284,7 +320,7 @@ export const OtpVerificationScreen: React.FC = () => {
                         textContentType="oneTimeCode"
                         autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'off'}
                         maxLength={6}
-                        editable={!isLoading}
+                        editable={!(isLoading || localLoading)}
                     />
 
                     <View style={styles.otpWrapper}>
@@ -292,7 +328,7 @@ export const OtpVerificationScreen: React.FC = () => {
                             {otp.map((digit, index) => (
                                 <React.Fragment key={index}>
                                     <TextInput
-                                        ref={(ref) => (otpInputRefs.current[index] = ref)}
+                                        ref={(ref) => { otpInputRefs.current[index] = ref; }}
                                         style={styles.otpInput}
                                         value={digit}
                                         onChangeText={(value) => handleOtpChange(index, value)}
@@ -300,7 +336,7 @@ export const OtpVerificationScreen: React.FC = () => {
                                         keyboardType="number-pad"
                                         maxLength={index === 0 ? 6 : 1}
                                         selectTextOnFocus
-                                        editable={!isLoading}
+                                        editable={!(isLoading || localLoading)}
                                         textContentType={index === 0 ? 'oneTimeCode' : 'none'}
                                         autoComplete={index === 0 && Platform.OS === 'android' ? 'sms-otp' : 'off'}
                                     />
@@ -320,7 +356,7 @@ export const OtpVerificationScreen: React.FC = () => {
                             ) : (
                                 <TouchableOpacity
                                     onPress={handleResendOtp}
-                                    disabled={isLoading}
+                                    disabled={isLoading || localLoading}
                                 >
                                     <Text style={styles.resendLink}>
                                         {t('auth.resendOtp', 'Resend')}
@@ -337,7 +373,7 @@ export const OtpVerificationScreen: React.FC = () => {
                     <Button
                         title={t('auth.verify', 'Verify')}
                         onPress={() => handleVerify()}
-                        loading={isLoading}
+                        loading={isLoading || localLoading}
                         fullWidth
                         size="large"
                         style={styles.verifyButton}

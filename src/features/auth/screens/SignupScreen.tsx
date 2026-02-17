@@ -392,7 +392,7 @@ export const SignupScreen: React.FC = () => {
             style={styles.container}
         >
             <View style={styles.topPanel}>
-                <Text style={styles.topTitle}>{t('auth.signUp')}</Text>
+                {/* <Text style={styles.topTitle}>{t('auth.signUp')}</Text> */}
             </View>
 
             <View style={styles.bottomSheet}>
@@ -484,7 +484,8 @@ export const SignupScreen: React.FC = () => {
                             onChangeText={(text) => updateField('password', text)}
                             error={errors.password}
                             secureTextEntry
-                            autoComplete="password-new"
+                            autoComplete="password"
+                            textContentType="none"
                             inputContainerStyle={styles.inputField}
                             style={styles.inputText}
                             labelStyle={styles.inputLabel}
@@ -497,7 +498,8 @@ export const SignupScreen: React.FC = () => {
                             onChangeText={(text) => updateField('confirmPassword', text)}
                             error={errors.confirmPassword}
                             secureTextEntry
-                            autoComplete="password-new"
+                            autoComplete="password"
+                            textContentType="none"
                             inputContainerStyle={styles.inputField}
                             style={styles.inputText}
                             labelStyle={styles.inputLabel}
