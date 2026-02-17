@@ -8,7 +8,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { loginThunk, setSelectedUserType } from '@/store/slices/authSlice';
 import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
 import { theme } from '@/theme';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,8 +29,16 @@ export const LoginScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
+    const params = useLocalSearchParams<{ type?: string }>();
     const { lastSelectedCountry } = useAppSelector(state => state.core);
     const selectedUserType = useAppSelector(state => state.auth.selectedUserType ?? 'customer');
+
+    // Pre-select user type from params if provided
+    useEffect(() => {
+        if (params.type === 'supplier' || params.type === 'customer') {
+            dispatch(setSelectedUserType(params.type));
+        }
+    }, [params.type]);
 
     const [emailOrPhone, setEmailOrPhone] = useState('');
     const [password, setPassword] = useState('');

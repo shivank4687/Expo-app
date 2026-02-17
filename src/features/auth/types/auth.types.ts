@@ -32,6 +32,8 @@ export interface SignupRequest {
     password: string;
     password_confirmation: string;
     is_subscribed?: boolean;
+    company_name?: string;
+    url?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -67,6 +69,7 @@ export interface OtpVerificationRequest {
 }
 
 export interface OtpVerificationResponse extends AuthResponse {
+    is_approved?: boolean;
     // Same as AuthResponse (user + token)
 }
 

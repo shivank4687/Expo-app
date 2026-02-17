@@ -22,6 +22,7 @@ interface OtpVerificationParams {
     verificationToken: string;
     phone: string;
     type?: string;
+    userType?: string;
 }
 
 export const OtpVerificationScreen: React.FC = () => {
@@ -87,6 +88,7 @@ export const OtpVerificationScreen: React.FC = () => {
                         params: {
                             verificationToken: token,
                             otp: otpCode,
+                            userType: params.userType || 'customer',
                         },
                     } as any);
                     return;
@@ -95,11 +97,11 @@ export const OtpVerificationScreen: React.FC = () => {
                 }
             }
 
-            // For customer registration, use the Redux thunk
-            await dispatch(verifyOtpThunk({
+            // For customer/supplier registration, use the Redux thunk
+            const result = await dispatch(verifyOtpThunk({
                 verification_token: token,
                 otp: otpCode,
-                type: 'customer',
+                type: verificationType as any,
                 device_name: 'mobile_app',
             })).unwrap();
 
@@ -109,12 +111,35 @@ export const OtpVerificationScreen: React.FC = () => {
                 duration: 3000,
             });
 
-            // Navigate to home after successful verification
+            // Navigate after successful verification
             setTimeout(() => {
-                if (router.canGoBack()) {
-                    router.dismissAll();
+                if (verificationType === 'supplier') {
+                    const isApproved = (result as any).isApproved;
+
+                    if (!isApproved) {
+                        showToast({
+                            message: t('auth.supplierRegistrationPending', 'Registration successful! Your account is pending admin approval.'),
+                            type: 'info',
+                            duration: 5000,
+                        });
+                        router.replace('/');
+                    } else {
+                        showToast({
+                            message: t('auth.supplierRegistrationSuccess', 'Account verified! Please login with your credentials.'),
+                            type: 'success',
+                            duration: 5000,
+                        });
+                        router.replace({
+                            pathname: '/login',
+                            params: { type: 'supplier' }
+                        });
+                    }
+                } else {
+                    if (router.canGoBack()) {
+                        router.dismissAll();
+                    }
+                    router.replace('/(drawer)/(tabs)');
                 }
-                router.replace('/(drawer)/(tabs)');
             }, 500);
         } catch (err: any) {
             // Extract error message from different possible error structures

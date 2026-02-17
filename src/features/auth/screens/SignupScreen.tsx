@@ -37,6 +37,8 @@ export const SignupScreen: React.FC = () => {
         phone: '',
         password: '',
         confirmPassword: '',
+        company_name: '',
+        url: '',
     });
 
     const [errors, setErrors] = useState<{
@@ -46,6 +48,8 @@ export const SignupScreen: React.FC = () => {
         phone?: string;
         password?: string;
         confirmPassword?: string;
+        company_name?: string;
+        url?: string;
     }>({});
 
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
@@ -59,6 +63,7 @@ export const SignupScreen: React.FC = () => {
     const [validating, setValidating] = useState<{
         email?: boolean;
         phone?: boolean;
+        url?: boolean;
     }>({});
     const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -88,7 +93,7 @@ export const SignupScreen: React.FC = () => {
             const response = await authApi.checkDuplicate({
                 type: 'email',
                 value: email,
-            });
+            }, selectedUserType);
 
             if (!response.available) {
                 setErrors(prev => ({
@@ -104,7 +109,7 @@ export const SignupScreen: React.FC = () => {
         } finally {
             setValidating(prev => ({ ...prev, email: false }));
         }
-    }, [t]);
+    }, [t, selectedUserType]);
 
     // Validate phone
     const validatePhone = useCallback(async (phone: string, countryId?: number) => {
@@ -140,7 +145,7 @@ export const SignupScreen: React.FC = () => {
                 type: 'phone',
                 value: phone,
                 phone_country_id: countryId,
-            });
+            }, selectedUserType);
 
             if (!response.available) {
                 setErrors(prev => ({
@@ -155,6 +160,39 @@ export const SignupScreen: React.FC = () => {
             // Don't show error for validation failures, just log
         } finally {
             setValidating(prev => ({ ...prev, phone: false }));
+        }
+    }, [t, selectedUserType]);
+
+    // Validate URL
+    const validateUrl = useCallback(async (url: string) => {
+        if (!url) {
+            setErrors(prev => ({
+                ...prev,
+                url: t('auth.urlRequired', 'Shop URL is required'),
+            }));
+            return;
+        }
+
+        // Check if URL exists
+        setValidating(prev => ({ ...prev, url: true }));
+        try {
+            const response = await authApi.checkDuplicate({
+                type: 'url',
+                value: url,
+            }, 'supplier');
+
+            if (!response.available) {
+                setErrors(prev => ({
+                    ...prev,
+                    url: response.message || t('auth.urlAlreadyExists', 'This shop URL is already taken'),
+                }));
+            } else {
+                setErrors(prev => ({ ...prev, url: undefined }));
+            }
+        } catch (error: any) {
+            console.error('URL validation error:', error);
+        } finally {
+            setValidating(prev => ({ ...prev, url: false }));
         }
     }, [t]);
 
@@ -205,6 +243,18 @@ export const SignupScreen: React.FC = () => {
             }, 500);
         }
     }, [formData.phone, selectedCountry, validatePhone]);
+
+    // Handle URL blur
+    const handleUrlBlur = useCallback(() => {
+        if (formData.url && selectedUserType === 'supplier') {
+            if (validationTimeoutRef.current) {
+                clearTimeout(validationTimeoutRef.current);
+            }
+            validationTimeoutRef.current = setTimeout(() => {
+                validateUrl(formData.url);
+            }, 500);
+        }
+    }, [formData.url, selectedUserType, validateUrl]);
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -265,6 +315,18 @@ export const SignupScreen: React.FC = () => {
             newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
         }
 
+        if (selectedUserType === 'supplier') {
+            if (!validation.isRequired(formData.company_name)) {
+                newErrors.company_name = t('auth.companyNameRequired', 'Company name is required');
+            }
+
+            if (!validation.isRequired(formData.url)) {
+                newErrors.url = t('auth.urlRequired', 'Shop URL is required');
+            } else if (errors.url) {
+                newErrors.url = errors.url;
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -282,7 +344,7 @@ export const SignupScreen: React.FC = () => {
                 const emailResponse = await authApi.checkDuplicate({
                     type: 'email',
                     value: formData.email,
-                });
+                }, selectedUserType);
                 if (!emailResponse.available) {
                     setErrors(prev => ({
                         ...prev,
@@ -302,7 +364,7 @@ export const SignupScreen: React.FC = () => {
                     type: 'phone',
                     value: formData.phone,
                     phone_country_id: Number(selectedCountry.id),
-                });
+                }, selectedUserType);
                 if (!phoneResponse.available) {
                     setErrors(prev => ({
                         ...prev,
@@ -312,6 +374,25 @@ export const SignupScreen: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Phone validation error:', error);
+            }
+        }
+
+        // Validate URL if supplier
+        if (selectedUserType === 'supplier' && formData.url && /^[a-z0-9-]+$/.test(formData.url)) {
+            try {
+                const urlResponse = await authApi.checkDuplicate({
+                    type: 'url',
+                    value: formData.url,
+                }, 'supplier');
+                if (!urlResponse.available) {
+                    setErrors(prev => ({
+                        ...prev,
+                        url: urlResponse.message || t('auth.urlAlreadyExists', 'This URL is already taken. Please choose another.'),
+                    }));
+                    hasDuplicateErrors = true;
+                }
+            } catch (error) {
+                console.error('URL validation error:', error);
             }
         }
 
@@ -341,6 +422,12 @@ export const SignupScreen: React.FC = () => {
                 signupPayload.dial_code = selectedCountry.dial_code;
             }
 
+            // Add supplier fields
+            if (selectedUserType === 'supplier') {
+                signupPayload.company_name = formData.company_name;
+                signupPayload.url = formData.url;
+            }
+
             const result = await dispatch(signupThunk(signupPayload)).unwrap();
 
             // Check if OTP verification is required
@@ -355,6 +442,7 @@ export const SignupScreen: React.FC = () => {
                     params: {
                         verificationToken: result.verificationToken,
                         phone: phoneWithCode,
+                        type: selectedUserType,
                     },
                 });
                 return;
@@ -393,7 +481,7 @@ export const SignupScreen: React.FC = () => {
             style={styles.container}
         >
             <View style={styles.topPanel}>
-                {/* <Text style={styles.topTitle}>{t('auth.signUp')}</Text> */}
+                {/* <Text style={styles.topTitle}>{t('auth.signUp')}</Text>  */}
             </View>
 
             <View style={styles.bottomSheet}>
@@ -542,6 +630,35 @@ export const SignupScreen: React.FC = () => {
                             style={styles.inputText}
                             labelStyle={styles.inputLabel}
                         />
+
+                        {selectedUserType === 'supplier' && (
+                            <>
+                                <Input
+                                    label={t('auth.companyName', 'Company Name')}
+                                    placeholder={t('auth.enterCompanyName', 'Enter your company name')}
+                                    value={formData.company_name}
+                                    onChangeText={(text) => updateField('company_name', text)}
+                                    error={errors.company_name}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+
+                                <Input
+                                    label={t('auth.shopUrl', 'Shop URL')}
+                                    placeholder={t('auth.enterShopUrl', 'Enter your shop URL (e.g. my-shop)')}
+                                    value={formData.url}
+                                    onChangeText={(text) => updateField('url', text.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                                    onBlur={handleUrlBlur}
+                                    error={errors.url}
+                                    autoCapitalize="none"
+                                    editable={!validating.url}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+                            </>
+                        )}
 
                         <View style={styles.actionContainer}>
                             <Button

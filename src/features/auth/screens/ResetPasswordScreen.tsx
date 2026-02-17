@@ -86,7 +86,7 @@ export const ResetPasswordScreen: React.FC = () => {
                 otp: otp,
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
-            });
+            }, (params.userType as any) || 'customer');
 
             showToast({
                 message: response.message || t('auth.passwordResetSuccess'),

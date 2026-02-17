@@ -83,7 +83,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                 phone,
                 phone_country_id: Number(selectedCountry!.id),
                 dial_code: selectedCountry!.dial_code || '',
-            });
+            }, selectedUserType);
 
             showToast({
                 message: response.message || t('auth.otpSentForPasswordReset'),
@@ -99,6 +99,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                     verificationToken: response.verification_token,
                     phone: phoneWithCode,
                     type: 'password_reset',
+                    userType: selectedUserType,
                 },
             } as any);
         } catch (err: any) {
