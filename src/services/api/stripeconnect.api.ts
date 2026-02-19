@@ -14,6 +14,17 @@ interface StripeConnectSuccessResponse {
     message: string;
 }
 
+interface StripeDetails {
+    stripe_user_id: string;
+    stripe_account_id: string;
+    created_at: string;
+    connected_at: string | null;
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+    details_submitted: boolean;
+    is_fully_connected: boolean;
+}
+
 /**
  * Stripe Connect API endpoints
  */
@@ -70,7 +81,7 @@ export const stripeConnectApi = {
     /**
      * Supplier: Get Connection Details
      */
-    getDetails: async (): Promise<{ success: boolean; connected: boolean; details?: { stripe_user_id: string; created_at: string } }> => {
+    getDetails: async (): Promise<{ success: boolean; connected: boolean; details?: StripeDetails }> => {
         try {
             return await restApiClient.get('/supplier-app/stripe/details');
         } catch (error: any) {

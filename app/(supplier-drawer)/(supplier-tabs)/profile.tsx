@@ -8,11 +8,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 export default function ProfileScreen() {
     const insets = useSafeAreaInsets();
     const [expandedCards, setExpandedCards] = useState({
-        business: false,
-        legal: false,
-        vat: false,
-        contact: false,
-        payments: false,
+        business: true,
+        legal: true,
+        vat: true,
+        contact: true,
+        payments: true,
         closeAccount: false,
     });
 

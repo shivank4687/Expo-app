@@ -11,8 +11,32 @@ interface StripeConnectCardProps {
 
 interface StripeDetails {
     stripe_user_id: string;
+    stripe_account_id: string;
     created_at: string;
+    connected_at: string | null;
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+    details_submitted: boolean;
+    is_fully_connected: boolean;
 }
+
+const benefitHighlights = [
+    'Receive payments directly in your Stripe account',
+    'Fast, secure payment processing',
+    'Automatic payout scheduling',
+    'Detailed transaction reporting',
+];
+
+const formatDate = (value?: string | null) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+    });
+};
 
 export default function StripeConnectCard({ expanded, onToggle }: StripeConnectCardProps) {
     const [loading, setLoading] = useState(false);
@@ -81,6 +105,15 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
         }
     };
 
+    const accountId = stripeDetails?.stripe_account_id || stripeDetails?.stripe_user_id;
+    const connectedOn = formatDate(stripeDetails?.connected_at ?? stripeDetails?.created_at);
+    const isFullyConnected = stripeDetails?.is_fully_connected ?? false;
+    const statusItems = [
+        { label: 'Charges', enabled: stripeDetails?.charges_enabled },
+        { label: 'Payouts', enabled: stripeDetails?.payouts_enabled },
+        { label: 'Details Submitted', enabled: stripeDetails?.details_submitted },
+    ];
+
     return (
         <View style={styles.card}>
             <TouchableOpacity
@@ -97,19 +130,6 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                     <Text style={styles.description}>Where to receive your money (Stripe)</Text>
                 </View>
 
-
-
-                {connected ? (
-                    <View style={styles.connectedBadge}>
-                        <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-                        <Text style={styles.badgeText}>Connected</Text>
-                    </View>
-                ) : (
-                    <View style={styles.toBeCompletedBadge}>
-                        <Text style={styles.toBeCompletedText}>To be completed</Text>
-                    </View>
-                )}
-
                 <View style={styles.chevronContainer}>
                     <Ionicons
                         name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -117,6 +137,18 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                         color="#0A292D"
                     />
                 </View>
+
+                {connected ? (
+                    <View style={[styles.connectedBadge, !isFullyConnected && styles.partialBadge]}>
+                        <Text style={[styles.badgeText, !isFullyConnected && styles.partialBadgeText]}>
+                            {isFullyConnected ? 'Connected' : 'Action Required'}
+                        </Text>
+                    </View>
+                ) : (
+                    <View style={styles.toBeCompletedBadge}>
+                        <Text style={styles.toBeCompletedText}>To be completed</Text>
+                    </View>
+                )}
             </TouchableOpacity>
 
             {expanded && (
@@ -125,9 +157,45 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                         <ActivityIndicator size="small" color="#00615E" />
                     ) : connected ? (
                         <View style={styles.connectedContainer}>
-                            <Text style={styles.connectedText}>
-                                Connected Account: {stripeDetails?.stripe_user_id}
-                            </Text>
+                            <View style={styles.accountSummary}>
+                                <Text style={styles.connectedLabel}>Connected Account ID</Text>
+                                <Text style={styles.accountIdText}>{accountId ?? '—'}</Text>
+                                {stripeDetails?.stripe_user_id && (
+                                    <Text style={styles.userIdText}>Stripe User: {stripeDetails.stripe_user_id}</Text>
+                                )}
+                                <Text style={styles.connectedOnText}>Connected on {connectedOn}</Text>
+                            </View>
+
+                            <View style={styles.statusGrid}>
+                                {statusItems.map((item) => (
+                                    <View style={styles.statusCard} key={item.label}>
+                                        <Ionicons
+                                            name={item.enabled ? 'checkmark-circle' : 'close-circle'}
+                                            size={18}
+                                            color={item.enabled ? '#1D8531' : '#BB5625'}
+                                        />
+                                        <View style={styles.statusTextGroup}>
+                                            <Text style={styles.statusLabel}>{item.label}</Text>
+                                            <Text style={styles.statusValue}>
+                                                {item.enabled ? 'Enabled' : 'Incomplete'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
+
+                            {!isFullyConnected && (
+                                <View style={styles.warningContainer}>
+                                    <Text style={styles.warningTitle}>Action required</Text>
+                                    <Text style={styles.warningMessage}>
+                                        Provide the remaining information in Stripe to start receiving payouts.
+                                    </Text>
+                                    <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
+                                        <Text style={styles.connectButtonText}>Complete setup</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
                             <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
                                 <Text style={styles.disconnectButtonText}>Disconnect</Text>
                             </TouchableOpacity>
@@ -137,6 +205,14 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                             <Text style={styles.infoText}>
                                 Connect your Stripe account to receive automatic payouts.
                             </Text>
+                            <View style={styles.benefitsContainer}>
+                                {benefitHighlights.map((benefit) => (
+                                    <View style={styles.benefitRow} key={benefit}>
+                                        <Ionicons name="checkmark-circle" size={16} color="#00615E" />
+                                        <Text style={styles.benefitText}>{benefit}</Text>
+                                    </View>
+                                ))}
+                            </View>
                             <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
                                 <Text style={styles.connectButtonText}>Connect with Stripe</Text>
                             </TouchableOpacity>
@@ -159,7 +235,7 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                     {authUrl && (
                         <>
                             {/* Debugging Text */}
-                            <Text style={{ fontSize: 10, color: 'gray', padding: 5 }}>Loading: {authUrl}</Text>
+                            {/* <Text style={{ fontSize: 10, color: 'gray', padding: 5 }}>Loading: {authUrl}</Text> */}
                             <WebView
                                 source={{ uri: authUrl }}
                                 onNavigationStateChange={onWebViewNavigationStateChange}
@@ -208,6 +284,8 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
+        width: '100%',
+        position: 'relative',
     },
     iconBg: {
         flexDirection: 'row',
@@ -220,36 +298,36 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     textContainer: {
+        flex: 1,
         flexDirection: 'column',
         alignItems: 'flex-start',
         padding: 0,
         gap: 4,
-        width: 171,
-        height: 34,
     },
     title: {
-        width: 171,
-        height: 16,
+        width: '100%',
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '500',
+        fontSize: 16,
+        lineHeight: 19,
+        color: '#000000',
+    },
+    description: {
+        width: '100%',
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 14,
-        lineHeight: 16,
+        lineHeight: 20,
         color: '#0A292D',
-    },
-    description: {
-        width: 171,
-        height: 14,
-        fontFamily: 'Inter',
-        fontStyle: 'normal',
-        fontWeight: '400',
-        fontSize: 12,
-        lineHeight: 14,
-        color: '#7D8A8C',
     },
     chevronContainer: {
         width: 16,
         height: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 'auto',
     },
     content: {
         paddingTop: 8,
@@ -257,10 +335,63 @@ const styles = StyleSheet.create({
     connectedContainer: {
         gap: 12,
     },
+    accountSummary: {
+        marginBottom: 4,
+    },
+    connectedLabel: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#0A292D',
+    },
+    accountIdText: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 16,
+        color: '#000000',
+    },
+    userIdText: {
+        fontFamily: 'Inter',
+        fontSize: 13,
+        color: '#4C5A5F',
+    },
+    connectedOnText: {
+        fontFamily: 'Inter',
+        fontSize: 13,
+        color: '#7D8A8C',
+    },
     connectedText: {
         fontFamily: 'Inter',
         fontSize: 14,
         color: '#0A292D',
+    },
+    statusGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    statusCard: {
+        width: '48%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 12,
+        marginBottom: 8,
+    },
+    statusTextGroup: {
+        marginLeft: 8,
+    },
+    statusLabel: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 12,
+        color: '#0A292D',
+    },
+    statusValue: {
+        fontFamily: 'Inter',
+        fontSize: 12,
+        color: '#7D8A8C',
     },
     disconnectButton: {
         padding: 10,
@@ -273,8 +404,41 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
     },
+    warningContainer: {
+        padding: 12,
+        backgroundColor: '#FFF6F0',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#F4C3B7',
+    },
+    warningTitle: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#BB5625',
+    },
+    warningMessage: {
+        fontFamily: 'Inter',
+        fontSize: 13,
+        color: '#4C5A5F',
+    },
     connectContainer: {
         gap: 12,
+    },
+    benefitsContainer: {
+        marginTop: 8,
+    },
+    benefitRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    benefitText: {
+        fontFamily: 'Inter',
+        fontSize: 13,
+        color: '#0A292D',
+        flex: 1,
+        marginLeft: 6,
     },
     infoText: {
         fontFamily: 'Inter',
@@ -311,11 +475,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         gap: 10,
         position: 'absolute',
-        width: 110,
+        minWidth: 110,
         height: 22,
-        right: 0,
-        top: 0,
-        backgroundColor: '#F3F0E7',
+        right: 110,
+        top: -3,
+        backgroundColor: '#FCF7EA',
+        borderWidth: 1,
+        borderColor: '#DDAA39',
         borderRadius: 80,
     },
     toBeCompletedText: {
@@ -324,7 +490,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontSize: 12,
         lineHeight: 14,
-        color: '#0A292D',
+        color: '#000000',
     },
     connectedBadge: {
         flexDirection: 'row',
@@ -333,12 +499,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         gap: 4,
         position: 'absolute',
-        width: 100,
+        minWidth: 10,
         height: 22,
-        right: 0,
-        top: 0,
+        right: 150,
+        top: -3,
         backgroundColor: '#00615E',
         borderRadius: 80,
+    },
+    partialBadge: {
+        backgroundColor: '#FFD9B2',
     },
     badgeText: {
         fontFamily: 'Inter',
@@ -347,5 +516,8 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 14,
         color: '#FFFFFF',
+    },
+    partialBadgeText: {
+        color: '#BB5625',
     },
 });
