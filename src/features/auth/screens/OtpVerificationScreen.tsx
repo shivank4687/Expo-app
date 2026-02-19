@@ -12,7 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { verifyOtpThunk, resendOtpThunk, clearVerification } from '@/store/slices/authSlice';
+import { verifyOtpThunk, resendOtpThunk, clearVerification, clearError } from '@/store/slices/authSlice';
 import { Button } from '@/shared/components/Button';
 import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
@@ -301,13 +301,14 @@ export const OtpVerificationScreen: React.FC = () => {
         }
     }, [resendCooldown]);
 
-    // Focus first input on mount
+    // Focus first input on mount and clear any stale errors
     useEffect(() => {
+        dispatch(clearError());
         const timer = setTimeout(() => {
             otpInputRefs.current[0]?.focus();
         }, 100);
         return () => clearTimeout(timer);
-    }, []);
+    }, [dispatch]);
 
     // Cleanup on unmount
     useEffect(() => {

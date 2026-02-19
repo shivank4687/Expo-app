@@ -330,6 +330,7 @@ const authSlice = createSlice({
         clearVerification: (state) => {
             state.verificationToken = null;
             state.pendingRegistration = null;
+            state.error = null;
         },
     },
     extraReducers: (builder) => {

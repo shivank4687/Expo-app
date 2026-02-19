@@ -30,7 +30,7 @@ export const stripeConnectApi = {
                 '/customer/stripeconnect/success',
                 { session_id: sessionId }
             );
-            
+
             console.log('[stripeconnect.api] API response:', JSON.stringify(response, null, 2));
             console.log('[stripeconnect.api] Response structure:', {
                 hasSuccess: 'success' in response,
@@ -39,7 +39,7 @@ export const stripeConnectApi = {
                 hasOrder: !!(response.data?.order),
                 orderId: response.data?.order?.id
             });
-            
+
             // Response is already the data object from axios (response.data was already extracted)
             // So response should be: { success: true, data: { order: {...} }, message: "..." }
             return response;
@@ -52,6 +52,42 @@ export const stripeConnectApi = {
                 statusText: error.response?.statusText
             });
             throw new Error(error.response?.data?.message || error.message || 'Failed to process payment success');
+        }
+    },
+
+    /**
+     * Supplier: Get Mobile Auth Bridge URL
+     */
+    getConnectUrl: async (): Promise<{ success: boolean; url: string }> => {
+        try {
+            return await restApiClient.get('/supplier-app/stripe/connect-url');
+        } catch (error: any) {
+            console.error('[stripeconnect.api] Failed to get connect URL:', error);
+            throw new Error(error.response?.data?.message || 'Failed to get connect URL');
+        }
+    },
+
+    /**
+     * Supplier: Get Connection Details
+     */
+    getDetails: async (): Promise<{ success: boolean; connected: boolean; details?: { stripe_user_id: string; created_at: string } }> => {
+        try {
+            return await restApiClient.get('/supplier-app/stripe/details');
+        } catch (error: any) {
+            console.error('[stripeconnect.api] Failed to get details:', error);
+            throw new Error(error.response?.data?.message || 'Failed to get details');
+        }
+    },
+
+    /**
+     * Supplier: Disconnect Account
+     */
+    disconnect: async (): Promise<{ success: boolean; message: string }> => {
+        try {
+            return await restApiClient.post('/supplier-app/stripe/disconnect', {});
+        } catch (error: any) {
+            console.error('[stripeconnect.api] Failed to disconnect:', error);
+            throw new Error(error.response?.data?.message || 'Failed to disconnect');
         }
     },
 };

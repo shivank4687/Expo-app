@@ -272,16 +272,20 @@ export const LoginScreen: React.FC = () => {
                                 <Text style={styles.secondaryButtonText}>{t('auth.forgotPassword')}</Text>
                             </TouchableOpacity>
 
-                            <Text style={styles.orText}>{t('auth.or', 'or')}</Text>
+                            {selectedUserType === 'customer' && (
+                                <>
+                                    <Text style={styles.orText}>{t('auth.or', 'or')}</Text>
 
-                            <TouchableOpacity
-                                style={styles.googleButton}
-                                activeOpacity={1}
-                                onPress={() => { }}
-                            >
-                                <GoogleIcon width={18} height={18} />
-                                <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle', 'Continue with Google')}</Text>
-                            </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.googleButton}
+                                        activeOpacity={1}
+                                        onPress={() => { }}
+                                    >
+                                        <GoogleIcon width={18} height={18} />
+                                        <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle', 'Continue with Google')}</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
                         </View>
 
                         <View style={styles.signupContainer}>

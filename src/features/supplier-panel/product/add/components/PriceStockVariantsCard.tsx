@@ -554,7 +554,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             length: '',
             width: '',
             height: '',
-            image: null,
+            images: [],
         };
 
         setVariants(prev => [...prev, newVariant]);
