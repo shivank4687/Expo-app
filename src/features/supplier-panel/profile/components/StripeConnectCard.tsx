@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, SafeAreaView } from 'react-native';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    ActivityIndicator,
+    Modal,
+    SafeAreaView,
+    TextInput,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import { stripeConnectApi } from '@/services/api/stripeconnect.api';
+import { supplierPaymentAccountApi } from '@/services/api/supplierPaymentAccount.api';
 
 interface StripeConnectCardProps {
     expanded: boolean;
@@ -44,10 +54,18 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
     const [stripeDetails, setStripeDetails] = useState<StripeDetails | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [authUrl, setAuthUrl] = useState<string | null>(null);
+    const [paypalEmail, setPaypalEmail] = useState('');
+    const [paypalLoading, setPaypalLoading] = useState(false);
+    const [paypalSaving, setPaypalSaving] = useState(false);
+    const [paypalFeedback, setPaypalFeedback] = useState<{
+        type: 'success' | 'error';
+        message: string;
+    } | null>(null);
 
     useEffect(() => {
         if (expanded) {
             fetchDetails();
+            fetchPayPalEmail();
         }
     }, [expanded]);
 
@@ -63,6 +81,70 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
             console.error('Failed to fetch Stripe details:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPayPalEmail = async () => {
+        setPaypalLoading(true);
+        setPaypalFeedback(null);
+
+        try {
+            const response = await supplierPaymentAccountApi.getPayPal();
+            if (response.success) {
+                setPaypalEmail(response.data?.paypal_email ?? '');
+            }
+        } catch (error) {
+            console.error('Failed to fetch PayPal details:', error);
+            setPaypalFeedback({
+                type: 'error',
+                message: 'Unable to load saved PayPal details. Please try again.',
+            });
+        } finally {
+            setPaypalLoading(false);
+        }
+    };
+
+    const isValidPayPalEmail = (value: string) => {
+        const trimmed = value.trim();
+        if (trimmed === '') return false;
+        // Basic RFC 5322 email validation (simplified)
+        const emailPattern =
+            /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        return emailPattern.test(trimmed);
+    };
+
+    const handleSavePayPal = async () => {
+        const email = paypalEmail.trim();
+        if (!isValidPayPalEmail(email)) {
+            setPaypalFeedback({ type: 'error', message: 'Please enter a valid PayPal email address.' });
+            return;
+        }
+
+        setPaypalSaving(true);
+        setPaypalFeedback(null);
+
+        try {
+            const response = await supplierPaymentAccountApi.savePayPal(email);
+            if (response.success) {
+                setPaypalFeedback({
+                    type: 'success',
+                    message: response.message || 'PayPal details saved successfully.',
+                });
+                setPaypalEmail(email);
+            } else {
+                setPaypalFeedback({
+                    type: 'error',
+                    message: response.message || 'Unable to save PayPal details.',
+                });
+            }
+        } catch (error: any) {
+            console.error('Failed to save PayPal details:', error);
+            setPaypalFeedback({
+                type: 'error',
+                message: error.message || 'Unable to save PayPal details.',
+            });
+        } finally {
+            setPaypalSaving(false);
         }
     };
 
@@ -127,7 +209,7 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
 
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>Payments</Text>
-                    <Text style={styles.description}>Where to receive your money (Stripe)</Text>
+                    <Text style={styles.description}>Where to receive payouts (Stripe & PayPal)</Text>
                 </View>
 
                 <View style={styles.chevronContainer}>
@@ -153,71 +235,120 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
 
             {expanded && (
                 <View style={styles.content}>
-                    {loading ? (
-                        <ActivityIndicator size="small" color="#00615E" />
-                    ) : connected ? (
-                        <View style={styles.connectedContainer}>
-                            <View style={styles.accountSummary}>
-                                <Text style={styles.connectedLabel}>Connected Account ID</Text>
-                                <Text style={styles.accountIdText}>{accountId ?? '—'}</Text>
-                                {stripeDetails?.stripe_user_id && (
-                                    <Text style={styles.userIdText}>Stripe User: {stripeDetails.stripe_user_id}</Text>
-                                )}
-                                <Text style={styles.connectedOnText}>Connected on {connectedOn}</Text>
+                    <View style={styles.sectionCard}>
+                        {loading ? (
+                            <View style={styles.loadingWrapper}>
+                                <ActivityIndicator size="small" color="#00615E" />
                             </View>
-
-                            <View style={styles.statusGrid}>
-                                {statusItems.map((item) => (
-                                    <View style={styles.statusCard} key={item.label}>
-                                        <Ionicons
-                                            name={item.enabled ? 'checkmark-circle' : 'close-circle'}
-                                            size={18}
-                                            color={item.enabled ? '#1D8531' : '#BB5625'}
-                                        />
-                                        <View style={styles.statusTextGroup}>
-                                            <Text style={styles.statusLabel}>{item.label}</Text>
-                                            <Text style={styles.statusValue}>
-                                                {item.enabled ? 'Enabled' : 'Incomplete'}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                ))}
-                            </View>
-
-                            {!isFullyConnected && (
-                                <View style={styles.warningContainer}>
-                                    <Text style={styles.warningTitle}>Action required</Text>
-                                    <Text style={styles.warningMessage}>
-                                        Provide the remaining information in Stripe to start receiving payouts.
-                                    </Text>
-                                    <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
-                                        <Text style={styles.connectButtonText}>Complete setup</Text>
-                                    </TouchableOpacity>
+                        ) : connected ? (
+                            <View style={styles.connectedContainer}>
+                                <View style={styles.accountSummary}>
+                                    <Text style={styles.connectedLabel}>Connected Account ID</Text>
+                                    <Text style={styles.accountIdText}>{accountId ?? '—'}</Text>
+                                    {/* {stripeDetails?.stripe_user_id && (
+                                        <Text style={styles.userIdText}>Stripe User: {stripeDetails.stripe_user_id}</Text>
+                                    )} */}
+                                    <Text style={styles.connectedOnText}>Connected on {connectedOn}</Text>
                                 </View>
-                            )}
 
-                            <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
-                                <Text style={styles.disconnectButtonText}>Disconnect</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <View style={styles.connectContainer}>
-                            <Text style={styles.infoText}>
-                                Connect your Stripe account to receive automatic payouts.
-                            </Text>
-                            <View style={styles.benefitsContainer}>
-                                {benefitHighlights.map((benefit) => (
-                                    <View style={styles.benefitRow} key={benefit}>
-                                        <Ionicons name="checkmark-circle" size={16} color="#00615E" />
-                                        <Text style={styles.benefitText}>{benefit}</Text>
+                                <View style={styles.statusGrid}>
+                                    {statusItems.map((item) => (
+                                        <View style={styles.statusCard} key={item.label}>
+                                            <Ionicons
+                                                name={item.enabled ? 'checkmark-circle' : 'close-circle'}
+                                                size={18}
+                                                color={item.enabled ? '#1D8531' : '#BB5625'}
+                                            />
+                                            <View style={styles.statusTextGroup}>
+                                                <Text style={styles.statusLabel}>{item.label}</Text>
+                                                <Text style={styles.statusValue}>
+                                                    {item.enabled ? 'Enabled' : 'Incomplete'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+
+                                {!isFullyConnected && (
+                                    <View style={styles.warningContainer}>
+                                        <Text style={styles.warningTitle}>Action required</Text>
+                                        <Text style={styles.warningMessage}>
+                                            Provide the remaining information in Stripe to start receiving payouts.
+                                        </Text>
+                                        <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
+                                            <Text style={styles.connectButtonText}>Complete setup</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                ))}
+                                )}
+
+                                <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
+                                    <Text style={styles.disconnectButtonText}>Disconnect</Text>
+                                </TouchableOpacity>
                             </View>
-                            <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
-                                <Text style={styles.connectButtonText}>Connect with Stripe</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                        ) : (
+                            <View style={styles.connectContainer}>
+                                <Text style={styles.infoText}>
+                                    Connect your Stripe account to receive automatic payouts.
+                                </Text>
+                                <View style={styles.benefitsContainer}>
+                                    {benefitHighlights.map((benefit) => (
+                                        <View style={styles.benefitRow} key={benefit}>
+                                            <Ionicons name="checkmark-circle" size={16} color="#00615E" />
+                                            <Text style={styles.benefitText}>{benefit}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                                <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
+                                    <Text style={styles.connectButtonText}>Connect with Stripe</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.sectionCard}>
+                        <Text style={styles.sectionTitle}>PayPal payouts</Text>
+                        <Text style={styles.sectionSubtitle}>
+                            {paypalLoading
+                                ? 'Loading saved PayPal details...'
+                                : 'Enter the PayPal email where you would like to receive payouts.'}
+                        </Text>
+                        <TextInput
+                            value={paypalEmail}
+                            onChangeText={setPaypalEmail}
+                            style={styles.paypalInput}
+                            placeholder="PayPal email address"
+                            placeholderTextColor="#7D8A8C"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            editable={!paypalLoading}
+                        />
+                        <TouchableOpacity
+                            style={[
+                                styles.paypalSaveButton,
+                                paypalSaving && styles.paypalSaveButtonDisabled,
+                            ]}
+                            onPress={handleSavePayPal}
+                            disabled={paypalSaving}
+                        >
+                            {paypalSaving ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <Text style={styles.paypalSaveButtonText}>Save PayPal details</Text>
+                            )}
+                        </TouchableOpacity>
+                        {paypalFeedback && (
+                            <Text
+                                style={[
+                                    styles.paypalMessage,
+                                    paypalFeedback.type === 'success'
+                                        ? styles.paypalSuccessMessage
+                                        : styles.paypalErrorMessage,
+                                ]}
+                            >
+                                {paypalFeedback.message}
+                            </Text>
+                        )}
+                    </View>
                 </View>
             )}
 
@@ -331,6 +462,67 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingTop: 8,
+        gap: 12,
+    },
+    sectionCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        backgroundColor: '#FFFFFF',
+        gap: 12,
+    },
+    sectionTitle: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 16,
+        color: '#0A292D',
+    },
+    sectionSubtitle: {
+        fontFamily: 'Inter',
+        fontSize: 13,
+        color: '#4C5A5F',
+    },
+    loadingWrapper: {
+        paddingVertical: 20,
+        alignItems: 'center',
+    },
+    paypalInput: {
+        height: 44,
+        borderWidth: 1,
+        borderColor: '#E5DBCE',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        fontFamily: 'Inter',
+        fontSize: 14,
+        backgroundColor: '#FAF9F6',
+        color: '#0A292D',
+    },
+    paypalSaveButton: {
+        marginTop: 6,
+        paddingVertical: 12,
+        backgroundColor: '#00615E',
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    paypalSaveButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        color: '#FFFFFF',
+    },
+    paypalSaveButtonDisabled: {
+        opacity: 0.7,
+    },
+    paypalMessage: {
+        marginTop: 8,
+        fontFamily: 'Inter',
+        fontSize: 13,
+    },
+    paypalSuccessMessage: {
+        color: '#1D8531',
+    },
+    paypalErrorMessage: {
+        color: '#BB5625',
     },
     connectedContainer: {
         gap: 12,
@@ -367,17 +559,15 @@ const styles = StyleSheet.create({
     },
     statusGrid: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
         justifyContent: 'space-between',
     },
     statusCard: {
-        width: '48%',
+        width: '32%',
         flexDirection: 'row',
         alignItems: 'center',
         padding: 10,
         backgroundColor: '#F5F5F5',
         borderRadius: 12,
-        marginBottom: 8,
     },
     statusTextGroup: {
         marginLeft: 8,

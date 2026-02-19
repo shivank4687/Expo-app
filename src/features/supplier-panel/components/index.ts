@@ -10,3 +10,4 @@ export * from './cards';
 
 export { default as Dropdown } from './Dropdown';
 export { TabGroup, type Tab } from './TabGroup';
+export { default as InlineDropdown } from './InlineDropdown';

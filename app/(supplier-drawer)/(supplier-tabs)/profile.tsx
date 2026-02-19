@@ -3,6 +3,9 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import StripeConnectCard from '@/features/supplier-panel/profile/components/StripeConnectCard';
+import TypeOfBusinessCard from '@/features/supplier-panel/profile/components/TypeOfBusinessCard';
+import VatTaxesCard from '@/features/supplier-panel/profile/components/VatTaxesCard';
+import LegalInformationCard from '@/features/supplier-panel/profile/components/LegalInformationCard';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
@@ -76,209 +79,27 @@ export default function ProfileScreen() {
 
                 {/* Frame 135 - Business Type Card Container */}
                 {/* Frame 135 - Business Type Card Container */}
-                <View style={styles.businessCard}>
-                    {/* Frame 72 - Business Type Row */}
-                    <TouchableOpacity
-                        style={styles.businessHeader}
-                        onPress={() => toggleCard('business')}
-                        activeOpacity={0.7}
-                    >
-                        {/* Frame 45 - Icon Background */}
-                        <View style={styles.businessIconBg}>
-                            <Ionicons name="cube-outline" size={16} color="#FFFFFF" />
-                        </View>
-
-                        {/* Frame 61 Container */}
-                        <View style={styles.businessTextContainer}>
-                            {/* Frame 58 - Inner Text */}
-                            <Text style={styles.businessTitle}>Type of business</Text>
-                            <Text style={styles.businessDescription}>Define how you sell today</Text>
-                        </View>
-
-                        {/* chevron-down (Manual Vector implementation) */}
-                        <View style={styles.chevronContainer}>
-                            <Ionicons
-                                name={expandedCards.business ? 'chevron-up' : 'chevron-down'}
-                                size={16}
-                                color="#0A292D"
-                            />
-                        </View>
-
-                        {/* Frame 104 - Done Badge */}
-                        <View style={styles.doneBadge}>
-                            {/* Ellipse 2 (Icon replacement) */}
-                            <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-                            <Text style={styles.doneText}>Done</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {expandedCards.business && (
-                        /* Frame 45 (2nd occurrence) - Form Section */
-                        <View style={styles.formSection}>
-                            {/* Frame 145 - Input Row */}
-                            <View style={styles.inputRow}>
-                                <Text style={styles.inputLabel}>Seller Profile</Text>
-
-                                {/* input container (Chip style input) */}
-                                <View style={styles.inputChip}>
-                                    <Text style={styles.inputText}>Enter here...</Text>
-                                    <Ionicons name="chevron-down" size={16} color="#0A292D" />
-                                </View>
-                            </View>
-
-                            {/* Notice Message */}
-                            <Text style={styles.noticeText}>
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                <TypeOfBusinessCard
+                    expanded={expandedCards.business}
+                    onToggle={() => toggleCard('business')}
+                    styles={styles}
+                />
 
                 {/* Frame 136 - Legal Information Card Container */}
                 {/* Frame 136 - Legal Information Card Container */}
-                <View style={styles.legalCard}>
-                    {/* Frame 72 - Legal Header */}
-                    <TouchableOpacity
-                        style={styles.businessHeader}
-                        onPress={() => toggleCard('legal')}
-                        activeOpacity={0.7}
-                    >
-                        {/* Frame 45 - Icon Background */}
-                        <View style={styles.businessIconBg}>
-                            <Ionicons name="id-card-outline" size={16} color="#FFFFFF" />
-                        </View>
-
-                        {/* Frame 61 Container */}
-                        <View style={styles.businessTextContainer}>
-                            {/* Frame 58 - Inner Text */}
-                            <Text style={styles.businessTitle}>Legal information</Text>
-                            <Text style={styles.businessDescription}>Identity Verification</Text>
-                        </View>
-
-                        {/* chevron-down */}
-                        <View style={styles.chevronContainer}>
-                            <Ionicons
-                                name={expandedCards.legal ? 'chevron-up' : 'chevron-down'}
-                                size={16}
-                                color="#0A292D"
-                            />
-                        </View>
-
-                        {/* Frame 104 - Missing Documents Badge */}
-                        <View style={styles.missingBadge}>
-                            <Text style={styles.missingText}>Missing documents</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {expandedCards.legal && (
-                        <>
-                            {/* Frame 45 (Inner) - Form Section */}
-                            <View style={styles.formSection}>
-                                {/* Frame 146 - Identity Input Row */}
-                                <View style={styles.inputRow}>
-                                    <Text style={styles.inputLabel}>Seller Profile</Text>
-
-                                    {/* input container */}
-                                    <View style={styles.inputChip}>
-                                        <Ionicons name="attach" size={16} color="#0A292D" />
-                                        <Text style={styles.inputTextSmall}>Enter here...</Text>
-                                    </View>
-                                </View>
-
-                                {/* Description Message */}
-                                <Text style={styles.noticeText}>
-                                    Upload a clear photo (front view). (1 file)
-                                </Text>
-                            </View>
-
-                            {/* Frame 73 - Video Selfie Section */}
-                            <View style={styles.formSection}>
-                                {/* Frame 147 - Row */}
-                                <View style={styles.inputRowHigher}>
-                                    <Text style={styles.inputLabelHigh}>Video selfie (3-5s)</Text>
-
-                                    {/* input container */}
-                                    <View style={styles.inputChipHigh}>
-                                        <Ionicons name="attach" size={16} color="#0A292D" />
-                                        <Text style={styles.inputTextSmall}>Enter here...</Text>
-                                    </View>
-                                </View>
-
-                                {/* Description Message */}
-                                <Text style={styles.noticeText}>
-                                    To confirm identity and prevent fraud.
-                                </Text>
-                            </View>
-
-                            {/* Vector 2 - Divider */}
-                            <View style={styles.divider} />
-
-                            {/* KYC Notice */}
-                            <Text style={styles.noticeText}>
-                                Your documents are used only for security (KYC). They are never published
-                            </Text>
-                        </>
-                    )}
-                </View>
+                <LegalInformationCard
+                    expanded={expandedCards.legal}
+                    onToggle={() => toggleCard('legal')}
+                    styles={styles}
+                />
 
                 {/* Frame 137 - VAT and Taxes Card Container */}
                 {/* Frame 137 - VAT and Taxes Card Container */}
-                <View style={styles.vatCard}>
-                    {/* Frame 72 - VAT Header */}
-                    <TouchableOpacity
-                        style={styles.businessHeader}
-                        onPress={() => toggleCard('vat')}
-                        activeOpacity={0.7}
-                    >
-                        {/* Frame 45 - Icon Background */}
-                        <View style={styles.businessIconBg}>
-                            <Ionicons name="receipt-outline" size={16} color="#FFFFFF" />
-                        </View>
-
-                        {/* Frame 61 Container */}
-                        <View style={styles.businessTextContainer}>
-                            {/* Frame 58 - Inner Text */}
-                            <Text style={styles.businessTitle}>VAT and taxes</Text>
-                            <Text style={styles.businessDescription}>Tax settings (only if applicable)</Text>
-                        </View>
-
-                        {/* chevron-down */}
-                        <View style={styles.chevronContainer}>
-                            <Ionicons
-                                name={expandedCards.vat ? 'chevron-up' : 'chevron-down'}
-                                size={16}
-                                color="#0A292D"
-                            />
-                        </View>
-
-                        {/* Frame 104 - Done Badge */}
-                        <View style={styles.doneBadgeVat}>
-                            {/* Ellipse 2 (Icon replacement) */}
-                            <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-                            <Text style={styles.doneText}>Done</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {expandedCards.vat && (
-                        /* Frame 45 (Inner) - Form Section */
-                        <View style={styles.formSection}>
-                            {/* Frame 148 - VAT Mode Input Row */}
-                            <View style={styles.inputRow}>
-                                <Text style={styles.vatLabel}>VAT Mode</Text>
-
-                                {/* input container (Chip style input) */}
-                                <View style={styles.inputChip}>
-                                    <Text style={styles.inputTextSmall}>Enter here...</Text>
-                                    <Ionicons name="chevron-down" size={16} color="#0A292D" />
-                                </View>
-                            </View>
-
-                            {/* Recommendation Message */}
-                            <Text style={styles.noticeText}>
-                                Recommended: If you don't have a Tax ID, use "Not Applicable" for frictionless selling
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                <VatTaxesCard
+                    expanded={expandedCards.vat}
+                    onToggle={() => toggleCard('vat')}
+                    styles={styles}
+                />
                 {/* Frame 138 - Contact Card Container */}
                 {/* Frame 138 - Contact Card Container */}
                 <View style={styles.contactCard}>
@@ -1013,6 +834,46 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         color: '#0A292D',
     },
+    inputField: {
+        flex: 1,
+        height: 40,
+        borderWidth: 1,
+        borderColor: '#E1D9CF',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        fontFamily: 'Inter',
+        fontSize: 14,
+        color: '#0A292D',
+        backgroundColor: '#FAF9F6',
+    },
+    businessOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        padding: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#E1D9CF',
+        borderRadius: 8,
+        backgroundColor: '#FFFFFF',
+        gap: 12,
+    },
+    businessOptionSelected: {
+        borderColor: '#00615E',
+        backgroundColor: '#F0FCF8',
+    },
+    optionLabel: {
+        flex: 1,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '500',
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#0A292D',
+    },
+    optionLabelSelected: {
+        color: '#00615E',
+    },
     warningBox: {
         width: '100%',
         minHeight: 99,
@@ -1047,7 +908,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 12,
+        paddingVertical: 0,
+        paddingHorizontal: 12,
         backgroundColor: '#FCEEEE',
         borderWidth: 1,
         borderColor: '#F5BFBF',
