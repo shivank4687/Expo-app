@@ -30,6 +30,9 @@ export const API_ENDPOINTS = {
     SUPPLIER_RESEND_OTP: '/supplier-app/resend-otp',
     SUPPLIER_LOGOUT: '/supplier-app/logout',
     SUPPLIER_GET: '/supplier-app/get',
+    SUPPLIER_VERIFICATION_STATUS: '/supplier-app/verification',
+    SUPPLIER_VERIFICATION_RESEND: '/supplier-app/verification/resend',
+    SUPPLIER_VERIFICATION_IDENTITY: '/supplier-app/verification/identity',
     SUPPLIER_FORGOT_PASSWORD_PHONE: '/supplier-app/forgot-password-phone',
     SUPPLIER_RESET_PASSWORD: '/supplier-app/reset-password',
     // Products
@@ -108,6 +111,12 @@ export const API_ENDPOINTS = {
     SUPPLIER_PRODUCT_ATTRIBUTES: '/supplier-app/products/attributes',
     SUPPLIER_PRODUCT_CATEGORIES: '/supplier-app/products/categories',
     SUPPLIER_CHECK_SKU: '/supplier-app/products/check-sku',
+
+    // Supplier Notifications
+    SUPPLIER_NOTIFICATIONS: '/supplier-app/notifications',
+    SUPPLIER_NOTIFICATIONS_MARK_ALL_READ: '/supplier-app/notifications/mark-all-read',
+    SUPPLIER_NOTIFICATIONS_MARK_RFQ_READ: '/supplier-app/notifications/rfq/:id/mark-read',
+    SUPPLIER_NOTIFICATIONS_MARK_ORDER_READ: '/supplier-app/notifications/order/:id/mark-read',
 };
 
 export const PAGINATION = {

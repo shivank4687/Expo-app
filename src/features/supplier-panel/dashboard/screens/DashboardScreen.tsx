@@ -1,4 +1,4 @@
-import { AttachIcon, MessageIcon } from '@/assets/icons';
+import { AttachIcon, MessageIcon, NotificationIcon } from '@/assets/icons';
 import { createShipment } from '@/features/supplier-panel/dashboard/api/shipments.api';
 import { DashboardReviewsSection } from '@/features/supplier-panel/dashboard/components/DashboardReviewsSection';
 import { LowStockProductsList } from '@/features/supplier-panel/dashboard/components/LowStockProductsList';
@@ -9,15 +9,17 @@ import { SalesStatsCard } from '@/features/supplier-panel/dashboard/components/S
 import { useLowStockProducts } from '@/features/supplier-panel/dashboard/hooks/useLowStockProducts';
 import { usePendingOrdersList } from '@/features/supplier-panel/dashboard/hooks/usePendingOrdersList';
 import { useOrdersList } from '@/features/supplier-panel/orders/hooks/useOrdersList';
+import { notificationsApi } from '@/features/supplier-panel/notifications/api/notifications.api';
 import { productsApi } from '@/services/api/products.api';
 import { useToast } from '@/shared/components/Toast';
+import { useSupplierSocket } from '@/features/supplier-panel/notifications/hooks/useSupplierSocket';
 import { useAppSelector } from '@/store/hooks';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,6 +32,32 @@ export function DashboardScreen() {
     const { showToast } = useToast();
     const insets = useSafeAreaInsets();
     const router = useRouter();
+
+    // Setup real-time notifications
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useSupplierSocket({
+        onNewNotification: (data) => {
+            // Increment count or fetch new count depending on data payload
+            // For now, simple increment or fetch new
+            setUnreadCount(prev => prev + 1);
+        },
+        onConnect: () => {
+            // Initial fetch happens in the Notifications screen or could be added here
+            // If the backend returns the initial count on connect, we would set it here
+        }
+    });
+
+    // Fetch unread count every time this screen is focused (resets badge after viewing notifications)
+    useFocusEffect(
+        useCallback(() => {
+            if (isAuthenticated) {
+                notificationsApi.getNotifications(1)
+                    .then(res => setUnreadCount(res.unread_counts.total))
+                    .catch(err => console.error('Failed to fetch notification count', err));
+            }
+        }, [isAuthenticated])
+    );
 
     // State for tracking numbers and photos per order
     const [trackingNumbers, setTrackingNumbers] = useState<Record<number, string>>({});
@@ -270,6 +298,21 @@ export function DashboardScreen() {
 
                     {/* Action Buttons */}
                     <View style={styles.actionButtons}>
+                        <View style={styles.notificationWrapper}>
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => router.push('/(supplier-drawer)/notifications' as any)}
+                            >
+                                <NotificationIcon width={16} height={16} color="#000000" />
+                            </TouchableOpacity>
+                            {unreadCount > 0 && (
+                                <View style={styles.notificationBadge}>
+                                    <Text style={styles.notificationBadgeText}>
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
                         <TouchableOpacity
                             style={styles.actionButton}
                             onPress={() => router.push('/(supplier-drawer)/messages')}
@@ -625,6 +668,30 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#00615E',
         borderRadius: 8,
+    },
+    notificationWrapper: {
+        position: 'relative',
+    },
+    notificationBadge: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        minWidth: 16,
+        height: 16,
+        backgroundColor: '#E53935',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 3,
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
+    },
+    notificationBadgeText: {
+        fontFamily: 'Inter',
+        fontWeight: '700',
+        fontSize: 9,
+        lineHeight: 11,
+        color: '#FFFFFF',
     },
     infoCardContainer: {
         flexDirection: 'row',

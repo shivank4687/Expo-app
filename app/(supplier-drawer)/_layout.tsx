@@ -35,6 +35,13 @@ export default function SupplierDrawerLayout() {
             drawerItemStyle: { display: 'none' },
           }}
         />
+        <Drawer.Screen
+          name="notifications"
+          options={{
+            drawerLabel: "Notifications",
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
       </Drawer>
     </>
   );

@@ -1,11 +1,13 @@
 import { COLORS } from '@/features/supplier-panel/styles';
 import { useToast } from '@/shared/components/Toast/ToastContext';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSupplierProfile, SupplierProfile, updateSupplierProfile } from '../api/supplier-profile.api';
 import { AddressCard, DeliveryMethodCard, IdentityCard, PoliciesCard, SalesShippingCard, ShopDetailsCard, ShopMediaCard, SocialMediaCard } from '../components';
+import { consumeContactUpdate } from '@/features/supplier-panel/profile/contactUpdateTracker';
 
 export default function ShopScreen() {
     const { showToast } = useToast();
@@ -29,6 +31,21 @@ export default function ShopScreen() {
             setLoading(false);
         }
     }, []);
+
+    const isFirstFocus = useRef(true);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (isFirstFocus.current) {
+                isFirstFocus.current = false;
+                return;
+            }
+
+            if (consumeContactUpdate()) {
+                fetchProfile();
+            }
+        }, [fetchProfile])
+    );
 
     useEffect(() => {
         fetchProfile();

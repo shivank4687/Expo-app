@@ -1,22 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { stripeConnectApi } from '@/services/api/stripeconnect.api';
+import { supplierPaymentAccountApi } from '@/services/api/supplierPaymentAccount.api';
+import { useToast } from '@/shared/components/Toast';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
     ActivityIndicator,
     Modal,
     SafeAreaView,
+    StyleSheet,
+    Text,
     TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
-import { stripeConnectApi } from '@/services/api/stripeconnect.api';
-import { supplierPaymentAccountApi } from '@/services/api/supplierPaymentAccount.api';
 
 interface StripeConnectCardProps {
     expanded: boolean;
     onToggle: () => void;
+    onStatusChange?: (completed: boolean) => void;
+    onReady?: () => void;
 }
 
 interface StripeDetails {
@@ -48,26 +51,54 @@ const formatDate = (value?: string | null) => {
     });
 };
 
-export default function StripeConnectCard({ expanded, onToggle }: StripeConnectCardProps) {
-    const [loading, setLoading] = useState(false);
+export default function StripeConnectCard({ expanded, onToggle, onStatusChange, onReady }: StripeConnectCardProps) {
+    const [loading, setLoading] = useState(true);
     const [connected, setConnected] = useState(false);
     const [stripeDetails, setStripeDetails] = useState<StripeDetails | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [authUrl, setAuthUrl] = useState<string | null>(null);
     const [paypalEmail, setPaypalEmail] = useState('');
-    const [paypalLoading, setPaypalLoading] = useState(false);
+    const [paypalLoading, setPaypalLoading] = useState(true);
     const [paypalSaving, setPaypalSaving] = useState(false);
-    const [paypalFeedback, setPaypalFeedback] = useState<{
-        type: 'success' | 'error';
-        message: string;
-    } | null>(null);
+    const [hasSignaledReady, setHasSignaledReady] = useState(false);
+    const { showToast } = useToast();
+    useEffect(() => {
+        const stripeConnected = Boolean(stripeDetails?.is_fully_connected);
+        const payPalConfigured = Boolean(paypalEmail.trim());
+        const completed = stripeConnected && payPalConfigured;
+
+        onStatusChange?.(completed);
+    }, [stripeDetails, paypalEmail]);
+    const hasLoadedStripeData = useRef(false);
 
     useEffect(() => {
-        if (expanded) {
+        if (!hasLoadedStripeData.current) {
+            hasLoadedStripeData.current = true;
             fetchDetails();
             fetchPayPalEmail();
         }
-    }, [expanded]);
+    }, []);
+
+    const prevModalState = useRef(modalVisible);
+    useEffect(() => {
+        if (prevModalState.current && !modalVisible) {
+            fetchDetails();
+            fetchPayPalEmail();
+        }
+        prevModalState.current = modalVisible;
+    }, [modalVisible]);
+
+    useEffect(() => {
+        if (
+            !hasSignaledReady &&
+            hasLoadedStripeData.current &&
+            !loading &&
+            !paypalLoading
+        ) {
+            setHasSignaledReady(true);
+            onReady?.();
+        }
+    }, [hasSignaledReady, loading, paypalLoading, onReady]);
 
     const fetchDetails = async () => {
         setLoading(true);
@@ -86,7 +117,6 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
 
     const fetchPayPalEmail = async () => {
         setPaypalLoading(true);
-        setPaypalFeedback(null);
 
         try {
             const response = await supplierPaymentAccountApi.getPayPal();
@@ -95,9 +125,9 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
             }
         } catch (error) {
             console.error('Failed to fetch PayPal details:', error);
-            setPaypalFeedback({
-                type: 'error',
+            showToast({
                 message: 'Unable to load saved PayPal details. Please try again.',
+                type: 'error',
             });
         } finally {
             setPaypalLoading(false);
@@ -116,32 +146,34 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
     const handleSavePayPal = async () => {
         const email = paypalEmail.trim();
         if (!isValidPayPalEmail(email)) {
-            setPaypalFeedback({ type: 'error', message: 'Please enter a valid PayPal email address.' });
+            showToast({
+                message: 'Please enter a valid PayPal email address.',
+                type: 'error',
+            });
             return;
         }
 
         setPaypalSaving(true);
-        setPaypalFeedback(null);
 
         try {
             const response = await supplierPaymentAccountApi.savePayPal(email);
             if (response.success) {
-                setPaypalFeedback({
-                    type: 'success',
+                showToast({
                     message: response.message || 'PayPal details saved successfully.',
+                    type: 'success',
                 });
                 setPaypalEmail(email);
             } else {
-                setPaypalFeedback({
-                    type: 'error',
+                showToast({
                     message: response.message || 'Unable to save PayPal details.',
+                    type: 'error',
                 });
             }
         } catch (error: any) {
             console.error('Failed to save PayPal details:', error);
-            setPaypalFeedback({
-                type: 'error',
+            showToast({
                 message: error.message || 'Unable to save PayPal details.',
+                type: 'error',
             });
         } finally {
             setPaypalSaving(false);
@@ -193,7 +225,7 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
     const statusItems = [
         { label: 'Charges', enabled: stripeDetails?.charges_enabled },
         { label: 'Payouts', enabled: stripeDetails?.payouts_enabled },
-        { label: 'Details Submitted', enabled: stripeDetails?.details_submitted },
+        { label: 'Documents', enabled: stripeDetails?.details_submitted },
     ];
 
     return (
@@ -212,25 +244,27 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                     <Text style={styles.description}>Where to receive payouts (Stripe & PayPal)</Text>
                 </View>
 
-                <View style={styles.chevronContainer}>
-                    <Ionicons
-                        name={expanded ? 'chevron-up' : 'chevron-down'}
-                        size={16}
-                        color="#0A292D"
-                    />
-                </View>
+                <View style={styles.headerActions}>
+                    {connected ? (
+                        <View style={[styles.connectedBadge, !isFullyConnected && styles.partialBadge]}>
+                            <Text style={[styles.badgeText, !isFullyConnected && styles.partialBadgeText]}>
+                                {isFullyConnected ? 'Connected' : 'Action Required'}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={styles.toBeCompletedBadge}>
+                            <Text style={styles.toBeCompletedText}>To be completed</Text>
+                        </View>
+                    )}
 
-                {connected ? (
-                    <View style={[styles.connectedBadge, !isFullyConnected && styles.partialBadge]}>
-                        <Text style={[styles.badgeText, !isFullyConnected && styles.partialBadgeText]}>
-                            {isFullyConnected ? 'Connected' : 'Action Required'}
-                        </Text>
+                    <View style={styles.chevronContainer}>
+                        <Ionicons
+                            name={expanded ? 'chevron-up' : 'chevron-down'}
+                            size={16}
+                            color="#0A292D"
+                        />
                     </View>
-                ) : (
-                    <View style={styles.toBeCompletedBadge}>
-                        <Text style={styles.toBeCompletedText}>To be completed</Text>
-                    </View>
-                )}
+                </View>
             </TouchableOpacity>
 
             {expanded && (
@@ -252,19 +286,28 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                                 </View>
 
                                 <View style={styles.statusGrid}>
-                                    {statusItems.map((item) => (
-                                        <View style={styles.statusCard} key={item.label}>
-                                            <Ionicons
-                                                name={item.enabled ? 'checkmark-circle' : 'close-circle'}
-                                                size={18}
-                                                color={item.enabled ? '#1D8531' : '#BB5625'}
-                                            />
-                                            <View style={styles.statusTextGroup}>
-                                                <Text style={styles.statusLabel}>{item.label}</Text>
-                                                <Text style={styles.statusValue}>
-                                                    {item.enabled ? 'Enabled' : 'Incomplete'}
-                                                </Text>
-                                            </View>
+                                    {statusItems.map((item, index) => (
+                                        <View
+                                            style={[
+                                                styles.statusCard,
+                                                item.enabled
+                                                    ? styles.statusCardEnabled
+                                                    : styles.statusCardDisabled,
+                                                index !== statusItems.length - 1 && styles.statusCardSpacing,
+                                            ]}
+                                            key={item.label}
+                                        >
+                                            <Text style={styles.statusLabel}>{item.label}</Text>
+                                            <Text
+                                                style={[
+                                                    styles.statusValue,
+                                                    item.enabled
+                                                        ? styles.statusValueEnabled
+                                                        : styles.statusValueDisabled,
+                                                ]}
+                                            >
+                                                {item.enabled ? 'Enabled' : 'Incomplete'}
+                                            </Text>
                                         </View>
                                     ))}
                                 </View>
@@ -336,18 +379,6 @@ export default function StripeConnectCard({ expanded, onToggle }: StripeConnectC
                                 <Text style={styles.paypalSaveButtonText}>Save PayPal details</Text>
                             )}
                         </TouchableOpacity>
-                        {paypalFeedback && (
-                            <Text
-                                style={[
-                                    styles.paypalMessage,
-                                    paypalFeedback.type === 'success'
-                                        ? styles.paypalSuccessMessage
-                                        : styles.paypalErrorMessage,
-                                ]}
-                            >
-                                {paypalFeedback.message}
-                            </Text>
-                        )}
                     </View>
                 </View>
             )}
@@ -458,7 +489,6 @@ const styles = StyleSheet.create({
         height: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 'auto',
     },
     content: {
         paddingTop: 8,
@@ -562,26 +592,44 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     statusCard: {
-        width: '32%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#F5F5F5',
+        flex: 1,
+        minWidth: 96,
+        minHeight: 72,
+        padding: 14,
         borderRadius: 12,
+        borderWidth: 1,
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
-    statusTextGroup: {
-        marginLeft: 8,
+    statusCardEnabled: {
+        backgroundColor: '#E6F8F2',
+        borderColor: '#B5E4D5',
+    },
+    statusCardDisabled: {
+        backgroundColor: '#FDEDED',
+        borderColor: '#F5C2BE',
     },
     statusLabel: {
         fontFamily: 'Inter',
         fontWeight: '600',
         fontSize: 12,
         color: '#0A292D',
+        marginBottom: 4,
+        flexWrap: 'wrap',
     },
     statusValue: {
         fontFamily: 'Inter',
         fontSize: 12,
-        color: '#7D8A8C',
+        marginTop: 6,
+    },
+    statusValueEnabled: {
+        color: '#1D8531',
+    },
+    statusValueDisabled: {
+        color: '#BB5625',
+    },
+    statusCardSpacing: {
+        marginRight: 8,
     },
     disconnectButton: {
         padding: 10,
@@ -664,11 +712,6 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         paddingHorizontal: 8,
         gap: 10,
-        position: 'absolute',
-        minWidth: 110,
-        height: 22,
-        right: 110,
-        top: -3,
         backgroundColor: '#FCF7EA',
         borderWidth: 1,
         borderColor: '#DDAA39',
@@ -688,13 +731,16 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         paddingHorizontal: 8,
         gap: 4,
-        position: 'absolute',
-        minWidth: 10,
-        height: 22,
-        right: 150,
-        top: -3,
         backgroundColor: '#00615E',
         borderRadius: 80,
+        minWidth: 10,
+        height: 22,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginLeft: 'auto',
     },
     partialBadge: {
         backgroundColor: '#FFD9B2',
