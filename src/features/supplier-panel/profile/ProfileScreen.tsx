@@ -4,9 +4,11 @@ import StripeConnectCard from '@/features/supplier-panel/profile/components/Stri
 import VatTaxesCard from '@/features/supplier-panel/profile/components/VatTaxesCard';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import ProgressCard from './components/ProgressCard';
 type ProfileProgressState = {
     legal: boolean
@@ -33,6 +35,7 @@ const initialReadyState: Record<keyof ProfileProgressState, boolean> = {
 
 export default function ProfileScreen() {
     const insets = useSafeAreaInsets();
+    const { expandLegal } = useLocalSearchParams<{ expandLegal?: string }>();
     const [expandedCards, setExpandedCards] = useState({
         legal: true,
         vat: true,
@@ -40,6 +43,8 @@ export default function ProfileScreen() {
         payments: true,
         closeAccount: false,
     });
+    // Key used to force LegalInformationCard to remount and reload when arriving from a notification
+    const [legalKey, setLegalKey] = useState(0);
     const [progressState, setProgressState] = useState<ProfileProgressState>({
         legal: false,
         vat: false,
@@ -64,6 +69,17 @@ export default function ProfileScreen() {
     const toggleCard = (card: keyof typeof expandedCards) => {
         setExpandedCards((prev) => ({ ...prev, [card]: !prev[card] }));
     };
+
+    // When navigating here from an identity verification notification,
+    // force the legal card open and reload its status.
+    useFocusEffect(
+        useCallback(() => {
+            if (expandLegal === '1') {
+                setExpandedCards((prev) => ({ ...prev, legal: true }));
+                setLegalKey((k) => k + 1); // remounts LegalInformationCard → triggers fresh API call
+            }
+        }, [expandLegal])
+    );
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -113,6 +129,7 @@ export default function ProfileScreen() {
                 {/* Frame 136 - Legal Information Card Container */}
                 {/* Frame 136 - Legal Information Card Container */}
                 <LegalInformationCard
+                    key={legalKey}
                     expanded={expandedCards.legal}
                     onToggle={() => toggleCard('legal')}
                     onStatusChange={(done) =>

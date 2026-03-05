@@ -35,6 +35,9 @@ export const API_ENDPOINTS = {
     SUPPLIER_VERIFICATION_IDENTITY: '/supplier-app/verification/identity',
     SUPPLIER_FORGOT_PASSWORD_PHONE: '/supplier-app/forgot-password-phone',
     SUPPLIER_RESET_PASSWORD: '/supplier-app/reset-password',
+    // Supplier Device Token (push notifications)
+    SUPPLIER_DEVICE_TOKEN_REGISTER: '/supplier-app/device-token/register',
+    SUPPLIER_DEVICE_TOKEN_UNREGISTER: '/supplier-app/device-token/unregister',
     // Products
     PRODUCTS: '/products',
     PRODUCT_DETAIL: '/products/:id',

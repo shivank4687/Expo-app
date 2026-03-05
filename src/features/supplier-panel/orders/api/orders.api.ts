@@ -99,6 +99,17 @@ export interface OrderShipment {
 export interface OrderDetails extends Omit<Order, 'items'> {
     items: OrderItem[];
     shipments: OrderShipment[];
+    payment?: {
+        method: string | null;
+        method_title: string | null;
+        additional?: {
+            voucher_number?: string;
+            voucher_url?: string;
+            voucher_expires_at?: string;
+            payment_intent_id?: string;
+            status?: string;
+        } | null;
+    };
 }
 
 export interface OrderDetailsResponse {

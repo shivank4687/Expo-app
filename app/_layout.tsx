@@ -1,6 +1,7 @@
 import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
 import { expoPushNotificationService } from "@/services/notifications/expo-push-notification.service";
+import { supplierPushNotificationService } from "@/services/notifications/supplier-push-notification.service";
 import { ToastContainer, ToastProvider } from "@/shared/components/Toast";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { checkAuthThunk } from "@/store/slices/authSlice";
@@ -28,17 +29,29 @@ function AppContent() {
   const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
 
-  // Setup push notification handlers on app start
+  // Setup CUSTOMER push notification handlers on app start
   useEffect(() => {
-    console.log('🔔 Setting up push notification handlers...');
+    console.log('🔔 Setting up customer push notification handlers...');
     expoPushNotificationService.setupNotificationHandlers();
 
-    // Cleanup on unmount
     return () => {
-      console.log('🔕 Cleaning up push notification handlers...');
+      console.log('🔕 Cleaning up customer push notification handlers...');
       expoPushNotificationService.cleanup();
     };
   }, []);
+
+  // Setup SUPPLIER push notification handlers when supplier is authenticated
+  useEffect(() => {
+    if (!isSupplierAuthenticated) return;
+
+    console.log('🔔 Setting up supplier push notification handlers...');
+    supplierPushNotificationService.setupNotificationHandlers();
+
+    return () => {
+      console.log('🔕 Cleaning up supplier push notification handlers...');
+      supplierPushNotificationService.cleanup();
+    };
+  }, [isSupplierAuthenticated]);
 
   // Load wishlist when customer is authenticated
   useEffect(() => {

@@ -7,9 +7,12 @@ import { OrderDetailsResponse } from '../../orders/api/orders.api';
 
 interface OrderDetailsTabProps {
     order?: OrderDetailsResponse['data'];
+    onVoucherRegenerated?: (newPaymentData: any) => void;
 }
 
-export const OrderDetailsTab = ({ order }: OrderDetailsTabProps) => {
+import { PaymentInfoCard } from './PaymentInfoCard';
+
+export const OrderDetailsTab = ({ order, onVoucherRegenerated }: OrderDetailsTabProps) => {
     if (!order) {
         return (
             <View style={styles.container}>
@@ -23,6 +26,7 @@ export const OrderDetailsTab = ({ order }: OrderDetailsTabProps) => {
             <OrderInfoCard order={order} />
             <CustomerInfoCard order={order} />
             <ShippingInfoCard order={order} />
+            <PaymentInfoCard order={order} onVoucherRegenerated={onVoucherRegenerated} />
         </ScrollView>
     );
 };

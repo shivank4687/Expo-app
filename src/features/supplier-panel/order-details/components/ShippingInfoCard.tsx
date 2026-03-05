@@ -8,7 +8,7 @@ interface ShippingInfoCardProps {
 }
 
 export const ShippingInfoCard = ({ order }: ShippingInfoCardProps) => {
-    const { shipping_address, billing_address, shipping_method, payment_method } = order;
+    const { shipping_address, billing_address, shipping_method } = order;
 
     const renderAddress = (title: string, address: typeof shipping_address) => {
         if (!address) return null;
@@ -32,7 +32,7 @@ export const ShippingInfoCard = ({ order }: ShippingInfoCardProps) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Shipping & Payment</Text>
+            <Text style={styles.title}>Shipping & Billing</Text>
 
             {renderAddress('Shipping Address', shipping_address)}
             {renderAddress('Billing Address', billing_address)}
@@ -40,11 +40,6 @@ export const ShippingInfoCard = ({ order }: ShippingInfoCardProps) => {
             <View style={styles.section}>
                 <Text style={styles.subtitle}>Shipping Method</Text>
                 <Text style={styles.value}>{shipping_method || 'N/A'}</Text>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.subtitle}>Payment Method</Text>
-                <Text style={styles.value}>{payment_method || 'N/A'}</Text>
             </View>
         </View>
     );

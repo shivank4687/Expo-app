@@ -25,6 +25,7 @@ interface LegalInformationCardStyles {
     businessTitle: TextStyle;
     businessDescription: TextStyle;
     chevronContainer: ViewStyle;
+    headerActions: ViewStyle;
     missingBadge: ViewStyle;
     missingText: TextStyle;
     divider: ViewStyle;
@@ -330,22 +331,24 @@ export default function LegalInformationCard({
                     <Text style={styles.businessDescription}>Identity Verification</Text>
                 </View>
                 <View style={styles.headerActions}>
-                    <View
-                        style={[
-                            statusStyles.badge,
-                            verificationVariant === 'success'
-                                ? statusStyles.badgeSuccess
-                                : verificationVariant === 'warning'
-                                    ? statusStyles.badgeWarning
-                                    : verificationVariant === 'error'
-                                        ? statusStyles.badgeError
-                                        : statusStyles.badgeInfo,
-                        ]}
-                    >
-                        <Text style={statusStyles.badgeText}>
-                            {verificationLabel || 'Missing documents'}
-                        </Text>
-                    </View>
+                    {!statusLoading && (
+                        <View
+                            style={[
+                                statusStyles.badge,
+                                verificationVariant === 'success'
+                                    ? statusStyles.badgeSuccess
+                                    : verificationVariant === 'warning'
+                                        ? statusStyles.badgeWarning
+                                        : verificationVariant === 'error'
+                                            ? statusStyles.badgeError
+                                            : statusStyles.badgeInfo,
+                            ]}
+                        >
+                            <Text style={statusStyles.badgeText}>
+                                {verificationLabel || 'Missing documents'}
+                            </Text>
+                        </View>
+                    )}
                     <View style={styles.chevronContainer}>
                         <Ionicons
                             name={expanded ? 'chevron-up' : 'chevron-down'}

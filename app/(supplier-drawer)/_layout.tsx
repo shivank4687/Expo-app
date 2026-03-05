@@ -42,6 +42,13 @@ export default function SupplierDrawerLayout() {
             drawerItemStyle: { display: 'none' },
           }}
         />
+        <Drawer.Screen
+          name="rfq-details"
+          options={{
+            drawerLabel: "RFQ Details",
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
       </Drawer>
     </>
   );

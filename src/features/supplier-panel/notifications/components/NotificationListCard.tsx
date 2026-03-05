@@ -99,7 +99,7 @@ export function NotificationListCard({ notification, onPress }: NotificationList
             case 'closed': statusMessage = 'Closed'; break;
             case 'pending_payment': statusMessage = 'Pending Payment'; break;
         }
-        return `#${notification.order.id} ${statusMessage}`;
+        return `#${notification.order.id} Order ${statusMessage}`;
     };
 
     return (

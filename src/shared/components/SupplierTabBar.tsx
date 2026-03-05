@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type DrawerOption = 'profile' | 'marketing' | 'reviews' | 'transactions';
+type DrawerOption = 'profile' | 'marketing' | 'reviews' | 'transactions' | 'rfq';
 
 export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
@@ -20,11 +20,11 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
 
     // Check if More tab or its sub-screens are focused
     const focusedRouteName = state.routes[state.index].name;
-    const isMoreTabFocused = ['profile', 'marketing', 'reviews', 'transactions'].includes(focusedRouteName);
+    const isMoreTabFocused = ['rfq', 'profile', 'marketing', 'reviews', 'transactions'].includes(focusedRouteName);
 
     // Sync drawer selection with route
     useEffect(() => {
-        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing' || focusedRouteName === 'reviews' || focusedRouteName === 'transactions') {
+        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing' || focusedRouteName === 'reviews' || focusedRouteName === 'transactions' || focusedRouteName === 'rfq') {
             setSelectedOption(focusedRouteName as DrawerOption);
         }
     }, [focusedRouteName]);
@@ -61,6 +61,7 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
             {/* Drawer */}
             <Animated.View style={[styles.drawer, { height: drawerHeight }]}>
                 <View style={styles.drawerContent}>
+
                     <TouchableOpacity
                         style={[
                             styles.drawerOption,
@@ -73,6 +74,20 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             selectedOption === 'profile' && styles.drawerOptionTextActive
                         ]}>
                             Profile
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.drawerOption,
+                            selectedOption === 'rfq' && styles.drawerOptionActive
+                        ]}
+                        onPress={() => handleDrawerOptionPress('rfq')}
+                    >
+                        <Text style={[
+                            styles.drawerOptionText,
+                            selectedOption === 'rfq' && styles.drawerOptionTextActive
+                        ]}>
+                            RFQ
                         </Text>
                     </TouchableOpacity>
 
@@ -127,7 +142,7 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
             <View style={styles.navbar}>
                 {state.routes.map((route, index) => {
                     // Show Profile as the "More" tab, but hide Marketing, Reviews, Transactions and old Settings
-                    if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'transactions' || route.name === 'settings') {
+                    if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'transactions' || route.name === 'settings' || route.name === 'rfq') {
                         return null;
                     }
 
@@ -254,7 +269,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 6,
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         borderRadius: 20,
         backgroundColor: '#F5F5F5',
     },

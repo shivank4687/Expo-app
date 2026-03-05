@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 interface MessageInputProps {
     onSend: (message: string) => void;
     disabled?: boolean;
+    hideAttachment?: boolean;
 }
 
-export default function OrderMessageInput({ onSend, disabled = false }: MessageInputProps) {
+export default function OrderMessageInput({ onSend, disabled = false, hideAttachment = false }: MessageInputProps) {
     const [message, setMessage] = useState('');
     const inputRef = useRef<TextInput>(null);
 
@@ -23,9 +24,11 @@ export default function OrderMessageInput({ onSend, disabled = false }: MessageI
             style={styles.container}
             onPress={() => inputRef.current?.focus()}
         >
-            <TouchableOpacity style={styles.iconButton} disabled={disabled}>
-                <Ionicons name="attach-outline" size={20} color="#0A292D" />
-            </TouchableOpacity>
+            {!hideAttachment && (
+                <TouchableOpacity style={styles.iconButton} disabled={disabled}>
+                    <Ionicons name="attach-outline" size={20} color="#0A292D" />
+                </TouchableOpacity>
+            )}
 
             <TextInput
                 ref={inputRef}

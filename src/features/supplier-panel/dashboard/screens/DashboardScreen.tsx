@@ -18,8 +18,8 @@ import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useFocusEffect } from 'expo-router';
-import React, { useState, useCallback } from 'react';
+import { useRouter, useFocusEffect, useSegments } from 'expo-router';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,28 +35,45 @@ export function DashboardScreen() {
 
     // Setup real-time notifications
     const [unreadCount, setUnreadCount] = useState(0);
+    const [isLoadingCount, setIsLoadingCount] = useState(false);
+    // Track whether the user navigated to the Notifications screen so we can
+    // reset the badge locally on return (without a network call).
+    const wasOnNotificationsRef = useRef(false);
 
     useSupplierSocket({
-        onNewNotification: (data) => {
-            // Increment count or fetch new count depending on data payload
-            // For now, simple increment or fetch new
+        onNewNotification: () => {
+            // Increment badge in real-time — no API call needed
             setUnreadCount(prev => prev + 1);
         },
-        onConnect: () => {
-            // Initial fetch happens in the Notifications screen or could be added here
-            // If the backend returns the initial count on connect, we would set it here
-        }
     });
 
-    // Fetch unread count every time this screen is focused (resets badge after viewing notifications)
+    // Fetch the true unread count ONCE on mount
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        setIsLoadingCount(true);
+        notificationsApi.getNotifications(1)
+            .then(res => setUnreadCount(res.unread_counts.total))
+            .catch(err => console.error('Failed to fetch notification count', err))
+            .finally(() => setIsLoadingCount(false));
+    }, [isAuthenticated]);
+
+    // Track when the user leaves for / returns from Notifications
+    const segments = useSegments();
+    useEffect(() => {
+        const onNotificationsScreen = segments.some(s => s === 'notifications');
+        if (onNotificationsScreen) {
+            wasOnNotificationsRef.current = true;
+        }
+    }, [segments]);
+
+    // On focus: if coming back from Notifications, just zero the badge — no API hit.
     useFocusEffect(
         useCallback(() => {
-            if (isAuthenticated) {
-                notificationsApi.getNotifications(1)
-                    .then(res => setUnreadCount(res.unread_counts.total))
-                    .catch(err => console.error('Failed to fetch notification count', err));
+            if (wasOnNotificationsRef.current) {
+                setUnreadCount(0);
+                wasOnNotificationsRef.current = false;
             }
-        }, [isAuthenticated])
+        }, [])
     );
 
     // State for tracking numbers and photos per order
@@ -303,9 +320,16 @@ export function DashboardScreen() {
                                 style={styles.actionButton}
                                 onPress={() => router.push('/(supplier-drawer)/notifications' as any)}
                             >
-                                <NotificationIcon width={16} height={16} color="#000000" />
+                                <NotificationIcon width={16} height={16} color={isLoadingCount ? '#AAAAAA' : '#000000'} />
+                                {isLoadingCount && (
+                                    <ActivityIndicator
+                                        size={12}
+                                        color="#00615E"
+                                        style={styles.iconOverlayLoader}
+                                    />
+                                )}
                             </TouchableOpacity>
-                            {unreadCount > 0 && (
+                            {!isLoadingCount && unreadCount > 0 && (
                                 <View style={styles.notificationBadge}>
                                     <Text style={styles.notificationBadgeText}>
                                         {unreadCount > 99 ? '99+' : unreadCount}
@@ -315,7 +339,7 @@ export function DashboardScreen() {
                         </View>
                         <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={() => router.push('/(supplier-drawer)/messages')}
+                            onPress={() => router.push('/(supplier-drawer)/messages' as any)}
                         >
                             <MessageIcon width={16} height={16} color="#000000" />
                         </TouchableOpacity>
@@ -685,6 +709,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 3,
         borderWidth: 1.5,
         borderColor: '#FFFFFF',
+    },
+    iconOverlayLoader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
     },
     notificationBadgeText: {
         fontFamily: 'Inter',

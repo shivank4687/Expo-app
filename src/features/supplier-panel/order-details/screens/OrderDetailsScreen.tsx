@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
@@ -20,9 +21,18 @@ export default function OrderDetailsScreen() {
     const [activeTab, setActiveTab] = useState<TabType>('details');
     const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
     const isFromDashboard = sourceParam === 'dashboard';
+    const fromScreen = Array.isArray(params.from) ? params.from[0] : params.from;
 
     // Get order ID from route params
     const orderId = params.orderId ? parseInt(params.orderId as string) : 0;
+
+    // Drawer keeps this screen mounted; reset tab to default each time screen comes into focus
+    // so navigating away and back always starts on the Details tab.
+    useFocusEffect(
+        useCallback(() => {
+            setActiveTab('details');
+        }, [])
+    );
 
     const tabs: Tab[] = [
         { id: 'details', label: 'Details' },
@@ -121,7 +131,16 @@ export default function OrderDetailsScreen() {
             return <OrderChatView supplierOrderId={orderId} />;
         }
 
-        return <OrderDetailsTab order={order ?? undefined} />;
+        const handleVoucherRegenerated = (newPaymentData: any) => {
+            if (order) {
+                setOrder({
+                    ...order,
+                    payment: newPaymentData
+                });
+            }
+        };
+
+        return <OrderDetailsTab order={order ?? undefined} onVoucherRegenerated={handleVoucherRegenerated} />;
     };
 
     return (
@@ -131,14 +150,22 @@ export default function OrderDetailsScreen() {
                 <View style={styles.headerContent}>
                     <TouchableOpacity
                         style={styles.backButton}
-                        onPress={() => router.back()}
+                        onPress={() => {
+                            if (fromScreen === 'notifications') {
+                                router.push('/(supplier-drawer)/notifications' as any);
+                            } else {
+                                router.back();
+                            }
+                        }}
                         activeOpacity={0.7}
                     >
                         <Ionicons name="arrow-back" size={16} color="#000000" />
                     </TouchableOpacity>
 
                     <View style={styles.titleContainer}>
-                        <Text style={styles.headerTitle}>{isFromDashboard ? 'Dashboard' : 'Orders'}</Text>
+                        <Text style={styles.headerTitle}>
+                            {fromScreen === 'notifications' ? 'Notifications' : isFromDashboard ? 'Dashboard' : 'Orders'}
+                        </Text>
                     </View>
                 </View>
             </View>
