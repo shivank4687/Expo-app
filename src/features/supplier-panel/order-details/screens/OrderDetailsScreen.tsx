@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
 import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
-import { createShipment } from '../../dashboard/api/shipments.api';
+import { createShipment, createSkydropxShipment } from '../../dashboard/api/shipments.api';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -108,6 +108,45 @@ export default function OrderDetailsScreen() {
         }
     };
 
+    const handleSkydropxSubmit = async (consignmentNote: string, packageType: string) => {
+        try {
+            setIsSubmittingTracking(true);
+
+            const payload = {
+                consignment_note: consignmentNote,
+                package_type: packageType,
+            };
+
+            const response = await createSkydropxShipment(orderId, payload);
+
+            if (response.success && response.data) {
+                // Manually update local state to show the new shipment immediately
+                if (order) {
+                    const newShipment = {
+                        id: response.data.shipment_id,
+                        carrier_title: response.data.carrier_title,
+                        track_number: response.data.track_number || '',
+                        tracking_photo_url: null,
+                        total_qty: 1,
+                        created_at: response.data.created_at,
+                    };
+
+                    setOrder({
+                        ...order,
+                        shipments: [...(order.shipments || []), newShipment],
+                    });
+                }
+            } else {
+                alert(response.message || 'Failed to create Skydropx shipment');
+            }
+        } catch (error: any) {
+            console.error('Failed to submit Skydropx tracking:', error);
+            alert(error?.message || 'An error occurred while creating Skydropx shipment');
+        } finally {
+            setIsSubmittingTracking(false);
+        }
+    };
+
     const renderTabContent = () => {
         if (loading) {
             return (
@@ -122,7 +161,9 @@ export default function OrderDetailsScreen() {
                 <TrackingInfoCard
                     shipments={order?.shipments}
                     isSubmitting={isSubmittingTracking}
+                    isSkydropx={true}
                     onSubmit={handleTrackingSubmit}
+                    onSkydropxSubmit={handleSkydropxSubmit}
                 />
             );
         }

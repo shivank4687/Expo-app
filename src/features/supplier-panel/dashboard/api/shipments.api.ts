@@ -61,3 +61,19 @@ export const createShipment = async (
 
     return await multipartFetch<CreateShipmentResponse>(endpoint, formData);
 };
+
+export interface CreateSkydropxShipmentRequest {
+    consignment_note: string;
+    package_type: string;
+}
+
+/**
+ * Create a Skydropx shipment for a specific order
+ */
+export const createSkydropxShipment = async (
+    orderId: number,
+    data: CreateSkydropxShipmentRequest
+): Promise<CreateShipmentResponse> => {
+    const endpoint = `/supplier-app/shipments/create/skydropx/${orderId}`;
+    return await restApiClient.post<CreateShipmentResponse>(endpoint, data);
+};

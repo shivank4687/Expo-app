@@ -1,12 +1,9 @@
 import InlineDropdown, { DropdownOption } from '@/features/supplier-panel/components/InlineDropdown';
-import {
-    getSupplierTaxProfile,
-    SupplierTaxProfilePayload,
-    updateSupplierTaxProfile,
-} from '@/features/supplier-panel/profile/api/supplier-tax-profile.api';
-import { coreApi, Country } from '@/services/api/core.api';
+import { getSupplierTaxProfile, SupplierTaxProfilePayload, updateSupplierTaxProfile } from '@/features/supplier-panel/profile/api/supplier-tax-profile.api';
 import { PickerItem, PickerModal } from '@/shared/components/PickerModal';
 import { useToast } from '@/shared/components/Toast';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
@@ -19,6 +16,7 @@ interface VatTaxesCardStyles {
     businessTitle: TextStyle;
     businessDescription: TextStyle;
     chevronContainer: ViewStyle;
+    headerActions: ViewStyle;
     doneBadgeVat: ViewStyle;
     doneText: TextStyle;
     formSection: ViewStyle;
@@ -108,9 +106,10 @@ export default function VatTaxesCard({
     const [region, setRegion] = useState('');
     const [postcode, setPostcode] = useState('');
     const [taxPhone, setTaxPhone] = useState('');
+    const dispatch = useAppDispatch();
+    const countries = useAppSelector(state => state.core.countries);
+    const isLoadingCountries = useAppSelector(state => state.core.isLoadingCountries);
     const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-    const [countries, setCountries] = useState<Country[]>([]);
-    const [loadingCountries, setLoadingCountries] = useState(true);
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [selectedBusinessOption, setSelectedBusinessOption] = useState<string | null>(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
@@ -128,38 +127,16 @@ export default function VatTaxesCard({
     }, [selectedBusinessOption, vatMode]);
 
     useEffect(() => {
-        let isMounted = true;
+        dispatch(fetchCountriesThunk());
+    }, [dispatch]);
 
-        const fetchCountries = async () => {
-            try {
-                setLoadingCountries(true);
-                const countriesData = await coreApi.getCountries();
-                if (isMounted) {
-                    setCountries(countriesData);
-                }
-            } catch (error) {
-                console.error('Error fetching countries:', error);
-            } finally {
-                if (isMounted) {
-                    setLoadingCountries(false);
-                }
-            }
-        };
-
-        fetchCountries();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    const countryItems: PickerItem[] = countries.map(country => ({
+    const countryItems: PickerItem[] = (countries || []).map(country => ({
         label: country.name,
         value: country.code,
     }));
 
     const getSelectedCountryName = () => {
-        const country = countries.find(c => c.code === selectedCountry);
+        const country = (countries || []).find(c => c.code === selectedCountry);
         return country ? country.name : '';
     };
 
@@ -239,11 +216,11 @@ export default function VatTaxesCard({
     }, [showToast]);
 
     useEffect(() => {
-        if (!hasSignaledReady && !loadingCountries && !loadingProfile) {
+        if (!hasSignaledReady && !isLoadingCountries && !loadingProfile) {
             setHasSignaledReady(true);
             onReady?.();
         }
-    }, [hasSignaledReady, loadingCountries, loadingProfile, onReady]);
+    }, [hasSignaledReady, isLoadingCountries, loadingProfile, onReady]);
 
     const handleSave = async () => {
         if (savingProfile || loadingProfile) {
@@ -406,7 +383,7 @@ export default function VatTaxesCard({
                                     <View style={styles.inputRow}>
                                         <Text style={styles.inputLabel}>RFC (Tax ID)</Text>
                                         <TextInput
-                                            style={styles.inputField}
+                                            style={styles.inputField as any}
                                             placeholder="Enter RFC"
                                             placeholderTextColor="#7D8A8C"
                                             value={rfc}
@@ -472,13 +449,13 @@ export default function VatTaxesCard({
                                             value={city}
                                             onChangeText={setCity}
                                             textContentType="addressCity"
-                                            autoComplete="address-level2"
+                                            autoComplete="address-line2"
                                         />
                                     </View>
                                     <View style={styles.inputRow}>
                                         <Text style={styles.inputLabel}>State/Province</Text>
                                         <TextInput
-                                            style={styles.inputField}
+                                            style={styles.inputField as any}
                                             placeholder="Enter state or province"
                                             placeholderTextColor="#7D8A8C"
                                             value={region}
@@ -490,7 +467,7 @@ export default function VatTaxesCard({
                                     <View style={styles.inputRow}>
                                         <Text style={styles.inputLabel}>Postcode</Text>
                                         <TextInput
-                                            style={[styles.inputField, styles.smallInputField]}
+                                            style={[styles.inputField, styles.smallInputField] as any}
                                             placeholder="Enter postcode"
                                             placeholderTextColor="#7D8A8C"
                                             value={postcode}
@@ -505,15 +482,15 @@ export default function VatTaxesCard({
                                         <TouchableOpacity
                                             style={[styles.inputField, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
                                             onPress={() => setShowCountryPicker(true)}
-                                            disabled={loadingCountries}
+                                            disabled={isLoadingCountries}
                                         >
                                             <Text style={{ color: selectedCountry ? '#0A292D' : '#7D8A8C', flex: 1 }} numberOfLines={1}>
-                                                {loadingCountries
+                                                {isLoadingCountries
                                                     ? 'Loading...'
                                                     : (selectedCountry ? getSelectedCountryName() : 'Select country')
                                                 }
                                             </Text>
-                                            {loadingCountries ? (
+                                            {isLoadingCountries ? (
                                                 <ActivityIndicator size="small" color="#666666" />
                                             ) : (
                                                 <Ionicons name="chevron-down" size={16} color="#666666" />
@@ -537,6 +514,7 @@ export default function VatTaxesCard({
                     )}
                 </View>
             )}
+
             <PickerModal
                 visible={showCountryPicker}
                 title="Select Country"

@@ -1,12 +1,8 @@
-import {
-    getSupplierAddress,
-    SupplierAddress,
-    SupplierAddressUpdateData,
-    updateSupplierAddress,
-} from '@/features/supplier-panel/shop/api/supplier-address.api';
-import { coreApi, Country } from '@/services/api/core.api';
+import { SupplierAddress, SupplierAddressUpdateData, getSupplierAddress, updateSupplierAddress } from '@/features/supplier-panel/shop/api/supplier-address.api';
 import { PickerItem, PickerModal } from '@/shared/components/PickerModal';
 import { useToast } from '@/shared/components/Toast';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -28,6 +24,7 @@ interface ContactCardStyles {
     businessTitle: TextStyle;
     businessDescription: TextStyle;
     chevronContainer: ViewStyle;
+    headerActions: ViewStyle;
     formSection: ViewStyle;
     inputRow: ViewStyle;
     phoneLabel: TextStyle;
@@ -76,9 +73,10 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
     const [city, setCity] = useState('');
     const [region, setRegion] = useState('');
     const [postcode, setPostcode] = useState('');
+    const dispatch = useAppDispatch();
+    const countries = useAppSelector(state => state.core.countries);
+    const isLoadingCountries = useAppSelector(state => state.core.isLoadingCountries);
     const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-    const [countries, setCountries] = useState<Country[]>([]);
-    const [loadingCountries, setLoadingCountries] = useState(true);
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [loadingAddress, setLoadingAddress] = useState(true);
     const [savingAddress, setSavingAddress] = useState(false);
@@ -90,36 +88,15 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
     }, [isSaved]);
 
     useEffect(() => {
-        if (!hasSignaledReady && !loadingCountries && !loadingAddress) {
+        if (!hasSignaledReady && !isLoadingCountries && !loadingAddress) {
             setHasSignaledReady(true);
             onReady?.();
         }
-    }, [hasSignaledReady, loadingCountries, loadingAddress, onReady]);
+    }, [hasSignaledReady, isLoadingCountries, loadingAddress, onReady]);
+
     useEffect(() => {
-        let isMounted = true;
-
-        const fetchCountries = async () => {
-            try {
-                setLoadingCountries(true);
-                const countriesData = await coreApi.getCountries();
-                if (isMounted) {
-                    setCountries(countriesData);
-                }
-            } catch (error) {
-                console.error('Error fetching countries:', error);
-            } finally {
-                if (isMounted) {
-                    setLoadingCountries(false);
-                }
-            }
-        };
-
-        fetchCountries();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
+        dispatch(fetchCountriesThunk());
+    }, [dispatch]);
 
     useEffect(() => {
         let isMounted = true;
@@ -219,13 +196,13 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
         }
     };
 
-    const countryItems: PickerItem[] = countries.map(country => ({
+    const countryItems: PickerItem[] = (countries || []).map(country => ({
         label: country.name,
         value: country.code,
     }));
 
     const getSelectedCountryName = () => {
-        const country = countries.find(c => c.code === selectedCountry);
+        const country = (countries || []).find(c => c.code === selectedCountry);
         return country ? country.name : '';
     };
 
@@ -269,7 +246,7 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
                             <View style={styles.inputRow}>
                                 <Text style={styles.phoneLabel}>Phone</Text>
                                 <TextInput
-                                    style={[styles.inputField, styles.smallInputField]}
+                                    style={styles.inputField as any}
                                     placeholder="Enter phone"
                                     placeholderTextColor="#7D8A8C"
                                     keyboardType="phone-pad"
@@ -299,7 +276,7 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
                             <View style={styles.inputRow}>
                                 <Text style={styles.addressLabel}>Street</Text>
                                 <TextInput
-                                    style={styles.inputField}
+                                    style={styles.inputField as any}
                                     placeholder="Enter address"
                                     placeholderTextColor="#7D8A8C"
                                     value={address1}
@@ -323,31 +300,31 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
                             <View style={styles.inputRow}>
                                 <Text style={styles.addressLabel}>City</Text>
                                 <TextInput
-                                    style={styles.inputField}
+                                    style={styles.inputField as any}
                                     placeholder="Enter city"
                                     placeholderTextColor="#7D8A8C"
                                     value={city}
                                     onChangeText={setCity}
                                     textContentType="addressCity"
-                                    autoComplete="address-level2"
+                                    autoComplete="address-line2"
                                 />
                             </View>
                             <View style={styles.inputRow}>
                                 <Text style={styles.addressLabel}>State</Text>
                                 <TextInput
-                                    style={styles.inputField}
+                                    style={styles.inputField as any}
                                     placeholder="Enter state/province"
                                     placeholderTextColor="#7D8A8C"
                                     value={region}
                                     onChangeText={setRegion}
                                     textContentType="addressState"
-                                    autoComplete="address-level1"
+                                    autoComplete="address-line1"
                                 />
                             </View>
                             <View style={styles.inputRow}>
                                 <Text style={styles.addressLabel}>Postcode</Text>
                                 <TextInput
-                                    style={[styles.inputField, styles.smallInputField]}
+                                    style={[styles.inputField, styles.smallInputField] as any}
                                     placeholder="Enter code"
                                     placeholderTextColor="#7D8A8C"
                                     value={postcode}
@@ -362,14 +339,14 @@ export default function ContactCard({ expanded, onToggle, onStatusChange, onRead
                                 <TouchableOpacity
                                     style={[styles.inputField, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
                                     onPress={() => setShowCountryPicker(true)}
-                                    disabled={loadingCountries}
+                                    disabled={isLoadingCountries}
                                 >
                                     <Text style={{ color: selectedCountry ? '#0A292D' : '#7D8A8C', flex: 1 }} numberOfLines={1}>
-                                        {loadingCountries
+                                        {isLoadingCountries
                                             ? 'Loading...'
                                             : (selectedCountry ? getSelectedCountryName() : 'Select country')}
                                     </Text>
-                                    {loadingCountries ? (
+                                    {isLoadingCountries ? (
                                         <ActivityIndicator size="small" color="#666666" />
                                     ) : (
                                         <Ionicons name="chevron-down" size={16} color="#666666" />

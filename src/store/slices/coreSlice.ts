@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { coreApi, Locale, Currency, Channel } from '@/services/api/core.api';
+import { coreApi, Locale, Currency, Channel, Country } from '@/services/api/core.api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Storage keys
@@ -15,11 +15,13 @@ interface CoreState {
     locales: Locale[];
     currencies: Currency[];
     channels: Channel[];
+    countries: Country[];
     selectedLocale: Locale | null;
     selectedCurrency: Currency | null;
     selectedChannel: Channel | null;
     lastSelectedCountry: any | null; // Using any for now to avoid circular or complex imports if Country isn't fully defined here, but better to use the type if possible. Wait, Country is imported.
     isLoading: boolean;
+    isLoadingCountries: boolean;
     error: string | null;
 }
 
@@ -28,11 +30,13 @@ const initialState: CoreState = {
     locales: [],
     currencies: [],
     channels: [],
+    countries: [],
     selectedLocale: null,
     selectedCurrency: null,
     selectedChannel: null,
     lastSelectedCountry: null,
     isLoading: false,
+    isLoadingCountries: false,
     error: null,
 };
 
@@ -81,6 +85,27 @@ export const fetchCoreConfig = createAsyncThunk(
             };
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch core configuration');
+        }
+    }
+);
+
+export const fetchCountriesThunk = createAsyncThunk(
+    'core/fetchCountries',
+    async (_, { getState, rejectWithValue }) => {
+        try {
+            const state = getState() as { core: CoreState };
+            return await coreApi.getCountries();
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch countries');
+        }
+    },
+    {
+        condition: (_, { getState }) => {
+            const state = getState() as { core: CoreState };
+            if (state.core.countries.length > 0 || state.core.isLoadingCountries) {
+                // Return false to cancel execution
+                return false;
+            }
         }
     }
 );
@@ -161,6 +186,20 @@ const coreSlice = createSlice({
             })
             .addCase(fetchCoreConfig.rejected, (state, action) => {
                 state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
+        // Fetch countries
+        builder
+            .addCase(fetchCountriesThunk.pending, (state) => {
+                state.isLoadingCountries = true;
+            })
+            .addCase(fetchCountriesThunk.fulfilled, (state, action) => {
+                state.isLoadingCountries = false;
+                state.countries = action.payload;
+            })
+            .addCase(fetchCountriesThunk.rejected, (state, action) => {
+                state.isLoadingCountries = false;
                 state.error = action.payload as string;
             });
 

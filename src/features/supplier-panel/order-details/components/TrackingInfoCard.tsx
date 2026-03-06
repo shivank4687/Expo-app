@@ -17,21 +17,45 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Button } from '../../../../shared/components/Button';
+import { PickerModal } from '../../../../shared/components/PickerModal';
 import { OrderShipment } from '../../orders/api/orders.api';
 import { theme } from '@/theme';
 
 interface TrackingInfoCardProps {
     shipments?: OrderShipment[];
     isSubmitting?: boolean;
+    isSkydropx?: boolean;
     onSubmit?: (trackingNumber: string, photoUri: string | null) => void;
+    onSkydropxSubmit?: (consignmentNote: string, packageType: string) => void;
 }
 
-export default function TrackingInfoCard({ shipments = [], isSubmitting = false, onSubmit }: TrackingInfoCardProps) {
+export default function TrackingInfoCard({ shipments = [], isSubmitting = false, isSkydropx = false, onSubmit, onSkydropxSubmit }: TrackingInfoCardProps) {
     const [trackingNumber, setTrackingNumber] = useState('');
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [viewModalVisible, setViewModalVisible] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+
+    const [selectedMethod, setSelectedMethod] = useState<'skydropx' | 'manual'>(isSkydropx ? 'skydropx' : 'manual');
+    const [consignmentNote, setConsignmentNote] = useState('');
+    const [packageType, setPackageType] = useState('');
+    const [isConsignmentModalVisible, setIsConsignmentModalVisible] = useState(false);
+    const [isPackageModalVisible, setIsPackageModalVisible] = useState(false);
+
+    const consignmentOptions = [
+        { label: 'Office supplies', value: '53102400' },
+        { label: 'Computers', value: '43211500' },
+        { label: 'Computer accessories', value: '43211700' },
+        { label: 'Clothing', value: '53100000' },
+        { label: 'Consumer electronics', value: '52161500' },
+    ];
+
+    const packageOptions = [
+        { label: 'Envelope', value: '1G' },
+        { label: 'Small package', value: '2G' },
+        { label: 'Medium package', value: '3G' },
+        { label: 'Large package', value: '4G' },
+    ];
 
     const handleViewPhoto = (uri: string) => {
         setSelectedPhoto(uri);
@@ -61,8 +85,14 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
     };
 
     const handleSubmit = () => {
-        if (onSubmit && trackingNumber) {
-            onSubmit(trackingNumber, photoUri);
+        if (selectedMethod === 'skydropx') {
+            if (onSkydropxSubmit && consignmentNote && packageType) {
+                onSkydropxSubmit(consignmentNote, packageType);
+            }
+        } else {
+            if (onSubmit && trackingNumber) {
+                onSubmit(trackingNumber, photoUri);
+            }
         }
     };
 
@@ -169,54 +199,120 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
                 <View style={styles.formContainer}>
                     <Text style={styles.sectionTitle}>Add Tracking Information</Text>
 
-                    {/* Tracking Number Section */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Tracking number</Text>
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter here..."
-                                placeholderTextColor="#0A292D"
-                                value={trackingNumber}
-                                onChangeText={setTrackingNumber}
-                                editable={!isSubmitting}
-                            />
-                        </View>
-                    </View>
+                    {isSkydropx && (
+                        <View style={styles.methodContainer}>
+                            <Text style={styles.label}>Shipment Method</Text>
+                            <View style={styles.radioGroup}>
+                                <TouchableOpacity
+                                    style={[styles.radioButton, selectedMethod === 'skydropx' && styles.radioButtonSelected]}
+                                    onPress={() => setSelectedMethod('skydropx')}
+                                >
+                                    <View style={[styles.radioCircle, selectedMethod === 'skydropx' && styles.radioCircleSelected]}>
+                                        {selectedMethod === 'skydropx' && <View style={styles.radioInnerCircle} />}
+                                    </View>
+                                    <View style={styles.radioTextContainer}>
+                                        <Text style={styles.radioLabel}>Skydropx</Text>
+                                        <Text style={styles.radioSubLabel}>Automated provider</Text>
+                                    </View>
+                                </TouchableOpacity>
 
-                    {/* Upload Photo Section */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Upload photo</Text>
-                        {photoUri ? (
-                            <View style={styles.photoPreviewContainer}>
-                                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-                                <TouchableOpacity style={styles.removePhotoButton} onPress={removePhoto}>
-                                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                                <TouchableOpacity
+                                    style={[styles.radioButton, selectedMethod === 'manual' && styles.radioButtonSelected]}
+                                    onPress={() => setSelectedMethod('manual')}
+                                >
+                                    <View style={[styles.radioCircle, selectedMethod === 'manual' && styles.radioCircleSelected]}>
+                                        {selectedMethod === 'manual' && <View style={styles.radioInnerCircle} />}
+                                    </View>
+                                    <View style={styles.radioTextContainer}>
+                                        <Text style={styles.radioLabel}>Manual</Text>
+                                        <Text style={styles.radioSubLabel}>Own logistics</Text>
+                                    </View>
                                 </TouchableOpacity>
                             </View>
-                        ) : (
-                            <TouchableOpacity
-                                style={styles.inputContainer}
-                                onPress={handlePhotoUpload}
-                                activeOpacity={0.7}
-                                disabled={isSubmitting}
-                            >
-                                <Ionicons name="attach-outline" size={16} color="#0A292D" />
-                                <Text style={styles.input}>Select a photo...</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                        </View>
+                    )}
+
+                    {selectedMethod === 'skydropx' ? (
+                        <>
+                            {/* Skydropx Fields */}
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Consignment Note</Text>
+                                <TouchableOpacity
+                                    style={styles.inputContainer}
+                                    onPress={() => setIsConsignmentModalVisible(true)}
+                                >
+                                    <Text style={[styles.input, !consignmentNote && { color: '#6B7280' }]}>
+                                        {consignmentNote ? consignmentOptions.find(o => o.value === consignmentNote)?.label : 'Select Consignment Note'}
+                                    </Text>
+                                    <Ionicons name="chevron-down" size={20} color="#0A292D" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Package Type</Text>
+                                <TouchableOpacity
+                                    style={styles.inputContainer}
+                                    onPress={() => setIsPackageModalVisible(true)}
+                                >
+                                    <Text style={[styles.input, !packageType && { color: '#6B7280' }]}>
+                                        {packageType ? packageOptions.find(o => o.value === packageType)?.label : 'Select Package Type'}
+                                    </Text>
+                                    <Ionicons name="chevron-down" size={20} color="#0A292D" />
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    ) : (
+                        <>
+                            {/* Tracking Number Section */}
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Tracking number</Text>
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Enter here..."
+                                        placeholderTextColor="#0A292D"
+                                        value={trackingNumber}
+                                        onChangeText={setTrackingNumber}
+                                        editable={!isSubmitting}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Upload Photo Section */}
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Upload photo</Text>
+                                {photoUri ? (
+                                    <View style={styles.photoPreviewContainer}>
+                                        <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+                                        <TouchableOpacity style={styles.removePhotoButton} onPress={removePhoto}>
+                                            <Ionicons name="close-circle" size={24} color="#EF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.inputContainer}
+                                        onPress={handlePhotoUpload}
+                                        activeOpacity={0.7}
+                                        disabled={isSubmitting}
+                                    >
+                                        <Ionicons name="attach-outline" size={16} color="#0A292D" />
+                                        <Text style={styles.input}>Select a photo...</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </>
+                    )}
 
                     {/* Submit Button */}
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
                             style={[
                                 styles.submitButton,
-                                (!trackingNumber || isSubmitting) && styles.disabledButton
+                                (!(selectedMethod === 'skydropx' ? consignmentNote && packageType : trackingNumber) || isSubmitting) && styles.disabledButton
                             ]}
                             onPress={handleSubmit}
                             activeOpacity={0.8}
-                            disabled={!trackingNumber || isSubmitting}
+                            disabled={!(selectedMethod === 'skydropx' ? consignmentNote && packageType : trackingNumber) || isSubmitting}
                         >
                             {isSubmitting ? (
                                 <ActivityIndicator size="small" color="#F5F5F5" />
@@ -227,6 +323,25 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
                     </View>
                 </View>
             )}
+
+            {/* Skydropx Pickers */}
+            <PickerModal
+                visible={isConsignmentModalVisible}
+                title="Consignment Note"
+                items={consignmentOptions}
+                selectedValue={consignmentNote}
+                onSelect={setConsignmentNote}
+                onClose={() => setIsConsignmentModalVisible(false)}
+            />
+            <PickerModal
+                visible={isPackageModalVisible}
+                title="Package Type"
+                items={packageOptions}
+                selectedValue={packageType}
+                onSelect={setPackageType}
+                onClose={() => setIsPackageModalVisible(false)}
+                searchable={false}
+            />
         </View>
     );
 }
@@ -428,5 +543,61 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 16,
         color: '#F5F5F5',
+    },
+    methodContainer: {
+        width: '100%',
+        gap: 8,
+    },
+    radioGroup: {
+        flexDirection: 'column',
+        gap: 12,
+    },
+    radioButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        borderRadius: 8,
+        gap: 12,
+        backgroundColor: '#FFFFFF',
+    },
+    radioButtonSelected: {
+        borderColor: '#00615E',
+        backgroundColor: '#F3F8F8',
+    },
+    radioCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#E9E3D3',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioCircleSelected: {
+        borderColor: '#00615E',
+    },
+    radioInnerCircle: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#00615E',
+    },
+    radioTextContainer: {
+        flex: 1,
+    },
+    radioLabel: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#0A292D',
+    },
+    radioSubLabel: {
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 12,
+        color: '#666666',
+        marginTop: 2,
     },
 });

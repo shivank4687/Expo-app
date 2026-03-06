@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PickerModal, PickerItem } from '@/shared/components/PickerModal';
-import { coreApi, Country, State } from '@/services/api/core.api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 
 interface AddressCardProps {
     data: {
@@ -17,26 +18,16 @@ interface AddressCardProps {
 }
 
 export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors = {} }) => {
-    const [countries, setCountries] = useState<Country[]>([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useAppDispatch();
+    const countries = useAppSelector(state => state.core.countries);
+    const isLoadingCountries = useAppSelector(state => state.core.isLoadingCountries);
 
     const [showCountryPicker, setShowCountryPicker] = useState(false);
 
     // Fetch countries on mount
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const countriesData = await coreApi.getCountries();
-                setCountries(countriesData);
-            } catch (error) {
-                console.error('Error fetching countries:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+        dispatch(fetchCountriesThunk());
+    }, [dispatch]);
 
     const countryItems: PickerItem[] = countries.map(country => ({
         label: country.name,
@@ -92,12 +83,12 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                 <TouchableOpacity
                     style={[styles.inputContainerSmall, errors.country ? styles.inputError : null]}
                     onPress={() => setShowCountryPicker(true)}
-                    disabled={loading}
+                    disabled={isLoadingCountries}
                 >
                     <Text style={[styles.inputSmall, !data.country && styles.placeholderText]}>
-                        {loading ? 'Loading...' : (data.country ? getSelectedCountryName() : 'Select Country')}
+                        {isLoadingCountries ? 'Loading...' : (data.country ? getSelectedCountryName() : 'Select Country')}
                     </Text>
-                    {loading ? (
+                    {isLoadingCountries ? (
                         <ActivityIndicator size="small" color="#666666" />
                     ) : (
                         <Ionicons name="chevron-down" size={16} color="#666666" />

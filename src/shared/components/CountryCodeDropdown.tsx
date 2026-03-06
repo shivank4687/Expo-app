@@ -15,9 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
 import { Country } from '@/services/api/core.api';
-import { coreApi } from '@/services/api/core.api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setLastSelectedCountry } from '@/store/slices/coreSlice';
+import { fetchCountriesThunk, setLastSelectedCountry } from '@/store/slices/coreSlice';
 
 interface CountryCodeDropdownProps {
     onCountrySelect: (country: Country) => void;
@@ -31,15 +30,34 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
     selectedCountry,
 }) => {
     const dispatch = useAppDispatch();
-    const { lastSelectedCountry } = useAppSelector(state => state.core);
+    const { lastSelectedCountry, countries, isLoadingCountries } = useAppSelector(state => state.core);
     const [isVisible, setIsVisible] = useState(false);
-    const [countries, setCountries] = useState<Country[]>([]);
+    const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentCountry, setCurrentCountry] = useState<Country | null>(selectedCountry || lastSelectedCountry || null);
 
     useEffect(() => {
-        loadCountries();
-    }, []);
+        dispatch(fetchCountriesThunk());
+    }, [dispatch]);
+
+    useEffect(() => {
+        // Filter countries that have dial_code and apply search term if any
+        if ((countries || []).length > 0) {
+            const withDialCode = (countries || []).filter(c => c.dial_code);
+            setFilteredCountries(withDialCode);
+
+            // Set default country if not already set
+            if (!currentCountry) {
+                const defaultCountry = lastSelectedCountry || withDialCode.find(
+                    c => c.dial_code === defaultCode
+                ) || withDialCode[0];
+                if (defaultCountry) {
+                    setCurrentCountry(defaultCountry);
+                    onCountrySelect(defaultCountry);
+                }
+            }
+        }
+    }, [countries]);
 
     useEffect(() => {
         if (selectedCountry) {
@@ -47,29 +65,7 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
         }
     }, [selectedCountry]);
 
-    const loadCountries = async () => {
-        try {
-            const data = await coreApi.getCountries();
-            // Filter countries that have dial_code
-            const countriesWithDialCode = data.filter(c => c.dial_code);
-            setCountries(countriesWithDialCode);
-
-            // Set default country if not already set
-            if (!currentCountry) {
-                const defaultCountry = lastSelectedCountry || countriesWithDialCode.find(
-                    c => c.dial_code === defaultCode
-                ) || countriesWithDialCode[0];
-                if (defaultCountry) {
-                    setCurrentCountry(defaultCountry);
-                    onCountrySelect(defaultCountry);
-                }
-            }
-        } catch (error) {
-            console.error('Error loading countries:', error);
-        }
-    };
-
-    const filteredCountries = countries.filter(country => {
+    const displayCountries = filteredCountries.filter(country => {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         return (
@@ -195,7 +191,7 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
 
                             <View style={styles.countryListContainer}>
                                 <FlatList
-                                    data={filteredCountries}
+                                    data={displayCountries}
                                     renderItem={renderCountryItem}
                                     keyExtractor={(item) => item.id}
                                     style={styles.countryList}

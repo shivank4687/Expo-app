@@ -2,13 +2,17 @@ import ContactCard from '@/features/supplier-panel/profile/components/ContactCar
 import LegalInformationCard from '@/features/supplier-panel/profile/components/LegalInformationCard';
 import StripeConnectCard from '@/features/supplier-panel/profile/components/StripeConnectCard';
 import VatTaxesCard from '@/features/supplier-panel/profile/components/VatTaxesCard';
+import ApplicationDataCard from '@/features/supplier-panel/profile/components/ApplicationDataCard';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { useAppDispatch } from '@/store/hooks';
+import { supplierLogoutThunk } from '@/store/slices/supplierAuthSlice';
 import ProgressCard from './components/ProgressCard';
 type ProfileProgressState = {
     legal: boolean
@@ -34,6 +38,10 @@ const initialReadyState: Record<keyof ProfileProgressState, boolean> = {
 };
 
 export default function ProfileScreen() {
+    const { t } = useTranslation();
+    const dispatch = useAppDispatch();
+    const router = useRouter();
+
     const insets = useSafeAreaInsets();
     const { expandLegal } = useLocalSearchParams<{ expandLegal?: string }>();
     const [expandedCards, setExpandedCards] = useState({
@@ -41,6 +49,7 @@ export default function ProfileScreen() {
         vat: true,
         contact: true,
         payments: true,
+        applicationData: true,
         closeAccount: false,
     });
     // Key used to force LegalInformationCard to remount and reload when arriving from a notification
@@ -80,6 +89,29 @@ export default function ProfileScreen() {
             }
         }, [expandLegal])
     );
+
+    const handleLogout = () => {
+        Alert.alert(
+            t('auth.logoutConfirmTitle', 'Confirm Logout'),
+            t('auth.logoutConfirmMessage', 'Are you sure you want to logout?'),
+            [
+                {
+                    text: t('common.cancel', 'Cancel'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('auth.logout', 'Logout'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        await dispatch(supplierLogoutThunk());
+                        // Navigate to shop home screen after logout
+                        router.replace('/(drawer)/(tabs)');
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -161,6 +193,13 @@ export default function ProfileScreen() {
                     }
                     onReady={() => markCardReady('payments')}
                 />
+
+                <ApplicationDataCard
+                    expanded={expandedCards.applicationData}
+                    onToggle={() => toggleCard('applicationData')}
+                    styles={styles as any}
+                />
+
                 {/* Frame 140 - Close Account Card Container */}
                 {/* Frame 140 - Close Account Card Container */}
                 <View style={styles.closeAccountCard}>
@@ -231,6 +270,14 @@ export default function ProfileScreen() {
                         </View>
                     </View>
                 </View> */}
+
+                {/* Logout */}
+                <View style={styles.logoutSection}>
+                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                        <Ionicons name="log-out-outline" size={24} color="#D32F2F" />
+                        <Text style={styles.logoutText}>{t('auth.logout', 'Logout')}</Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -1042,5 +1089,23 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: '#EEEEEF',
         marginVertical: 4,
+    },
+    logoutSection: {
+        marginTop: 16,
+        marginBottom: 32,
+        alignItems: 'center',
+    },
+    logoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        gap: 8,
+    },
+    logoutText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '500',
+        fontSize: 16,
+        color: '#D32F2F',
     },
 });
