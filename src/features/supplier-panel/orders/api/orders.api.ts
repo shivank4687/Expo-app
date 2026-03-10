@@ -99,9 +99,21 @@ export interface OrderShipment {
     status?: string | null;
 }
 
+export interface OrderInvoice {
+    id: number;
+    increment_id: string | null;
+    state: string;
+    base_grand_total: number;
+    formatted_base_grand_total: string;
+    grand_total: number;
+    formatted_grand_total: string;
+    created_at: string;
+}
+
 export interface OrderDetails extends Omit<Order, 'items'> {
     items: OrderItem[];
     shipments: OrderShipment[];
+    invoices?: OrderInvoice[];
     payment?: {
         method: string | null;
         method_title: string | null;
@@ -142,5 +154,16 @@ export const getOrders = async (
  */
 export const getOrderDetails = async (orderId: number): Promise<OrderDetailsResponse> => {
     const response = await api.get<OrderDetailsResponse>(`/supplier-app/orders/${orderId}`);
+    return response;
+};
+
+/**
+ * Get PDF blob for a specific invoice
+ * @param invoiceId - Invoice ID
+ */
+export const downloadInvoicePdf = async (invoiceId: number): Promise<Blob> => {
+    const response = await api.get<Blob>(`/supplier-app/orders/invoices/${invoiceId}/download`, {
+        responseType: 'blob',
+    });
     return response;
 };

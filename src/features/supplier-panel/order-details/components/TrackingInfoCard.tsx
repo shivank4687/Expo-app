@@ -182,20 +182,28 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
                                     <Text style={styles.shipmentText}>Carrier: {shipment.carrier_title}</Text>
                                     {shipment.track_number ? <Text style={styles.shipmentText}>Tracking: {shipment.track_number}</Text> : null}
 
-                                    {parsedInfo.tracking_url && (
-                                        <TouchableOpacity onPress={() => Linking.openURL(parsedInfo.tracking_url)}>
-                                            <Text style={[styles.shipmentText, { color: '#00615E', textDecorationLine: 'underline', marginTop: 2 }]}>
-                                                Tracking URL
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
+                                    {(parsedInfo.tracking_url || parsedInfo.label_url) && (
+                                        <View style={styles.actionButtonsRow}>
+                                            {parsedInfo.tracking_url && (
+                                                <TouchableOpacity
+                                                    style={styles.actionButton}
+                                                    onPress={() => Linking.openURL(parsedInfo.tracking_url)}
+                                                >
+                                                    <Ionicons name="location-outline" size={16} color="#00615E" />
+                                                    <Text style={styles.actionButtonText}>Track</Text>
+                                                </TouchableOpacity>
+                                            )}
 
-                                    {parsedInfo.label_url && (
-                                        <TouchableOpacity onPress={() => Linking.openURL(parsedInfo.label_url)}>
-                                            <Text style={[styles.shipmentText, { color: '#00615E', textDecorationLine: 'underline', marginTop: 2 }]}>
-                                                Label View
-                                            </Text>
-                                        </TouchableOpacity>
+                                            {parsedInfo.label_url && (
+                                                <TouchableOpacity
+                                                    style={styles.actionButton}
+                                                    onPress={() => Linking.openURL(parsedInfo.label_url)}
+                                                >
+                                                    <Ionicons name="document-text-outline" size={16} color="#00615E" />
+                                                    <Text style={styles.actionButtonText}>Label</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
                                     )}
 
                                     <Text style={styles.shipmentDate}>
@@ -690,5 +698,29 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666666',
         marginTop: 2,
+    },
+    actionButtonsRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 8,
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        backgroundColor: '#F3F8F8',
+        borderWidth: 1,
+        borderColor: '#00615E',
+        borderRadius: 6,
+        flex: 1,
+    },
+    actionButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 13,
+        color: '#00615E',
     },
 });

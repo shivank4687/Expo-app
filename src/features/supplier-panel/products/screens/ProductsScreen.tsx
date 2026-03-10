@@ -331,8 +331,6 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
         paddingHorizontal: 16,
         paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
     },
 
     // List Content

@@ -105,13 +105,13 @@ export default function InlineDropdown({
                                     >
                                         {option.label}
                                     </Text>
-                                    {isActive && (
+                                    {/* {isActive && (
                                         <Ionicons
                                             name="checkmark-circle"
                                             size={18}
                                             color="#00615E"
                                         />
-                                    )}
+                                    )} */}
                                 </TouchableOpacity>
                             );
                         })}

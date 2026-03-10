@@ -164,8 +164,6 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         gap: 16,
         backgroundColor: COLORS.background,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
     },
     listContent: {
         padding: 16,

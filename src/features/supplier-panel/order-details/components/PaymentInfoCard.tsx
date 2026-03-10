@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { COLORS } from '../../styles/colors';
 import { OrderDetails } from '../../orders/api/orders.api';
+import { downloadInvoicePdf } from '../../orders/api/orders.api';
 import { regenerateOxxoVoucher } from '../api/payment.api';
 import { useToast } from '../../../../shared/components/Toast/ToastContext';
 
@@ -14,6 +17,7 @@ interface PaymentInfoCardProps {
 
 export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCardProps) => {
     const [isRegenerating, setIsRegenerating] = useState(false);
+    const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<number | null>(null);
     const { showToast } = useToast();
 
     if (!order.payment) return null;
@@ -70,11 +74,64 @@ export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCard
         }
     };
 
+    const handleDownloadInvoice = async (invoiceId: number, incrementId: string | null) => {
+        try {
+            setDownloadingInvoiceId(invoiceId);
+
+            // Generate filename based on increment_id or just id
+            const fileName = `Invoice_${incrementId || invoiceId}.pdf`;
+            const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+            // Fetch PDF blob from the API
+            const pdfBlob = await downloadInvoicePdf(invoiceId);
+
+            // Convert Blob to base64
+            const reader = new FileReader();
+            reader.readAsDataURL(pdfBlob);
+
+            reader.onloadend = async () => {
+                const base64data = reader.result as string;
+                // Remove the data:application/pdf;base64, prefix
+                const base64pdf = base64data.split(',')[1];
+
+                // Save to filesystem
+                await FileSystem.writeAsStringAsync(fileUri, base64pdf, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+
+                // Share/View the document
+                const isAvailable = await Sharing.isAvailableAsync();
+                if (isAvailable) {
+                    await Sharing.shareAsync(fileUri, {
+                        mimeType: 'application/pdf',
+                        dialogTitle: `Download ${fileName}`,
+                        UTI: 'com.adobe.pdf' // iOS identifier
+                    });
+                } else {
+                    showToast({ message: 'Sharing is not available on this device', type: 'error' });
+                }
+            };
+        } catch (error: any) {
+            console.error('Failed to download invoice:', error);
+            showToast({
+                message: error?.message || 'Failed to download invoice',
+                type: 'error'
+            });
+        } finally {
+            setDownloadingInvoiceId(null);
+        }
+    };
+
+    const hasInvoices = Array.isArray(order.invoices) && order.invoices.length > 0;
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Ionicons name="card-outline" size={20} color={COLORS.primary} />
-                <Text style={styles.title}>Payment Information</Text>
+                <Text style={styles.title}>
+                    Payment Information
+                    {hasInvoices ? ` • ${order.invoices!.length} Invoice${order.invoices!.length > 1 ? 's' : ''}` : ''}
+                </Text>
             </View>
 
             <View style={styles.content}>
@@ -134,6 +191,44 @@ export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCard
                                 </TouchableOpacity>
                             )}
                         </View>
+                    </View>
+                )}
+
+                {hasInvoices && (
+                    <View style={styles.invoicesContainer}>
+                        <View style={styles.divider} />
+                        <Text style={styles.sectionTitle}>Invoices</Text>
+
+                        {order.invoices!.map((invoice, index) => (
+                            <View key={invoice.id} style={styles.invoiceItem}>
+                                <View style={styles.invoiceInfo}>
+                                    <Text style={styles.invoiceId}>#{invoice.increment_id || invoice.id}</Text>
+                                    <Text style={styles.invoiceDate}>
+                                        {new Date(invoice.created_at).toLocaleDateString()}
+                                    </Text>
+                                </View>
+                                <View style={styles.invoiceAmountRow}>
+                                    <Text style={styles.invoiceAmount}>{invoice.formatted_grand_total}</Text>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.downloadButton}
+                                    onPress={() => handleDownloadInvoice(invoice.id, invoice.increment_id)}
+                                    disabled={downloadingInvoiceId === invoice.id}
+                                >
+                                    {downloadingInvoiceId === invoice.id ? (
+                                        <ActivityIndicator size="small" color={COLORS.primary} />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="download-outline" size={16} color={COLORS.primary} />
+                                            <Text style={styles.downloadButtonText}>Download PDF</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+
+                                {index < order.invoices!.length - 1 && <View style={styles.innerDivider} />}
+                            </View>
+                        ))}
                     </View>
                 )}
             </View>
@@ -263,5 +358,67 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontSize: 14,
         color: '#FFFFFF',
+    },
+    invoicesContainer: {
+        gap: 12,
+        marginTop: 4,
+    },
+    sectionTitle: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#374151',
+        marginBottom: 4,
+    },
+    invoiceItem: {
+        gap: 8,
+    },
+    invoiceInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    invoiceId: {
+        fontFamily: 'Inter',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#111827',
+    },
+    invoiceDate: {
+        fontFamily: 'Inter',
+        fontSize: 12,
+        color: '#6B7280',
+    },
+    invoiceAmountRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+    },
+    invoiceAmount: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 14,
+        color: '#111827',
+    },
+    downloadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+    },
+    downloadButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 14,
+        color: COLORS.primary,
+    },
+    innerDivider: {
+        height: 1,
+        backgroundColor: '#F3F4F6',
+        marginVertical: 8,
     },
 });
