@@ -100,10 +100,15 @@ export const fetchCountriesThunk = createAsyncThunk(
         }
     },
     {
+        // Cancel execution if we already have the countries
         condition: (_, { getState }) => {
             const state = getState() as { core: CoreState };
-            if (state.core.countries.length > 0 || state.core.isLoadingCountries) {
-                // Return false to cancel execution
+
+            // Only fetch if the countries array is empty. 
+            // We intentionally do NOT check `state.core.isLoadingCountries` here
+            // because if the app restarted while it was loading previously, that 
+            // state might be incorrectly stuck as `true` in local storage.
+            if (state.core.countries && state.core.countries.length > 0) {
                 return false;
             }
         }
@@ -192,13 +197,16 @@ const coreSlice = createSlice({
         // Fetch countries
         builder
             .addCase(fetchCountriesThunk.pending, (state) => {
+                console.log('🔄 coreSlice: fetchCountriesThunk pending');
                 state.isLoadingCountries = true;
             })
             .addCase(fetchCountriesThunk.fulfilled, (state, action) => {
+                console.log(`✅ coreSlice: fetchCountriesThunk fulfilled, received ${action.payload?.length || 0} countries`);
                 state.isLoadingCountries = false;
                 state.countries = action.payload;
             })
             .addCase(fetchCountriesThunk.rejected, (state, action) => {
+                console.error(`❌ coreSlice: fetchCountriesThunk rejected:`, action.payload);
                 state.isLoadingCountries = false;
                 state.error = action.payload as string;
             });

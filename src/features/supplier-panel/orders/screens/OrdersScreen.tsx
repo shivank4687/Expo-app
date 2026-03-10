@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabGroup, type Tab } from '../../components';
@@ -26,11 +26,26 @@ const OrdersScreen: React.FC = () => {
 
     const { orders, loading, error, refetch, loadMore, hasMore } = useOrdersList(activeTab);
 
-    // Refresh orders when screen comes into focus
+    // Keep a stable ref to always point at the latest refetch.
+    // This prevents useFocusEffect from re-firing when refetch identity
+    // changes on tab switch (filter → fetchOrders → refetch all recreate).
+    const refetchRef = useRef(refetch);
+    useEffect(() => {
+        refetchRef.current = refetch;
+    }, [refetch]);
+
+    const hasMountedRef = useRef(false);
     useFocusEffect(
         useCallback(() => {
-            refetch();
-        }, [refetch])
+            // Skip the very first focus — hook's useEffect handles initial load.
+            // Empty deps means this only fires on real screen focus/blur, never
+            // when refetch identity changes due to a tab switch.
+            if (!hasMountedRef.current) {
+                hasMountedRef.current = true;
+                return;
+            }
+            refetchRef.current();
+        }, []) // intentionally empty — refetchRef is always up-to-date via useEffect above
     );
 
     const handleTabChange = (tabId: string) => {

@@ -79,7 +79,7 @@ class ApiClient {
                         // }
 
                         config.headers.Authorization = `Bearer ${token}`;
-                        console.log('✅ Token added to request:', config.url);
+                        console.log('✅ Token added to request:', config.url, config.params);
                     } else {
                         console.log('⚠️ No token found for request:', config.url);
                     }

@@ -66,6 +66,7 @@ export const useOrdersList = (
 
     // Refetch from the beginning
     const refetch = useCallback(async () => {
+        setOrders([]);
         setCurrentPage(1);
         await fetchOrders(1, false);
     }, [fetchOrders]);

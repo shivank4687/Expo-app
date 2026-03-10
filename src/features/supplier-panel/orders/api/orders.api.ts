@@ -89,11 +89,14 @@ export interface OrderItem {
 
 export interface OrderShipment {
     id: number;
+    shipment_id?: number | null;
     carrier_title: string;
     track_number: string;
     tracking_photo_url?: string | null;
     total_qty: number;
     created_at: string;
+    shipment_information?: any;
+    status?: string | null;
 }
 
 export interface OrderDetails extends Omit<Order, 'items'> {

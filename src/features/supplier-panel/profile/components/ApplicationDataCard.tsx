@@ -1,10 +1,14 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
+import { checkSupplierAuthThunk, updateSupplierEmail } from '@/store/slices/supplierAuthSlice';
+import supplierAuthApi from '@/services/api/supplierAuth.api';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import {
     ActivityIndicator,
     Text,
+    TextInput,
     TextStyle,
     TouchableOpacity,
     View,
@@ -38,23 +42,64 @@ export default function ApplicationDataCard({ expanded, onToggle, styles }: Appl
     const dispatch = useAppDispatch();
     const countries = useAppSelector(state => state.core.countries);
     const isLoadingCountries = useAppSelector(state => state.core.isLoadingCountries);
+    const { showToast } = useToast();
+
+    const [isEditingEmail, setIsEditingEmail] = useState(false);
+    const [emailInput, setEmailInput] = useState('');
+    const [isSavingEmail, setIsSavingEmail] = useState(false);
 
     useEffect(() => {
         if (supplier?.phone_country_id) {
             dispatch(fetchCountriesThunk());
         }
-    }, [dispatch, supplier?.phone_country_id]);
+        if (supplier?.email) {
+            setEmailInput(supplier.email);
+            setIsEditingEmail(false);
+        } else {
+            setIsEditingEmail(true);
+        }
+    }, [dispatch, supplier]);
 
     const getDialCode = () => {
         if (!supplier?.phone_country_id) return '';
         const country = (countries || []).find(c => String(c.id) === String(supplier.phone_country_id));
-        return country?.dial_code ? `+${country.dial_code}` : '';
+        return country?.dial_code ? `${country.dial_code}` : '';
     };
 
     const displayPhone = () => {
         if (!supplier?.phone) return 'Not provided';
         const dialCode = getDialCode();
         return dialCode ? `${dialCode} ${supplier.phone}` : supplier.phone;
+    };
+
+    const handleSaveEmail = async () => {
+        if (!emailInput.trim()) {
+            showToast({ message: 'Please enter a valid email address.', type: 'error' });
+            return;
+        }
+
+        setIsSavingEmail(true);
+        try {
+            await supplierAuthApi.updateEmail(emailInput.trim());
+            showToast({ message: 'Email updated successfully.', type: 'success' });
+            setIsEditingEmail(false);
+
+            // Update Redux state
+            dispatch(updateSupplierEmail(emailInput.trim()));
+
+            // Update local storage so it persists across reloads
+            if (supplier) {
+                const updatedSupplier = { ...supplier, email: emailInput.trim() };
+                const { secureStorage } = await import('@/services/storage/secureStorage');
+                const { STORAGE_KEYS } = await import('@/config/constants');
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(updatedSupplier));
+            }
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || 'Failed to update email. Please try again.';
+            showToast({ message: errorMessage, type: 'error' });
+        } finally {
+            setIsSavingEmail(false);
+        }
     };
 
     return (
@@ -80,10 +125,47 @@ export default function ApplicationDataCard({ expanded, onToggle, styles }: Appl
                 <View style={styles.formSection}>
                     <View style={styles.inputRow}>
                         <Text style={styles.emailLabel}>Email</Text>
-                        <View style={{ flex: 1, height: 40, borderWidth: 1, borderColor: '#E1D9CF', borderRadius: 8, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#F3F0E7' }}>
-                            <Text style={{ fontFamily: 'Inter', fontSize: 14, color: '#0A292D' }}>
-                                {supplier?.email || 'Not provided'}
-                            </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                            <View style={{ flex: 1, height: 40, borderWidth: 1, borderColor: '#E1D9CF', borderRadius: 8, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: supplier?.email && !isEditingEmail ? '#F3F0E7' : '#FFFFFF' }}>
+                                {supplier?.email && !isEditingEmail ? (
+                                    <Text style={{ fontFamily: 'Inter', fontSize: 14, color: '#0A292D' }}>
+                                        {supplier.email}
+                                    </Text>
+                                ) : (
+                                    <TextInput
+                                        style={{ fontFamily: 'Inter', fontSize: 14, color: '#0A292D', flex: 1, padding: 0 }}
+                                        value={emailInput}
+                                        onChangeText={setEmailInput}
+                                        placeholder="Enter your email"
+                                        placeholderTextColor="#A09E9A"
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        editable={!isSavingEmail}
+                                    />
+                                )}
+                            </View>
+                            {(!supplier?.email || isEditingEmail) && (
+                                <TouchableOpacity
+                                    onPress={handleSaveEmail}
+                                    disabled={isSavingEmail}
+                                    style={{
+                                        height: 40,
+                                        paddingHorizontal: 16,
+                                        backgroundColor: '#00615E',
+                                        borderRadius: 8,
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    {isSavingEmail ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFFFFF' }}>
+                                            Save
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
 

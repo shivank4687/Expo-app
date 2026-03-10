@@ -29,13 +29,13 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
         dispatch(fetchCountriesThunk());
     }, [dispatch]);
 
-    const countryItems: PickerItem[] = countries.map(country => ({
+    const countryItems: PickerItem[] = (countries || []).map(country => ({
         label: country.name,
         value: country.code
     }));
 
     const getSelectedCountryName = () => {
-        const country = countries.find(c => c.code === data.country);
+        const country = (countries || []).find(c => c.code === data.country);
         return country ? country.name : '';
     };
 

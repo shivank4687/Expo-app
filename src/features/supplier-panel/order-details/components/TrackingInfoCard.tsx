@@ -7,29 +7,33 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Image,
-    Alert,
     Modal,
     Pressable,
-    Dimensions
+    Dimensions,
+    Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Button } from '../../../../shared/components/Button';
 import { PickerModal } from '../../../../shared/components/PickerModal';
+import { Dropdown } from '../../components';
 import { OrderShipment } from '../../orders/api/orders.api';
 import { theme } from '@/theme';
+import { useToast } from '../../../../shared/components/Toast/ToastContext';
 
 interface TrackingInfoCardProps {
     shipments?: OrderShipment[];
     isSubmitting?: boolean;
+    isSubmittingStatus?: boolean;
     isSkydropx?: boolean;
     onSubmit?: (trackingNumber: string, photoUri: string | null) => void;
     onSkydropxSubmit?: (consignmentNote: string, packageType: string) => void;
+    onStatusUpdate?: (shipmentId: number, status: string) => void;
 }
 
-export default function TrackingInfoCard({ shipments = [], isSubmitting = false, isSkydropx = false, onSubmit, onSkydropxSubmit }: TrackingInfoCardProps) {
+export default function TrackingInfoCard({ shipments = [], isSubmitting = false, isSubmittingStatus = false, isSkydropx = false, onSubmit, onSkydropxSubmit, onStatusUpdate }: TrackingInfoCardProps) {
+    const { showToast } = useToast();
     const [trackingNumber, setTrackingNumber] = useState('');
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [viewModalVisible, setViewModalVisible] = useState(false);
@@ -57,6 +61,22 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
         { label: 'Large package', value: '4G' },
     ];
 
+    const getAvailableStatuses = (currentStatus: string) => {
+        let statuses: string[] = [];
+        if (currentStatus === 'ready_to_ship') {
+            statuses = ['ready_to_ship', 'picked_up', 'in_transit', 'delivered'];
+        } else if (currentStatus === 'picked_up') {
+            statuses = ['picked_up', 'in_transit', 'delivered'];
+        } else if (currentStatus === 'in_transit') {
+            statuses = ['in_transit', 'delivered'];
+        }
+
+        return statuses.map(status => ({
+            label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            value: status
+        }));
+    };
+
     const handleViewPhoto = (uri: string) => {
         setSelectedPhoto(uri);
         setViewModalVisible(true);
@@ -74,11 +94,11 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
             if (downloadResult.status === 200) {
                 await Sharing.shareAsync(fileUri);
             } else {
-                Alert.alert('Error', 'Failed to download image');
+                showToast({ title: 'Error', message: 'Failed to download image', type: 'error' });
             }
         } catch (error) {
             console.error('Download error:', error);
-            Alert.alert('Error', 'An error occurred while trying to share the image');
+            showToast({ title: 'Error', message: 'An error occurred while trying to share the image', type: 'error' });
         } finally {
             setIsDownloading(false);
         }
@@ -119,49 +139,103 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
             {shipments.length > 0 && (
                 <View style={styles.existingShipments}>
                     <Text style={styles.sectionTitle}>Existing Shipments</Text>
-                    {shipments.map((shipment) => (
-                        <View key={shipment.id} style={styles.shipmentItem}>
-                            <View style={styles.shipmentInfo}>
-                                <Text style={styles.shipmentLabel}>ID: #{shipment.id}</Text>
-                                <Text style={styles.shipmentText}>Carrier: {shipment.carrier_title}</Text>
-                                <Text style={styles.shipmentText}>Tracking: {shipment.track_number}</Text>
-                                <Text style={styles.shipmentDate}>
-                                    {new Date(shipment.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                                </Text>
-                            </View>
+                    {shipments.map((shipment) => {
+                        let parsedInfo: any = {};
+                        try {
+                            if (shipment.shipment_information) {
+                                parsedInfo = typeof shipment.shipment_information === 'string'
+                                    ? JSON.parse(shipment.shipment_information)
+                                    : shipment.shipment_information;
+                            }
+                        } catch (e) {
+                            // ignore
+                        }
 
-                            {shipment.tracking_photo_url && (
-                                <View style={styles.shipmentRight}>
-                                    <TouchableOpacity
-                                        style={styles.shipmentPhotoContainer}
-                                        onPress={() => handleViewPhoto(shipment.tracking_photo_url!)}
-                                        activeOpacity={0.9}
-                                    >
-                                        <Image
-                                            source={{ uri: shipment.tracking_photo_url }}
-                                            style={styles.shipmentPhoto}
-                                            resizeMode="cover"
-                                        />
-                                        <View style={styles.viewBadge}>
-                                            <Ionicons name="eye" size={12} color="white" />
-                                        </View>
-                                    </TouchableOpacity>
+                        return (
+                            <View key={shipment.id} style={styles.shipmentItem}>
+                                <View style={styles.shipmentInfo}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <Text style={styles.shipmentLabel}>ID: #{shipment.id}</Text>
+                                        {shipment.status ? (
+                                            <View>
+                                                {(!parsedInfo.type || parsedInfo.type === 'manual') && ['ready_to_ship', 'picked_up', 'in_transit'].includes(shipment.status) ? (
+                                                    <Dropdown
+                                                        options={getAvailableStatuses(shipment.status)}
+                                                        value={shipment.status}
+                                                        onSelect={(newStatus: string) => {
+                                                            if (newStatus !== shipment.status && onStatusUpdate) {
+                                                                onStatusUpdate(shipment.shipment_id || shipment.id, newStatus);
+                                                            }
+                                                        }}
+                                                        style={styles.statusDropdownContainer}
+                                                    />
+                                                ) : (
+                                                    <View style={styles.statusBadge}>
+                                                        <Text style={styles.statusBadgeText}>
+                                                            {shipment.status.replace(/_/g, ' ')}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        ) : null}
+                                    </View>
+                                    <Text style={styles.shipmentText}>Carrier: {shipment.carrier_title}</Text>
+                                    {shipment.track_number ? <Text style={styles.shipmentText}>Tracking: {shipment.track_number}</Text> : null}
 
-                                    <TouchableOpacity
-                                        style={styles.downloadIconBtn}
-                                        onPress={() => handleDownloadPhoto(shipment.tracking_photo_url!)}
-                                        disabled={isDownloading}
-                                    >
-                                        {isDownloading ? (
-                                            <ActivityIndicator size="small" color="#00615E" />
-                                        ) : (
-                                            <Ionicons name="download-outline" size={20} color="#00615E" />
-                                        )}
-                                    </TouchableOpacity>
+                                    {parsedInfo.tracking_url && (
+                                        <TouchableOpacity onPress={() => Linking.openURL(parsedInfo.tracking_url)}>
+                                            <Text style={[styles.shipmentText, { color: '#00615E', textDecorationLine: 'underline', marginTop: 2 }]}>
+                                                Tracking URL
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {parsedInfo.label_url && (
+                                        <TouchableOpacity onPress={() => Linking.openURL(parsedInfo.label_url)}>
+                                            <Text style={[styles.shipmentText, { color: '#00615E', textDecorationLine: 'underline', marginTop: 2 }]}>
+                                                Label View
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    <Text style={styles.shipmentDate}>
+                                        {new Date(shipment.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                    </Text>
                                 </View>
-                            )}
-                        </View>
-                    ))}
+
+                                {shipment.tracking_photo_url && (
+                                    <View style={styles.shipmentRight}>
+                                        <TouchableOpacity
+                                            style={styles.shipmentPhotoContainer}
+                                            onPress={() => handleViewPhoto(shipment.tracking_photo_url!)}
+                                            activeOpacity={0.9}
+                                        >
+                                            <Image
+                                                source={{ uri: shipment.tracking_photo_url }}
+                                                style={styles.shipmentPhoto}
+                                                resizeMode="cover"
+                                            />
+                                            <View style={styles.viewBadge}>
+                                                <Ionicons name="eye" size={12} color="white" />
+                                            </View>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={styles.downloadIconBtn}
+                                            onPress={() => handleDownloadPhoto(shipment.tracking_photo_url!)}
+                                            disabled={isDownloading}
+                                        >
+                                            {isDownloading ? (
+                                                <ActivityIndicator size="small" color="#00615E" />
+                                            ) : (
+                                                <Ionicons name="download-outline" size={20} color="#00615E" />
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    })}
                 </View>
             )}
 
@@ -378,6 +452,23 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 14,
         color: '#0A292D',
+    },
+    statusBadge: {
+        backgroundColor: '#E0F2F1',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    statusBadgeText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 12,
+        color: '#00615E',
+        textTransform: 'capitalize',
+    },
+    statusDropdownContainer: {
+        width: 140,
     },
     shipmentText: {
         fontFamily: 'Inter',

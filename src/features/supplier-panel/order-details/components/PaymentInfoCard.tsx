@@ -5,6 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import { COLORS } from '../../styles/colors';
 import { OrderDetails } from '../../orders/api/orders.api';
 import { regenerateOxxoVoucher } from '../api/payment.api';
+import { useToast } from '../../../../shared/components/Toast/ToastContext';
 
 interface PaymentInfoCardProps {
     order: OrderDetails;
@@ -13,6 +14,7 @@ interface PaymentInfoCardProps {
 
 export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCardProps) => {
     const [isRegenerating, setIsRegenerating] = useState(false);
+    const { showToast } = useToast();
 
     if (!order.payment) return null;
 
@@ -34,8 +36,7 @@ export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCard
     const handleCopyVoucher = async () => {
         if (additional?.voucher_number) {
             await Clipboard.setStringAsync(additional.voucher_number);
-            // Could add a toast here if available in the context
-            alert('Voucher number copied to clipboard');
+            showToast({ message: 'Voucher number copied to clipboard', type: 'success' });
         }
     };
 
@@ -45,7 +46,7 @@ export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCard
             if (supported) {
                 await Linking.openURL(additional.voucher_url);
             } else {
-                alert("Don't know how to open this URL");
+                showToast({ message: "Don't know how to open this URL", type: 'error' });
             }
         }
     };
@@ -56,11 +57,14 @@ export const PaymentInfoCard = ({ order, onVoucherRegenerated }: PaymentInfoCard
             const response: any = await regenerateOxxoVoucher(order.id);
             if (response.data?.payment && onVoucherRegenerated) {
                 onVoucherRegenerated(response.data.payment);
-                alert('Voucher regenerated successfully');
+                showToast({ message: 'Voucher regenerated successfully', type: 'success' });
             }
         } catch (error: any) {
             console.error('Failed to regenerate voucher:', error);
-            alert(error?.response?.data?.message || error?.message || 'Failed to regenerate voucher');
+            showToast({
+                message: error?.response?.data?.message || error?.message || 'Failed to regenerate voucher',
+                type: 'error'
+            });
         } finally {
             setIsRegenerating(false);
         }

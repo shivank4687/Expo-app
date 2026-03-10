@@ -9,6 +9,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { PickerModal } from '../../../../shared/components/PickerModal';
+import { createSkydropxShipment } from '../../dashboard/api/shipments.api';
 
 export function MyOrdersSection() {
     const { data: ordersData, loading: ordersLoading, error: ordersError, refetch } = usePendingOrdersList();
@@ -19,6 +21,27 @@ export function MyOrdersSection() {
     const [trackingNumbers, setTrackingNumbers] = useState<Record<number, string>>({});
     const [trackingPhotos, setTrackingPhotos] = useState<Record<number, ImagePicker.ImagePickerAsset>>({});
     const [creatingShipment, setCreatingShipment] = useState<Record<number, boolean>>({});
+
+    const [selectedMethods, setSelectedMethods] = useState<Record<number, 'skydropx' | 'manual'>>({});
+    const [consignmentNotes, setConsignmentNotes] = useState<Record<number, string>>({});
+    const [packageTypes, setPackageTypes] = useState<Record<number, string>>({});
+    const [isConsignmentModalVisible, setIsConsignmentModalVisible] = useState<number | null>(null);
+    const [isPackageModalVisible, setIsPackageModalVisible] = useState<number | null>(null);
+
+    const consignmentOptions = [
+        { label: 'Office supplies', value: '53102400' },
+        { label: 'Computers', value: '43211500' },
+        { label: 'Computer accessories', value: '43211700' },
+        { label: 'Clothing', value: '53100000' },
+        { label: 'Consumer electronics', value: '52161500' },
+    ];
+
+    const packageOptions = [
+        { label: 'Envelope', value: '1G' },
+        { label: 'Small package', value: '2G' },
+        { label: 'Medium package', value: '3G' },
+        { label: 'Large package', value: '4G' },
+    ];
 
     const handlePickPhoto = async (orderId: number) => {
         try {
@@ -49,59 +72,105 @@ export function MyOrdersSection() {
         }
     };
 
-    const handleCreateShipment = async (orderId: number) => {
-        const trackingNumber = trackingNumbers[orderId];
-        const trackingPhoto = trackingPhotos[orderId];
+    const handleCreateShipment = async (order: any) => {
+        const orderId = order.id;
+        const defaultMethod = order.shipping_method?.includes('skydropx') ? 'skydropx' : 'manual';
+        const method = selectedMethods[orderId] || defaultMethod;
 
-        if (!trackingNumber && !trackingPhoto) {
-            showToast({ message: 'Please enter a tracking number or upload a photo.', type: 'warning' });
-            return;
-        }
+        if (method === 'skydropx') {
+            const consignmentNote = consignmentNotes[orderId];
+            const packageType = packageTypes[orderId];
 
-        try {
-            setCreatingShipment(prev => ({ ...prev, [orderId]: true }));
-
-            const shipmentData: any = {};
-
-            if (trackingNumber) {
-                shipmentData.track_number = trackingNumber;
+            if (!consignmentNote || !packageType) {
+                showToast({ message: 'Please select Consignment Note and Package Type.', type: 'warning' });
+                return;
             }
 
-            if (trackingPhoto) {
-                shipmentData.tracking_photo = {
-                    uri: trackingPhoto.uri,
-                    type: (trackingPhoto as any).mimeType || 'image/jpeg',
-                    name: trackingPhoto.fileName || `tracking_${orderId}.jpg`,
-                };
-            }
-
-            const response = await createShipment(orderId, shipmentData);
-
-            if (response.success) {
-                showToast({ message: 'Shipment created successfully!', type: 'success' });
-
-                setTrackingNumbers(prev => {
-                    const newState = { ...prev };
-                    delete newState[orderId];
-                    return newState;
-                });
-                setTrackingPhotos(prev => {
-                    const newState = { ...prev };
-                    delete newState[orderId];
-                    return newState;
+            try {
+                setCreatingShipment(prev => ({ ...prev, [orderId]: true }));
+                const response = await createSkydropxShipment(orderId, {
+                    consignment_note: consignmentNote,
+                    package_type: packageType,
                 });
 
-                refetch();
-                refetchShipped();
-            } else {
-                showToast({ message: response.message || 'Failed to create shipment', type: 'error' });
+                if (response.success) {
+                    showToast({ message: 'Skydropx Shipment created successfully!', type: 'success' });
+                    setConsignmentNotes(prev => {
+                        const newState = { ...prev };
+                        delete newState[orderId];
+                        return newState;
+                    });
+                    setPackageTypes(prev => {
+                        const newState = { ...prev };
+                        delete newState[orderId];
+                        return newState;
+                    });
+                    refetch();
+                    refetchShipped();
+                } else {
+                    showToast({ message: response.message || 'Failed to create Skydropx shipment', type: 'error' });
+                }
+            } catch (error: any) {
+                console.error('Error creating Skydropx shipment:', error);
+                const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create Skydropx shipment. Please try again.';
+                showToast({ message: errorMessage, type: 'error' });
+            } finally {
+                setCreatingShipment(prev => ({ ...prev, [orderId]: false }));
             }
-        } catch (error: any) {
-            console.error('Error creating shipment:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create shipment. Please try again.';
-            showToast({ message: errorMessage, type: 'error' });
-        } finally {
-            setCreatingShipment(prev => ({ ...prev, [orderId]: false }));
+        } else {
+            const trackingNumber = trackingNumbers[orderId];
+            const trackingPhoto = trackingPhotos[orderId];
+
+            if (!trackingNumber && !trackingPhoto) {
+                showToast({ message: 'Please enter a tracking number or upload a photo.', type: 'warning' });
+                return;
+            }
+
+            try {
+                setCreatingShipment(prev => ({ ...prev, [orderId]: true }));
+
+                const shipmentData: any = {};
+
+                if (trackingNumber) {
+                    shipmentData.track_number = trackingNumber;
+                }
+
+                if (trackingPhoto) {
+                    shipmentData.tracking_photo = {
+                        uri: trackingPhoto.uri,
+                        type: (trackingPhoto as any).mimeType || 'image/jpeg',
+                        name: trackingPhoto.fileName || `tracking_${orderId}.jpg`,
+                    };
+                }
+
+                const response = await createShipment(orderId, shipmentData);
+
+                if (response.success) {
+                    showToast({ message: 'Shipment created successfully!', type: 'success' });
+
+                    setTrackingNumbers(prev => {
+                        const newState = { ...prev };
+                        delete newState[orderId];
+                        return newState;
+                    });
+                    setTrackingPhotos(prev => {
+                        const newState = { ...prev };
+                        delete newState[orderId];
+                        return newState;
+                    });
+
+                    refetch();
+                    refetchShipped();
+                } else {
+                    showToast({ message: response.message || 'Failed to create shipment', type: 'error' });
+                }
+            } catch (error: any) {
+                console.error('Error creating shipment:', error);
+                const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create shipment. Please try again.';
+                showToast({ message: errorMessage, type: 'error' });
+            } finally {
+                setCreatingShipment(prev => ({ ...prev, [orderId]: false }));
+            }
         }
     };
 
@@ -159,6 +228,22 @@ export function MyOrdersSection() {
                                 <View style={styles.orderHeader}>
                                     <View style={styles.orderHeaderTop}>
                                         <Text style={styles.orderNumber}>{order.order_increment_id}</Text>
+                                        {order.shipping_method?.includes('skydropx') && (
+                                            <View style={styles.methodTabs}>
+                                                <TouchableOpacity
+                                                    style={[styles.methodTab, (selectedMethods[order.id] || 'skydropx') === 'skydropx' && styles.methodTabActive]}
+                                                    onPress={() => setSelectedMethods(prev => ({ ...prev, [order.id]: 'skydropx' }))}
+                                                >
+                                                    <Text style={[styles.methodTabText, (selectedMethods[order.id] || 'skydropx') === 'skydropx' && styles.methodTabTextActive]}>Skydropx</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={[styles.methodTab, (selectedMethods[order.id] || 'skydropx') === 'manual' && styles.methodTabActive]}
+                                                    onPress={() => setSelectedMethods(prev => ({ ...prev, [order.id]: 'manual' }))}
+                                                >
+                                                    <Text style={[styles.methodTabText, (selectedMethods[order.id] || 'skydropx') === 'manual' && styles.methodTabTextActive]}>Manual</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
                                         <View style={styles.orderTimeBadge}>
                                             <Ionicons name="time-outline" size={16} color="#FFFFFF" />
                                             <Text style={styles.orderTimeText}>18h</Text>
@@ -174,35 +259,66 @@ export function MyOrdersSection() {
                                 </View>
 
                                 <View style={styles.orderContent}>
-                                    <Text style={styles.orderContentTitle}>Shipping Code / Tracking</Text>
-                                    <View style={styles.trackingInputRow}>
-                                        <TextInput
-                                            style={styles.trackingInput}
-                                            placeholder="Paste the code"
-                                            placeholderTextColor="#0A292D"
-                                            value={trackingNumbers[order.id] || ''}
-                                            onChangeText={(text) => setTrackingNumbers(prev => ({ ...prev, [order.id]: text }))}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.photoButton}
-                                            onPress={() => handlePickPhoto(order.id)}
-                                        >
-                                            <AttachIcon width={16} height={16} color="#0A292D" />
-                                            <Text style={styles.photoButtonText}>Photo</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    {trackingPhotos[order.id] && (
-                                        <Text style={styles.photoSelectedText}>
-                                            ✓ Photo selected
-                                        </Text>
+
+                                    {(selectedMethods[order.id] || (order.shipping_method?.includes('skydropx') ? 'skydropx' : 'manual')) === 'skydropx' ? (
+                                        <>
+                                            <Text style={styles.orderContentTitle}>Skydropx Shipment</Text>
+                                            <View style={styles.skydropxFieldContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.skydropxInput}
+                                                    onPress={() => setIsConsignmentModalVisible(order.id)}
+                                                >
+                                                    <Text style={[styles.skydropxInputText, !consignmentNotes[order.id] && { color: '#6B7280' }]}>
+                                                        {consignmentNotes[order.id] ? consignmentOptions.find(o => o.value === consignmentNotes[order.id])?.label : 'Select Consignment Note'}
+                                                    </Text>
+                                                    <Ionicons name="chevron-down" size={20} color="#0A292D" />
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    style={styles.skydropxInput}
+                                                    onPress={() => setIsPackageModalVisible(order.id)}
+                                                >
+                                                    <Text style={[styles.skydropxInputText, !packageTypes[order.id] && { color: '#6B7280' }]}>
+                                                        {packageTypes[order.id] ? packageOptions.find(o => o.value === packageTypes[order.id])?.label : 'Select Package Type'}
+                                                    </Text>
+                                                    <Ionicons name="chevron-down" size={20} color="#0A292D" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Text style={styles.orderContentTitle}>Shipping Code / Tracking</Text>
+                                            <View style={styles.trackingInputRow}>
+                                                <TextInput
+                                                    style={styles.trackingInput}
+                                                    placeholder="Paste the code"
+                                                    placeholderTextColor="#0A292D"
+                                                    value={trackingNumbers[order.id] || ''}
+                                                    onChangeText={(text) => setTrackingNumbers(prev => ({ ...prev, [order.id]: text }))}
+                                                />
+                                                <TouchableOpacity
+                                                    style={styles.photoButton}
+                                                    onPress={() => handlePickPhoto(order.id)}
+                                                >
+                                                    <AttachIcon width={16} height={16} color="#0A292D" />
+                                                    <Text style={styles.photoButtonText}>Photo</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                            {trackingPhotos[order.id] && (
+                                                <Text style={styles.photoSelectedText}>
+                                                    ✓ Photo selected
+                                                </Text>
+                                            )}
+                                            <Text style={styles.orderHelpText}>
+                                                You can also upload a photo of the number if you have it on paper.
+                                            </Text>
+                                        </>
                                     )}
-                                    <Text style={styles.orderHelpText}>
-                                        You can also upload a photo of the number if you have it on paper.
-                                    </Text>
+
                                     <View style={styles.orderActions}>
                                         <TouchableOpacity
                                             style={[styles.orderActionPrimary, creatingShipment[order.id] && styles.orderActionDisabled]}
-                                            onPress={() => handleCreateShipment(order.id)}
+                                            onPress={() => handleCreateShipment(order)}
                                             disabled={creatingShipment[order.id]}
                                         >
                                             {creatingShipment[order.id] ? (
@@ -310,6 +426,34 @@ export function MyOrdersSection() {
                     </Text>
                 </View>
             )}
+
+            <PickerModal
+                visible={isConsignmentModalVisible !== null}
+                title="Consignment Note"
+                items={consignmentOptions}
+                selectedValue={isConsignmentModalVisible ? consignmentNotes[isConsignmentModalVisible] : ''}
+                onSelect={(value) => {
+                    if (isConsignmentModalVisible) {
+                        setConsignmentNotes(prev => ({ ...prev, [isConsignmentModalVisible]: value }));
+                    }
+                    setIsConsignmentModalVisible(null);
+                }}
+                onClose={() => setIsConsignmentModalVisible(null)}
+            />
+            <PickerModal
+                visible={isPackageModalVisible !== null}
+                title="Package Type"
+                items={packageOptions}
+                selectedValue={isPackageModalVisible ? packageTypes[isPackageModalVisible] : ''}
+                onSelect={(value) => {
+                    if (isPackageModalVisible) {
+                        setPackageTypes(prev => ({ ...prev, [isPackageModalVisible]: value }));
+                    }
+                    setIsPackageModalVisible(null);
+                }}
+                onClose={() => setIsPackageModalVisible(null)}
+                searchable={false}
+            />
         </View>
     );
 }
@@ -745,5 +889,61 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         fontSize: 16,
         color: '#0A292D',
+    },
+    methodTabs: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 2,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+    },
+    methodTab: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 0,
+        height: 24,
+        borderRadius: 4,
+    },
+    methodTabActive: {
+        backgroundColor: '#E0FFFE',
+    },
+    methodTabText: {
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 11,
+        lineHeight: 14,
+        color: '#000000',
+    },
+    methodTabTextActive: {
+        color: '#00615E',
+        fontWeight: '500',
+    },
+    skydropxFieldContainer: {
+        flexDirection: 'column',
+        gap: 8,
+        alignSelf: 'stretch',
+    },
+    skydropxInput: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        height: 40,
+        backgroundColor: '#F3F0E7',
+        borderWidth: 1,
+        borderColor: '#F3F0E7',
+        borderRadius: 8,
+        alignSelf: 'stretch',
+    },
+    skydropxInputText: {
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 14,
+        color: '#0A292D',
+        flex: 1,
     },
 });

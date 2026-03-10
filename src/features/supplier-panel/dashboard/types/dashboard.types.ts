@@ -46,6 +46,7 @@ export interface PendingOrder {
     total_items: number;
     amount: number;
     formatted_amount: string;
+    shipping_method?: string;
     created_at: string;
 }
 

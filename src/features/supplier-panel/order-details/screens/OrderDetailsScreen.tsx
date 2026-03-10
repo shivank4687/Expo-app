@@ -6,7 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
 import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
-import { createShipment, createSkydropxShipment } from '../../dashboard/api/shipments.api';
+import { createShipment, createSkydropxShipment, updateShipmentStatus } from '../../dashboard/api/shipments.api';
+import { useToast } from '@/shared/components/Toast';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -18,6 +19,7 @@ interface Tab {
 export default function OrderDetailsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState<TabType>('details');
     const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
     const isFromDashboard = sourceParam === 'dashboard';
@@ -43,6 +45,7 @@ export default function OrderDetailsScreen() {
     const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmittingTracking, setIsSubmittingTracking] = useState(false);
+    const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -98,11 +101,11 @@ export default function OrderDetailsScreen() {
                     });
                 }
             } else {
-                alert(response.message || 'Failed to create shipment');
+                showToast({ message: response.message || 'Failed to create shipment', type: 'error' });
             }
         } catch (error: any) {
             console.error('Failed to submit tracking:', error);
-            alert(error?.message || 'An error occurred while submitting tracking info');
+            showToast({ message: error?.message || 'An error occurred while submitting tracking info', type: 'error' });
         } finally {
             setIsSubmittingTracking(false);
         }
@@ -137,13 +140,39 @@ export default function OrderDetailsScreen() {
                     });
                 }
             } else {
-                alert(response.message || 'Failed to create Skydropx shipment');
+                showToast({ message: response.message || 'Failed to create Skydropx shipment', type: 'error' });
             }
         } catch (error: any) {
             console.error('Failed to submit Skydropx tracking:', error);
-            alert(error?.message || 'An error occurred while creating Skydropx shipment');
+            showToast({ message: error?.message || 'An error occurred while creating Skydropx shipment', type: 'error' });
         } finally {
             setIsSubmittingTracking(false);
+        }
+    };
+
+    const handleStatusUpdate = async (shipmentId: number, newStatus: string) => {
+        try {
+            setIsSubmittingStatus(true);
+            const response = await updateShipmentStatus(shipmentId, newStatus);
+            if (response.success) {
+                if (order && order.shipments) {
+                    const updatedShipments = order.shipments.map(shipment =>
+                        shipment.id === shipmentId ? { ...shipment, status: newStatus } : shipment
+                    );
+                    setOrder({
+                        ...order,
+                        shipments: updatedShipments,
+                    });
+                }
+                showToast({ message: 'Shipment status updated successfully', type: 'success' });
+            } else {
+                showToast({ message: response.message || 'Failed to update shipment status', type: 'error' });
+            }
+        } catch (error: any) {
+            console.error('Failed to update status:', error);
+            showToast({ message: error?.message || 'An error occurred while updating shipment status', type: 'error' });
+        } finally {
+            setIsSubmittingStatus(false);
         }
     };
 
@@ -161,9 +190,11 @@ export default function OrderDetailsScreen() {
                 <TrackingInfoCard
                     shipments={order?.shipments}
                     isSubmitting={isSubmittingTracking}
+                    isSubmittingStatus={isSubmittingStatus}
                     isSkydropx={true}
                     onSubmit={handleTrackingSubmit}
                     onSkydropxSubmit={handleSkydropxSubmit}
+                    onStatusUpdate={handleStatusUpdate}
                 />
             );
         }

@@ -131,6 +131,11 @@ const supplierAuthSlice = createSlice({
             state.isAuthenticated = false;
             state.error = null;
         },
+        updateSupplierEmail: (state, action: PayloadAction<string>) => {
+            if (state.supplier) {
+                state.supplier.email = action.payload;
+            }
+        },
     },
     extraReducers: (builder) => {
         // Check Auth
@@ -194,5 +199,5 @@ const supplierAuthSlice = createSlice({
     },
 });
 
-export const { clearError, resetSupplierAuth } = supplierAuthSlice.actions;
+export const { clearError, resetSupplierAuth, updateSupplierEmail } = supplierAuthSlice.actions;
 export default supplierAuthSlice.reducer;

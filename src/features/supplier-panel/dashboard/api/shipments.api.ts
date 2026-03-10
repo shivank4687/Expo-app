@@ -77,3 +77,25 @@ export const createSkydropxShipment = async (
     const endpoint = `/supplier-app/shipments/create/skydropx/${orderId}`;
     return await restApiClient.post<CreateShipmentResponse>(endpoint, data);
 };
+
+export interface UpdateShipmentStatusResponse {
+    success: boolean;
+    message: string;
+    data?: {
+        shipment_id: number;
+        status: string;
+    };
+    errors?: Record<string, string[]>;
+    error?: string;
+}
+
+/**
+ * Update the status of a specific manual shipment
+ */
+export const updateShipmentStatus = async (
+    shipmentId: number,
+    status: string
+): Promise<UpdateShipmentStatusResponse> => {
+    const endpoint = `/supplier-app/shipments/${shipmentId}/status`;
+    return await restApiClient.put<UpdateShipmentStatusResponse>(endpoint, { status });
+};
