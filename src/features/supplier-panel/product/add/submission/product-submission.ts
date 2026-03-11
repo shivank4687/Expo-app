@@ -1,4 +1,3 @@
-import { Alert } from 'react-native';
 import { ProductAttribute } from '../api/product-attributes.api';
 import productsApi from '@/services/api/products.api';
 import { EssentialCardRef } from '../components/EssentialCard';
@@ -22,63 +21,8 @@ export interface SubmissionParams {
     attributes: ProductAttribute[];
 }
 
-/**
- * Validates product attributes based on API metadata
- */
-export const validateAttributes = (data: any, attributes: ProductAttribute[]): string[] => {
-    const errors: string[] = [];
-
-    // Create a flattened version of the data for easier validation
-    const flattenedData = {
-        ...data,
-        ...(data.size || {}),
-    };
-
-    // Check required attributes based on API metadata
-    attributes.forEach(attr => {
-        if (!(['url_key', 'visible_individually', 'status', 'guest_checkout'].includes(attr.code)) && attr.is_required) {
-            const value = flattenedData[attr.code];
-            if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
-                errors.push(`${attr.admin_name} is required.`);
-            }
-        }
-    });
-
-    // Category check
-    if (!data.categories?.parent_id) {
-        errors.push('Category is required.');
-    }
-
-    return errors;
-};
-
-/**
- * Saves product as draft
- */
-export const handleSaveDraft = (params: SubmissionParams): void => {
-    const { refs, activeTab } = params;
-
-    const essentialData = refs.essentialCardRef.current?.getData();
-    const priceStockData = activeTab === 'simple'
-        ? refs.priceStockCardRef.current?.getData()
-        : refs.priceStockVariantsCardRef.current?.getData();
-    const detailsData = refs.detailsCardRef.current?.getData();
-
-    const fullProductData = {
-        type: activeTab === 'simple' ? 'simple' : 'configurable',
-        ...essentialData,
-        ...priceStockData,
-        ...detailsData,
-        status: 0, // Draft
-        created_at: new Date().toISOString(),
-    };
-
-    console.log('--- SAVE DRAFT DATA ---');
-    console.log(JSON.stringify(fullProductData, null, 2));
-    console.log('-----------------------');
-
-    Alert.alert('Success', 'Draft Information saved successfully!');
-};
+// validateAttributes and other helpers can stay if needed, but handleSaveDraft is deprecated
+// since we now use handlePublish(..., 0) for drafts.
 
 /**
  * Validates and publishes a product
@@ -86,8 +30,9 @@ export const handleSaveDraft = (params: SubmissionParams): void => {
 export const handlePublish = async (
     params: SubmissionParams,
     setIsSubmitting: (value: boolean) => void,
-    showToast?: (options: { message: string; type: 'success' | 'error' | 'info' }) => void
-): Promise<void> => {
+    showToast?: (options: { message: string; type: 'success' | 'error' | 'info' }) => void,
+    status: number = 1
+): Promise<boolean> => {
     const { refs, activeTab, attributeFamilyId, attributes } = params;
 
     const essentialData = refs.essentialCardRef.current?.getData();
@@ -110,36 +55,16 @@ export const handlePublish = async (
         ? refs.priceStockCardRef.current?.validate()
         : refs.priceStockVariantsCardRef.current?.validate();
 
-    console.log('=== VALIDATION RESULTS ===');
-    console.log('Active Tab:', activeTab);
-    console.log('Essential Valid:', isEssentialValid);
-    console.log('Price/Stock Valid:', isPriceStockValid);
-    console.log('========================');
-
     // Check if any validation failed
     if (!isEssentialValid || !isPriceStockValid) {
-        console.log('❌ Validation failed - stopping publish');
-        // const errorSections = [];
-        // if (!isEssentialValid) errorSections.push('Essential');
-        // if (!isPriceStockValid) errorSections.push('Price & Stock');
-
-        // Alert.alert(
-        //     'Validation Error',
-        //     `Please fill in all required fields in the ${errorSections.join(' and ')} section${errorSections.length > 1 ? 's' : ''}.`
-        // );
-        return;
+        if (showToast) {
+            showToast({
+                message: 'Please fill in all required fields correctly.',
+                type: 'error',
+            });
+        }
+        return false;
     }
-
-    // Validate
-    // const validationErrors = validateAttributes(fullProductData, attributes);
-    // if (validationErrors.length > 0) {
-    //     Alert.alert('Validation Error', validationErrors.join('\n'));
-    //     return;
-    // }
-
-    console.log('=== PRODUCT DATA TO SUBMIT ===');
-    console.log(JSON.stringify(fullProductData, null, 2));
-    console.log('==============================');
 
     try {
         setIsSubmitting(true);
@@ -147,34 +72,30 @@ export const handlePublish = async (
             product_locale: 'all',
             url_key: fullProductData.sku,
             ...settingsData, // Use dynamic settings from the card
-            status: 1
+            status: status
         };
 
-        console.log('🚀 Calling API...');
         await productsApi.createSupplierProduct({ ...fullProductData, ...defaultAttributes });
-        console.log('✅ API call successful');
 
         // Use toast notification instead of Alert
         if (showToast) {
             showToast({
-                message: 'Product published successfully!',
+                message: status === 1 ? 'Product published successfully!' : 'Product saved as draft successfully!',
                 type: 'success',
             });
-        } else {
-            Alert.alert('Success', 'Product published successfully!');
         }
+        return true;
     } catch (err: any) {
-        console.error('❌ Error publishing product:', err);
+        console.error('❌ Error submitting product:', err);
 
         // Use toast notification for errors
         if (showToast) {
             showToast({
-                message: err.response?.data?.message || 'Failed to publish product. Please check your inputs.',
+                message: err.response?.data?.message || `Failed to ${status === 1 ? 'publish' : 'save'} product. Please check your inputs.`,
                 type: 'error',
             });
-        } else {
-            Alert.alert('Error', err.response?.data?.message || 'Failed to publish product. Please check your inputs.');
         }
+        return false;
     } finally {
         setIsSubmitting(false);
     }

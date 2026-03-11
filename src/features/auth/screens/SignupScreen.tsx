@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { signupThunk } from '@/store/slices/authSlice';
+import { signupThunk, setSelectedUserType } from '@/store/slices/authSlice';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { CountryCodeDropdown } from '@/shared/components/CountryCodeDropdown';
@@ -25,8 +25,10 @@ export const SignupScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const { lastSelectedCountry } = useAppSelector(state => state.core);
     const { isLoading } = useAppSelector((state) => state.auth);
     const { showToast } = useToast();
+    const selectedUserType = useAppSelector(state => state.auth.selectedUserType ?? 'customer');
 
     const [formData, setFormData] = useState({
         first_name: '',
@@ -35,6 +37,8 @@ export const SignupScreen: React.FC = () => {
         phone: '',
         password: '',
         confirmPassword: '',
+        company_name: '',
+        url: '',
     });
 
     const [errors, setErrors] = useState<{
@@ -44,14 +48,24 @@ export const SignupScreen: React.FC = () => {
         phone?: string;
         password?: string;
         confirmPassword?: string;
+        company_name?: string;
+        url?: string;
     }>({});
 
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
+
+    // Update selectedCountry if lastSelectedCountry changes
+    useEffect(() => {
+        if (lastSelectedCountry && !selectedCountry) {
+            setSelectedCountry(lastSelectedCountry);
+        }
+    }, [lastSelectedCountry]);
     const [validating, setValidating] = useState<{
         email?: boolean;
         phone?: boolean;
+        url?: boolean;
     }>({});
-    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const updateField = useCallback((field: keyof typeof formData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -79,7 +93,7 @@ export const SignupScreen: React.FC = () => {
             const response = await authApi.checkDuplicate({
                 type: 'email',
                 value: email,
-            });
+            }, selectedUserType);
 
             if (!response.available) {
                 setErrors(prev => ({
@@ -95,7 +109,7 @@ export const SignupScreen: React.FC = () => {
         } finally {
             setValidating(prev => ({ ...prev, email: false }));
         }
-    }, [t]);
+    }, [t, selectedUserType]);
 
     // Validate phone
     const validatePhone = useCallback(async (phone: string, countryId?: number) => {
@@ -131,7 +145,7 @@ export const SignupScreen: React.FC = () => {
                 type: 'phone',
                 value: phone,
                 phone_country_id: countryId,
-            });
+            }, selectedUserType);
 
             if (!response.available) {
                 setErrors(prev => ({
@@ -147,6 +161,39 @@ export const SignupScreen: React.FC = () => {
         } finally {
             setValidating(prev => ({ ...prev, phone: false }));
         }
+    }, [t, selectedUserType]);
+
+    // Validate URL
+    const validateUrl = useCallback(async (url: string) => {
+        if (!url) {
+            setErrors(prev => ({
+                ...prev,
+                url: t('auth.urlRequired', 'Shop URL is required'),
+            }));
+            return;
+        }
+
+        // Check if URL exists
+        setValidating(prev => ({ ...prev, url: true }));
+        try {
+            const response = await authApi.checkDuplicate({
+                type: 'url',
+                value: url,
+            }, 'supplier');
+
+            if (!response.available) {
+                setErrors(prev => ({
+                    ...prev,
+                    url: response.message || t('auth.urlAlreadyExists', 'This shop URL is already taken'),
+                }));
+            } else {
+                setErrors(prev => ({ ...prev, url: undefined }));
+            }
+        } catch (error: any) {
+            console.error('URL validation error:', error);
+        } finally {
+            setValidating(prev => ({ ...prev, url: false }));
+        }
     }, [t]);
 
     const handleCountrySelect = useCallback((country: Country) => {
@@ -156,7 +203,7 @@ export const SignupScreen: React.FC = () => {
             // Clear previous phone error
             setErrors(prev => ({ ...prev, phone: undefined }));
             // Validate phone with new country immediately (no debounce)
-            validatePhone(formData.phone, country.id);
+            validatePhone(formData.phone, Number(country.id));
         } else if (formData.phone) {
             // If phone format is invalid, just clear the country-related error
             setErrors(prev => {
@@ -192,10 +239,22 @@ export const SignupScreen: React.FC = () => {
             }
             // Debounce validation by 500ms
             validationTimeoutRef.current = setTimeout(() => {
-                validatePhone(formData.phone, selectedCountry?.id);
+                validatePhone(formData.phone, Number(selectedCountry?.id));
             }, 500);
         }
     }, [formData.phone, selectedCountry, validatePhone]);
+
+    // Handle URL blur
+    const handleUrlBlur = useCallback(() => {
+        if (formData.url && selectedUserType === 'supplier') {
+            if (validationTimeoutRef.current) {
+                clearTimeout(validationTimeoutRef.current);
+            }
+            validationTimeoutRef.current = setTimeout(() => {
+                validateUrl(formData.url);
+            }, 500);
+        }
+    }, [formData.url, selectedUserType, validateUrl]);
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -237,7 +296,7 @@ export const SignupScreen: React.FC = () => {
         } else if (!selectedCountry) {
             newErrors.phone = t('auth.countryRequired', 'Please select a country code');
         } else if (errors.phone && (
-            errors.phone.includes('already registered') || 
+            errors.phone.includes('already registered') ||
             errors.phone.includes('already exists')
         )) {
             // Preserve existing "already exists" error if present
@@ -254,6 +313,18 @@ export const SignupScreen: React.FC = () => {
             newErrors.confirmPassword = t('auth.confirmPasswordRequired');
         } else if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
+        }
+
+        if (selectedUserType === 'supplier') {
+            if (!validation.isRequired(formData.company_name)) {
+                newErrors.company_name = t('auth.companyNameRequired', 'Company name is required');
+            }
+
+            if (!validation.isRequired(formData.url)) {
+                newErrors.url = t('auth.urlRequired', 'Shop URL is required');
+            } else if (errors.url) {
+                newErrors.url = errors.url;
+            }
         }
 
         setErrors(newErrors);
@@ -273,7 +344,7 @@ export const SignupScreen: React.FC = () => {
                 const emailResponse = await authApi.checkDuplicate({
                     type: 'email',
                     value: formData.email,
-                });
+                }, selectedUserType);
                 if (!emailResponse.available) {
                     setErrors(prev => ({
                         ...prev,
@@ -292,8 +363,8 @@ export const SignupScreen: React.FC = () => {
                 const phoneResponse = await authApi.checkDuplicate({
                     type: 'phone',
                     value: formData.phone,
-                    phone_country_id: selectedCountry.id,
-                });
+                    phone_country_id: Number(selectedCountry.id),
+                }, selectedUserType);
                 if (!phoneResponse.available) {
                     setErrors(prev => ({
                         ...prev,
@@ -303,6 +374,25 @@ export const SignupScreen: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Phone validation error:', error);
+            }
+        }
+
+        // Validate URL if supplier
+        if (selectedUserType === 'supplier' && formData.url && /^[a-z0-9-]+$/.test(formData.url)) {
+            try {
+                const urlResponse = await authApi.checkDuplicate({
+                    type: 'url',
+                    value: formData.url,
+                }, 'supplier');
+                if (!urlResponse.available) {
+                    setErrors(prev => ({
+                        ...prev,
+                        url: urlResponse.message || t('auth.urlAlreadyExists', 'This URL is already taken. Please choose another.'),
+                    }));
+                    hasDuplicateErrors = true;
+                }
+            } catch (error) {
+                console.error('URL validation error:', error);
             }
         }
 
@@ -332,12 +422,18 @@ export const SignupScreen: React.FC = () => {
                 signupPayload.dial_code = selectedCountry.dial_code;
             }
 
+            // Add supplier fields
+            if (selectedUserType === 'supplier') {
+                signupPayload.company_name = formData.company_name;
+                signupPayload.url = formData.url;
+            }
+
             const result = await dispatch(signupThunk(signupPayload)).unwrap();
 
             // Check if OTP verification is required
             if (result.requiresOtp && result.verificationToken) {
                 // Navigate to OTP verification screen
-                const phoneWithCode = selectedCountry 
+                const phoneWithCode = selectedCountry
                     ? `${selectedCountry.dial_code}${formData.phone}`
                     : formData.phone;
 
@@ -346,6 +442,7 @@ export const SignupScreen: React.FC = () => {
                     params: {
                         verificationToken: result.verificationToken,
                         phone: phoneWithCode,
+                        type: selectedUserType,
                     },
                 });
                 return;
@@ -383,115 +480,206 @@ export const SignupScreen: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View style={styles.header}>
-                    <Text style={styles.title}>{t('auth.createAccount')}</Text>
-                    <Text style={styles.subtitle}>{t('auth.signUpToGetStarted')}</Text>
-                </View>
+            <View style={styles.topPanel}>
+                {/* <Text style={styles.topTitle}>{t('auth.signUp')}</Text>  */}
+            </View>
 
-                <View style={styles.form}>
-                    <Input
-                        label={t('auth.firstName')}
-                        placeholder={t('auth.enterFirstName', 'Enter your first name')}
-                        value={formData.first_name}
-                        onChangeText={(text) => updateField('first_name', text)}
-                        error={errors.first_name}
-                        leftIcon="person"
-                        autoComplete="given-name"
-                    />
-
-                    <Input
-                        label={t('auth.lastName')}
-                        placeholder={t('auth.enterLastName', 'Enter your last name')}
-                        value={formData.last_name}
-                        onChangeText={(text) => updateField('last_name', text)}
-                        error={errors.last_name}
-                        leftIcon="person"
-                        autoComplete="family-name"
-                    />
-
-                    <View style={styles.inputWrapper}>
-                        <Input
-                            label={t('auth.phone')}
-                            placeholder={t('auth.enterPhone', 'Enter your phone number')}
-                            value={formData.phone}
-                            onChangeText={(text) => updateField('phone', text)}
-                            onBlur={handlePhoneBlur}
-                            error={errors.phone}
-                            leftPrefix={
-                                <CountryCodeDropdown
-                                    onCountrySelect={handleCountrySelect}
-                                    selectedCountry={selectedCountry}
-                                />
-                            }
-                            keyboardType="phone-pad"
-                            autoCapitalize="none"
-                            autoComplete="tel"
-                            editable={!validating.phone}
-                        />
+            <View style={styles.bottomSheet}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{t('auth.createAccount')}</Text>
+                        <Text style={styles.subtitle}>{t('auth.signUpToGetStarted')}</Text>
                     </View>
 
-                    <Input
-                        label={`${t('auth.email')} ${t('common.optional')}`}
-                        placeholder={t('auth.enterYourEmail')}
-                        value={formData.email}
-                        onChangeText={(text) => updateField('email', text)}
-                        onBlur={handleEmailBlur}
-                        error={errors.email}
-                        leftIcon="mail"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoComplete="email"
-                        editable={!validating.email}
-                    />
-
-                    <Input
-                        label={t('auth.password')}
-                        placeholder={t('auth.createAPassword')}
-                        value={formData.password}
-                        onChangeText={(text) => updateField('password', text)}
-                        error={errors.password}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password-new"
-                    />
-
-                    <Input
-                        label={t('auth.confirmPassword')}
-                        placeholder={t('auth.confirmYourPassword')}
-                        value={formData.confirmPassword}
-                        onChangeText={(text) => updateField('confirmPassword', text)}
-                        error={errors.confirmPassword}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password-new"
-                    />
-
-                    {/* <Text style={styles.termsText}>
-                        {t('auth.termsAgreement')}{' '}
-                        <Text style={styles.termsLink}>{t('auth.termsOfService')}</Text> {t('auth.and')}{' '}
-                        <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
-                    </Text> */}
-
-                    <Button
-                        title={t('auth.signUp')}
-                        onPress={handleSignup}
-                        loading={isLoading}
-                        fullWidth
-                        size="large"
-                    />
-
-                    <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
-                        <TouchableOpacity onPress={handleLoginPress}>
-                            <Text style={styles.loginLink}>{t('auth.signIn')}</Text>
+                    <View style={styles.toggleContainer}>
+                        <TouchableOpacity
+                            style={[
+                                styles.toggleButton,
+                                selectedUserType === 'customer' && styles.toggleButtonActive,
+                            ]}
+                            onPress={() => dispatch(setSelectedUserType('customer'))}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.toggleButtonText,
+                                    selectedUserType === 'customer' && styles.toggleButtonTextActive,
+                                ]}
+                            >
+                                {t('auth.customer', 'Customer')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.toggleButton,
+                                selectedUserType === 'supplier' && styles.toggleButtonActive,
+                            ]}
+                            onPress={() => dispatch(setSelectedUserType('supplier'))}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.toggleButtonText,
+                                    selectedUserType === 'supplier' && styles.toggleButtonTextActive,
+                                ]}
+                            >
+                                {t('auth.supplier', 'Supplier')}
+                            </Text>
                         </TouchableOpacity>
                     </View>
-                </View>
-            </ScrollView>
+
+                    <View style={styles.form}>
+                        <View style={styles.row}>
+                            <View style={styles.flex1}>
+                                <Input
+                                    label={t('auth.firstName')}
+                                    placeholder={t('auth.enterFirstName')}
+                                    value={formData.first_name}
+                                    onChangeText={(text) => updateField('first_name', text)}
+                                    error={errors.first_name}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+                            </View>
+                            <View style={styles.spacingHorizontal} />
+                            <View style={styles.flex1}>
+                                <Input
+                                    label={t('auth.lastName')}
+                                    placeholder={t('auth.enterLastName')}
+                                    value={formData.last_name}
+                                    onChangeText={(text) => updateField('last_name', text)}
+                                    error={errors.last_name}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.inputWrapper}>
+                            <Input
+                                label={t('auth.phone')}
+                                placeholder={t('auth.enterPhone')}
+                                value={formData.phone}
+                                onChangeText={(text) => updateField('phone', text)}
+                                onBlur={handlePhoneBlur}
+                                error={errors.phone}
+                                leftPrefix={
+                                    <View style={styles.countryPickerWrapper}>
+                                        <CountryCodeDropdown
+                                            onCountrySelect={handleCountrySelect}
+                                            selectedCountry={selectedCountry}
+                                        />
+                                    </View>
+                                }
+                                keyboardType="phone-pad"
+                                autoCapitalize="none"
+                                autoComplete="tel"
+                                editable={!validating.phone}
+                                inputContainerStyle={styles.inputField}
+                                style={styles.inputText}
+                                labelStyle={styles.inputLabel}
+                            />
+                        </View>
+
+                        <Input
+                            label={`${t('auth.email')} ${t('common.optional')}`}
+                            placeholder={t('auth.enterYourEmail')}
+                            value={formData.email}
+                            onChangeText={(text) => updateField('email', text)}
+                            onBlur={handleEmailBlur}
+                            error={errors.email}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            autoComplete="email"
+                            editable={!validating.email}
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
+
+                        <Input
+                            label={t('auth.password')}
+                            placeholder={t('auth.createAPassword')}
+                            value={formData.password}
+                            onChangeText={(text) => updateField('password', text)}
+                            error={errors.password}
+                            secureTextEntry
+                            autoComplete="password"
+                            textContentType="none"
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
+
+                        <Input
+                            label={t('auth.confirmPassword')}
+                            placeholder={t('auth.confirmYourPassword')}
+                            value={formData.confirmPassword}
+                            onChangeText={(text) => updateField('confirmPassword', text)}
+                            error={errors.confirmPassword}
+                            secureTextEntry
+                            autoComplete="password"
+                            textContentType="none"
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
+
+                        {selectedUserType === 'supplier' && (
+                            <>
+                                <Input
+                                    label={t('auth.companyName', 'Company Name')}
+                                    placeholder={t('auth.enterCompanyName', 'Enter your company name')}
+                                    value={formData.company_name}
+                                    onChangeText={(text) => updateField('company_name', text)}
+                                    error={errors.company_name}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+
+                                <Input
+                                    label={t('auth.shopUrl', 'Shop URL')}
+                                    placeholder={t('auth.enterShopUrl', 'Enter your shop URL (e.g. my-shop)')}
+                                    value={formData.url}
+                                    onChangeText={(text) => updateField('url', text.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                                    onBlur={handleUrlBlur}
+                                    error={errors.url}
+                                    autoCapitalize="none"
+                                    editable={!validating.url}
+                                    inputContainerStyle={styles.inputField}
+                                    style={styles.inputText}
+                                    labelStyle={styles.inputLabel}
+                                />
+                            </>
+                        )}
+
+                        <View style={styles.actionContainer}>
+                            <Button
+                                title={t('auth.signUp')}
+                                onPress={handleSignup}
+                                loading={isLoading}
+                                fullWidth
+                                size="medium"
+                                style={styles.signUpButton}
+                            />
+
+                            <View style={styles.loginContainer}>
+                                <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
+                                <TouchableOpacity onPress={handleLoginPress}>
+                                    <Text style={styles.loginLink}>{t('auth.signIn')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+            </View>
         </KeyboardAvoidingView>
     );
 };
@@ -499,57 +687,152 @@ export const SignupScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background.default,
+        backgroundColor: '#00615E',
+    },
+    topPanel: {
+        paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
+        alignItems: 'center',
+    },
+    topTitle: {
+        fontSize: 24,
+        lineHeight: 29,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        fontFamily: 'Inter',
+    },
+    bottomSheet: {
+        flex: 1,
+        backgroundColor: '#FFFDF4',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        overflow: 'hidden',
     },
     scrollContent: {
         flexGrow: 1,
-        padding: theme.spacing.xl,
-        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.xl,
     },
     header: {
-        marginBottom: theme.spacing['2xl'],
+        marginBottom: theme.spacing.lg,
+        alignItems: 'flex-start',
+    },
+    toggleContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        padding: 4,
+        marginBottom: theme.spacing.lg,
+    },
+    toggleButton: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        borderRadius: 4,
+        height: 34,
+    },
+    toggleButtonActive: {
+        backgroundColor: '#00615E',
+        borderWidth: 1,
+        borderColor: '#00615E',
+    },
+    toggleButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 14,
+        lineHeight: 18,
+        color: '#000000',
+    },
+    toggleButtonTextActive: {
+        color: '#FFFFFF',
     },
     title: {
-        fontSize: theme.typography.fontSize['3xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
+        fontSize: 32,
+        lineHeight: 38,
+        fontWeight: '500',
+        color: '#000000',
+        marginBottom: theme.spacing.xs,
+        fontFamily: 'Inter',
     },
     subtitle: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontSize: 16,
+        lineHeight: 26,
+        fontWeight: '400',
+        color: '#090A0A',
+        fontFamily: 'Inter',
     },
     form: {
         width: '100%',
     },
+    row: {
+        flexDirection: 'row',
+        width: '100%',
+    },
+    flex1: {
+        flex: 1,
+    },
+    spacingHorizontal: {
+        width: theme.spacing.md,
+    },
     inputWrapper: {
         width: '100%',
     },
-    termsText: {
-        fontSize: theme.typography.fontSize.xs,
-        color: theme.colors.text.secondary,
-        textAlign: 'center',
-        marginBottom: theme.spacing.lg,
-        lineHeight: theme.typography.lineHeight.relaxed * theme.typography.fontSize.xs,
+    inputField: {
+        backgroundColor: '#F3F0E7',
+        borderWidth: 0,
+        borderRadius: 8,
+        minHeight: 40,
     },
-    termsLink: {
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.medium,
+    inputText: {
+        color: '#0A292D',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    inputLabel: {
+        color: '#72777A',
+        fontSize: 14,
+        marginBottom: 4,
+        fontFamily: 'Inter',
+    },
+    countryPickerWrapper: {
+        paddingRight: 4,
+        borderRightWidth: 1,
+        borderRightColor: '#EAECE1',
+        marginRight: 4,
+    },
+    actionContainer: {
+        marginTop: theme.spacing.md,
+        paddingHorizontal: 24,
+        gap: 10,
+    },
+    signUpButton: {
+        backgroundColor: '#00615E',
+        borderRadius: 8,
+        height: 40,
+        paddingVertical: 0,
     },
     loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: theme.spacing.xl,
+        marginTop: theme.spacing.lg,
     },
     loginText: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#72777A',
+        fontFamily: 'Inter',
     },
     loginLink: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.semiBold,
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#000000',
+        fontWeight: '600',
+        fontFamily: 'Inter',
     },
 });
 

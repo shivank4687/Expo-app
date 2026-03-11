@@ -41,6 +41,8 @@ export const SocialMediaCard: React.FC<SocialMediaCardProps> = ({ data, onChange
                             placeholderTextColor="#666666"
                             value={data[field.key as keyof typeof data] || ''}
                             onChangeText={(val) => onChange(field.key, val)}
+                            textContentType="none"
+                            autoComplete="off"
                         />
                     </View>
                 </View>
@@ -59,7 +61,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: 329,
+        width: "100%",
         height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -75,7 +77,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         height: 67,
     },
     label: {
@@ -92,21 +94,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
     },
     input: {
         flex: 1,
-        height: 16,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 16,
-        lineHeight: 16,
         color: '#000000',
         padding: 0,
     },

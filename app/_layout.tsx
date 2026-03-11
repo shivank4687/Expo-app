@@ -1,40 +1,57 @@
-import { Stack, useRouter, useSegments } from "expo-router";
-import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
-import { store, persistor } from "@/store/store";
-import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { checkAuthThunk } from "@/store/slices/authSlice";
-import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
-import { fetchCoreConfig } from "@/store/slices/coreSlice";
-import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
-import { ActivityIndicator, View } from "react-native";
 import "@/i18n/config";
 import { LocaleSync } from "@/i18n/LocaleSync";
-import { ToastProvider, ToastContainer } from "@/shared/components/Toast";
 import { expoPushNotificationService } from "@/services/notifications/expo-push-notification.service";
+import { supplierPushNotificationService } from "@/services/notifications/supplier-push-notification.service";
+import { ToastContainer, ToastProvider } from "@/shared/components/Toast";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { checkAuthThunk } from "@/store/slices/authSlice";
+import { fetchCoreConfig } from "@/store/slices/coreSlice";
+import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
+import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
+import { persistor, store } from "@/store/store";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+import { useTranslation } from "react-i18next";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;
 
 function AppContent() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const segments = useSegments();
   const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
 
-  // Setup push notification handlers on app start
+  // Setup CUSTOMER push notification handlers on app start
   useEffect(() => {
-    console.log('🔔 Setting up push notification handlers...');
+    console.log('🔔 Setting up customer push notification handlers...');
     expoPushNotificationService.setupNotificationHandlers();
 
-    // Cleanup on unmount
     return () => {
-      console.log('🔕 Cleaning up push notification handlers...');
+      console.log('🔕 Cleaning up customer push notification handlers...');
       expoPushNotificationService.cleanup();
     };
   }, []);
+
+  // Setup SUPPLIER push notification handlers when supplier is authenticated
+  useEffect(() => {
+    if (!isSupplierAuthenticated) return;
+
+    console.log('🔔 Setting up supplier push notification handlers...');
+    supplierPushNotificationService.setupNotificationHandlers();
+
+    return () => {
+      console.log('🔕 Cleaning up supplier push notification handlers...');
+      supplierPushNotificationService.cleanup();
+    };
+  }, [isSupplierAuthenticated]);
 
   // Load wishlist when customer is authenticated
   useEffect(() => {
@@ -50,7 +67,7 @@ function AppContent() {
     const isLoading = isCustomerLoading || isSupplierLoading;
     if (isLoading) return;
 
-    const isAuthScreen = segments[0] === 'login' || segments[0] === 'signup' || segments[0] === 'otp-verification' || segments[0] === 'index';
+    const isAuthScreen = (segments[0] as any) === 'login' || (segments[0] as any) === 'signup' || (segments[0] as any) === 'otp-verification' || (segments[0] as any) === 'index';
     const isOnSupplierDashboard = segments[0] === '(supplier-drawer)';
     const isOnCustomerDashboard = segments[0] === '(drawer)';
 
@@ -72,6 +89,36 @@ function AppContent() {
     // Customer dashboard (shop) is accessible without authentication, so no redirect needed
   }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, segments, router]);
 
+  const commonHeaderOptions = {
+    title: "",
+    headerBackTitle: "Back",
+    headerStyle: {
+      backgroundColor: '#00615E',
+      shadowColor: 'transparent',
+      elevation: 0,
+    },
+    headerTintColor: '#FFFFFF',
+    headerTitleStyle: {
+      color: '#FFFFFF',
+      fontWeight: '600' as const,
+    },
+    headerBackImage: () => (
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginLeft: 4,
+        }}
+      >
+        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+      </View>
+    ),
+  };
+
   return (
     <ToastProvider>
       <LocaleSync />
@@ -82,29 +129,40 @@ function AppContent() {
         <Stack.Screen
           name="login"
           options={{
-            title: "Login",
-            headerBackTitle: "Back",
+            ...commonHeaderOptions,
+            title: t('auth.signIn'),
           }}
         />
         <Stack.Screen
           name="signup"
           options={{
-            title: "Sign Up",
-            headerBackTitle: "Back",
+            ...commonHeaderOptions,
+            title: t('auth.signUp'),
           }}
         />
         <Stack.Screen
           name="otp-verification"
           options={{
-            title: "Verify OTP",
-            headerBackTitle: "Back",
+            ...commonHeaderOptions,
+            title: t('auth.verifyOtp', 'Verify OTP'),
           }}
+        />
+        <Stack.Screen
+          name="forgot-password"
+          options={{
+            ...commonHeaderOptions,
+            title: t('auth.forgotPassword'),
+          }}
+        />
+        <Stack.Screen
+          name="reset-password"
+          options={commonHeaderOptions}
         />
         <Stack.Screen
           name="contact-us"
           options={{
+            ...commonHeaderOptions,
             title: "Contact Us",
-            headerBackTitle: "Back",
           }}
         />
         <Stack.Screen
@@ -191,19 +249,21 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <PersistGate
-        loading={
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <ActivityIndicator size="large" />
-          </View>
-        }
-        persistor={persistor}
-        onBeforeLift={handleBeforeLift}
-      >
-        <AppContent />
-      </PersistGate>
+      <SafeAreaProvider>
+        <PersistGate
+          loading={
+            <View
+              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            >
+              <ActivityIndicator size="large" />
+            </View>
+          }
+          persistor={persistor}
+          onBeforeLift={handleBeforeLift}
+        >
+          <AppContent />
+        </PersistGate>
+      </SafeAreaProvider>
     </Provider>
   );
 }

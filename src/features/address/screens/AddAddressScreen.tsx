@@ -12,7 +12,9 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { addressApi } from '@/services/api/address.api';
-import { coreApi, Country, State } from '@/services/api/core.api';
+import { coreApi, State } from '@/services/api/core.api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 import { AddressFormData } from '../types/address.types';
 import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
@@ -46,17 +48,19 @@ export const AddAddressScreen: React.FC = () => {
     // Loading states
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [countries, setCountries] = useState<Country[]>([]);
+    const dispatch = useAppDispatch();
+    const countries = useAppSelector(state => state.core.countries);
+    const isLoadingCountries = useAppSelector(state => state.core.isLoadingCountries);
     const [states, setStates] = useState<State[]>([]);
     const [loadingStates, setLoadingStates] = useState(false);
-    
+
     // Modal states
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [showStatePicker, setShowStatePicker] = useState(false);
 
     // Load countries on mount
     useEffect(() => {
-        loadCountries();
+        dispatch(fetchCountriesThunk());
         if (isEditMode) {
             loadAddress();
         }
@@ -71,17 +75,6 @@ export const AddAddressScreen: React.FC = () => {
             setFormData(prev => ({ ...prev, state: '' }));
         }
     }, [formData.country]);
-
-    const loadCountries = async () => {
-        try {
-            const data = await coreApi.getCountries();
-            console.log('[AddAddressScreen] Loaded countries:', data.length);
-            setCountries(data);
-        } catch (error) {
-            console.error('[AddAddressScreen] Error loading countries:', error);
-            showToast({ message: 'Failed to load countries', type: 'error' });
-        }
-    };
 
     const loadStates = async (countryCode: string) => {
         try {
@@ -98,17 +91,17 @@ export const AddAddressScreen: React.FC = () => {
 
     const loadAddress = async () => {
         if (!id) return;
-        
+
         try {
             setIsLoading(true);
             const address = await addressApi.getAddressById(parseInt(id));
-            
+
             // API returns 'address' field, but form expects 'address1'
             const addressLines = address.address || address.address1 || [];
-            const normalizedAddress = Array.isArray(addressLines) 
-                ? addressLines 
+            const normalizedAddress = Array.isArray(addressLines)
+                ? addressLines
                 : [addressLines];
-            
+
             setFormData({
                 first_name: address.first_name,
                 last_name: address.last_name,
@@ -177,7 +170,7 @@ export const AddAddressScreen: React.FC = () => {
 
         try {
             setIsSaving(true);
-            
+
             if (isEditMode && id) {
                 await addressApi.updateAddress(parseInt(id), formData);
                 showToast({ message: 'Address updated successfully', type: 'success' });
@@ -185,7 +178,7 @@ export const AddAddressScreen: React.FC = () => {
                 await addressApi.createAddress(formData);
                 showToast({ message: 'Address added successfully', type: 'success' });
             }
-            
+
             router.back();
         } catch (error: any) {
             console.error('[AddAddressScreen] Error saving address:', error);
@@ -208,7 +201,7 @@ export const AddAddressScreen: React.FC = () => {
     };
 
     const getSelectedCountryName = () => {
-        const country = countries.find(c => c.code === formData.country);
+        const country = (countries || []).find(c => c.code === formData.country);
         return country ? country.name : '';
     };
 
@@ -220,7 +213,7 @@ export const AddAddressScreen: React.FC = () => {
         return formData.state;
     };
 
-    const countryItems: PickerItem[] = countries.map(country => ({
+    const countryItems: PickerItem[] = (countries || []).map(country => ({
         label: country.name,
         value: country.code,
     }));
@@ -247,14 +240,14 @@ export const AddAddressScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen 
-                options={{ 
+            <Stack.Screen
+                options={{
                     title: isEditMode ? 'Edit Address' : 'Add New Address',
                     headerBackTitle: 'Back',
-                }} 
+                }}
             />
-            
-            <ScrollView 
+
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
@@ -379,10 +372,15 @@ export const AddAddressScreen: React.FC = () => {
                     <TouchableOpacity
                         style={[styles.pickerButton, errors.country && styles.inputError]}
                         onPress={() => setShowCountryPicker(true)}
+                        disabled={isLoadingCountries}
                     >
-                        <Text style={[styles.pickerButtonText, !formData.country && styles.placeholderText]}>
-                            {getSelectedCountryName() || 'Select Country'}
-                        </Text>
+                        {isLoadingCountries ? (
+                            <ActivityIndicator size="small" color={theme.colors.gray[500]} />
+                        ) : (
+                            <Text style={[styles.pickerButtonText, !formData.country && styles.placeholderText]}>
+                                {getSelectedCountryName() || 'Select Country'}
+                            </Text>
+                        )}
                         <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
                     </TouchableOpacity>
                     {errors.country && (

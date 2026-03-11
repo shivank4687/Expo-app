@@ -30,6 +30,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         placeholderTextColor="#666666"
                         value={data.company_name}
                         onChangeText={(val) => onChange('company_name', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.company_name && <Text style={styles.errorText}>{errors.company_name}</Text>}
@@ -45,6 +47,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         placeholderTextColor="#666666"
                         value={data.company_tag_line}
                         onChangeText={(val) => onChange('company_tag_line', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.company_tag_line && <Text style={styles.errorText}>{errors.company_tag_line}</Text>}
@@ -60,6 +64,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         placeholderTextColor="#666666"
                         value={data.registerd_in}
                         onChangeText={(val) => onChange('registerd_in', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.registerd_in && <Text style={styles.errorText}>{errors.registerd_in}</Text>}
@@ -75,6 +81,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         placeholderTextColor="#666666"
                         value={data.designation}
                         onChangeText={(val) => onChange('designation', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.designation && <Text style={styles.errorText}>{errors.designation}</Text>}
@@ -91,6 +99,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         keyboardType="numeric"
                         value={data.team_size}
                         onChangeText={(val) => onChange('team_size', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.team_size && <Text style={styles.errorText}>{errors.team_size}</Text>}
@@ -106,6 +116,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         placeholderTextColor="#666666"
                         value={data.certification}
                         onChangeText={(val) => onChange('certification', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.certification && <Text style={styles.errorText}>{errors.certification}</Text>}
@@ -122,6 +134,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                         keyboardType="decimal-pad"
                         value={data.response_time}
                         onChangeText={(val) => onChange('response_time', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.response_time && <Text style={styles.errorText}>{errors.response_time}</Text>}
@@ -140,7 +154,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: 329,
+        width: "100%",
         height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -158,7 +172,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         minHeight: 83,
         marginBottom: 8,
     },
@@ -166,7 +180,7 @@ const styles = StyleSheet.create({
         minHeight: 105,
     },
     label: {
-        width: 329,
+        width: "100%",
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',
@@ -182,7 +196,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 56,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -200,13 +214,11 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     input: {
-        width: 297,
-        height: 32,
+        flex: 1,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 16,
-        lineHeight: 16,
         color: '#666666',
         padding: 0,
     }

@@ -1,23 +1,39 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LowStockProductCard } from './LowStockProductCard';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
+import { LowStockProductCard } from './LowStockProductCard';
 
 interface LowStockProductsListProps {
-    onProductSave?: (productId: number, price: number, stock: number) => void;
+    onProductSave?: (productId: number, price: number, stock: number) => Promise<boolean | void> | boolean | void;
     onProductEdit?: (productId: number) => void;
     onEditVariants?: (productId: number) => void;
+    onToggleStatus?: (productId: number, currentStatus: 'active' | 'inactive') => Promise<boolean | void> | boolean | void;
+    onDuplicate?: (productId: number) => Promise<boolean | void> | boolean | void;
     onSeeAll?: () => void;
+    productsData?: any;
 }
 
 export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
     onProductSave,
     onProductEdit,
     onEditVariants,
+    onToggleStatus,
+    onDuplicate,
     onSeeAll,
+    productsData,
 }) => {
-    const { data: products, loading, error, refetch } = useLowStockProducts();
+    const hookData = useLowStockProducts();
+    const { data: products, loading, error, refetch } = productsData || hookData;
+
+    const handleSave = async (productId: number, price: number, stock: number) => {
+        if (!onProductSave) return;
+        try {
+            await onProductSave(productId, price, stock);
+        } catch {
+            // onProductSave should handle its own error UI
+        }
+    };
 
     if (loading) {
         return (
@@ -78,13 +94,15 @@ export const LowStockProductsList: React.FC<LowStockProductsListProps> = ({
             </View>
 
             <View style={styles.productsContainer}>
-                {displayProducts.map((product) => (
+                {displayProducts.map((product: any) => (
                     <LowStockProductCard
-                        key={product.id}
+                        key={product.marketplace_product_id || product.id}
                         product={product}
-                        onSave={onProductSave}
+                        onSave={handleSave}
                         onEdit={onProductEdit}
                         onEditVariants={onEditVariants}
+                        onToggleStatus={onToggleStatus}
+                        onDuplicate={onDuplicate}
                     />
                 ))}
             </View>
@@ -106,7 +124,7 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
         alignSelf: 'stretch',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
         shadowColor: '#000000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
@@ -202,8 +220,9 @@ const styles = StyleSheet.create({
         gap: 8,
         alignSelf: 'stretch',
         height: 40,
+        backgroundColor: '#EAECE1',
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: '#EAECE1',
         borderRadius: 8,
     },
     seeAllButtonText: {

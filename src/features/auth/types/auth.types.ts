@@ -32,6 +32,8 @@ export interface SignupRequest {
     password: string;
     password_confirmation: string;
     is_subscribed?: boolean;
+    company_name?: string;
+    url?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -62,17 +64,18 @@ export interface AuthResponse {
 export interface OtpVerificationRequest {
     verification_token: string;
     otp: string;
-    type?: 'customer' | 'supplier';
+    type?: 'customer' | 'supplier' | 'password_reset';
     device_name: string;
 }
 
 export interface OtpVerificationResponse extends AuthResponse {
+    is_approved?: boolean;
     // Same as AuthResponse (user + token)
 }
 
 export interface ResendOtpRequest {
     verification_token: string;
-    type?: 'customer' | 'supplier';
+    type?: 'customer' | 'supplier' | 'password_reset';
 }
 
 export interface ResendOtpResponse {

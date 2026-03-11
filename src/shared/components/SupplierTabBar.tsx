@@ -1,11 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type DrawerOption = 'profile' | 'marketing' | 'reviews';
+type DrawerOption = 'profile' | 'marketing' | 'reviews' | 'transactions' | 'rfq';
 
 export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+    const insets = useSafeAreaInsets();
+    // Some Android devices report 0 bottom inset with 3-button navigation.
+    // Use a fallback gap to keep the tab bar above system buttons.
+    const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 28) : 0;
     const [selectedOption, setSelectedOption] = useState<DrawerOption>('profile');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerHeight = useRef(new Animated.Value(0)).current;
@@ -15,11 +20,11 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
 
     // Check if More tab or its sub-screens are focused
     const focusedRouteName = state.routes[state.index].name;
-    const isMoreTabFocused = ['profile', 'marketing', 'reviews'].includes(focusedRouteName);
+    const isMoreTabFocused = ['rfq', 'profile', 'marketing', 'reviews', 'transactions'].includes(focusedRouteName);
 
     // Sync drawer selection with route
     useEffect(() => {
-        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing' || focusedRouteName === 'reviews') {
+        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing' || focusedRouteName === 'reviews' || focusedRouteName === 'transactions' || focusedRouteName === 'rfq') {
             setSelectedOption(focusedRouteName as DrawerOption);
         }
     }, [focusedRouteName]);
@@ -52,10 +57,11 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingBottom: bottomInset }]}>
             {/* Drawer */}
             <Animated.View style={[styles.drawer, { height: drawerHeight }]}>
                 <View style={styles.drawerContent}>
+
                     <TouchableOpacity
                         style={[
                             styles.drawerOption,
@@ -68,6 +74,20 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             selectedOption === 'profile' && styles.drawerOptionTextActive
                         ]}>
                             Profile
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.drawerOption,
+                            selectedOption === 'rfq' && styles.drawerOptionActive
+                        ]}
+                        onPress={() => handleDrawerOptionPress('rfq')}
+                    >
+                        <Text style={[
+                            styles.drawerOptionText,
+                            selectedOption === 'rfq' && styles.drawerOptionTextActive
+                        ]}>
+                            RFQ
                         </Text>
                     </TouchableOpacity>
 
@@ -100,14 +120,29 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             Reviews
                         </Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.drawerOption,
+                            selectedOption === 'transactions' && styles.drawerOptionActive
+                        ]}
+                        onPress={() => handleDrawerOptionPress('transactions')}
+                    >
+                        <Text style={[
+                            styles.drawerOptionText,
+                            selectedOption === 'transactions' && styles.drawerOptionTextActive
+                        ]}>
+                            Payouts
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </Animated.View>
 
             {/* Tab Bar */}
             <View style={styles.navbar}>
                 {state.routes.map((route, index) => {
-                    // Show Profile as the "More" tab, but hide Marketing, Reviews and old Settings
-                    if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'settings') {
+                    // Show Profile as the "More" tab, but hide Marketing, Reviews, Transactions and old Settings
+                    if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'transactions' || route.name === 'settings' || route.name === 'rfq') {
                         return null;
                     }
 
@@ -121,8 +156,8 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
 
                     let isFocused = state.index === index;
 
-                    // Special case: Highlight More tab (profile) if marketing or reviews is focused
-                    if (route.name === 'profile' && (focusedRouteName === 'marketing' || focusedRouteName === 'reviews')) {
+                    // Special case: Highlight More tab (profile) if marketing, reviews, or transactions is focused
+                    if (route.name === 'profile' && (focusedRouteName === 'marketing' || focusedRouteName === 'reviews' || focusedRouteName === 'transactions')) {
                         isFocused = true;
                     }
 
@@ -197,9 +232,11 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                     );
                 })}
             </View>
-            <View style={styles.navigationHandle}>
-                <View style={styles.handle} />
-            </View>
+            {Platform.OS === 'ios' && (
+                <View style={styles.navigationHandle}>
+                    <View style={styles.handle} />
+                </View>
+            )}
         </View>
     );
 }
@@ -232,7 +269,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 6,
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         borderRadius: 20,
         backgroundColor: '#F5F5F5',
     },

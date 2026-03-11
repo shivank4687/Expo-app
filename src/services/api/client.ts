@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 import { config } from '@/config/env';
 import { STORAGE_KEYS } from '@/config/constants';
 import { secureStorage } from '../storage/secureStorage';
+import { isTokenExpired } from '@/shared/utils/authUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Global token setter for Redux to update
@@ -70,8 +71,15 @@ class ApiClient {
                     }
 
                     if (token) {
+                        // Check if token is expired before sending request
+                        // if (isTokenExpired(token)) {
+                        //     console.log('🚨 Token is expired, triggering logout before request:', config.url);
+                        //     await this.handleUnauthorized();
+                        //     return Promise.reject(new Error('Token expired'));
+                        // }
+
                         config.headers.Authorization = `Bearer ${token}`;
-                        console.log('✅ Token added to request:', config.url);
+                        console.log('✅ Token added to request:', config.url, config.params);
                     } else {
                         console.log('⚠️ No token found for request:', config.url);
                     }
@@ -101,10 +109,17 @@ class ApiClient {
                 // Currency is handled the same way for both
                 config.headers['X-Currency'] = currency;
 
-                // If the request data is FormData, remove Content-Type header
-                // Let axios set it automatically with the correct boundary
-                if (config.data instanceof FormData) {
+                // If the request data is FormData, remove JSON Content-Type
+                // so axios/React Native can set multipart boundary correctly.
+                const isFormDataPayload =
+                    !!config.data &&
+                    typeof (config.data as any).append === 'function' &&
+                    (Object.prototype.toString.call(config.data) === '[object FormData]' ||
+                        (typeof FormData !== 'undefined' && config.data instanceof FormData));
+
+                if (isFormDataPayload) {
                     delete config.headers['Content-Type'];
+                    delete config.headers['content-type'];
                 }
 
                 return config;

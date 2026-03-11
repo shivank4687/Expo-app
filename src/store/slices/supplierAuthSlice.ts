@@ -4,7 +4,7 @@ import { secureStorage } from '@/services/storage/secureStorage';
 import { STORAGE_KEYS } from '@/config/constants';
 import { LoginRequest } from '@/features/auth/types/auth.types';
 import { setGlobalToken } from '@/services/api/client';
-import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
+import { supplierPushNotificationService } from '@/services/notifications/supplier-push-notification.service';
 import socketService from '@/services/socket.service';
 
 interface SupplierAuthState {
@@ -71,10 +71,10 @@ export const supplierLoginThunk = createAsyncThunk(
             // Set global token for API client
             setGlobalToken(response.token);
 
-            // Register device token for push notifications
+            // Register device token for supplier push notifications
             try {
                 console.log('🔔 Registering supplier device token for push notifications...');
-                await expoPushNotificationService.registerToken();
+                await supplierPushNotificationService.registerToken();
             } catch (notificationError) {
                 console.error('Failed to register push notification token (non-critical):', notificationError);
                 // Don't fail login if notification registration fails
@@ -95,10 +95,10 @@ export const supplierLogoutThunk = createAsyncThunk(
     'supplierAuth/logout',
     async (_, { rejectWithValue }) => {
         try {
-            // Unregister device token for push notifications
+            // Unregister device token for supplier push notifications
             try {
                 console.log('🔕 Unregistering supplier device token for push notifications...');
-                await expoPushNotificationService.unregisterToken();
+                await supplierPushNotificationService.unregisterToken();
             } catch (notificationError) {
                 console.error('Failed to unregister push notification token (non-critical):', notificationError);
                 // Don't fail logout if notification unregistration fails
@@ -130,6 +130,11 @@ const supplierAuthSlice = createSlice({
             state.token = null;
             state.isAuthenticated = false;
             state.error = null;
+        },
+        updateSupplierEmail: (state, action: PayloadAction<string>) => {
+            if (state.supplier) {
+                state.supplier.email = action.payload;
+            }
         },
     },
     extraReducers: (builder) => {
@@ -194,5 +199,5 @@ const supplierAuthSlice = createSlice({
     },
 });
 
-export const { clearError, resetSupplierAuth } = supplierAuthSlice.actions;
+export const { clearError, resetSupplierAuth, updateSupplierEmail } = supplierAuthSlice.actions;
 export default supplierAuthSlice.reducer;

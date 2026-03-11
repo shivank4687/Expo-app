@@ -1,8 +1,9 @@
+import { getReviews, Review } from '@/features/supplier-panel/reviews/api/reviews.api';
+import { ReviewCard } from '@/features/supplier-panel/reviews/components';
 import { supplierTheme } from '@/theme';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { ReviewCard } from '@/features/supplier-panel/reviews/components';
-import { getReviews, Review } from '@/features/supplier-panel/reviews/api/reviews.api';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ReviewsScreen() {
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -12,6 +13,7 @@ export default function ReviewsScreen() {
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [error, setError] = useState<string | null>(null);
+    const insets = useSafeAreaInsets();
 
     const fetchReviews = async (page: number = 1, isRefresh: boolean = false) => {
         try {
@@ -85,7 +87,7 @@ export default function ReviewsScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.safeArea}>
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#00615E" />
                 </View>
@@ -94,7 +96,7 @@ export default function ReviewsScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
             <FlatList
                 data={reviews}
                 renderItem={({ item }) => (
@@ -109,7 +111,7 @@ export default function ReviewsScreen() {
                     />
                 )}
                 keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={styles.container}
+                contentContainerStyle={[styles.container, { paddingBottom: insets.bottom }]}
                 ListHeaderComponent={renderHeader}
                 ListFooterComponent={renderFooter}
                 ListEmptyComponent={renderEmpty}
@@ -137,7 +139,8 @@ const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 16,
         paddingTop: 20,
-        paddingBottom: 40,
+        paddingBottom: 0,
+        flexGrow: 1,
     },
     header: {
         gap: 8,

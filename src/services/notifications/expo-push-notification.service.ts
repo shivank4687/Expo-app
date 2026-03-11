@@ -118,7 +118,9 @@ class ExpoPushNotificationService {
     }
 
     /**
-     * Handle navigation based on notification type
+     * Handle navigation based on notification type.
+     * Customer panel only — supplier types are handled in
+     * supplier-push-notification.service.ts
      */
     private handleNotificationNavigation(data: any): void {
         try {
@@ -128,17 +130,9 @@ class ExpoPushNotificationService {
                 case 'order_invoiced':
                 case 'order_shipped':
                 case 'feedback_request':
-                    // Navigate to order detail screen
+                    // Navigate to customer order detail screen
                     if (data.order_id) {
                         router.push(`/(tabs)/orders/${data.order_id}` as any);
-                    }
-                    break;
-
-                case 'supplier_order_new':
-                case 'supplier_order_updated':
-                    // Navigate to supplier order detail (if you have supplier app)
-                    if (data.supplier_order_id) {
-                        router.push(`/supplier/orders/${data.supplier_order_id}` as any);
                     }
                     break;
 
@@ -148,14 +142,12 @@ class ExpoPushNotificationService {
                     if (data.quote_id && data.customer_quote_item_id) {
                         router.push(`/quotes/response/${data.quote_id}/${data.customer_quote_item_id}` as any);
                     } else {
-                        // Fallback to notifications screen
                         router.push('/notifications' as any);
                     }
                     break;
 
                 default:
-                    console.log('Unknown notification type:', data.type);
-                    // Navigate to notifications screen as fallback
+                    console.log('Unknown customer notification type:', data.type);
                     router.push('/notifications' as any);
             }
         } catch (error) {

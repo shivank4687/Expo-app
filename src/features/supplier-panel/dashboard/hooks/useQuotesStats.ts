@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { dashboardStatsApi } from '../api/dashboard-stats.api';
 import { QuotesStatsResponse } from '../types/dashboard.types';
 
@@ -32,9 +33,11 @@ export const useQuotesStats = (): UseQuotesStatsReturn => {
         }
     };
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchStats();
+        }, [])
+    );
 
     return {
         data,

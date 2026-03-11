@@ -138,9 +138,17 @@ const NewOrderCard: React.FC<NewOrderCardProps> = ({ order, onPress, onAccept, o
 
                     {/* Status and Price Row */}
                     <View style={styles.statusPriceRow}>
-                        <View style={styles.statusIndicator}>
+                        <View style={[
+                            styles.statusIndicator,
+                            {
+                                backgroundColor: order.status === 'pending' ? '#BB5625' : '#006C5B',
+                                borderColor: order.status === 'pending' ? '#BB5625' : '#00615E'
+                            }
+                        ]}>
                             <View style={styles.statusDot} />
-                            <Text style={styles.statusText}>Awaiting tracking</Text>
+                            <Text style={styles.statusText}>
+                                {order.status === 'pending' ? 'Payment pending' : 'Awaiting tracking'}
+                            </Text>
                         </View>
                         <Text style={styles.price}>${order.grand_total.toFixed(2)}</Text>
                     </View>
@@ -173,7 +181,7 @@ const NewOrderCard: React.FC<NewOrderCardProps> = ({ order, onPress, onAccept, o
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        backgroundColor: COLORS.white,
+        backgroundColor: '#FCF7EA',
         borderRadius: 8,
         padding: 8,
         marginBottom: 12,
@@ -212,6 +220,7 @@ const styles = StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: 8,
     },
     orderId: {

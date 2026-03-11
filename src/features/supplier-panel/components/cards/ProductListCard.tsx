@@ -14,6 +14,7 @@ export interface ProductListCardProps {
     status: 'active' | 'inactive';
     stock: number;
     imageUrl?: string | null;
+    type?: string;
     onEdit?: () => void;
     onToggleStatus?: (id: number, currentStatus: 'active' | 'inactive') => void;
     onDuplicate?: (productId: number) => void;
@@ -26,6 +27,7 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
     status,
     stock,
     imageUrl,
+    type,
     onEdit,
     onToggleStatus,
     onDuplicate,
@@ -33,10 +35,10 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
     const router = useRouter();
 
     const handlePress = () => {
-        router.push({
-            pathname: '/(supplier-drawer)/product-view',
-            params: { id: id.toString(), name },
-        });
+        // router.push({
+        //     pathname: '/(supplier-drawer)/product-view',
+        //     params: { id: id.toString(), name },
+        // });
     };
 
     return (
@@ -72,7 +74,10 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
                     <Text style={styles.productName} numberOfLines={2}>
                         {name}
                     </Text>
-                    <Text style={styles.priceText}>{price}</Text>
+                    <Text style={[
+                        styles.priceText,
+                        type === 'configurable' && { opacity: 0 }
+                    ]}>{price}</Text>
                 </View>
 
                 {/* Status and Stock Row */}
@@ -92,7 +97,10 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({
                         </View>
 
                         {/* Stock Count */}
-                        <Text style={styles.stockText}>Stock: {stock}</Text>
+                        <Text style={[
+                            styles.stockText,
+                            type === 'configurable' && { opacity: 0 }
+                        ]}>Stock: {stock}</Text>
                     </View>
 
                     {/* Action Buttons */}
@@ -128,12 +136,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         width: '100%',
-        backgroundColor: COLORS.white,
+        backgroundColor: '#FCF7EA',
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
         shadowRadius: 6,
-        elevation: 3,
+        elevation: 6,
         borderRadius: 8,
         marginBottom: 8,
     },

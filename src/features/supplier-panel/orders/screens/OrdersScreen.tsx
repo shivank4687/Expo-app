@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, FlatList, Text, ActivityIndicator, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { COLORS } from '../../styles/colors';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabGroup, type Tab } from '../../components';
-import { OrdersHeader, OrderCard, NewOrderCard } from '../components';
-import { useOrdersList } from '../hooks/useOrdersList';
+import { COLORS } from '../../styles/colors';
 import { Order } from '../api/orders.api';
+import { NewOrderCard, OrderCard, OrdersHeader } from '../components';
+import { useOrdersList } from '../hooks/useOrdersList';
 
 /**
  * Orders Screen
  * Displays orders with tabs for Pending, Shipped, and Issues
  */
 const OrdersScreen: React.FC = () => {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
 
@@ -22,6 +25,28 @@ const OrdersScreen: React.FC = () => {
     ];
 
     const { orders, loading, error, refetch, loadMore, hasMore } = useOrdersList(activeTab);
+
+    // Keep a stable ref to always point at the latest refetch.
+    // This prevents useFocusEffect from re-firing when refetch identity
+    // changes on tab switch (filter → fetchOrders → refetch all recreate).
+    const refetchRef = useRef(refetch);
+    useEffect(() => {
+        refetchRef.current = refetch;
+    }, [refetch]);
+
+    const hasMountedRef = useRef(false);
+    useFocusEffect(
+        useCallback(() => {
+            // Skip the very first focus — hook's useEffect handles initial load.
+            // Empty deps means this only fires on real screen focus/blur, never
+            // when refetch identity changes due to a tab switch.
+            if (!hasMountedRef.current) {
+                hasMountedRef.current = true;
+                return;
+            }
+            refetchRef.current();
+        }, []) // intentionally empty — refetchRef is always up-to-date via useEffect above
+    );
 
     const handleTabChange = (tabId: string) => {
         setActiveTab(tabId as 'pending' | 'shipped' | 'issues');
@@ -90,7 +115,7 @@ const OrdersScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 12 : 0) }]}>
                 {/* Header */}
                 <OrdersHeader />
 
@@ -139,8 +164,6 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         gap: 16,
         backgroundColor: COLORS.background,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
     },
     listContent: {
         padding: 16,

@@ -4,6 +4,7 @@ import { getOrderMessages, sendOrderMessage, OrderMessage } from '../api/order-m
 import OrderMessageBubble from './OrderMessageBubble';
 import OrderMessageInput from './OrderMessageInput';
 import socketService from '@/services/socket/socketService';
+import { useAppSelector } from '@/store/hooks';
 
 interface OrderChatViewProps {
     supplierOrderId: number;
@@ -17,6 +18,10 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
     const [error, setError] = useState<string | null>(null);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    // Read supplier identity from Redux for socket authentication
+    const { supplier: supplierData } = useAppSelector((state) => state.supplierAuth);
+    const resolvedSupplierId = supplierId ?? supplierData?.id;
+
     // Fetch messages on mount
     useEffect(() => {
         fetchMessages();
@@ -24,12 +29,13 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
 
     // Socket.IO real-time integration
     useEffect(() => {
-        // Connect to Socket.IO
-        socketService.connect();
+        // Connect to Socket.IO with supplier authentication
+        const socketToken = resolvedSupplierId ? `supplier_${resolvedSupplierId}` : undefined;
+        socketService.connect(socketToken, 'supplier');
 
         // Join the order room
-        if (supplierId) {
-            socketService.joinOrderRoom(supplierOrderId, supplierId);
+        if (resolvedSupplierId) {
+            socketService.joinOrderRoom(supplierOrderId, resolvedSupplierId);
         }
 
         // Listen for new messages
@@ -58,12 +64,12 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
 
         // Cleanup on unmount
         return () => {
-            if (supplierId) {
-                socketService.leaveOrderRoom(supplierOrderId, supplierId);
+            if (resolvedSupplierId) {
+                socketService.leaveOrderRoom(supplierOrderId, resolvedSupplierId);
             }
             socketService.offNewMessage();
         };
-    }, [supplierOrderId, supplierId]);
+    }, [supplierOrderId, resolvedSupplierId]);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -132,8 +138,8 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+            behavior="padding"
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 100}
         >
             {/* Messages List */}
             <ScrollView
@@ -141,6 +147,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
                 style={styles.messagesContainer}
                 contentContainerStyle={styles.messagesContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 {messages.length === 0 ? (
                     <View style={styles.emptyContainer}>

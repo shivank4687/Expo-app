@@ -1,7 +1,7 @@
 import { restApiClient } from './client';
 import { API_ENDPOINTS } from '@/config/constants';
-import { 
-    LoginRequest, 
+import {
+    LoginRequest,
     AuthResponse,
 } from '@/features/auth/types/auth.types';
 
@@ -49,6 +49,13 @@ export const supplierAuthApi = {
      */
     async get(): Promise<{ data: Supplier }> {
         return restApiClient.get<{ data: Supplier }>(API_ENDPOINTS.SUPPLIER_GET);
+    },
+
+    /**
+     * Update supplier email
+     */
+    async updateEmail(email: string): Promise<{ message: string }> {
+        return restApiClient.put<{ message: string }>('/supplier-app/profile/email', { email });
     },
 
     /**

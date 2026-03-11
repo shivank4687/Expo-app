@@ -11,7 +11,7 @@ import { PriceStockCardRef } from './components/PriceStockCard';
 import { PriceStockVariantsCardRef } from './components/PriceStockVariantsCard';
 import { DetailsCardRef } from './components/DetailsCard';
 import { SettingsCardRef } from './components/SettingsCard';
-import { handlePublish, handleSaveDraft } from './submission/product-submission';
+import { handlePublish } from './submission/product-submission';
 import aiContentApi from '@/services/api/ai-content.api';
 import { InputModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
@@ -28,8 +28,6 @@ export default function AddProductScreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [productName, setProductName] = useState('');
-
-    const [attributeRefreshKey, setAttributeRefreshKey] = useState(0);
 
     // AI Generation state
     const [showAIModal, setShowAIModal] = useState(false);
@@ -49,9 +47,22 @@ export default function AddProductScreen() {
     useFocusEffect(
         React.useCallback(() => {
             setActiveTab('simple');
+            setProductName('');
             setResetKey(prev => prev + 1); // Force remount of all components
         }, [])
     );
+
+    const handleTabSwitch = (tab: TabType) => {
+        if (tab === activeTab || isSubmitting) {
+            return;
+        }
+
+        Keyboard.dismiss();
+        setActiveTab(tab);
+        setProductName('');
+        // Remount cards so previous tab validation errors and field state do not persist.
+        setResetKey(prev => prev + 1);
+    };
 
     // Fetch product attributes on mount and tab change
     const fetchAttributes = async () => {
@@ -73,23 +84,8 @@ export default function AddProductScreen() {
         fetchAttributes();
     }, [activeTab]);
 
-    const handleSaveDraftLocal = () => {
-        handleSaveDraft({
-            refs: {
-                essentialCardRef,
-                priceStockCardRef,
-                priceStockVariantsCardRef,
-                detailsCardRef,
-                settingsCardRef,
-            },
-            activeTab,
-            attributeFamilyId,
-            attributes,
-        });
-    };
-
-    const handlePublishLocal = async () => {
-        await handlePublish(
+    const handleSubmit = async (status: number = 1) => {
+        const success = await handlePublish(
             {
                 refs: {
                     essentialCardRef,
@@ -103,8 +99,12 @@ export default function AddProductScreen() {
                 attributes,
             },
             setIsSubmitting,
-            showToast
+            showToast,
+            status
         );
+        if (success) {
+            router.replace('/(supplier-drawer)/(supplier-tabs)/products');
+        }
     };
 
     // Handle AI Content Generation
@@ -182,6 +182,7 @@ export default function AddProductScreen() {
                         key={`price-stock-variants-${resetKey}`}
                         productName={productName}
                         attributes={attributes}
+                        onAttributesRefresh={fetchAttributes}
                     />
                 )}
 
@@ -235,7 +236,7 @@ export default function AddProductScreen() {
                     <View style={styles.tabsContainer}>
                         <TouchableOpacity
                             style={[styles.tab, activeTab === 'simple' && styles.tabActive]}
-                            onPress={() => setActiveTab('simple')}
+                            onPress={() => handleTabSwitch('simple')}
                             activeOpacity={0.7}
                             disabled={isSubmitting}
                         >
@@ -244,7 +245,7 @@ export default function AddProductScreen() {
 
                         <TouchableOpacity
                             style={[styles.tab, activeTab === 'configurable' && styles.tabActive]}
-                            onPress={() => setActiveTab('configurable')}
+                            onPress={() => handleTabSwitch('configurable')}
                             activeOpacity={0.7}
                             disabled={isSubmitting}
                         >
@@ -260,25 +261,19 @@ export default function AddProductScreen() {
 
                 {renderContent()}
 
-                {/* Action Buttons */}
                 {!fetchError && (
                     <View style={styles.actionButtons}>
                         <TouchableOpacity
-                            style={[styles.discardButton, isSubmitting && styles.disabledButton]}
-                            onPress={handleSaveDraftLocal}
+                            style={[styles.draftButton, isSubmitting && styles.disabledButton]}
+                            onPress={() => handleSubmit(0)}
                             disabled={isSubmitting}
                         >
-                            <Text style={styles.actionButtonText}>Save Draft</Text>
+                            <Text style={styles.draftButtonText}>Save Draft</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.previewButton, isSubmitting && styles.disabledButton]}
-                            disabled={isSubmitting}
-                        >
-                            <Text style={styles.actionButtonText}>Preview</Text>
-                        </TouchableOpacity>
+
                         <TouchableOpacity
                             style={[styles.publishButton, isSubmitting && styles.disabledButton]}
-                            onPress={handlePublishLocal}
+                            onPress={() => handleSubmit(1)}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (
@@ -398,12 +393,12 @@ const styles = StyleSheet.create({
     },
     actionButtons: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 12,
         width: '100%',
         marginTop: 16,
         marginBottom: 32,
     },
-    discardButton: {
+    draftButton: {
         flex: 1,
         height: 44,
         justifyContent: 'center',
@@ -413,15 +408,11 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
         borderRadius: 8,
     },
-    previewButton: {
-        flex: 1,
-        height: 44,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: COLORS.white,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        borderRadius: 8,
+    draftButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '400',
+        fontSize: 14,
+        color: COLORS.primary,
     },
     publishButton: {
         flex: 1,
@@ -430,12 +421,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: COLORS.primary,
         borderRadius: 8,
-    },
-    actionButtonText: {
-        fontFamily: 'Inter',
-        fontWeight: '400',
-        fontSize: 14,
-        color: '#000000',
     },
     publishButtonText: {
         fontFamily: 'Inter',

@@ -1,17 +1,24 @@
+import { getInvitationActivity, getInvitationStats, InvitationActivity, InvitationStats, logInvitationAction } from '@/features/supplier-panel/invitations/api/invitations.api';
 import { supplierTheme } from '@/theme';
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Share, Alert, ActivityIndicator, Image, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getInvitationStats, getInvitationActivity, logInvitationAction, InvitationStats, InvitationActivity } from '@/features/supplier-panel/invitations/api/invitations.api';
 import { cacheDirectory, downloadAsync } from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Clipboard, Image, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MarketingScreen() {
     const [stats, setStats] = useState<InvitationStats | null>(null);
     const [activities, setActivities] = useState<InvitationActivity[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [isQrLoading, setIsQrLoading] = useState(true);
+    const insets = useSafeAreaInsets();
+
+    const qrCodeUrl = stats?.referral_url
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(stats.referral_url)}`
+        : null;
 
     const fetchData = useCallback(async (showLoading = true) => {
         if (showLoading) setLoading(true);
@@ -36,6 +43,10 @@ export default function MarketingScreen() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        setIsQrLoading(!!qrCodeUrl);
+    }, [qrCodeUrl]);
 
     const handleCopyLink = () => {
         if (!stats?.referral_url) return;
@@ -210,23 +221,29 @@ export default function MarketingScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom }]}
+            >
+                {/* Frame 134 - Header Container */}
+                <View style={styles.headerContainer}>
+                    {/* Marketing - Title */}
+                    <Text style={styles.headerTitle}>Marketing</Text>
+
+                    {/* Frame 71 - Invitation Program Chip */}
+                    <View style={styles.invitationChip}>
+                        <Text style={styles.invitationText}>Invitation Program</Text>
+                    </View>
+
+                    {/* Subtitle */}
+                    <Text style={styles.subtitle}>
+                        Invite your contacts to install the app. Share your QR or your link in seconds.
+                    </Text>
+                </View>
+
                 {/* Frame 24 - Main Container */}
                 <View style={styles.mainCard}>
-                    {/* Header Section */}
-                    <View style={styles.headerRow}>
-                        <View style={styles.headerTextContainer}>
-                            <Text style={styles.title}>Marketing</Text>
-                            {/* Frame 71 - Invitation Program Chip */}
-                            <View style={styles.invitationChip}>
-                                <Text style={styles.invitationText}>Invitation Program</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.subtitle}>
-                            Invite your contacts to install the app. Share your QR or your link in seconds.
-                        </Text>
-                    </View>
 
                     {/* Frame 66 - Commission Card */}
                     <View style={styles.commissionCard}>
@@ -268,11 +285,22 @@ export default function MarketingScreen() {
                         {/* Frame 128 - QR Container */}
                         <View style={styles.qrContainer}>
                             <View style={styles.qrPlaceholder}>
-                                {stats?.referral_url ? (
-                                    <Image
-                                        source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(stats.referral_url)}` }}
-                                        style={{ width: 100, height: 100 }}
-                                    />
+                                {qrCodeUrl ? (
+                                    <>
+                                        {isQrLoading && (
+                                            <ActivityIndicator size="small" color="#00615E" />
+                                        )}
+                                        <Image
+                                            source={{ uri: qrCodeUrl }}
+                                            style={[
+                                                styles.qrImage,
+                                                isQrLoading && styles.qrImageHidden,
+                                            ]}
+                                            onLoadStart={() => setIsQrLoading(true)}
+                                            onLoadEnd={() => setIsQrLoading(false)}
+                                            onError={() => setIsQrLoading(false)}
+                                        />
+                                    </>
                                 ) : (
                                     <Ionicons name="qr-code-outline" size={80} color="#877F6C" />
                                 )}
@@ -362,21 +390,20 @@ export default function MarketingScreen() {
                     </Text>
                 </View>
 
+                {/* Frame 132 - How it works Header */}
+                <View style={styles.headerContainer}>
+                    <Text style={styles.headerTitle}>How it works</Text>
+                    {/* Frame 71 - Benefit Chip */}
+                    <View style={styles.benefitChip}>
+                        <Text style={styles.benefitText}>Benefit</Text>
+                    </View>
+                    <Text style={styles.subtitle}>
+                        Clear rules and metrics for you to get the most out of it.
+                    </Text>
+                </View>
+
                 {/* Frame 34 - How it works Card */}
                 <View style={styles.howItWorksCard}>
-                    {/* Frame 132 - Header */}
-                    <View style={styles.howItWorksHeader}>
-                        <View style={styles.headerTitleRow}>
-                            <Text style={styles.title}>How it works</Text>
-                            {/* Frame 71 - Benefit Chip */}
-                            <View style={styles.benefitChip}>
-                                <Text style={styles.benefitText}>Benefit</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.subtitle}>
-                            Clear rules and metrics for you to get the most out of it.
-                        </Text>
-                    </View>
 
                     {/* Frame 66 - Bonus Detail */}
                     <View style={styles.bonusCard}>
@@ -393,7 +420,7 @@ export default function MarketingScreen() {
 
                     {/* Frame 72 - Recent Activity */}
                     <View style={styles.activityCard}>
-                        <View style={styles.activityHeader}>
+                        <View style={styles.cardHeader}>
                             <Text style={styles.activityTitle}>Recent activity</Text>
                             {activities.length === 0 && (
                                 <View style={styles.demoChip}>
@@ -457,8 +484,36 @@ const styles = StyleSheet.create({
     contentContainer: {
         paddingHorizontal: 16,
         paddingTop: 20,
-        paddingBottom: 40,
+        paddingBottom: 0,
         gap: 8,
+        flexGrow: 1,
+    },
+    headerContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 8,
+        width: '100%',
+        minHeight: 52,
+        position: 'relative',
+    },
+    headerTitle: {
+        width: '100%',
+        height: 24,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '700',
+        fontSize: 24,
+        lineHeight: 24,
+        color: '#000000',
+    },
+    cardHeader: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: 0,
+        gap: 8,
+        width: '100%',
+        position: 'relative',
     },
     mainCard: {
         width: '100%',
@@ -501,6 +556,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 4,
         paddingHorizontal: 8,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         backgroundColor: '#BB5625',
         borderRadius: 70,
     },
@@ -642,20 +700,28 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    qrImage: {
+        width: 100,
+        height: 100,
+    },
+    qrImageHidden: {
+        opacity: 0,
+        position: 'absolute',
+    },
     actionButtons: {
         width: '100%',
         gap: 8,
     },
     primaryButton: {
         width: '100%',
-        height: 40,
         backgroundColor: '#00615E',
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 8,
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     primaryButtonText: {
         fontFamily: 'Inter',
@@ -666,14 +732,14 @@ const styles = StyleSheet.create({
     },
     secondaryButton: {
         width: '100%',
-        height: 40,
         backgroundColor: '#EAECE1',
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 8,
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     secondaryButtonText: {
         fontFamily: 'Inter',
@@ -795,6 +861,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 4,
         paddingHorizontal: 8,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         backgroundColor: '#BB5625',
         borderRadius: 70,
     },
@@ -847,7 +916,7 @@ const styles = StyleSheet.create({
         borderColor: '#EEEEEF',
         borderRadius: 8,
         padding: 8,
-        gap: 16,
+        gap: 8,
         position: 'relative',
     },
     activityHeader: {
@@ -869,6 +938,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 4,
         paddingHorizontal: 8,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         backgroundColor: '#BB5625',
         borderRadius: 70,
     },

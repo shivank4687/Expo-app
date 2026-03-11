@@ -12,6 +12,7 @@ export interface Product {
     status: 'active' | 'inactive';
     stock: number;
     image_url?: string | null;
+    type?: string;
 }
 
 export interface ProductsListParams {

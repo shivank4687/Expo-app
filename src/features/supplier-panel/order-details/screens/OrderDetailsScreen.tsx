@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
-import { getOrderDetails } from '../../orders/api/orders.api';
+import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
+import { createShipment, createSkydropxShipment, updateShipmentStatus } from '../../dashboard/api/shipments.api';
+import { useToast } from '@/shared/components/Toast';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -16,10 +19,22 @@ interface Tab {
 export default function OrderDetailsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState<TabType>('details');
+    const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
+    const isFromDashboard = sourceParam === 'dashboard';
+    const fromScreen = Array.isArray(params.from) ? params.from[0] : params.from;
 
     // Get order ID from route params
     const orderId = params.orderId ? parseInt(params.orderId as string) : 0;
+
+    // Drawer keeps this screen mounted; reset tab to default each time screen comes into focus
+    // so navigating away and back always starts on the Details tab.
+    useFocusEffect(
+        useCallback(() => {
+            setActiveTab('details');
+        }, [])
+    );
 
     const tabs: Tab[] = [
         { id: 'details', label: 'Details' },
@@ -27,8 +42,10 @@ export default function OrderDetailsScreen() {
         { id: 'tracking', label: 'Tracking' },
     ];
 
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isSubmittingTracking, setIsSubmittingTracking] = useState(false);
+    const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -48,10 +65,115 @@ export default function OrderDetailsScreen() {
         }
     };
 
-    const handleTrackingSubmit = (trackingNumber: string, photoUri: string) => {
-        console.log('Tracking Number:', trackingNumber);
-        console.log('Photo URI:', photoUri);
-        // TODO: Implement API call to submit tracking information
+    const handleTrackingSubmit = async (trackingNumber: string, photoUri: string | null) => {
+        try {
+            setIsSubmittingTracking(true);
+
+            const shipmentData: any = {
+                track_number: trackingNumber,
+            };
+
+            if (photoUri) {
+                shipmentData.tracking_photo = {
+                    uri: photoUri,
+                    type: 'image/jpeg',
+                    name: `tracking_${orderId}.jpg`,
+                };
+            }
+
+            const response = await createShipment(orderId, shipmentData);
+
+            if (response.success && response.data) {
+                // Manually update local state to show the new shipment immediately
+                if (order) {
+                    const newShipment = {
+                        id: response.data.shipment_id,
+                        carrier_title: response.data.carrier_title,
+                        track_number: response.data.track_number || trackingNumber,
+                        tracking_photo_url: response.data.tracking_photo_url || photoUri,
+                        total_qty: 1, // Defaulting if not in response
+                        created_at: response.data.created_at,
+                    };
+
+                    setOrder({
+                        ...order,
+                        shipments: [...(order.shipments || []), newShipment],
+                    });
+                }
+            } else {
+                showToast({ message: response.message || 'Failed to create shipment', type: 'error' });
+            }
+        } catch (error: any) {
+            console.error('Failed to submit tracking:', error);
+            showToast({ message: error?.message || 'An error occurred while submitting tracking info', type: 'error' });
+        } finally {
+            setIsSubmittingTracking(false);
+        }
+    };
+
+    const handleSkydropxSubmit = async (consignmentNote: string, packageType: string) => {
+        try {
+            setIsSubmittingTracking(true);
+
+            const payload = {
+                consignment_note: consignmentNote,
+                package_type: packageType,
+            };
+
+            const response = await createSkydropxShipment(orderId, payload);
+
+            if (response.success && response.data) {
+                // Manually update local state to show the new shipment immediately
+                if (order) {
+                    const newShipment = {
+                        id: response.data.shipment_id,
+                        carrier_title: response.data.carrier_title,
+                        track_number: response.data.track_number || '',
+                        tracking_photo_url: null,
+                        total_qty: 1,
+                        created_at: response.data.created_at,
+                    };
+
+                    setOrder({
+                        ...order,
+                        shipments: [...(order.shipments || []), newShipment],
+                    });
+                }
+            } else {
+                showToast({ message: response.message || 'Failed to create Skydropx shipment', type: 'error' });
+            }
+        } catch (error: any) {
+            console.error('Failed to submit Skydropx tracking:', error);
+            showToast({ message: error?.message || 'An error occurred while creating Skydropx shipment', type: 'error' });
+        } finally {
+            setIsSubmittingTracking(false);
+        }
+    };
+
+    const handleStatusUpdate = async (shipmentId: number, newStatus: string) => {
+        try {
+            setIsSubmittingStatus(true);
+            const response = await updateShipmentStatus(shipmentId, newStatus);
+            if (response.success) {
+                if (order && order.shipments) {
+                    const updatedShipments = order.shipments.map(shipment =>
+                        shipment.id === shipmentId ? { ...shipment, status: newStatus } : shipment
+                    );
+                    setOrder({
+                        ...order,
+                        shipments: updatedShipments,
+                    });
+                }
+                showToast({ message: 'Shipment status updated successfully', type: 'success' });
+            } else {
+                showToast({ message: response.message || 'Failed to update shipment status', type: 'error' });
+            }
+        } catch (error: any) {
+            console.error('Failed to update status:', error);
+            showToast({ message: error?.message || 'An error occurred while updating shipment status', type: 'error' });
+        } finally {
+            setIsSubmittingStatus(false);
+        }
     };
 
     const renderTabContent = () => {
@@ -64,14 +186,33 @@ export default function OrderDetailsScreen() {
         }
 
         if (activeTab === 'tracking') {
-            return <TrackingInfoCard onSubmit={handleTrackingSubmit} />;
+            return (
+                <TrackingInfoCard
+                    shipments={order?.shipments}
+                    isSubmitting={isSubmittingTracking}
+                    isSubmittingStatus={isSubmittingStatus}
+                    isSkydropx={true}
+                    onSubmit={handleTrackingSubmit}
+                    onSkydropxSubmit={handleSkydropxSubmit}
+                    onStatusUpdate={handleStatusUpdate}
+                />
+            );
         }
 
         if (activeTab === 'messages') {
             return <OrderChatView supplierOrderId={orderId} />;
         }
 
-        return <OrderDetailsTab order={order} />;
+        const handleVoucherRegenerated = (newPaymentData: any) => {
+            if (order) {
+                setOrder({
+                    ...order,
+                    payment: newPaymentData
+                });
+            }
+        };
+
+        return <OrderDetailsTab order={order ?? undefined} onVoucherRegenerated={handleVoucherRegenerated} />;
     };
 
     return (
@@ -81,14 +222,22 @@ export default function OrderDetailsScreen() {
                 <View style={styles.headerContent}>
                     <TouchableOpacity
                         style={styles.backButton}
-                        onPress={() => router.back()}
+                        onPress={() => {
+                            if (fromScreen === 'notifications') {
+                                router.push('/(supplier-drawer)/notifications' as any);
+                            } else {
+                                router.back();
+                            }
+                        }}
                         activeOpacity={0.7}
                     >
                         <Ionicons name="arrow-back" size={16} color="#000000" />
                     </TouchableOpacity>
 
                     <View style={styles.titleContainer}>
-                        <Text style={styles.headerTitle}>Orders</Text>
+                        <Text style={styles.headerTitle}>
+                            {fromScreen === 'notifications' ? 'Notifications' : isFromDashboard ? 'Dashboard' : 'Orders'}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -197,7 +346,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 4,
-        height: 42,
+        minHeight: 42,
         backgroundColor: COLORS.white,
         borderRadius: 8,
     },
@@ -207,8 +356,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 10,
-        paddingVertical: 10,
-        height: 34,
+        paddingVertical: 8,
+        minHeight: 34,
         borderRadius: 4,
     },
     tabActive: {
@@ -220,7 +369,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 14,
-        lineHeight: 14,
+        lineHeight: 18,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
         color: '#000000',
     },
     tabTextActive: {

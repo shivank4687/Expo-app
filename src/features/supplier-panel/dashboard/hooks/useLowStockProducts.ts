@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { productsApi } from '../../products/api/products.api';
 import { getLowStockProducts, LowStockProduct } from '../api/low-stock-products.api';
 
 export const useLowStockProducts = () => {
@@ -20,14 +22,54 @@ export const useLowStockProducts = () => {
         }
     };
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+    const quickUpdateProduct = useCallback(async (
+        productId: number,
+        updates: {
+            status?: 'active' | 'inactive';
+            price?: number;
+            stock?: number;
+        }
+    ) => {
+        // Optimistically update the UI
+        const previousData = [...data];
+        setData((prev) =>
+            prev.map((product) =>
+                (product.marketplace_product_id || product.id) === productId
+                    ? {
+                        ...product,
+                        ...(updates.status !== undefined && { status: updates.status }),
+                        ...(updates.price !== undefined && {
+                            price: updates.price,
+                            formatted_price: `$${updates.price.toFixed(2)}`
+                        }),
+                        ...(updates.stock !== undefined && { stock_qty: updates.stock }),
+                    }
+                    : product
+            )
+        );
+
+        try {
+            await productsApi.quickUpdateProduct(productId, updates);
+            return { success: true };
+        } catch (error) {
+            // Revert on error
+            setData(previousData);
+            console.error('Error quick updating product:', error);
+            return { success: false, error };
+        }
+    }, [data]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchProducts();
+        }, [])
+    );
 
     return {
         data,
         loading,
         error,
+        quickUpdateProduct,
         refetch: fetchProducts,
     };
 };

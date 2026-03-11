@@ -111,7 +111,7 @@ export const coreApi = {
      */
     async getCountries(): Promise<Country[]> {
         const response = await restApiClient.get<PaginatedResponse<Country>>('/countries', {
-            params: { pagination: 0 },
+            params: { pagination: 0, sort: 'name', order: 'asc' },
         });
         return response.data || [];
     },

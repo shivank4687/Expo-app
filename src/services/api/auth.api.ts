@@ -34,8 +34,9 @@ export const authApi = {
      * Register new user
      * Returns either OTP verification required response or direct registration response
      */
-    async register(data: SignupRequest): Promise<SignupResponse> {
-        return restApiClient.post<SignupResponse>(API_ENDPOINTS.REGISTER, {
+    async register(data: SignupRequest, type: 'customer' | 'supplier' = 'customer'): Promise<SignupResponse> {
+        const endpoint = type === 'supplier' ? API_ENDPOINTS.SUPPLIER_REGISTER : API_ENDPOINTS.REGISTER;
+        return restApiClient.post<SignupResponse>(endpoint, {
             ...data,
             device_name: 'mobile_app', // Required for API token generation
         });
@@ -45,7 +46,8 @@ export const authApi = {
      * Verify OTP and complete registration
      */
     async verifyOtp(data: OtpVerificationRequest): Promise<OtpVerificationResponse> {
-        return restApiClient.post<OtpVerificationResponse>(API_ENDPOINTS.VERIFY_OTP, {
+        const endpoint = data.type === 'supplier' ? API_ENDPOINTS.SUPPLIER_VERIFY_OTP : API_ENDPOINTS.VERIFY_OTP;
+        return restApiClient.post<OtpVerificationResponse>(endpoint, {
             ...data,
             type: data.type || 'customer',
         });
@@ -55,7 +57,8 @@ export const authApi = {
      * Resend OTP
      */
     async resendOtp(data: ResendOtpRequest): Promise<ResendOtpResponse> {
-        return restApiClient.post<ResendOtpResponse>(API_ENDPOINTS.RESEND_OTP, {
+        const endpoint = data.type === 'supplier' ? API_ENDPOINTS.SUPPLIER_RESEND_OTP : API_ENDPOINTS.RESEND_OTP;
+        return restApiClient.post<ResendOtpResponse>(endpoint, {
             ...data,
             type: data.type || 'customer',
         });
@@ -129,11 +132,12 @@ export const authApi = {
      * Check if email or phone already exists
      */
     async checkDuplicate(data: {
-        type: 'email' | 'phone';
+        type: 'email' | 'phone' | 'url';
         value: string;
         phone_country_id?: number;
-    }): Promise<{ available: boolean; message?: string }> {
-        return restApiClient.post(API_ENDPOINTS.CHECK_DUPLICATE, data);
+    }, userType: 'customer' | 'supplier' = 'customer'): Promise<{ available: boolean; message?: string }> {
+        const endpoint = userType === 'supplier' ? API_ENDPOINTS.SUPPLIER_CHECK_DUPLICATE : API_ENDPOINTS.CHECK_DUPLICATE;
+        return restApiClient.post(endpoint, data);
     },
 
     /**
@@ -150,7 +154,7 @@ export const authApi = {
         phone: string;
         phone_country_id: number;
         dial_code: string;
-    }): Promise<{
+    }, userType: 'customer' | 'supplier' = 'customer'): Promise<{
         requires_otp_verification: boolean;
         message: string;
         verification_token: string;
@@ -159,7 +163,8 @@ export const authApi = {
         otp_expiry: string;
         resend_available_at: string;
     }> {
-        return restApiClient.post(API_ENDPOINTS.FORGOT_PASSWORD_PHONE, data);
+        const endpoint = userType === 'supplier' ? API_ENDPOINTS.SUPPLIER_FORGOT_PASSWORD_PHONE : API_ENDPOINTS.FORGOT_PASSWORD_PHONE;
+        return restApiClient.post(endpoint, data);
     },
 
     /**
@@ -170,8 +175,9 @@ export const authApi = {
         otp: string;
         password: string;
         password_confirmation: string;
-    }): Promise<{ message: string }> {
-        return restApiClient.post(API_ENDPOINTS.RESET_PASSWORD, data);
+    }, userType: 'customer' | 'supplier' = 'customer'): Promise<{ message: string }> {
+        const endpoint = userType === 'supplier' ? API_ENDPOINTS.SUPPLIER_RESET_PASSWORD : API_ENDPOINTS.RESET_PASSWORD;
+        return restApiClient.post(endpoint, data);
     },
 };
 

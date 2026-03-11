@@ -101,11 +101,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 originName
             );
 
-            setSelectedOrigins(prev => [...prev, newOption.id.toString()]);
-
             if (onAttributesRefresh) {
                 await onAttributesRefresh();
             }
+
+            setSelectedOrigins(prev => [...prev, newOption.id.toString()]);
 
             showToast({
                 message: `Origin "${originName}" has been added!`,
@@ -131,11 +131,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 featureName
             );
 
-            setSelectedFeatures(prev => [...prev, newOption.id.toString()]);
-
             if (onAttributesRefresh) {
                 await onAttributesRefresh();
             }
+
+            setSelectedFeatures(prev => [...prev, newOption.id.toString()]);
 
             showToast({
                 message: `Feature "${featureName}" has been added!`,
@@ -228,7 +228,7 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                 </ScrollView>
 
                 {/* Action Buttons */}
-                <View style={styles.buttonGroup}>
+                {/* <View style={styles.buttonGroup}>
                     <TouchableOpacity style={styles.primaryButton}>
                         <Ionicons name="add" size={16} color="#000000" />
                         <Text style={styles.buttonText}>Add Feature</Text>
@@ -237,7 +237,7 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                     <TouchableOpacity style={styles.secondaryButton}>
                         <Text style={styles.buttonText}>Create features and Values</Text>
                     </TouchableOpacity>
-                </View>
+                </View> */}
             </View>
 
             {/* Origin Input Modal */}

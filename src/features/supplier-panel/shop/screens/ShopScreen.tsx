@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { IdentityCard, ShopDetailsCard, PoliciesCard, AddressCard, SalesShippingCard, DeliveryMethodCard, ShopMediaCard, SocialMediaCard } from '../components';
 import { COLORS } from '@/features/supplier-panel/styles';
-import { getSupplierProfile, updateSupplierProfile, SupplierProfile } from '../api/supplier-profile.api';
 import { useToast } from '@/shared/components/Toast/ToastContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getSupplierProfile, SupplierProfile, updateSupplierProfile } from '../api/supplier-profile.api';
+import { AddressCard, DeliveryMethodCard, IdentityCard, PoliciesCard, SalesShippingCard, ShopDetailsCard, ShopMediaCard, SocialMediaCard } from '../components';
+import { consumeContactUpdate } from '@/features/supplier-panel/profile/contactUpdateTracker';
 
 export default function ShopScreen() {
     const { showToast } = useToast();
@@ -29,6 +31,21 @@ export default function ShopScreen() {
             setLoading(false);
         }
     }, []);
+
+    const isFirstFocus = useRef(true);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (isFirstFocus.current) {
+                isFirstFocus.current = false;
+                return;
+            }
+
+            if (consumeContactUpdate()) {
+                fetchProfile();
+            }
+        }, [fetchProfile])
+    );
 
     useEffect(() => {
         fetchProfile();
@@ -138,7 +155,11 @@ export default function ShopScreen() {
             });
         } catch (error: any) {
             console.error('Error updating profile:', error);
-            const errorMessage = error.response?.data?.message || 'Failed to update profile.';
+            const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message ||
+                'Failed to update profile.';
             showToast({
                 type: 'error',
                 message: errorMessage
@@ -274,8 +295,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 16,
         backgroundColor: COLORS.background,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
     },
     headerTitle: {
         fontFamily: 'Inter',
@@ -292,7 +311,7 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 8,
         gap: 16,
-        alignItems: 'center',
+        alignItems: 'stretch',
     },
     card: {
         display: 'flex',
@@ -301,7 +320,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 16,
         gap: 16,
-        width: 361,
+        width: "100%",
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
         shadowColor: '#000000',
@@ -317,7 +336,7 @@ const styles = StyleSheet.create({
     actionRow: {
         flexDirection: 'row',
         gap: 8,
-        width: 361,
+        width: "100%",
         height: 40,
         alignSelf: 'stretch',
         marginTop: 8,

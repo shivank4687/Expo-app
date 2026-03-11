@@ -25,6 +25,8 @@ export interface PriceStockVariantsCardRef {
     updateFields: (data: any) => void;
 }
 
+const MAX_VARIANT_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+
 const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockVariantsCardProps>(({
     productName,
     attributes = [],
@@ -522,7 +524,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         // Check if all selected attributes have a value in tempSelection
         const allSelected = selectedVariantAttributes.every(id => tempSelection[id]);
         if (!allSelected) {
-            Alert.alert('Selection Missing', 'Please select values for all attributes.');
+            showToast({
+                message: 'Please select values for all attributes.',
+                type: 'warning',
+            });
             return;
         }
 
@@ -532,7 +537,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         );
 
         if (isDuplicate) {
-            Alert.alert('Duplicate', 'This variant already exists.');
+            showToast({
+                message: 'This variant already exists.',
+                type: 'warning',
+            });
             return;
         }
 
@@ -546,7 +554,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             length: '',
             width: '',
             height: '',
-            image: null,
+            images: [],
         };
 
         setVariants(prev => [...prev, newVariant]);
@@ -568,7 +576,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your media library.');
+                showToast({
+                    message: 'Please grant permission to access your media library.',
+                    type: 'warning',
+                });
                 return;
             }
 
@@ -580,6 +591,14 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_VARIANT_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 const newImage = { uri: result.assets[0].uri };
                 setVariants(prev => prev.map(v => {
                     if (v.id === variantId) {
@@ -596,7 +615,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             }
         } catch (error) {
             console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick image.');
+            showToast({
+                message: 'Failed to pick image.',
+                type: 'error',
+            });
         }
     };
 
@@ -604,7 +626,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         try {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your camera.');
+                showToast({
+                    message: 'Please grant permission to access your camera.',
+                    type: 'warning',
+                });
                 return;
             }
 
@@ -616,6 +641,14 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_VARIANT_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 const newImage = { uri: result.assets[0].uri };
                 setVariants(prev => prev.map(v => {
                     if (v.id === variantId) {
@@ -632,7 +665,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             }
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take photo.');
+            showToast({
+                message: 'Failed to take photo.',
+                type: 'error',
+            });
         }
     };
 
@@ -838,10 +874,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 )}
 
                 {/* AI Suggestion */}
-                <TouchableOpacity style={styles.aiButton}>
+                {/* <TouchableOpacity style={styles.aiButton}>
                     <AiIcon width={16} height={16} color="#000000" />
                     <Text style={styles.buttonText}>Auto-generate information</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
             {/* Main Variant Selector */}
@@ -1185,10 +1221,10 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.aiButton}>
+                {/* <TouchableOpacity style={styles.aiButton}>
                     <AiIcon width={16} height={16} color="#000000" />
                     <Text style={styles.buttonText}>Standard Price</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <Text style={styles.tipText}>
                     We recommend applying a progressive price based on quantities to encourage larger and recurring orders.
@@ -1208,9 +1244,9 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     <Text style={styles.applyToAllText}>Apply to all variants</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.publishButton}>
+                {/* <TouchableOpacity style={styles.publishButton}>
                     <Text style={styles.publishButtonText}>Save</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
             {/* Option Creation Modal */}

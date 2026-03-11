@@ -1,4 +1,5 @@
 import { restApiClient } from '@/services/api/client';
+import { formatFileUri, multipartFetch } from '@/services/api/fetchClient';
 
 export interface SupplierProfile {
     id: number;
@@ -117,12 +118,45 @@ export const getSupplierProfile = async (): Promise<SupplierProfile> => {
 export const updateSupplierProfile = async (
     data: SupplierProfileUpdateData
 ): Promise<SupplierProfile> => {
-    const formData = new FormData();
-
     // Helper function to check if a value is a local file URI
     const isLocalFileUri = (uri: string | null | undefined): boolean => {
         return !!uri && (uri.startsWith('file://') || uri.startsWith('content://'));
     };
+
+    const hasImageUpload =
+        isLocalFileUri(data.banner) ||
+        isLocalFileUri(data.logo) ||
+        isLocalFileUri(data.profile);
+
+    const hasImageDelete =
+        data.banner === null ||
+        data.logo === null ||
+        data.profile === null;
+
+    const extractProfile = (response: any): SupplierProfile => {
+        return response?.data ?? response;
+    };
+
+    // Prefer JSON payload when images are unchanged.
+    // This avoids multipart issues seen in some Android release builds.
+    if (!hasImageUpload && !hasImageDelete) {
+        const payload: Record<string, any> = {};
+
+        Object.keys(data).forEach((key) => {
+            const value = data[key as keyof SupplierProfileUpdateData];
+            if (value !== undefined) {
+                payload[key] = value;
+            }
+        });
+
+        const response = await restApiClient.put<any>(
+            '/supplier-app/profile',
+            payload
+        );
+        return extractProfile(response);
+    }
+
+    const formData = new FormData();
 
     // Append all text fields to FormData
     Object.keys(data).forEach((key) => {
@@ -153,7 +187,7 @@ export const updateSupplierProfile = async (
 
             // Create a file-like object for React Native FormData
             const file = {
-                uri,
+                uri: formatFileUri(uri),
                 type,
                 name: filename,
             } as any;
@@ -163,7 +197,6 @@ export const updateSupplierProfile = async (
             // Image removed - send deletion flag
             formData.append('delete_banner', '1');
         }
-        // If it's a URL (existing image), don't send anything
     }
 
     // Handle logo image
@@ -176,7 +209,7 @@ export const updateSupplierProfile = async (
 
             // Create a file-like object for React Native FormData
             const file = {
-                uri,
+                uri: formatFileUri(uri),
                 type,
                 name: filename,
             } as any;
@@ -187,7 +220,7 @@ export const updateSupplierProfile = async (
         }
     }
 
-    // Handle profile image (kept for backend compatibility, not used in mobile UI)
+    // Handle profile image
     if (data.profile !== undefined) {
         if (isLocalFileUri(data.profile)) {
             const uri = data.profile as string;
@@ -197,7 +230,7 @@ export const updateSupplierProfile = async (
 
             // Create a file-like object for React Native FormData
             const file = {
-                uri,
+                uri: formatFileUri(uri),
                 type,
                 name: filename,
             } as any;
@@ -211,10 +244,10 @@ export const updateSupplierProfile = async (
     // For PUT request via FormData, use POST with _method override
     formData.append('_method', 'PUT');
 
-    // Use POST instead of PUT for FormData (Laravel requirement)
-    const response = await restApiClient.post<{ data: SupplierProfile; message: string }>(
+    // Use POST instead of PUT for FormData (Laravel requirement) via multipartFetch
+    const response = await multipartFetch<{ data: SupplierProfile; message: string }>(
         '/supplier-app/profile',
         formData
     );
-    return response.data;
+    return extractProfile(response);
 };

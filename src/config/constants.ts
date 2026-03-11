@@ -19,12 +19,25 @@ export const API_ENDPOINTS = {
     VERIFY_OTP: '/customer/verify-otp',
     RESEND_OTP: '/customer/resend-otp',
     LOGOUT: '/customer/logout',
+    REFRESH_TOKEN: '/customer/refresh-token',
     FORGOT_PASSWORD_PHONE: '/customer/forgot-password-phone',
     RESET_PASSWORD: '/customer/reset-password',
     // Supplier App Auth
     SUPPLIER_LOGIN: '/supplier-app/login',
+    SUPPLIER_REGISTER: '/supplier-app/register',
+    SUPPLIER_CHECK_DUPLICATE: '/supplier-app/check-duplicate',
+    SUPPLIER_VERIFY_OTP: '/supplier-app/verify-otp',
+    SUPPLIER_RESEND_OTP: '/supplier-app/resend-otp',
     SUPPLIER_LOGOUT: '/supplier-app/logout',
     SUPPLIER_GET: '/supplier-app/get',
+    SUPPLIER_VERIFICATION_STATUS: '/supplier-app/verification',
+    SUPPLIER_VERIFICATION_RESEND: '/supplier-app/verification/resend',
+    SUPPLIER_VERIFICATION_IDENTITY: '/supplier-app/verification/identity',
+    SUPPLIER_FORGOT_PASSWORD_PHONE: '/supplier-app/forgot-password-phone',
+    SUPPLIER_RESET_PASSWORD: '/supplier-app/reset-password',
+    // Supplier Device Token (push notifications)
+    SUPPLIER_DEVICE_TOKEN_REGISTER: '/supplier-app/device-token/register',
+    SUPPLIER_DEVICE_TOKEN_UNREGISTER: '/supplier-app/device-token/unregister',
     // Products
     PRODUCTS: '/products',
     PRODUCT_DETAIL: '/products/:id',
@@ -101,6 +114,12 @@ export const API_ENDPOINTS = {
     SUPPLIER_PRODUCT_ATTRIBUTES: '/supplier-app/products/attributes',
     SUPPLIER_PRODUCT_CATEGORIES: '/supplier-app/products/categories',
     SUPPLIER_CHECK_SKU: '/supplier-app/products/check-sku',
+
+    // Supplier Notifications
+    SUPPLIER_NOTIFICATIONS: '/supplier-app/notifications',
+    SUPPLIER_NOTIFICATIONS_MARK_ALL_READ: '/supplier-app/notifications/mark-all-read',
+    SUPPLIER_NOTIFICATIONS_MARK_RFQ_READ: '/supplier-app/notifications/rfq/:id/mark-read',
+    SUPPLIER_NOTIFICATIONS_MARK_ORDER_READ: '/supplier-app/notifications/order/:id/mark-read',
 };
 
 export const PAGINATION = {

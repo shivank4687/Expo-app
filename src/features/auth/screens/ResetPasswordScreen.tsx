@@ -86,7 +86,7 @@ export const ResetPasswordScreen: React.FC = () => {
                 otp: otp,
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
-            });
+            }, (params.userType as any) || 'customer');
 
             showToast({
                 message: response.message || t('auth.passwordResetSuccess'),
@@ -128,47 +128,61 @@ export const ResetPasswordScreen: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View style={styles.header}>
-                    <Text style={styles.title}>{t('auth.resetPasswordTitle')}</Text>
-                    <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
-                </View>
+            <View style={styles.topPanel} />
 
-                <View style={styles.form}>
-                    <Input
-                        label={t('auth.newPassword')}
-                        placeholder={t('auth.enterNewPassword')}
-                        value={formData.password}
-                        onChangeText={(text) => updateField('password', text)}
-                        error={errors.password}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password-new"
-                    />
+            <View style={styles.bottomSheet}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{t('auth.resetPasswordTitle')}</Text>
+                        <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
+                    </View>
 
-                    <Input
-                        label={t('auth.confirmNewPassword')}
-                        placeholder={t('auth.confirmYourPassword')}
-                        value={formData.confirmPassword}
-                        onChangeText={(text) => updateField('confirmPassword', text)}
-                        error={errors.confirmPassword}
-                        leftIcon="lock-closed"
-                        secureTextEntry
-                        autoComplete="password-new"
-                    />
+                    <View style={styles.form}>
+                        <Input
+                            label={t('auth.newPassword')}
+                            placeholder={t('auth.enterNewPassword')}
+                            value={formData.password}
+                            onChangeText={(text) => updateField('password', text)}
+                            error={errors.password}
+                            secureTextEntry
+                            autoComplete="password"
+                            textContentType="none"
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
 
-                    <Button
-                        title={t('auth.resetPassword')}
-                        onPress={handleResetPassword}
-                        loading={isLoading}
-                        fullWidth
-                        size="large"
-                    />
-                </View>
-            </ScrollView>
+                        <Input
+                            label={t('auth.confirmNewPassword')}
+                            placeholder={t('auth.confirmYourPassword')}
+                            value={formData.confirmPassword}
+                            onChangeText={(text) => updateField('confirmPassword', text)}
+                            error={errors.confirmPassword}
+                            secureTextEntry
+                            autoComplete="password"
+                            textContentType="none"
+                            inputContainerStyle={styles.inputField}
+                            style={styles.inputText}
+                            labelStyle={styles.inputLabel}
+                        />
+
+                        <View style={styles.actionContainer}>
+                            <Button
+                                title={t('auth.resetPassword')}
+                                onPress={handleResetPassword}
+                                loading={isLoading}
+                                fullWidth
+                                size="medium"
+                                style={styles.resetButton}
+                            />
+                        </View>
+                    </View>
+                </ScrollView>
+            </View>
         </KeyboardAvoidingView>
     );
 };
@@ -176,30 +190,76 @@ export const ResetPasswordScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background.default,
+        backgroundColor: '#00615E',
+    },
+    topPanel: {
+        paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
+        alignItems: 'center',
+    },
+    bottomSheet: {
+        flex: 1,
+        backgroundColor: '#FFFDF4',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        overflow: 'hidden',
     },
     scrollContent: {
         flexGrow: 1,
-        padding: theme.spacing.xl,
-        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.xl,
     },
     header: {
-        marginBottom: theme.spacing['2xl'],
-        alignItems: 'center',
+        marginBottom: theme.spacing.lg,
+        alignItems: 'flex-start',
     },
     title: {
-        fontSize: theme.typography.fontSize['3xl'],
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
+        fontSize: 32,
+        lineHeight: 38,
+        fontWeight: '500',
+        color: '#000000',
+        marginBottom: theme.spacing.xs,
+        fontFamily: 'Inter',
     },
     subtitle: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
-        textAlign: 'center',
+        fontSize: 16,
+        lineHeight: 26,
+        fontWeight: '400',
+        color: '#090A0A',
+        fontFamily: 'Inter',
     },
     form: {
         width: '100%',
+    },
+    inputField: {
+        backgroundColor: '#F3F0E7',
+        borderWidth: 0,
+        borderRadius: 8,
+        minHeight: 40,
+    },
+    inputText: {
+        color: '#0A292D',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    inputLabel: {
+        color: '#72777A',
+        fontSize: 14,
+        marginBottom: 4,
+        fontFamily: 'Inter',
+    },
+    actionContainer: {
+        marginTop: theme.spacing.md,
+        paddingHorizontal: 24,
+        gap: 10,
+    },
+    resetButton: {
+        backgroundColor: '#00615E',
+        borderRadius: 8,
+        height: 40,
+        paddingVertical: 0,
     },
 });
 

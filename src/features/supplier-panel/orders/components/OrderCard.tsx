@@ -93,12 +93,12 @@ const getStatusBadgeStyle = (status: string) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: COLORS.white,
+        backgroundColor: '#FCF7EA',
         borderRadius: 8,
         padding: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: '#E9E3D3',
     },
     content: {
         flexDirection: 'row',

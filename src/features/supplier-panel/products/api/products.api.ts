@@ -2,9 +2,9 @@
  * Products API client for supplier panel
  */
 
-import { restApiClient } from '@/services/api/client';
 import { API_ENDPOINTS } from '@/config/constants';
-import type { ProductsListResponse, ProductsListParams } from '../types/products.types';
+import { restApiClient } from '@/services/api/client';
+import type { ProductsListParams, ProductsListResponse } from '../types/products.types';
 
 export const productsApi = {
     /**

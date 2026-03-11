@@ -53,11 +53,12 @@ const styles = StyleSheet.create({
     metricCard: {
         flexDirection: 'column',
         alignItems: 'flex-start',
-        padding: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 4,
         gap: 8,
         width: '48%',
         height: 106,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FCF7EA',
         borderRadius: 8,
         shadowColor: '#000000',
         shadowOffset: {
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 4,
         paddingHorizontal: 8,
-        backgroundColor: '#E0FFFE',
+        backgroundColor: '#BB5625',
         borderRadius: 50,
     },
     badgeText: {
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 12,
         lineHeight: 17,
-        color: '#00615E',
+        color: '#FFFFFF',
     },
     metricContent: {
         flexDirection: 'column',

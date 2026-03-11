@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useToast } from '@/shared/components/Toast/ToastContext';
 
 interface ShopMediaCardProps {
     data: {
@@ -11,6 +12,9 @@ interface ShopMediaCardProps {
 }
 
 export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) => {
+    const { showToast } = useToast();
+    const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+
     const pickBanner = async () => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -27,7 +31,15 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                 quality: 0.8,
             });
 
-            if (!result.canceled) {
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 onChange('banner', result.assets[0].uri);
             }
         } catch (error) {
@@ -136,7 +148,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: 329,
+        width: "100%",
         height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -151,7 +163,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         position: 'relative',
     },
     headerRow: {
@@ -159,7 +171,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
-        height: 22,
     },
     label: {
         fontFamily: 'Inter',
@@ -171,7 +182,7 @@ const styles = StyleSheet.create({
     },
     badge: {
         paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingVertical: 2,
         backgroundColor: '#E0FFFE',
         borderWidth: 1,
         borderColor: '#00615E',
@@ -192,7 +203,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -209,7 +220,7 @@ const styles = StyleSheet.create({
         padding: 0,
     },
     description: {
-        width: 329,
+        width: "100%",
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '400',
@@ -218,7 +229,7 @@ const styles = StyleSheet.create({
         color: '#666666',
     },
     bannerPreviewContainer: {
-        width: 329,
+        width: "100%",
         height: 180,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -260,7 +271,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        width: 329,
+        width: "100%",
         marginTop: 8,
     },
     photoSlot: {

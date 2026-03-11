@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PickerModal, PickerItem } from '@/shared/components/PickerModal';
-import { coreApi, Country, State } from '@/services/api/core.api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 
 interface AddressCardProps {
     data: {
@@ -17,34 +18,24 @@ interface AddressCardProps {
 }
 
 export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors = {} }) => {
-    const [countries, setCountries] = useState<Country[]>([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useAppDispatch();
+    const countries = useAppSelector(state => state.core.countries);
+    const isLoadingCountries = useAppSelector(state => state.core.isLoadingCountries);
 
     const [showCountryPicker, setShowCountryPicker] = useState(false);
 
     // Fetch countries on mount
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const countriesData = await coreApi.getCountries();
-                setCountries(countriesData);
-            } catch (error) {
-                console.error('Error fetching countries:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+        dispatch(fetchCountriesThunk());
+    }, [dispatch]);
 
-    const countryItems: PickerItem[] = countries.map(country => ({
+    const countryItems: PickerItem[] = (countries || []).map(country => ({
         label: country.name,
         value: country.code
     }));
 
     const getSelectedCountryName = () => {
-        const country = countries.find(c => c.code === data.country);
+        const country = (countries || []).find(c => c.code === data.country);
         return country ? country.name : '';
     };
 
@@ -62,6 +53,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         placeholderTextColor="#666666"
                         value={data.address1}
                         onChangeText={(val) => onChange('address1', val)}
+                        textContentType="streetAddressLine1"
+                        autoComplete="address-line1"
                     />
                 </View>
                 {errors.address1 && <Text style={styles.errorText}>{errors.address1}</Text>}
@@ -77,6 +70,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         placeholderTextColor="#666666"
                         value={data.city}
                         onChangeText={(val) => onChange('city', val)}
+                        textContentType="addressCity"
+                        autoComplete="address-line2"
                     />
                 </View>
                 {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
@@ -88,12 +83,12 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                 <TouchableOpacity
                     style={[styles.inputContainerSmall, errors.country ? styles.inputError : null]}
                     onPress={() => setShowCountryPicker(true)}
-                    disabled={loading}
+                    disabled={isLoadingCountries}
                 >
                     <Text style={[styles.inputSmall, !data.country && styles.placeholderText]}>
-                        {loading ? 'Loading...' : (data.country ? getSelectedCountryName() : 'Select Country')}
+                        {isLoadingCountries ? 'Loading...' : (data.country ? getSelectedCountryName() : 'Select Country')}
                     </Text>
-                    {loading ? (
+                    {isLoadingCountries ? (
                         <ActivityIndicator size="small" color="#666666" />
                     ) : (
                         <Ionicons name="chevron-down" size={16} color="#666666" />
@@ -112,6 +107,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         placeholderTextColor="#666666"
                         value={data.state}
                         onChangeText={(val) => onChange('state', val)}
+                        textContentType="addressState"
+                        autoComplete="off"
                     />
                 </View>
                 {errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
@@ -128,6 +125,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({ data, onChange, errors
                         keyboardType="numeric"
                         value={data.postcode}
                         onChangeText={(val) => onChange('postcode', val)}
+                        textContentType="postalCode"
+                        autoComplete="postal-code"
                     />
                 </View>
                 {errors.postcode && <Text style={styles.errorText}>{errors.postcode}</Text>}
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: 329,
+        width: "100%",
         height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -175,7 +174,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         minHeight: 67,
         marginBottom: 8,
     },
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
         minHeight: 85,
     },
     label: {
-        width: 329,
+        width: "100%",
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',
@@ -197,9 +196,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,

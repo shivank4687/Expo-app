@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useToast } from '@/shared/components/Toast/ToastContext';
 
 interface ShopDetailsCardProps {
     data: {
@@ -13,6 +14,9 @@ interface ShopDetailsCardProps {
 }
 
 export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange }) => {
+    const { showToast } = useToast();
+    const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+
     const pickImage = async () => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -29,7 +33,15 @@ export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange
                 quality: 0.8,
             });
 
-            if (!result.canceled) {
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const fileSize = result.assets[0].fileSize || 0;
+                if (fileSize > MAX_IMAGE_SIZE) {
+                    showToast({
+                        message: 'Image size exceeds 1.5MB limit.',
+                        type: 'warning',
+                    });
+                    return;
+                }
                 onChange('logo', result.assets[0].uri);
             }
         } catch (error) {
@@ -68,6 +80,8 @@ export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange
                         textAlignVertical="top"
                         value={data.company_overview}
                         onChangeText={(val) => onChange('company_overview', val)}
+                        textContentType="none"
+                        autoComplete="off"
                     />
                 </View>
                 <Text style={styles.tipText}>
@@ -112,6 +126,8 @@ export const ShopDetailsCard: React.FC<ShopDetailsCardProps> = ({ data, onChange
                         keyboardType="phone-pad"
                         value={data.phone}
                         onChangeText={(val) => onChange('phone', val)}
+                        textContentType="telephoneNumber"
+                        autoComplete="tel"
                     />
                 </View>
             </View>
@@ -134,7 +150,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         height: 187,
     },
     fieldContainerSmall: {
@@ -143,7 +159,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
         height: 67,
     },
     fieldContainerLogo: {
@@ -152,7 +168,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: 329,
+        width: "100%",
     },
     logoPreviewContainer: {
         width: 100,
@@ -187,7 +203,7 @@ const styles = StyleSheet.create({
         padding: 2,
     },
     label: {
-        width: 329,
+        width: "100%",
         height: 19,
         fontFamily: 'Inter',
         fontStyle: 'normal',
@@ -203,7 +219,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         paddingLeft: 16,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 112,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -214,9 +230,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
         gap: 10,
-        width: 329,
+        width: "100%",
         height: 40,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
@@ -246,7 +261,7 @@ const styles = StyleSheet.create({
         padding: 0,
     },
     tipText: {
-        width: 329,
+        width: "100%",
         height: 40,
         fontFamily: 'Inter',
         fontStyle: 'normal',

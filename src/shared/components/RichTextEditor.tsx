@@ -22,20 +22,40 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const [internalValue, setInternalValue] = useState(value);
     const isUserTyping = useRef(false);
 
+    const normalizeHtml = (html: string) => {
+        const trimmed = (html || '').trim();
+        if (!trimmed) return '';
+        const emptyPatterns = [
+            '<p><br></p>',
+            '<div><br></div>',
+            '<br>',
+            '<p></p>',
+            '<div></div>',
+            '&nbsp;',
+        ];
+        if (emptyPatterns.includes(trimmed)) return '';
+        if (trimmed.replace(/&nbsp;|\s|<br\s*\/?>|<p>|<\/p>|<div>|<\/div>/gi, '') === '') {
+            return '';
+        }
+        return html;
+    };
+
     // Update editor content only when value changes externally (not from user input)
     useEffect(() => {
         // Only update if the value changed externally (e.g., from AI generation)
         // and not from user typing
-        if (!isUserTyping.current && value !== internalValue && richText.current) {
-            richText.current.setContentHTML(value);
-            setInternalValue(value);
+        const normalizedValue = normalizeHtml(value);
+        if (!isUserTyping.current && normalizedValue !== internalValue && richText.current) {
+            richText.current.setContentHTML(normalizedValue);
+            setInternalValue(normalizedValue);
         }
     }, [value]);
 
     const handleChange = (html: string) => {
         isUserTyping.current = true;
-        setInternalValue(html);
-        onChange(html);
+        const normalized = normalizeHtml(html);
+        setInternalValue(normalized);
+        onChange(normalized);
         // Reset the flag after a short delay
         setTimeout(() => {
             isUserTyping.current = false;
@@ -89,7 +109,14 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 {/* Editor */}
                 <RichEditor
                     ref={richText}
-                    initialContentHTML={value}
+                    initialContentHTML={normalizeHtml(value)}
+                    editorInitializedCallback={() => {
+                        const normalized = normalizeHtml(value);
+                        if (richText.current) {
+                            richText.current.setContentHTML(normalized);
+                        }
+                        setInternalValue(normalized);
+                    }}
                     onChange={handleChange}
                     placeholder={placeholder}
                     style={[styles.editor, { minHeight }]}

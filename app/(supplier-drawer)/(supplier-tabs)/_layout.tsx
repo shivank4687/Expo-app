@@ -24,12 +24,24 @@ export default function SupplierTabsLayout() {
       title: "More"
     }, */
     {
+      name: "rfq",
+      title: "RFQ"
+    },
+    {
       name: "profile",
-      title: "More"
+      title: "Profile"
     },
     {
       name: "marketing",
       title: "Marketing"
+    },
+    {
+      name: "reviews",
+      title: "Reviews"
+    },
+    {
+      name: "transactions",
+      title: "Transactions"
     },
   ];
   return (

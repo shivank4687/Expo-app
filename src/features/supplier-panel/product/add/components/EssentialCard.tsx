@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
@@ -33,8 +33,8 @@ interface MediaFile {
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+const MAX_VIDEO_SIZE = 1.5 * 1024 * 1024; // 1.5MB
 const MAX_VIDEO_DURATION = 25; // 25 seconds
 const REQUIRED_IMAGE_WIDTH = 560;
 const REQUIRED_IMAGE_HEIGHT = 609;
@@ -380,7 +380,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your media library.');
+                showToast({
+                    message: 'Please grant permission to access your media library.',
+                    type: 'error',
+                });
                 return;
             }
 
@@ -396,7 +399,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             }
         } catch (error) {
             console.error('Error picking files:', error);
-            Alert.alert('Error', 'Failed to select files. Please try again.');
+            showToast({
+                message: 'Failed to select files. Please try again.',
+                type: 'error',
+            });
         }
     };
 
@@ -406,7 +412,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
             if (status !== 'granted') {
-                Alert.alert('Permission Required', 'Please grant permission to access your camera.');
+                showToast({
+                    message: 'Please grant permission to access your camera.',
+                    type: 'error',
+                });
                 return;
             }
 
@@ -422,7 +431,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             }
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take photo. Please try again.');
+            showToast({
+                message: 'Failed to take photo. Please try again.',
+                type: 'error',
+            });
         }
     };
 
@@ -444,7 +456,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             // Validate file size
             if (isVideo) {
                 if (fileSize > MAX_VIDEO_SIZE) {
-                    errors.push(`Video size exceeds 20MB limit.`);
+                    errors.push(`Video size exceeds 1.5MB limit.`);
                     continue;
                 }
                 const durationInSeconds = (asset.duration || 0) / 1000;
@@ -465,7 +477,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 };
             } else {
                 if (fileSize > MAX_IMAGE_SIZE) {
-                    errors.push(`Image "${asset.fileName}" exceeds 5MB limit.`);
+                    errors.push(`Image "${asset.fileName}" exceeds 1.5MB limit.`);
                     continue;
                 }
                 if (images.length + newImages.length >= MAX_IMAGES) {
@@ -491,7 +503,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
         // Show errors if any
         if (errors.length > 0) {
-            Alert.alert('Validation Errors', errors.join('\n'));
+            showToast({
+                message: errors.join('\n'),
+                type: 'error',
+            });
         }
     };
 
@@ -869,10 +884,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             </View>
 
             {/* Add Custom Category Button */}
-            <TouchableOpacity style={styles.aiButton}>
+            {/* <TouchableOpacity style={styles.aiButton}>
                 <Ionicons name="add" size={16} color="#000000" />
                 <Text style={styles.buttonText}>Add custom category</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {/* Material Input Modal */}
             <InputModal
@@ -1095,10 +1110,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 12,
+        paddingVertical: 0,
+        paddingHorizontal: 12,
         gap: 8,
         width: '100%',
-        height: 40,
+        minHeight: 40,
         backgroundColor: COLORS.primaryLight,
         borderWidth: 1,
         borderColor: COLORS.primary,

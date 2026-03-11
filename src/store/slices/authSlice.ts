@@ -25,6 +25,7 @@ interface AuthState {
     error: string | null;
     verificationToken: string | null;
     pendingRegistration: SignupRequest | null;
+    selectedUserType: 'customer' | 'supplier';
 }
 
 const initialState: AuthState = {
@@ -35,6 +36,7 @@ const initialState: AuthState = {
     error: null,
     verificationToken: null,
     pendingRegistration: null,
+    selectedUserType: 'customer',
 };
 
 // Async Thunks
@@ -138,9 +140,11 @@ export const loginThunk = createAsyncThunk(
 
 export const signupThunk = createAsyncThunk(
     'auth/signup',
-    async (data: SignupRequest, { rejectWithValue }) => {
+    async (data: SignupRequest, { getState, rejectWithValue }) => {
         try {
-            const response: SignupResponse = await authApi.register(data);
+            const state = getState() as any;
+            const userType = state.auth.selectedUserType || 'customer';
+            const response: SignupResponse = await authApi.register(data, userType);
 
             // Check if OTP verification is required
             if (response.requires_otp_verification && response.verification_token) {
@@ -203,25 +207,31 @@ export const verifyOtpThunk = createAsyncThunk(
                 }
             }
 
-            // Store in secure storage
-            if (token && typeof token === 'string') {
-                await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+            // Store in secure storage and register notifications only for customers
+            // Suppliers need to login manually or wait for approval
+            if (response.is_approved === undefined) {
+                if (token && typeof token === 'string') {
+                    await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+                }
+
+                if (user) {
+                    await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+                }
+
+                // Register device token for push notifications (requires session)
+                try {
+                    console.log('🔔 Registering device token for push notifications...');
+                    await expoPushNotificationService.registerToken();
+                } catch (notificationError) {
+                    console.error('Failed to register push notification token (non-critical):', notificationError);
+                }
             }
 
-            if (user) {
-                await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
-            }
-
-            // Register device token for push notifications
-            try {
-                console.log('🔔 Registering device token for push notifications...');
-                await expoPushNotificationService.registerToken();
-            } catch (notificationError) {
-                console.error('Failed to register push notification token (non-critical):', notificationError);
-                // Don't fail OTP verification if notification registration fails
-            }
-
-            return { user, token };
+            return {
+                user,
+                token,
+                isApproved: response.is_approved
+            };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
         }
@@ -311,12 +321,16 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
         },
+        setSelectedUserType: (state, action: PayloadAction<'customer' | 'supplier'>) => {
+            state.selectedUserType = action.payload;
+        },
         clearError: (state) => {
             state.error = null;
         },
         clearVerification: (state) => {
             state.verificationToken = null;
             state.pendingRegistration = null;
+            state.error = null;
         },
     },
     extraReducers: (builder) => {
@@ -366,18 +380,18 @@ const authSlice = createSlice({
             .addCase(signupThunk.fulfilled, (state, action) => {
                 if (action.payload.requiresOtp) {
                     // OTP verification required
-                    state.verificationToken = action.payload.verificationToken;
-                    state.pendingRegistration = action.payload.registrationData;
+                    state.verificationToken = action.payload.verificationToken || null;
+                    state.pendingRegistration = action.payload.registrationData || null;
                     state.isLoading = false;
                     state.error = null;
                 } else {
                     // Direct registration successful
-                    state.user = action.payload.user;
-                    state.token = action.payload.token;
+                    state.user = action.payload.user || null;
+                    state.token = action.payload.token || null;
                     state.isAuthenticated = true;
                     state.isLoading = false;
                     state.error = null;
-                    setGlobalToken(action.payload.token);
+                    setGlobalToken(action.payload.token || null);
                 }
             })
             .addCase(signupThunk.rejected, (state, action) => {
@@ -392,14 +406,27 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(verifyOtpThunk.fulfilled, (state, action) => {
-                state.user = action.payload.user;
-                state.token = action.payload.token;
-                state.isAuthenticated = true;
-                state.isLoading = false;
-                state.error = null;
-                state.verificationToken = null;
-                state.pendingRegistration = null;
-                setGlobalToken(action.payload.token);
+                const { isApproved } = action.payload;
+
+                // If it's a supplier flow (isApproved is defined), we don't auto-authenticate
+                // as they need to be redirected to Home or Login per user request.
+                if (isApproved !== undefined) {
+                    state.isLoading = false;
+                    state.error = null;
+                    state.verificationToken = null;
+                    state.pendingRegistration = null;
+                    // We don't set state.user, state.token, or state.isAuthenticated
+                } else {
+                    // Normal customer flow: auto-authenticate
+                    state.user = action.payload.user;
+                    state.token = action.payload.token;
+                    state.isAuthenticated = true;
+                    state.isLoading = false;
+                    state.error = null;
+                    state.verificationToken = null;
+                    state.pendingRegistration = null;
+                    setGlobalToken(action.payload.token);
+                }
             })
             .addCase(verifyOtpThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -447,5 +474,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { setUser, clearError, clearVerification } = authSlice.actions;
+export const { setUser, setSelectedUserType, clearError, clearVerification } = authSlice.actions;
 export default authSlice.reducer;
