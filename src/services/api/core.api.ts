@@ -113,6 +113,7 @@ export const coreApi = {
         const response = await restApiClient.get<PaginatedResponse<Country>>('/countries', {
             params: { pagination: 0, sort: 'name', order: 'asc' },
         });
+
         return response.data || [];
     },
 

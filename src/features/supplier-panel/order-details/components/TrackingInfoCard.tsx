@@ -1,26 +1,26 @@
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    ActivityIndicator,
-    Image,
-    Modal,
-    Pressable,
-    Dimensions,
-    Linking
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Linking,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { PickerModal } from '../../../../shared/components/PickerModal';
+import { useToast } from '../../../../shared/components/Toast/ToastContext';
 import { Dropdown } from '../../components';
 import { OrderShipment } from '../../orders/api/orders.api';
-import { theme } from '@/theme';
-import { useToast } from '../../../../shared/components/Toast/ToastContext';
+import { consignmentOptions, packageOptions } from '../../shared/constants/shipmentOptions';
 
 interface TrackingInfoCardProps {
     shipments?: OrderShipment[];
@@ -46,20 +46,7 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
     const [isConsignmentModalVisible, setIsConsignmentModalVisible] = useState(false);
     const [isPackageModalVisible, setIsPackageModalVisible] = useState(false);
 
-    const consignmentOptions = [
-        { label: 'Office supplies', value: '53102400' },
-        { label: 'Computers', value: '43211500' },
-        { label: 'Computer accessories', value: '43211700' },
-        { label: 'Clothing', value: '53100000' },
-        { label: 'Consumer electronics', value: '52161500' },
-    ];
 
-    const packageOptions = [
-        { label: 'Envelope', value: '1G' },
-        { label: 'Small package', value: '2G' },
-        { label: 'Medium package', value: '3G' },
-        { label: 'Large package', value: '4G' },
-    ];
 
     const getAvailableStatuses = (currentStatus: string) => {
         let statuses: string[] = [];

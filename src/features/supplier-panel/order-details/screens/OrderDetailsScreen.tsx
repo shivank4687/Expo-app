@@ -185,13 +185,14 @@ export default function OrderDetailsScreen() {
             );
         }
 
+
         if (activeTab === 'tracking') {
             return (
                 <TrackingInfoCard
                     shipments={order?.shipments}
                     isSubmitting={isSubmittingTracking}
                     isSubmittingStatus={isSubmittingStatus}
-                    isSkydropx={true}
+                    isSkydropx={order?.shipping_method.startsWith('Skydropx')}
                     onSubmit={handleTrackingSubmit}
                     onSkydropxSubmit={handleSkydropxSubmit}
                     onStatusUpdate={handleStatusUpdate}

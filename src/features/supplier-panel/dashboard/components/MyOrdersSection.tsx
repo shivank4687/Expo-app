@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { PickerModal } from '../../../../shared/components/PickerModal';
 import { createSkydropxShipment } from '../../dashboard/api/shipments.api';
+import { consignmentOptions, packageOptions } from '../../shared/constants/shipmentOptions';
 
 export function MyOrdersSection() {
     const { data: ordersData, loading: ordersLoading, error: ordersError, refetch } = usePendingOrdersList();
@@ -28,20 +29,7 @@ export function MyOrdersSection() {
     const [isConsignmentModalVisible, setIsConsignmentModalVisible] = useState<number | null>(null);
     const [isPackageModalVisible, setIsPackageModalVisible] = useState<number | null>(null);
 
-    const consignmentOptions = [
-        { label: 'Office supplies', value: '53102400' },
-        { label: 'Computers', value: '43211500' },
-        { label: 'Computer accessories', value: '43211700' },
-        { label: 'Clothing', value: '53100000' },
-        { label: 'Consumer electronics', value: '52161500' },
-    ];
 
-    const packageOptions = [
-        { label: 'Envelope', value: '1G' },
-        { label: 'Small package', value: '2G' },
-        { label: 'Medium package', value: '3G' },
-        { label: 'Large package', value: '4G' },
-    ];
 
     const handlePickPhoto = async (orderId: number) => {
         try {
@@ -73,6 +61,7 @@ export function MyOrdersSection() {
     };
 
     const handleCreateShipment = async (order: any) => {
+
         const orderId = order.id;
         const defaultMethod = order.shipping_method?.includes('skydropx') ? 'skydropx' : 'manual';
         const method = selectedMethods[orderId] || defaultMethod;
@@ -228,7 +217,7 @@ export function MyOrdersSection() {
                                 <View style={styles.orderHeader}>
                                     <View style={styles.orderHeaderTop}>
                                         <Text style={styles.orderNumber}>{order.order_increment_id}</Text>
-                                        {order.shipping_method?.includes('skydropx') && (
+                                        {order.shipping_method?.startsWith('skydropx') && (
                                             <View style={styles.methodTabs}>
                                                 <TouchableOpacity
                                                     style={[styles.methodTab, (selectedMethods[order.id] || 'skydropx') === 'skydropx' && styles.methodTabActive]}

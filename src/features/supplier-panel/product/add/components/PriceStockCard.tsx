@@ -97,7 +97,8 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             { type: 'pattern', value: /^\d+(\.\d+)?$/, message: 'Price must be a valid number' }
         ],
         sku: [
-            { type: 'required', message: 'SKU is required' }
+            { type: 'required', message: 'SKU is required' },
+            { type: 'pattern', value: /^\S*$/, message: 'SKU cannot contain spaces' }
         ],
     });
 

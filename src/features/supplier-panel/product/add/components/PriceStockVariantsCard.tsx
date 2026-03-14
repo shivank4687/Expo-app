@@ -100,7 +100,8 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     // Form validation
     const { errors, validate, clearError, setError } = useFormValidation({
         sku: [
-            { type: 'required', message: 'SKU is required' }
+            { type: 'required', message: 'SKU is required' },
+            { type: 'pattern', value: /^\S*$/, message: 'SKU cannot contain spaces' }
         ],
         weight: [
             { type: 'required', message: 'Weight is required' }
