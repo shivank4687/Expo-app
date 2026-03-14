@@ -8,6 +8,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Clipboard, Image, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const supplierColors = supplierTheme.colors;
+const PRIMARY_COLOR = supplierColors.primary[500];
+const TEXT_INVERSE = supplierColors.text.inverse;
+const TEXT_PRIMARY = supplierColors.text.primary;
+const BACKGROUND_DEFAULT = supplierColors.background.default;
+const WHITE_COLOR = supplierColors.white;
+const BORDER_LIGHT_COLOR = supplierColors.border.light;
+
 export default function MarketingScreen() {
     const [stats, setStats] = useState<InvitationStats | null>(null);
     const [activities, setActivities] = useState<InvitationActivity[]>([]);
@@ -215,7 +223,7 @@ export default function MarketingScreen() {
     if (loading) {
         return (
             <View style={[styles.safeArea, styles.centered]}>
-                <ActivityIndicator size="large" color="#00615E" />
+                <ActivityIndicator size="large" color={PRIMARY_COLOR} />
             </View>
         );
     }
@@ -288,7 +296,7 @@ export default function MarketingScreen() {
                                 {qrCodeUrl ? (
                                     <>
                                         {isQrLoading && (
-                                            <ActivityIndicator size="small" color="#00615E" />
+                                            <ActivityIndicator size="small" color={PRIMARY_COLOR} />
                                         )}
                                         <Image
                                             source={{ uri: qrCodeUrl }}
@@ -310,7 +318,7 @@ export default function MarketingScreen() {
                         {/* Frame 32 - Action Buttons */}
                         <View style={styles.actionButtons}>
                             <TouchableOpacity style={styles.primaryButton} onPress={handleShareQR}>
-                                <Ionicons name="share-outline" size={16} color="#F5F5F5" />
+                                <Ionicons name="share-outline" size={16} color={TEXT_INVERSE} />
                                 <Text style={styles.primaryButtonText}>Share QR code</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.secondaryButton} onPress={handleDownloadQR}>
@@ -327,13 +335,13 @@ export default function MarketingScreen() {
                             Share this link via WhatsApp, Messages, Mail or networks. It's automatically associated with your account.
                         </Text>
                         <TouchableOpacity style={styles.inputContainer} onPress={handleCopyLink}>
-                            <TextInput
-                                style={styles.linkInput}
-                                value={stats?.referral_url || 'Loading...'}
-                                editable={false}
-                                pointerEvents="none"
-                            />
-                            <Ionicons name="copy-outline" size={20} color="#00615E" />
+                        <TextInput
+                            style={styles.linkInput}
+                            value={stats?.referral_url || 'Loading...'}
+                            editable={false}
+                            pointerEvents="none"
+                        />
+                        <Ionicons name="copy-outline" size={20} color={PRIMARY_COLOR} />
                         </TouchableOpacity>
                     </View>
 
@@ -343,7 +351,7 @@ export default function MarketingScreen() {
                         <View style={styles.shareRow}>
                             <TouchableOpacity style={styles.shareCard} onPress={() => handleShare('whatsapp')}>
                                 <View style={styles.shareIconBg}>
-                                    <Ionicons name="logo-whatsapp" size={16} color="#FFFFFF" />
+                                    <Ionicons name="logo-whatsapp" size={16} color={TEXT_INVERSE} />
                                 </View>
                                 <View style={styles.shareTextContainer}>
                                     <Text style={styles.shareTitle}>WhatsApp</Text>
@@ -352,7 +360,7 @@ export default function MarketingScreen() {
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.shareCard} onPress={() => handleShare('messages')}>
                                 <View style={styles.shareIconBg}>
-                                    <Ionicons name="chatbubble-outline" size={16} color="#FFFFFF" />
+                                    <Ionicons name="chatbubble-outline" size={16} color={TEXT_INVERSE} />
                                 </View>
                                 <View style={styles.shareTextContainer}>
                                     <Text style={styles.shareTitle}>Messages</Text>
@@ -363,19 +371,19 @@ export default function MarketingScreen() {
 
                         {/* Frame 130 - Row 2 */}
                         <View style={styles.shareRow}>
-                            <TouchableOpacity style={styles.shareCard} onPress={() => handleShare('facebook')}>
-                                <View style={styles.shareIconBg}>
-                                    <Ionicons name="logo-facebook" size={16} color="#FFFFFF" />
-                                </View>
-                                <View style={styles.shareTextContainer}>
-                                    <Text style={styles.shareTitle}>Facebook</Text>
-                                    <Text style={styles.shareDesc}>Publish/Send</Text>
-                                </View>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.shareCard} onPress={() => handleShare('more')}>
-                                <View style={styles.shareIconBg}>
-                                    <Ionicons name="ellipsis-horizontal" size={16} color="#FFFFFF" />
-                                </View>
+            <TouchableOpacity style={styles.shareCard} onPress={() => handleShare('facebook')}>
+                <View style={styles.shareIconBg}>
+                    <Ionicons name="logo-facebook" size={16} color={TEXT_INVERSE} />
+                </View>
+                <View style={styles.shareTextContainer}>
+                    <Text style={styles.shareTitle}>Facebook</Text>
+                    <Text style={styles.shareDesc}>Publish/Send</Text>
+                </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareCard} onPress={() => handleShare('more')}>
+                <View style={styles.shareIconBg}>
+                    <Ionicons name="ellipsis-horizontal" size={16} color={TEXT_INVERSE} />
+                </View>
                                 <View style={styles.shareTextContainer}>
                                     <Text style={styles.shareTitle}>More</Text>
                                     <Text style={styles.shareDesc}>Other apps</Text>
@@ -685,7 +693,7 @@ const styles = StyleSheet.create({
     qrContainer: {
         width: '100%',
         height: 133,
-        backgroundColor: '#FCF7EA',
+        backgroundColor: BACKGROUND_DEFAULT,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
@@ -693,7 +701,7 @@ const styles = StyleSheet.create({
     qrPlaceholder: {
         width: 108,
         height: 108,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: WHITE_COLOR,
         borderWidth: 1,
         borderColor: '#E0D7C2',
         borderRadius: 12,
@@ -714,7 +722,7 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         width: '100%',
-        backgroundColor: '#00615E',
+        backgroundColor: PRIMARY_COLOR,
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
@@ -728,11 +736,11 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 16,
-        color: '#F5F5F5',
+        color: TEXT_INVERSE,
     },
     secondaryButton: {
         width: '100%',
-        backgroundColor: '#EAECE1',
+        backgroundColor: BORDER_LIGHT_COLOR,
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
@@ -746,7 +754,7 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 16,
-        color: '#0A292D',
+        color: TEXT_PRIMARY,
     },
     linkSection: {
         width: '100%',
@@ -800,7 +808,7 @@ const styles = StyleSheet.create({
     shareIconBg: {
         width: 32,
         height: 32,
-        backgroundColor: '#00615E',
+        backgroundColor: PRIMARY_COLOR,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
@@ -970,7 +978,7 @@ const styles = StyleSheet.create({
     activityIconBg: {
         width: 32,
         height: 32,
-        backgroundColor: '#00615E',
+        backgroundColor: PRIMARY_COLOR,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
@@ -1035,7 +1043,7 @@ const styles = StyleSheet.create({
     finalSecondaryButton: {
         flex: 1,
         height: 40,
-        backgroundColor: '#EAECE1',
+        backgroundColor: BORDER_LIGHT_COLOR,
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
@@ -1048,12 +1056,12 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 16,
-        color: '#0A292D',
+        color: TEXT_PRIMARY,
     },
     finalPrimaryButton: {
         flex: 1,
         height: 40,
-        backgroundColor: '#00615E',
+        backgroundColor: PRIMARY_COLOR,
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'center',
@@ -1066,6 +1074,6 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 16,
-        color: '#F5F5F5',
+        color: TEXT_INVERSE,
     },
 });

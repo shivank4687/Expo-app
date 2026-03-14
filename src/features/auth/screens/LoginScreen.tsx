@@ -7,7 +7,7 @@ import { validation } from '@/shared/utils/validation';
 import { useAppDispatch } from '@/store/hooks';
 import { loginThunk, setSelectedUserType } from '@/store/slices/authSlice';
 import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
-import { theme } from '@/theme';
+import { supplierTheme, theme } from '@/theme';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -301,10 +301,20 @@ export const LoginScreen: React.FC = () => {
     );
 };
 
+const supplierColors = supplierTheme.colors;
+const primaryColor = supplierColors.primary[500];
+const secondaryLightColor = supplierColors.secondary[100];
+const borderLightColor = supplierColors.border.light;
+const textPrimaryColor = supplierColors.text.primary;
+const textSecondaryColor = supplierColors.text.secondary;
+const textInverseColor = supplierColors.text.inverse;
+const backgroundDefaultColor = supplierColors.background.default;
+const whiteColor = supplierColors.white;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#00615E',
+        backgroundColor: primaryColor,
     },
     topPanel: {
         paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
@@ -316,12 +326,12 @@ const styles = StyleSheet.create({
         fontSize: 24,
         lineHeight: 29,
         fontWeight: '500',
-        color: '#FFFFFF',
+        color: textInverseColor,
         fontFamily: 'Inter',
     },
     bottomSheet: {
         flex: 1,
-        backgroundColor: '#FFFDF4',
+        backgroundColor: backgroundDefaultColor,
         borderTopLeftRadius: 40,
         borderTopRightRadius: 40,
         overflow: 'hidden',
@@ -339,7 +349,7 @@ const styles = StyleSheet.create({
     toggleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: whiteColor,
         borderRadius: 8,
         padding: 4,
         marginBottom: theme.spacing.lg,
@@ -354,25 +364,25 @@ const styles = StyleSheet.create({
         height: 34,
     },
     toggleButtonActive: {
-        backgroundColor: '#00615E',
+        backgroundColor: primaryColor,
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: primaryColor,
     },
     toggleButtonText: {
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 14,
         lineHeight: 18,
-        color: '#000000',
+        color: textPrimaryColor,
     },
     toggleButtonTextActive: {
-        color: '#FFFFFF',
+        color: textInverseColor,
     },
     title: {
         fontSize: 32,
         lineHeight: 38,
         fontWeight: '500',
-        color: '#000000',
+        color: textPrimaryColor,
         marginBottom: theme.spacing.xs,
         fontFamily: 'Inter',
     },
@@ -380,7 +390,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 26,
         fontWeight: '400',
-        color: '#090A0A',
+        color: textPrimaryColor,
         fontFamily: 'Inter',
     },
     form: {
@@ -393,13 +403,13 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.sm,
     },
     inputField: {
-        backgroundColor: '#F3F0E7',
+        backgroundColor: secondaryLightColor,
         borderWidth: 0,
         borderRadius: 8,
         minHeight: 40,
     },
     inputText: {
-        color: '#0A292D',
+        color: textPrimaryColor,
         fontSize: 14,
         fontWeight: '500',
     },
@@ -409,12 +419,12 @@ const styles = StyleSheet.create({
     },
     forgotPasswordText: {
         fontSize: 14,
-        color: '#00615E',
+        color: primaryColor,
         fontWeight: '500',
         fontFamily: 'Inter',
     },
     signInButton: {
-        backgroundColor: '#00615E',
+        backgroundColor: primaryColor,
         borderRadius: 8,
         height: 40,
         paddingVertical: 0, // Ensure fixed height doesn't clip with Button's default padding
@@ -428,7 +438,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#EAECE1',
+        backgroundColor: borderLightColor,
         borderRadius: 8,
         height: 40,
         width: '100%',
@@ -437,14 +447,14 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 16,
-        color: '#0A292D',
+        color: textPrimaryColor,
     },
     orText: {
         fontFamily: 'Inter',
         fontSize: 16,
         lineHeight: 26,
         textAlign: 'center',
-        color: '#72777A',
+        color: textSecondaryColor,
         marginVertical: 4,
     },
     googleButton: {
@@ -452,9 +462,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingVertical: 10,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: whiteColor,
         borderWidth: 1,
-        borderColor: '#E3E5E6',
+        borderColor: borderLightColor,
         borderRadius: 10,
         height: 48,
         width: '100%',
@@ -466,7 +476,7 @@ const styles = StyleSheet.create({
     googleButtonText: {
         fontFamily: 'Inter',
         fontSize: 16,
-        color: '#000000',
+        color: textPrimaryColor,
     },
     signupContainer: {
         flexDirection: 'row',
@@ -476,13 +486,13 @@ const styles = StyleSheet.create({
     signupText: {
         fontSize: 16,
         lineHeight: 26,
-        color: '#72777A',
+        color: textSecondaryColor,
         fontFamily: 'Inter',
     },
     signupLink: {
         fontSize: 16,
         lineHeight: 26,
-        color: '#000000',
+        color: textPrimaryColor,
         fontWeight: '600',
         fontFamily: 'Inter',
     },

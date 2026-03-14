@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { verifyOtpThunk, resendOtpThunk, clearVerification, clearError } from '@/store/slices/authSlice';
 import { Button } from '@/shared/components/Button';
-import { theme } from '@/theme';
+import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { authApi } from '@/services/api/auth.api';
 
@@ -423,10 +423,18 @@ export const OtpVerificationScreen: React.FC = () => {
     );
 };
 
+const supplierColors = supplierTheme.colors;
+const primaryColor = supplierColors.primary[500];
+const textPrimaryColor = supplierColors.text.primary;
+const textSecondaryColor = supplierColors.text.secondary;
+const borderLightColor = supplierColors.border.light;
+const whiteColor = supplierColors.white;
+const backgroundDefaultColor = supplierColors.background.default;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background.default,
+        backgroundColor: backgroundDefaultColor,
     },
     scrollContent: {
         flexGrow: 1,
@@ -447,7 +455,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontSize: 24,
         lineHeight: 29, // 120% of 24px
-        color: '#000000',
+        color: textPrimaryColor,
         alignSelf: 'stretch',
     },
     subtitle: {
@@ -455,7 +463,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         fontSize: 16,
         lineHeight: 26, // 160% of 16px
-        color: '#090A0A',
+        color: textPrimaryColor,
         alignSelf: 'stretch',
     },
     form: {
@@ -481,9 +489,9 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 10,
         gap: 10,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: whiteColor,
         borderWidth: 1,
-        borderColor: '#E3E5E6',
+        borderColor: borderLightColor,
         borderRadius: 10,
         height: 54,
         alignSelf: 'stretch',
@@ -496,7 +504,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         textAlignVertical: 'center',
-        color: '#181818',
+        color: textPrimaryColor,
         padding: 0,
         margin: 0,
         includeFontPadding: false,
@@ -504,7 +512,7 @@ const styles = StyleSheet.create({
     otpDivider: {
         width: 1,
         height: 26,
-        backgroundColor: '#E3E5E6',
+        backgroundColor: borderLightColor,
         alignSelf: 'stretch',
     },
     errorText: {
@@ -515,7 +523,7 @@ const styles = StyleSheet.create({
     },
     verifyButton: {
         marginBottom: theme.spacing.lg,
-        backgroundColor: '#00615E',
+        backgroundColor: primaryColor,
         borderRadius: 8,
         height: 40,
         paddingVertical: 0,
@@ -530,14 +538,14 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         fontSize: 16,
         lineHeight: 26,
-        color: '#000000',
+        color: textPrimaryColor,
     },
     resendLink: {
         fontFamily: 'Inter',
         fontWeight: '400',
         fontSize: 16,
         lineHeight: 26,
-        color: '#00615E',
+        color: primaryColor,
         textDecorationLine: 'underline',
     },
     cooldownText: {

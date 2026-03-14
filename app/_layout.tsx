@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { useTranslation } from "react-i18next";
+import { supplierTheme } from "@/theme";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;
@@ -89,33 +90,36 @@ function AppContent() {
     // Customer dashboard (shop) is accessible without authentication, so no redirect needed
   }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, segments, router]);
 
+  const teal = supplierTheme.colors.primary[500];
+  const inverseText = supplierTheme.colors.text.inverse;
+
   const commonHeaderOptions = {
     title: "",
     headerBackTitle: "Back",
     headerStyle: {
-      backgroundColor: '#00615E',
+      backgroundColor: teal,
       shadowColor: 'transparent',
       elevation: 0,
     },
-    headerTintColor: '#FFFFFF',
+    headerTintColor: inverseText,
     headerTitleStyle: {
-      color: '#FFFFFF',
+      color: inverseText,
       fontWeight: '600' as const,
     },
     headerBackImage: () => (
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          backgroundColor: 'rgba(255,255,255,0.2)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginLeft: 4,
-        }}
-      >
-        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-      </View>
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginLeft: 4,
+          }}
+        >
+          <Ionicons name="arrow-back" size={20} color={inverseText} />
+        </View>
     ),
   };
 

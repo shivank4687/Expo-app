@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { validation } from '@/shared/utils/validation';
-import { theme } from '@/theme';
+import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { authApi } from '@/services/api/auth.api';
 
@@ -187,10 +187,17 @@ export const ResetPasswordScreen: React.FC = () => {
     );
 };
 
+const supplierColors = supplierTheme.colors;
+const primaryColor = supplierColors.primary[500];
+const secondaryLightColor = supplierColors.secondary[100];
+const textPrimaryColor = supplierColors.text.primary;
+const textSecondaryColor = supplierColors.text.secondary;
+const backgroundDefaultColor = supplierColors.background.default;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#00615E',
+        backgroundColor: primaryColor,
     },
     topPanel: {
         paddingTop: Platform.OS === 'ios' ? theme.spacing['3xl'] : theme.spacing.xl,
@@ -200,7 +207,7 @@ const styles = StyleSheet.create({
     },
     bottomSheet: {
         flex: 1,
-        backgroundColor: '#FFFDF4',
+        backgroundColor: backgroundDefaultColor,
         borderTopLeftRadius: 40,
         borderTopRightRadius: 40,
         overflow: 'hidden',
@@ -219,7 +226,7 @@ const styles = StyleSheet.create({
         fontSize: 32,
         lineHeight: 38,
         fontWeight: '500',
-        color: '#000000',
+        color: textPrimaryColor,
         marginBottom: theme.spacing.xs,
         fontFamily: 'Inter',
     },
@@ -227,25 +234,25 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 26,
         fontWeight: '400',
-        color: '#090A0A',
+        color: textPrimaryColor,
         fontFamily: 'Inter',
     },
     form: {
         width: '100%',
     },
     inputField: {
-        backgroundColor: '#F3F0E7',
+        backgroundColor: secondaryLightColor,
         borderWidth: 0,
         borderRadius: 8,
         minHeight: 40,
     },
     inputText: {
-        color: '#0A292D',
+        color: textPrimaryColor,
         fontSize: 14,
         fontWeight: '500',
     },
     inputLabel: {
-        color: '#72777A',
+        color: textSecondaryColor,
         fontSize: 14,
         marginBottom: 4,
         fontFamily: 'Inter',
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     resetButton: {
-        backgroundColor: '#00615E',
+        backgroundColor: primaryColor,
         borderRadius: 8,
         height: 40,
         paddingVertical: 0,
