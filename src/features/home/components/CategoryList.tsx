@@ -38,9 +38,76 @@ const CategoryImageComponent: React.FC<{ imageUrl?: string }> = ({ imageUrl }) =
 };
 
 /**
+ * SubcategoryItem
+ * A single tappable item inside the horizontal carousel
+ */
+const SubcategoryItem: React.FC<{
+    item: Category;
+    onPress: (id: number, name: string) => void;
+}> = ({ item, onPress }) => (
+    <TouchableOpacity
+        style={styles.categoryItem}
+        onPress={() => onPress(item.id, item.name)}
+        activeOpacity={0.7}
+    >
+        <View style={styles.iconContainer}>
+            <CategoryImageComponent imageUrl={item.image} />
+        </View>
+        <Text style={styles.categoryName} numberOfLines={2}>
+            {item.name}
+        </Text>
+    </TouchableOpacity>
+);
+
+/**
+ * CategorySection
+ * One parent category row: heading + horizontal subcategory carousel
+ */
+const CategorySection: React.FC<{
+    parent: Category;
+    onPress: (id: number, name: string) => void;
+}> = ({ parent, onPress }) => {
+    // If no children, show the parent itself as the sole carousel item
+    const items: Category[] = parent.children && parent.children.length > 0
+        ? parent.children
+        : [parent];
+
+    return (
+        <View style={styles.section}>
+            {/* Section heading — tapping navigates to the parent category */}
+            <TouchableOpacity
+                style={styles.sectionHeader}
+                onPress={() => onPress(parent.id, parent.name)}
+                activeOpacity={0.7}
+            >
+                <Text style={styles.sectionTitle}>{parent.name}</Text>
+                <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={theme.colors.text.secondary}
+                />
+            </TouchableOpacity>
+
+            {/* Horizontal subcategory carousel */}
+            <FlatList
+                data={items}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                    <SubcategoryItem item={item} onPress={onPress} />
+                )}
+                contentContainerStyle={styles.listContent}
+            />
+        </View>
+    );
+};
+
+/**
  * CategoryList Component
- * Displays a vertical list of categories
- * Automatically reloads when locale changes
+ * Displays a vertical list of parent categories, each with a
+ * horizontal subcategory carousel beneath it.
+ * Automatically reloads when locale changes.
  */
 export const CategoryList: React.FC = () => {
     const { t } = useTranslation();
@@ -59,60 +126,51 @@ export const CategoryList: React.FC = () => {
         router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}` as any);
     }, [router]);
 
-    const renderCategory = useCallback(({ item }: { item: Category }) => (
-        <TouchableOpacity
-            style={styles.categoryItem}
-            onPress={() => handleCategoryPress(item.id, item.name)}
-            activeOpacity={0.7}
-        >
-            <View style={styles.iconContainer}>
-                <CategoryImageComponent imageUrl={item.image} />
-            </View>
-            <Text style={styles.categoryName} numberOfLines={2}>
-                {item.name}
-            </Text>
-        </TouchableOpacity>
-    ), [handleCategoryPress]);
-
     if (isLoading) {
         return (
-            <View style={styles.container}>
-                <Text style={styles.title}>{t('category.categories')}</Text>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                </View>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
             </View>
         );
     }
 
     if (categories.length === 0) {
-        return null; // Don't show section if no categories
+        return null;
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>{t('category.categories')}</Text>
-            <FlatList
-                data={categories}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderCategory}
-                contentContainerStyle={styles.listContent}
-            />
+        <View>
+            {categories.map((parent) => (
+                <CategorySection
+                    key={parent.id}
+                    parent={parent}
+                    onPress={handleCategoryPress}
+                />
+            ))}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        marginBottom: theme.spacing.lg,
+    loadingContainer: {
+        height: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    title: {
-        fontSize: theme.typography.fontSize.xl,
+    section: {
+        marginBottom: theme.spacing.xl,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: theme.spacing.md,
+        paddingHorizontal: theme.spacing.xs,
+    },
+    sectionTitle: {
+        fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.text.primary,
-        marginBottom: theme.spacing.md,
     },
     listContent: {
         paddingRight: theme.spacing.md,
@@ -141,11 +199,6 @@ const styles = StyleSheet.create({
         color: theme.colors.text.primary,
         fontWeight: theme.typography.fontWeight.medium,
         textAlign: 'center',
-    },
-    loadingContainer: {
-        height: 80,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 });
 

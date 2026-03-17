@@ -1,5 +1,5 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { SupplierTabBar } from "@/shared/components/SupplierTabBar";
+import { TabBar } from "@/shared/components/TabBar";
 import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
 import { Tabs } from "expo-router";
 import React from "react";
@@ -29,7 +29,7 @@ export default function TabLayout() {
   return (
     <Tabs
       tabBar={(props) => (
-        <SupplierTabBar
+        <TabBar
           {...props}
           tabs={CUSTOMER_TABS}
           drawerOptions={CUSTOMER_DRAWER_OPTIONS}

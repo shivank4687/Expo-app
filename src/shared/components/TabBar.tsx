@@ -40,20 +40,20 @@ const TEXT_PRIMARY_COLOR = supplierTheme.colors.text.primary;
 const TAB_ACTIVE_BACKGROUND = supplierTheme.colors.background.light_green;
 const DRAWER_OPTION_BG = supplierTheme.colors.secondary[50];
 
-type SupplierTabBarProps = BottomTabBarProps & {
+type TabBarProps = BottomTabBarProps & {
     tabs?: TabDefinition[];
     drawerOptions?: DrawerOptionDefinition[];
 };
 
 type TabRoute = BottomTabBarProps['state']['routes'][number];
 
-export function SupplierTabBar({
+export function TabBar({
     state,
     descriptors,
     navigation,
     tabs,
     drawerOptions,
-}: SupplierTabBarProps) {
+}: TabBarProps) {
     const insets = useSafeAreaInsets();
     const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 28) : 0;
 
@@ -125,6 +125,7 @@ export function SupplierTabBar({
                                 styles.drawerOption,
                                 selectedOption === option.name && styles.drawerOptionActive,
                             ]}
+                            activeOpacity={1}
                             onPress={() => handleDrawerOptionPress(option)}
                         >
                             <Text
@@ -186,6 +187,7 @@ export function SupplierTabBar({
                             accessibilityLabel={options.tabBarAccessibilityLabel}
                             onPress={onPress}
                             onLongPress={onLongPress}
+                            activeOpacity={1}
                             style={[styles.tab, isFocused && styles.tabActive]}
                         >
                             <Ionicons

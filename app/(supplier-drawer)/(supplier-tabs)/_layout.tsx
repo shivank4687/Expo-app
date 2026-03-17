@@ -1,4 +1,4 @@
-import { SupplierTabBar } from "@/shared/components/SupplierTabBar";
+import { TabBar } from "@/shared/components/TabBar";
 import { Tabs } from "expo-router";
 
 export default function SupplierTabsLayout() {
@@ -46,7 +46,7 @@ export default function SupplierTabsLayout() {
   ];
   return (
     <Tabs
-      tabBar={(props) => <SupplierTabBar {...props} />}
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
