@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, DrawerActions } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
-import { theme } from '@/theme';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { fetchCartThunk } from '@/store/slices/cartSlice';
-import { fetchUnreadCountThunk } from '@/store/slices/notificationSlice';
 import { APP_NAME } from '@/config/constants';
 import socketService from '@/services/socket.service';
 import { useToast } from '@/shared/components/Toast';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCartThunk } from '@/store/slices/cartSlice';
+import { fetchUnreadCountThunk } from '@/store/slices/notificationSlice';
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { DrawerActions, useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ShopHeaderProps {
     title?: string;
@@ -186,7 +186,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingBottom: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,

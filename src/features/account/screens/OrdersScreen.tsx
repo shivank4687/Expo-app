@@ -3,15 +3,15 @@
  * Displays list of customer orders with infinite scroll pagination
  */
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
-import { Stack } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { theme } from '@/theme';
-import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
-import { ordersApi, Order } from '@/services/api/orders.api';
-import { OrderCard } from '../components/OrderCard';
+import { Order, ordersApi } from '@/services/api/orders.api';
 import { useToast } from '@/shared/components/Toast';
+import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
+import { theme } from '@/theme';
+import { Stack } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { OrderCard } from '../components/OrderCard';
 
 const ORDERS_PER_PAGE = 10;
 
@@ -19,7 +19,7 @@ export const OrdersScreen: React.FC = () => {
     const { t } = useTranslation();
     const { isLoading: isAuthLoading } = useRequireAuth();
     const { showToast } = useToast();
-    
+
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -29,7 +29,7 @@ export const OrdersScreen: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [totalPages, setTotalPages] = useState(1);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
-    
+
     // Use refs to track loading state without causing re-renders
     const isLoadingRef = useRef(false);
     const isLoadingMoreRef = useRef(false);
@@ -48,11 +48,11 @@ export const OrdersScreen: React.FC = () => {
     ) => {
         // Prevent duplicate requests using refs
         if (append && isLoadingMoreRef.current) {
-            console.log('[OrdersScreen] Skipping - already loading more');
+            // console.log('[OrdersScreen] Skipping - already loading more');
             return;
         }
         if (!append && !showRefreshing && isLoadingRef.current && !isInitialLoadRef.current) {
-            console.log('[OrdersScreen] Skipping - already loading');
+            // console.log('[OrdersScreen] Skipping - already loading');
             return;
         }
 
@@ -67,12 +67,12 @@ export const OrdersScreen: React.FC = () => {
                 setIsLoading(true);
                 isLoadingRef.current = true;
             }
-            
+
             if (!append && !showRefreshing) {
                 setIsInitialLoad(false);
                 isInitialLoadRef.current = false;
             }
-            
+
             setError(null);
 
             const response = await ordersApi.getOrders({
@@ -98,26 +98,26 @@ export const OrdersScreen: React.FC = () => {
                 const newCurrentPage = meta.current_page;
                 const newTotalPages = meta.last_page;
                 const newHasMore = newCurrentPage < newTotalPages;
-                
-                console.log('[OrdersScreen] Pagination meta:', {
-                    currentPage: newCurrentPage,
-                    totalPages: newTotalPages,
-                    hasMore: newHasMore,
-                    ordersReceived: newOrders.length,
-                });
-                
+
+                // console.log('[OrdersScreen] Pagination meta:', {
+                //     currentPage: newCurrentPage,
+                //     totalPages: newTotalPages,
+                //     hasMore: newHasMore,
+                //     ordersReceived: newOrders.length,
+                // });
+
                 setCurrentPage(newCurrentPage);
                 setTotalPages(newTotalPages);
                 setHasMore(newHasMore);
             } else {
                 // Fallback: if no meta, check if we got less than requested
                 const newHasMore = newOrders.length === ORDERS_PER_PAGE;
-                console.log('[OrdersScreen] No meta, fallback pagination:', {
-                    ordersReceived: newOrders.length,
-                    expected: ORDERS_PER_PAGE,
-                    hasMore: newHasMore,
-                });
-                
+                // console.log('[OrdersScreen] No meta, fallback pagination:', {
+                //     ordersReceived: newOrders.length,
+                //     expected: ORDERS_PER_PAGE,
+                //     hasMore: newHasMore,
+                // });
+
                 setHasMore(newHasMore);
                 if (newOrders.length === ORDERS_PER_PAGE) {
                     setCurrentPage(page);
@@ -130,7 +130,7 @@ export const OrdersScreen: React.FC = () => {
         } catch (err: any) {
             console.error('Error loading orders:', err);
             setError(err.message || t('orders.loadError', 'Failed to load orders'));
-            
+
             // Only show toast for initial load or refresh, not for pagination
             if (!append) {
                 showToast({
@@ -171,25 +171,25 @@ export const OrdersScreen: React.FC = () => {
      * Handle scroll to end - load next page
      */
     const handleLoadMore = useCallback(() => {
-        console.log('[OrdersScreen] handleLoadMore called', {
-            isLoadingMore,
-            hasMore,
-            isLoading,
-            currentPage,
-            ordersCount: orders.length,
-        });
+        // console.log('[OrdersScreen] handleLoadMore called', {
+        //     isLoadingMore,
+        //     hasMore,
+        //     isLoading,
+        //     currentPage,
+        //     ordersCount: orders.length,
+        // });
 
         if (isLoadingMore || isLoading || !hasMore) {
-            console.log('[OrdersScreen] Skipping load more:', {
-                isLoadingMore,
-                isLoading,
-                hasMore,
-            });
+            // console.log('[OrdersScreen] Skipping load more:', {
+            //     isLoadingMore,
+            //     isLoading,
+            //     hasMore,
+            // });
             return;
         }
 
         const nextPage = currentPage + 1;
-        console.log('[OrdersScreen] Loading page:', nextPage);
+        // console.log('[OrdersScreen] Loading page:', nextPage);
         loadOrders(nextPage, true, false);
     }, [isLoadingMore, hasMore, isLoading, currentPage, orders.length, loadOrders]);
 
@@ -240,17 +240,17 @@ export const OrdersScreen: React.FC = () => {
 
     return (
         <>
-            <Stack.Screen 
-                options={{ 
-                    title: t('orders.title', 'My Orders'), 
-                    headerBackTitle: t('common.back', 'Back') 
-                }} 
+            <Stack.Screen
+                options={{
+                    title: t('orders.title', 'My Orders'),
+                    headerBackTitle: t('common.back', 'Back')
+                }}
             />
             <View style={styles.container}>
                 {error && !orders.length ? (
                     <View style={styles.errorContainer}>
                         <Text style={styles.errorText}>{error}</Text>
-                        <Text 
+                        <Text
                             style={styles.retryText}
                             onPress={() => loadOrders(1, false, false)}
                         >

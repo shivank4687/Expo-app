@@ -1,15 +1,15 @@
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
     LayoutAnimation,
     Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
     UIManager,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/theme';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

@@ -1,49 +1,106 @@
+import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type DrawerOption = 'profile' | 'marketing' | 'reviews' | 'transactions' | 'rfq';
+type TabDefinition = {
+    name: string;
+    label: string;
+    icon: React.ComponentProps<typeof Ionicons>['name'];
+};
 
-export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+type DrawerOptionDefinition = {
+    name: string;
+    label: string;
+};
+
+const DEFAULT_TABS: TabDefinition[] = [
+    { name: 'index', label: 'Home', icon: 'home-outline' },
+    { name: 'orders', label: 'Orders', icon: 'receipt-outline' },
+    { name: 'products', label: 'Products', icon: 'cube-outline' },
+    { name: 'shop', label: 'Shop', icon: 'storefront-outline' },
+    { name: 'profile', label: 'More', icon: 'settings-outline' },
+];
+
+const DEFAULT_DRAWER_OPTIONS: DrawerOptionDefinition[] = [
+    { name: 'profile', label: 'Profile' },
+    { name: 'rfq', label: 'RFQ' },
+    { name: 'marketing', label: 'Marketing' },
+    { name: 'reviews', label: 'Reviews' },
+    { name: 'transactions', label: 'Payouts' },
+];
+
+const PRIMARY_COLOR = supplierTheme.colors.primary[500];
+const TAB_BACKGROUND_COLOR = supplierTheme.colors.background.default;
+const WHITE_COLOR = supplierTheme.colors.white;
+const TEXT_SECONDARY_COLOR = supplierTheme.colors.text.secondary;
+const TEXT_PRIMARY_COLOR = supplierTheme.colors.text.primary;
+const TAB_ACTIVE_BACKGROUND = supplierTheme.colors.background.light_green;
+const DRAWER_OPTION_BG = supplierTheme.colors.secondary[50];
+
+type SupplierTabBarProps = BottomTabBarProps & {
+    tabs?: TabDefinition[];
+    drawerOptions?: DrawerOptionDefinition[];
+};
+
+type TabRoute = BottomTabBarProps['state']['routes'][number];
+
+export function SupplierTabBar({
+    state,
+    descriptors,
+    navigation,
+    tabs,
+    drawerOptions,
+}: SupplierTabBarProps) {
     const insets = useSafeAreaInsets();
-    // Some Android devices report 0 bottom inset with 3-button navigation.
-    // Use a fallback gap to keep the tab bar above system buttons.
     const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 28) : 0;
-    const [selectedOption, setSelectedOption] = useState<DrawerOption>('profile');
+
+    const tabsList = useMemo(() => (tabs && tabs.length > 0 ? tabs : DEFAULT_TABS), [tabs]);
+    const drawerOptionsList = useMemo(
+        () => (drawerOptions && drawerOptions.length > 0 ? drawerOptions : DEFAULT_DRAWER_OPTIONS),
+        [drawerOptions],
+    );
+
+    const drawerRouteNames = useMemo(
+        () => new Set(drawerOptionsList.map((option) => option.name)),
+        [drawerOptionsList],
+    );
+
+    const focusedRouteName = state.routes[state.index]?.name ?? '';
+    const isMoreTabFocused = drawerRouteNames.has(focusedRouteName);
+
+    const [selectedOption, setSelectedOption] = useState<string>(drawerOptionsList[0]?.name ?? 'profile');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerHeight = useRef(new Animated.Value(0)).current;
+    const visibleTabs = tabsList
+        .map((tab) => {
+            const route = state.routes.find((route) => route.name === tab.name);
+            if (!route) return null;
+            return { tab, route };
+        })
+        .filter((entry): entry is { tab: TabDefinition; route: TabRoute } => Boolean(entry));
 
-    // Tracking previous focus state to handle auto-opening
-    const prevIsMoreTabFocused = useRef(false);
-
-    // Check if More tab or its sub-screens are focused
-    const focusedRouteName = state.routes[state.index].name;
-    const isMoreTabFocused = ['rfq', 'profile', 'marketing', 'reviews', 'transactions'].includes(focusedRouteName);
-
-    // Sync drawer selection with route
     useEffect(() => {
-        if (focusedRouteName === 'profile' || focusedRouteName === 'marketing' || focusedRouteName === 'reviews' || focusedRouteName === 'transactions' || focusedRouteName === 'rfq') {
-            setSelectedOption(focusedRouteName as DrawerOption);
-        }
-    }, [focusedRouteName]);
+        setSelectedOption(drawerOptionsList[0]?.name ?? 'profile');
+    }, [drawerOptionsList]);
 
-    // Handle drawer visibility based on focus and manual toggle
+    useEffect(() => {
+        if (focusedRouteName && drawerRouteNames.has(focusedRouteName)) {
+            setSelectedOption(focusedRouteName);
+        }
+    }, [focusedRouteName, drawerRouteNames]);
+
     useEffect(() => {
         if (isMoreTabFocused) {
-            // Ensure drawer is open when entering "More" screens
-            // Use a slight check to avoid re-triggering if already open (manual toggle handled separately)
             setIsDrawerOpen(true);
         } else {
-            // Aggressively close drawer when leaving "More" screens
             setIsDrawerOpen(false);
         }
     }, [isMoreTabFocused]);
 
-    // Animation trigger
     useEffect(() => {
-        // Use timing for more predictable close/open during tab switches
         Animated.timing(drawerHeight, {
             toValue: isDrawerOpen ? 60 : 0,
             duration: 200,
@@ -51,9 +108,9 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
         }).start();
     }, [isDrawerOpen]);
 
-    const handleDrawerOptionPress = (option: DrawerOption) => {
-        setSelectedOption(option);
-        navigation.navigate(option);
+    const handleDrawerOptionPress = (option: DrawerOptionDefinition) => {
+        setSelectedOption(option.name);
+        navigation.navigate(option.name);
     };
 
     return (
@@ -61,103 +118,35 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
             {/* Drawer */}
             <Animated.View style={[styles.drawer, { height: drawerHeight }]}>
                 <View style={styles.drawerContent}>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.drawerOption,
-                            selectedOption === 'profile' && styles.drawerOptionActive
-                        ]}
-                        onPress={() => handleDrawerOptionPress('profile')}
-                    >
-                        <Text style={[
-                            styles.drawerOptionText,
-                            selectedOption === 'profile' && styles.drawerOptionTextActive
-                        ]}>
-                            Profile
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.drawerOption,
-                            selectedOption === 'rfq' && styles.drawerOptionActive
-                        ]}
-                        onPress={() => handleDrawerOptionPress('rfq')}
-                    >
-                        <Text style={[
-                            styles.drawerOptionText,
-                            selectedOption === 'rfq' && styles.drawerOptionTextActive
-                        ]}>
-                            RFQ
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.drawerOption,
-                            selectedOption === 'marketing' && styles.drawerOptionActive
-                        ]}
-                        onPress={() => handleDrawerOptionPress('marketing')}
-                    >
-                        <Text style={[
-                            styles.drawerOptionText,
-                            selectedOption === 'marketing' && styles.drawerOptionTextActive
-                        ]}>
-                            Marketing
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.drawerOption,
-                            selectedOption === 'reviews' && styles.drawerOptionActive
-                        ]}
-                        onPress={() => handleDrawerOptionPress('reviews')}
-                    >
-                        <Text style={[
-                            styles.drawerOptionText,
-                            selectedOption === 'reviews' && styles.drawerOptionTextActive
-                        ]}>
-                            Reviews
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.drawerOption,
-                            selectedOption === 'transactions' && styles.drawerOptionActive
-                        ]}
-                        onPress={() => handleDrawerOptionPress('transactions')}
-                    >
-                        <Text style={[
-                            styles.drawerOptionText,
-                            selectedOption === 'transactions' && styles.drawerOptionTextActive
-                        ]}>
-                            Payouts
-                        </Text>
-                    </TouchableOpacity>
+                    {drawerOptionsList.map((option) => (
+                        <TouchableOpacity
+                            key={option.name}
+                            style={[
+                                styles.drawerOption,
+                                selectedOption === option.name && styles.drawerOptionActive,
+                            ]}
+                            onPress={() => handleDrawerOptionPress(option)}
+                        >
+                            <Text
+                                style={[
+                                    styles.drawerOptionText,
+                                    selectedOption === option.name && styles.drawerOptionTextActive,
+                                ]}
+                            >
+                                {option.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </Animated.View>
 
             {/* Tab Bar */}
             <View style={styles.navbar}>
-                {state.routes.map((route, index) => {
-                    // Show Profile as the "More" tab, but hide Marketing, Reviews, Transactions and old Settings
-                    if (route.name === 'marketing' || route.name === 'reviews' || route.name === 'transactions' || route.name === 'settings' || route.name === 'rfq') {
-                        return null;
-                    }
-
+                {visibleTabs.map(({ tab, route }) => {
                     const { options } = descriptors[route.key];
-                    const label =
-                        options.tabBarLabel !== undefined
-                            ? options.tabBarLabel
-                            : options.title !== undefined
-                                ? options.title
-                                : route.name;
-
-                    let isFocused = state.index === index;
-
-                    // Special case: Highlight More tab (profile) if marketing, reviews, or transactions is focused
-                    if (route.name === 'profile' && (focusedRouteName === 'marketing' || focusedRouteName === 'reviews' || focusedRouteName === 'transactions')) {
+                    const label = tab.label || (options.title as string) || route.name;
+                    let isFocused = focusedRouteName === route.name;
+                    if (tab.name === 'profile' && drawerRouteNames.has(focusedRouteName)) {
                         isFocused = true;
                     }
 
@@ -168,12 +157,10 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             canPreventDefault: true,
                         });
 
-                        if (route.name === 'profile') {
+                        if (tab.name === 'profile') {
                             if (isFocused) {
-                                // Already on More screen, toggle drawer visibility
-                                setIsDrawerOpen(prev => !prev);
-                            } else {
-                                // Navigating to More screen - useEffect will handle opening
+                                setIsDrawerOpen((prev) => !prev);
+                            } else if (!event.defaultPrevented) {
                                 navigation.navigate(route.name);
                             }
                             return;
@@ -181,7 +168,6 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
 
                         if (!isFocused && !event.defaultPrevented) {
                             navigation.navigate(route.name);
-                            // useEffect will handle closing
                         }
                     };
 
@@ -190,24 +176,6 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             type: 'tabLongPress',
                             target: route.key,
                         });
-                    };
-
-                    // Get icon name based on route
-                    const getIconName = () => {
-                        switch (route.name) {
-                            case 'index':
-                                return 'home-outline';
-                            case 'orders':
-                                return 'receipt-outline';
-                            case 'products':
-                                return 'cube-outline';
-                            case 'shop':
-                                return 'storefront-outline';
-                            case 'profile':
-                                return 'settings-outline';
-                            default:
-                                return 'home-outline';
-                        }
                     };
 
                     return (
@@ -221,12 +189,12 @@ export function SupplierTabBar({ state, descriptors, navigation }: BottomTabBarP
                             style={[styles.tab, isFocused && styles.tabActive]}
                         >
                             <Ionicons
-                                name={getIconName() as any}
+                                name={tab.icon}
                                 size={24}
-                                color={isFocused ? '#00615E' : '#666666'}
+                                color={isFocused ? PRIMARY_COLOR : TEXT_SECONDARY_COLOR}
                             />
                             <Text style={[styles.label, isFocused && styles.labelActive]}>
-                                {typeof label === 'string' ? label : route.name}
+                                {label}
                             </Text>
                         </TouchableOpacity>
                     );
@@ -247,11 +215,11 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 0,
         width: '100%',
-        backgroundColor: '#FCF7EA',
+        backgroundColor: TAB_BACKGROUND_COLOR,
     },
     drawer: {
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: WHITE_COLOR,
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         overflow: 'hidden',
@@ -271,22 +239,22 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 10,
         borderRadius: 20,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: DRAWER_OPTION_BG,
     },
     drawerOptionActive: {
-        backgroundColor: '#E0FFFE',
+        backgroundColor: TAB_ACTIVE_BACKGROUND,
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: PRIMARY_COLOR,
     },
     drawerOptionText: {
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 12,
-        color: '#666666',
+        color: TEXT_SECONDARY_COLOR,
     },
     drawerOptionTextActive: {
-        color: '#00615E',
+        color: PRIMARY_COLOR,
         fontWeight: '600',
     },
     navbar: {
@@ -297,7 +265,7 @@ const styles = StyleSheet.create({
         gap: 10,
         width: '100%',
         height: 72,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: WHITE_COLOR,
         borderRadius: 16,
     },
     tab: {
@@ -311,9 +279,9 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     tabActive: {
-        backgroundColor: '#E0FFFE',
+        backgroundColor: TAB_ACTIVE_BACKGROUND,
         borderWidth: 1,
-        borderColor: '#00615E',
+        borderColor: PRIMARY_COLOR,
     },
     label: {
         fontFamily: 'Inter',
@@ -321,11 +289,11 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         fontSize: 9,
         lineHeight: 11,
-        color: '#666666',
+        color: TEXT_SECONDARY_COLOR,
         textAlign: 'center',
     },
     labelActive: {
-        color: '#000000',
+        color: TEXT_PRIMARY_COLOR,
     },
     navigationHandle: {
         width: '100%',

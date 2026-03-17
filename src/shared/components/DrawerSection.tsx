@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/theme';
 import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface DrawerSectionProps {
     title: string;
@@ -59,20 +59,20 @@ interface DrawerItemProps {
 }
 
 export const DrawerItem: React.FC<DrawerItemProps> = ({ label, icon, imageUrl, onPress, badge, rightText, level = 0 }) => {
-    const imageSource = imageUrl !== undefined 
+    const imageSource = imageUrl !== undefined
         ? (() => {
             const url = getAbsoluteImageUrl(imageUrl);
             return typeof url === 'string' ? { uri: url } : url;
         })()
         : null;
-    
+
     return (
-        <TouchableOpacity 
+        <TouchableOpacity
             style={[
-                styles.item, 
+                styles.item,
                 level > 0 && { paddingLeft: theme.spacing['2xl'] + (level * theme.spacing.lg) }
-            ]} 
-            onPress={onPress} 
+            ]}
+            onPress={onPress}
             activeOpacity={0.7}
         >
             <View style={styles.itemLeft}>
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg,
-        backgroundColor: theme.colors.gray[50],
+        backgroundColor: theme.colors.background.default//theme.colors.gray[50],
     },
     headerLeft: {
         flexDirection: 'row',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
         color: theme.colors.text.primary,
     },
     content: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     item: {
         flexDirection: 'row',

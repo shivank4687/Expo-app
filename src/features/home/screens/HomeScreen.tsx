@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-    View,
-    StyleSheet,
-    ScrollView,
-    RefreshControl,
-} from 'react-native';
 import { themeApi } from '@/services/api/theme.api';
-import { ThemeCustomization as ThemeCustomizationType } from '@/types/theme.types';
-import { ThemeCustomization } from '../components/ThemeCustomization';
-import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
-import { theme } from '@/theme';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useAppSelector } from '@/store/hooks';
+import { theme } from '@/theme';
+import { ThemeCustomization as ThemeCustomizationType } from '@/types/theme.types';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native';
+import { ThemeCustomization } from '../components/ThemeCustomization';
 
 import { NewsletterSubscription } from '../components/NewsletterSubscription';
 
@@ -105,7 +105,7 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.colors.background.default,
     },
     contentContainer: {
         paddingTop: theme.spacing.xs,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     },
     errorContainer: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.colors.background.default,
     },
 });
 

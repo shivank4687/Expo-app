@@ -1,6 +1,6 @@
 // Supplier-specific Theme
+import { borderRadius, shadows, spacing } from './spacing';
 import { typography } from './typography';
-import { spacing, borderRadius, shadows } from './spacing';
 
 export const supplierColors = {
     // Primary Brand Colors for Supplier
@@ -75,6 +75,7 @@ export const supplierColors = {
     background: {
         default: '#FCF7EA', // Cream background
         paper: '#ffffff',
+        light_green: '#E0FFFE',
         dark: '#00615E',
     },
 

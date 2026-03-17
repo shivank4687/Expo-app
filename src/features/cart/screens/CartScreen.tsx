@@ -3,35 +3,35 @@
  * Main cart screen with items, coupon, and price details
  */
 
-import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    ActivityIndicator,
-    RefreshControl
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '@/theme';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import {
-    fetchCartThunk,
-    applyCouponThunk,
-    removeCouponThunk
-} from '@/store/slices/cartSlice';
-import { EmptyCart } from '../components/EmptyCart';
-import { CartItemCard } from '../components/CartItemCard';
-import { CheckoutAuthModal } from '../components/CheckoutAuthModal';
-import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { Button } from '@/shared/components/Button';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useToast } from '@/shared/components/Toast';
 import { formatters } from '@/shared/utils/formatters';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+    applyCouponThunk,
+    fetchCartThunk,
+    removeCouponThunk
+} from '@/store/slices/cartSlice';
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+    ActivityIndicator,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CartItemCard } from '../components/CartItemCard';
+import { CheckoutAuthModal } from '../components/CheckoutAuthModal';
+import { EmptyCart } from '../components/EmptyCart';
 
 export const CartScreen: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -118,17 +118,17 @@ export const CartScreen: React.FC = () => {
     const hasDiscount = (cart.discount_amount || 0) > 0;
 
     // Debug: Log cart structure
-    console.log('🛒 Cart object keys:', Object.keys(cart));
-    console.log('🛒 Cart values:', {
-        sub_total: cart.sub_total,
-        base_sub_total: cart.base_sub_total,
-        discount_amount: cart.discount_amount,
-        tax_total: cart.tax_total,
-        grand_total: cart.grand_total,
-        shipping_amount: cart.shipping_amount,
-        formatted_sub_total: cart.formatted_sub_total,
-        formatted_grand_total: cart.formatted_grand_total,
-    });
+    // console.log('🛒 Cart object keys:', Object.keys(cart));
+    // console.log('🛒 Cart values:', {
+    //     sub_total: cart.sub_total,
+    //     base_sub_total: cart.base_sub_total,
+    //     discount_amount: cart.discount_amount,
+    //     tax_total: cart.tax_total,
+    //     grand_total: cart.grand_total,
+    //     shipping_amount: cart.shipping_amount,
+    //     formatted_sub_total: cart.formatted_sub_total,
+    //     formatted_grand_total: cart.formatted_grand_total,
+    // });
 
     // Calculate amount to pay WITHOUT shipping
     // Use || 0 to handle undefined values
@@ -137,7 +137,7 @@ export const CartScreen: React.FC = () => {
     const tax = Number(cart.tax_total || cart.base_tax_total || 0);
     const grandTotal = Number(cart.grand_total || cart.base_grand_total || 0);
 
-    console.log('💰 Parsed values:', { subtotal, discount, tax, grandTotal });
+    //console.log('💰 Parsed values:', { subtotal, discount, tax, grandTotal });
 
     // Calculate: Subtotal - Discount + Tax
     let amountToPay = subtotal - discount + tax;
@@ -146,16 +146,16 @@ export const CartScreen: React.FC = () => {
     if (amountToPay <= 0 && grandTotal > 0) {
         const shipping = Number(cart.shipping_amount || cart.base_shipping_amount || 0);
         amountToPay = grandTotal - shipping;
-        console.log('⚠️ Using grand_total minus shipping:', grandTotal, '-', shipping, '=', amountToPay);
+        // console.log('⚠️ Using grand_total minus shipping:', grandTotal, '-', shipping, '=', amountToPay);
     }
 
     // Final fallback: if still 0, use grand_total
     if (amountToPay <= 0 && grandTotal > 0) {
         amountToPay = grandTotal;
-        console.log('⚠️ Final fallback to grand_total:', amountToPay);
+        // console.log('⚠️ Final fallback to grand_total:', amountToPay);
     }
 
-    console.log('✅ Final amount to pay:', amountToPay);
+    // console.log('✅ Final amount to pay:', amountToPay);
 
     const formattedAmountToPay = formatters.formatPrice(amountToPay);
 

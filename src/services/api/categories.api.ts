@@ -1,5 +1,5 @@
-import { shopApiClient, restApiClient } from './client';
 import { API_ENDPOINTS } from '@/config/constants';
+import { restApiClient, shopApiClient } from './client';
 
 export interface Category {
     id: number;
@@ -90,22 +90,22 @@ export const categoriesApi = {
         const response = await restApiClient.get<{ data: any }>(url);
         const category = response.data || response;
 
-        console.log('Category response:', category);
+        // console.log('Category response:', category);
 
         // Fetch children/subcategories
         try {
-            console.log('Fetching subcategories for parent_id:', id);
+            //console.log('Fetching subcategories for parent_id:', id);
             const childrenResponse = await restApiClient.get<{ data: any[] }>('/descendant-categories', {
                 params: { parent_id: id }
             });
-            console.log('Subcategories raw response:', childrenResponse);
+            //console.log('Subcategories raw response:', childrenResponse);
             const children = childrenResponse.data || childrenResponse;
-            console.log('Subcategories data:', children);
+            //console.log('Subcategories data:', children);
             category.children = Array.isArray(children) ? children.map((cat: any) => ({
                 ...cat,
                 image: cat.logo_url || cat.image,
             })) : [];
-            console.log('Mapped children:', category.children);
+            //console.log('Mapped children:', category.children);
         } catch (error) {
             console.error('Error fetching children for category', id, error);
             category.children = [];

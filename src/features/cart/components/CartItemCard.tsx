@@ -3,19 +3,19 @@
  * Displays individual cart item with quantity controls and actions
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
 import { CartItem } from '@/features/cart/types/cart.types';
 import { Card } from '@/shared/components/Card';
 import { ProductImage } from '@/shared/components/LazyImage';
-import { formatters } from '@/shared/utils/formatters';
-import { theme } from '@/theme';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { updateCartItemThunk, removeFromCartThunk, moveToWishlistThunk } from '@/store/slices/cartSlice';
 import { useToast } from '@/shared/components/Toast';
+import { formatters } from '@/shared/utils/formatters';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { moveToWishlistThunk, removeFromCartThunk, updateCartItemThunk } from '@/store/slices/cartSlice';
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface CartItemCardProps {
     item: CartItem;
@@ -34,23 +34,23 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
 
     const handleProductPress = () => {
         const productId = item.product_id || item.product?.id;
-        console.log('🎯 Cart item clicked - item.product_id:', item.product_id, 'item.product.id:', item.product?.id);
-        
+        // console.log('🎯 Cart item clicked - item.product_id:', item.product_id, 'item.product.id:', item.product?.id);
+
         if (productId) {
-            console.log('✅ Navigating to product:', productId);
+            // console.log('✅ Navigating to product:', productId);
             router.push(`/product/${productId}` as any);
         } else {
-            console.log('❌ No product ID available. Item data:', JSON.stringify({
-                id: item.id,
-                product_id: item.product_id,
-                product: item.product ? { id: item.product.id } : null
-            }));
+            // console.log('❌ No product ID available. Item data:', JSON.stringify({
+            //     id: item.id,
+            //     product_id: item.product_id,
+            //     product: item.product ? { id: item.product.id } : null
+            // }));
         }
     };
 
     const handleQuantityChange = async (newQuantity: number) => {
         if (newQuantity < 1) return;
-        
+
         setIsUpdating(true);
         try {
             await dispatch(updateCartItemThunk({
@@ -93,13 +93,13 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
         }
 
         try {
-            console.log('[CartItemCard] Moving item to wishlist:', item.id);
+            // console.log('[CartItemCard] Moving item to wishlist:', item.id);
             const result = await dispatch(moveToWishlistThunk(item.id)).unwrap();
-            console.log('[CartItemCard] Move completed, updated cart:', result);
-            
+            // console.log('[CartItemCard] Move completed, updated cart:', result);
+
             // Cart state is already updated by moveToWishlistThunk which fetches the cart
             // The header will automatically reflect the new count
-            
+
             showToast({ message: t('cart.itemMovedToWishlist'), type: 'success' });
         } catch (error: any) {
             console.error('[CartItemCard] Move to wishlist failed:', error);
@@ -128,92 +128,92 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                                 <Text style={styles.productName} numberOfLines={2}>
                                     {item.name}
                                 </Text>
-                                
+
                                 <View style={styles.priceSection}>
                                     <Text style={styles.price}>
                                         {formatters.formatPrice(item.price)}
                                     </Text>
-                                <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
-                                <Text style={styles.subtotal}>
-                                    {formatters.formatPrice(subtotal)}
-                                </Text>
+                                    <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
+                                    <Text style={styles.subtotal}>
+                                        {formatters.formatPrice(subtotal)}
+                                    </Text>
                                 </View>
                             </View>
 
-                        {/* Quantity Controls */}
-                        <View style={styles.quantityContainer}>
-                            <TouchableOpacity
-                                style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    handleQuantityChange(item.quantity - 1);
-                                }}
-                                disabled={isUpdating || item.quantity <= 1}
-                            >
-                                <Ionicons 
-                                    name="remove" 
-                                    size={20} 
-                                    color={item.quantity <= 1 ? theme.colors.gray[400] : theme.colors.text.primary} 
-                                />
-                            </TouchableOpacity>
+                            {/* Quantity Controls */}
+                            <View style={styles.quantityContainer}>
+                                <TouchableOpacity
+                                    style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        handleQuantityChange(item.quantity - 1);
+                                    }}
+                                    disabled={isUpdating || item.quantity <= 1}
+                                >
+                                    <Ionicons
+                                        name="remove"
+                                        size={20}
+                                        color={item.quantity <= 1 ? theme.colors.gray[400] : theme.colors.text.primary}
+                                    />
+                                </TouchableOpacity>
 
-                            <View style={styles.quantityDisplay}>
-                                {isUpdating ? (
-                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                                ) : (
-                                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                                )}
+                                <View style={styles.quantityDisplay}>
+                                    {isUpdating ? (
+                                        <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                    ) : (
+                                        <Text style={styles.quantityText}>{item.quantity}</Text>
+                                    )}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        handleQuantityChange(item.quantity + 1);
+                                    }}
+                                    disabled={isUpdating}
+                                >
+                                    <Ionicons
+                                        name="add"
+                                        size={20}
+                                        color={theme.colors.text.primary}
+                                    />
+                                </TouchableOpacity>
                             </View>
-
-                            <TouchableOpacity
-                                style={styles.quantityButton}
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    handleQuantityChange(item.quantity + 1);
-                                }}
-                                disabled={isUpdating}
-                            >
-                                <Ionicons 
-                                    name="add" 
-                                    size={20} 
-                                    color={theme.colors.text.primary} 
-                                />
-                            </TouchableOpacity>
-                        </View>
                         </View>
                     </View>
                 </View>
 
                 {/* Actions - Full Width at Bottom */}
                 <View style={styles.actionsContainer}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.actionButton}
                         onPress={(e) => {
                             e?.stopPropagation?.();
                             handleMoveToWishlist();
                         }}
                     >
-                        <Ionicons 
-                            name="heart-outline" 
-                            size={18} 
-                            color={theme.colors.text.secondary} 
+                        <Ionicons
+                            name="heart-outline"
+                            size={18}
+                            color={theme.colors.text.secondary}
                         />
                         <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
                     </TouchableOpacity>
 
                     <View style={styles.actionDivider} />
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.actionButton}
                         onPress={(e) => {
                             e?.stopPropagation?.();
                             handleRemove();
                         }}
                     >
-                        <Ionicons 
-                            name="trash-outline" 
-                            size={18} 
-                            color={theme.colors.error.main} 
+                        <Ionicons
+                            name="trash-outline"
+                            size={18}
+                            color={theme.colors.error.main}
                         />
                         <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
                     </TouchableOpacity>

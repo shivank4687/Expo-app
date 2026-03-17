@@ -13,7 +13,7 @@ const { primary, background, text, border, success, error, warning, info } = col
 export const COLORS = {
     // Primary Brand Colors
     primary: primary[500],
-    primaryLight: primary[100],
+    primaryLight: '#E0FFFE', //primary[100],
     primaryDark: primary[700],
 
     // Background Colors

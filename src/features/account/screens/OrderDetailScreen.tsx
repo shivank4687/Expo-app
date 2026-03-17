@@ -3,36 +3,35 @@
  * Displays detailed information about a single order
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    ScrollView, 
-    ActivityIndicator, 
-    RefreshControl,
-    TouchableOpacity,
-    Alert,
-} from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from 'expo-router';
+import { OxxoVoucherWebView } from '@/features/checkout/components/OxxoVoucherWebView';
+import { Order, ordersApi } from '@/services/api/orders.api';
+import { useToast } from '@/shared/components/Toast';
+import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { ordersApi, Order } from '@/services/api/orders.api';
-import { formatters } from '@/shared/utils/formatters';
-import { useToast } from '@/shared/components/Toast';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { OrderAddressCard } from '../components/OrderAddressCard';
 import { OrderItemCard } from '../components/OrderItemCard';
 import { OrderSummaryCard } from '../components/OrderSummaryCard';
-import { OrderAddressCard } from '../components/OrderAddressCard';
-import { OxxoVoucherWebView } from '@/features/checkout/components/OxxoVoucherWebView';
 
 /**
  * Get status color based on order status
  */
 const getStatusColor = (status: string): string => {
     const statusLower = status.toLowerCase();
-    
+
     switch (statusLower) {
         case 'pending':
         case 'pending_payment':
@@ -77,15 +76,15 @@ export const OrderDetailScreen: React.FC = () => {
             setError(null);
             const response = await ordersApi.getOrder(parseInt(id));
             const orderData = response.data;
-            
+
             // Debug: Log payment data to see what we're receiving
-            console.log('[OrderDetailScreen] Order payment data:', {
-                payment: orderData.payment,
-                payment_method: orderData.payment?.method,
-                payment_additional: orderData.payment?.additional,
-                total_due: orderData.total_due,
-            });
-            
+            // console.log('[OrderDetailScreen] Order payment data:', {
+            //     payment: orderData.payment,
+            //     payment_method: orderData.payment?.method,
+            //     payment_additional: orderData.payment?.additional,
+            //     total_due: orderData.total_due,
+            // });
+
             setOrder(orderData);
         } catch (err: any) {
             console.error('[OrderDetailScreen] Error loading order:', err);
@@ -181,11 +180,11 @@ export const OrderDetailScreen: React.FC = () => {
     if (isLoading) {
         return (
             <>
-                <Stack.Screen 
-                    options={{ 
+                <Stack.Screen
+                    options={{
                         title: t('orders.orderDetails', 'Order Details'),
                         headerBackTitle: t('common.back', 'Back'),
-                    }} 
+                    }}
                 />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
@@ -200,22 +199,22 @@ export const OrderDetailScreen: React.FC = () => {
     if (error || !order) {
         return (
             <>
-                <Stack.Screen 
-                    options={{ 
+                <Stack.Screen
+                    options={{
                         title: t('orders.orderDetails', 'Order Details'),
                         headerBackTitle: t('common.back', 'Back'),
-                    }} 
+                    }}
                 />
                 <View style={styles.errorContainer}>
-                    <Ionicons 
-                        name="alert-circle-outline" 
-                        size={64} 
-                        color={theme.colors.error.main} 
+                    <Ionicons
+                        name="alert-circle-outline"
+                        size={64}
+                        color={theme.colors.error.main}
                     />
                     <Text style={styles.errorText}>
                         {error || t('orders.loadError', 'Failed to load order details')}
                     </Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.retryButton}
                         onPress={() => loadOrder()}
                         activeOpacity={0.7}
@@ -233,17 +232,17 @@ export const OrderDetailScreen: React.FC = () => {
     const formattedDate = formatters.formatDate(order.created_at, 'long');
     // Only show cancel button for pending orders
     const orderStatusLower = order.status.toLowerCase();
-    const canCancel = (orderStatusLower === 'pending' || orderStatusLower === 'pending_payment') && 
-                      order.can_cancel !== false;
+    const canCancel = (orderStatusLower === 'pending' || orderStatusLower === 'pending_payment') &&
+        order.can_cancel !== false;
     const canReorder = order.can_reorder !== false;
 
     return (
         <>
-            <Stack.Screen 
-                options={{ 
+            <Stack.Screen
+                options={{
                     title: `#${order.increment_id}`,
                     headerBackTitle: t('common.back', 'Back'),
-                }} 
+                }}
             />
             <ScrollView
                 style={styles.container}
@@ -289,10 +288,10 @@ export const OrderDetailScreen: React.FC = () => {
                                         <ActivityIndicator size="small" color={theme.colors.white} />
                                     ) : (
                                         <>
-                                            <Ionicons 
-                                                name="repeat-outline" 
-                                                size={18} 
-                                                color={theme.colors.white} 
+                                            <Ionicons
+                                                name="repeat-outline"
+                                                size={18}
+                                                color={theme.colors.white}
                                             />
                                             <Text style={styles.actionButtonText}>
                                                 {t('orders.reorder', 'Reorder')}
@@ -312,10 +311,10 @@ export const OrderDetailScreen: React.FC = () => {
                                         <ActivityIndicator size="small" color={theme.colors.error.main} />
                                     ) : (
                                         <>
-                                            <Ionicons 
-                                                name="close-circle-outline" 
-                                                size={18} 
-                                                color={theme.colors.error.main} 
+                                            <Ionicons
+                                                name="close-circle-outline"
+                                                size={18}
+                                                color={theme.colors.error.main}
                                             />
                                             <Text style={[styles.actionButtonText, styles.cancelButtonText]}>
                                                 {t('orders.cancel', 'Cancel Order')}
@@ -345,17 +344,17 @@ export const OrderDetailScreen: React.FC = () => {
 
                 {/* Shipping Address */}
                 {order.shipping_address && (
-                    <OrderAddressCard 
-                        address={order.shipping_address} 
-                        type="shipping" 
+                    <OrderAddressCard
+                        address={order.shipping_address}
+                        type="shipping"
                     />
                 )}
 
                 {/* Billing Address */}
                 {order.billing_address && (
-                    <OrderAddressCard 
-                        address={order.billing_address} 
-                        type="billing" 
+                    <OrderAddressCard
+                        address={order.billing_address}
+                        type="billing"
                     />
                 )}
 
@@ -367,10 +366,10 @@ export const OrderDetailScreen: React.FC = () => {
                         </Text>
                         {/* Always show payment method section */}
                         <View style={styles.methodRow}>
-                            <Ionicons 
-                                name="card-outline" 
-                                size={20} 
-                                color={theme.colors.text.secondary} 
+                            <Ionicons
+                                name="card-outline"
+                                size={20}
+                                color={theme.colors.text.secondary}
                             />
                             <View style={styles.methodInfo}>
                                 <Text style={styles.methodLabel}>
@@ -379,27 +378,27 @@ export const OrderDetailScreen: React.FC = () => {
                                 <Text style={styles.methodValue}>
                                     {order.payment_title || t('orders.notAvailable', 'Not available')}
                                 </Text>
-                                
+
                                 {/* OXXO Voucher Details */}
-                                {order.payment?.method === 'stripeoxxo' && 
-                                 order.payment?.additional && 
-                                 typeof order.payment.additional === 'object' &&
-                                 (order.payment.additional.voucher_number || order.payment.additional.voucher_url) && (
-                                    <OxxoVoucherSection 
-                                        order={order}
-                                        voucher={order.payment.additional}
-                                        onVoucherUpdated={loadOrder}
-                                    />
-                                )}
+                                {order.payment?.method === 'stripeoxxo' &&
+                                    order.payment?.additional &&
+                                    typeof order.payment.additional === 'object' &&
+                                    (order.payment.additional.voucher_number || order.payment.additional.voucher_url) && (
+                                        <OxxoVoucherSection
+                                            order={order}
+                                            voucher={order.payment.additional}
+                                            onVoucherUpdated={loadOrder}
+                                        />
+                                    )}
                             </View>
                         </View>
                         {/* Always show shipping method section */}
                         {order.shipping_title && (
                             <View style={styles.methodRow}>
-                                <Ionicons 
-                                    name="car-outline" 
-                                    size={20} 
-                                    color={theme.colors.text.secondary} 
+                                <Ionicons
+                                    name="car-outline"
+                                    size={20}
+                                    color={theme.colors.text.secondary}
                                 />
                                 <View style={styles.methodInfo}>
                                     <Text style={styles.methodLabel}>
@@ -597,33 +596,33 @@ interface OxxoVoucherSectionProps {
     onVoucherUpdated?: () => void;
 }
 
-const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({ 
-    order, 
-    voucher, 
-    onVoucherUpdated 
+const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
+    order,
+    voucher,
+    onVoucherUpdated
 }) => {
     const { t } = useTranslation();
     const { showToast } = useToast();
     const [isRenewing, setIsRenewing] = useState(false);
     const [showVoucherWebView, setShowVoucherWebView] = useState(false);
-    
-    const isExpired = voucher.voucher_expires_at 
+
+    const isExpired = voucher.voucher_expires_at
         ? new Date(voucher.voucher_expires_at) < new Date()
         : false;
-    
-    const expiryDate = voucher.voucher_expires_at 
+
+    const expiryDate = voucher.voucher_expires_at
         ? formatters.formatDate(voucher.voucher_expires_at, 'long')
         : null;
-    
+
     const handleViewVoucher = () => {
         if (voucher.voucher_url) {
             setShowVoucherWebView(true);
         }
     };
-    
+
     const handleRenewVoucher = async () => {
         if (isRenewing) return;
-        
+
         Alert.alert(
             t('orders.oxxo.renewVoucher', 'Renew Voucher'),
             t('orders.oxxo.renewConfirm', 'Are you sure you want to generate a new voucher?'),
@@ -638,13 +637,13 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
                         try {
                             setIsRenewing(true);
                             const response = await ordersApi.renewVoucher(order.id);
-                            
+
                             if (response.success) {
                                 showToast({
                                     message: response.message || t('orders.oxxo.renewSuccess', 'Voucher renewed successfully'),
                                     type: 'success',
                                 });
-                                
+
                                 // Reload order to get updated voucher data
                                 if (onVoucherUpdated) {
                                     onVoucherUpdated();
@@ -668,19 +667,19 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
             ]
         );
     };
-    
+
     return (
         <View style={voucherStyles.container}>
             <Text style={voucherStyles.refNumberLabel}>
                 {t('orders.oxxo.refNumber', 'Reference Number')}: {voucher.voucher_number}
             </Text>
-            
+
             {expiryDate && (
                 <Text style={voucherStyles.expiryText}>
                     {t('orders.oxxo.expireOn', 'Expires on')}: {expiryDate}
                 </Text>
             )}
-            
+
             {isExpired ? (
                 <View style={voucherStyles.expiredContainer}>
                     <Text style={voucherStyles.expiredText}>
@@ -696,10 +695,10 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
                             <ActivityIndicator size="small" color={theme.colors.primary[500]} />
                         ) : (
                             <>
-                                <Ionicons 
-                                    name="refresh-outline" 
-                                    size={16} 
-                                    color={theme.colors.primary[500]} 
+                                <Ionicons
+                                    name="refresh-outline"
+                                    size={16}
+                                    color={theme.colors.primary[500]}
                                 />
                                 <Text style={voucherStyles.renewButtonText}>
                                     {t('orders.oxxo.generate', 'Generate New Voucher')}
@@ -714,17 +713,17 @@ const OxxoVoucherSection: React.FC<OxxoVoucherSectionProps> = ({
                     onPress={handleViewVoucher}
                     activeOpacity={0.7}
                 >
-                    <Ionicons 
-                        name="receipt-outline" 
-                        size={16} 
-                        color={theme.colors.primary[500]} 
+                    <Ionicons
+                        name="receipt-outline"
+                        size={16}
+                        color={theme.colors.primary[500]}
                     />
                     <Text style={voucherStyles.viewButtonText}>
                         {t('orders.oxxo.viewVoucher', 'View Voucher')}
                     </Text>
                 </TouchableOpacity>
             )}
-            
+
             {/* OXXO Voucher WebView Modal */}
             {voucher.voucher_url && (
                 <OxxoVoucherWebView

@@ -1,21 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { SORT_OPTIONS } from '@/constants/sortOptions';
+import { ProductCard } from '@/features/home/components/ProductCard';
+import { Product } from '@/features/product/types/product.types';
 import { categoriesApi, Category } from '@/services/api/categories.api';
 import { productsApi } from '@/services/api/products.api';
-import { Product } from '@/features/product/types/product.types';
-import { ProductCard } from '@/features/home/components/ProductCard';
-import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
-import { Button } from '@/shared/components/Button';
-import { CategoryImage, BannerImage } from '@/shared/components/LazyImage';
+import { FilterModal } from '@/shared/components/FilterModal';
+import { BannerImage, CategoryImage } from '@/shared/components/LazyImage';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
-import { FilterModal } from '@/shared/components/FilterModal';
 import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
-import { SORT_OPTIONS } from '@/constants/sortOptions';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 const PRODUCTS_PER_PAGE = 12; // Increased for grid view
 
 /**
@@ -120,15 +119,15 @@ export const CategoryDetailScreen: React.FC = () => {
             setProducts(productsData.data);
             setCurrentPage(productsData.current_page || 1);
             setTotalPages(productsData.last_page || 1);
-            console.log('CategoryDetailScreen - Category loaded:', {
-                id: categoryData.id,
-                name: categoryData.name,
-                hasChildren: !!categoryData.children,
-                childrenCount: categoryData.children?.length || 0,
-                children: categoryData.children,
-                productsCount: productsData.data.length,
-                totalPages: productsData.last_page
-            });
+            // console.log('CategoryDetailScreen - Category loaded:', {
+            //     id: categoryData.id,
+            //     name: categoryData.name,
+            //     hasChildren: !!categoryData.children,
+            //     childrenCount: categoryData.children?.length || 0,
+            //     children: categoryData.children,
+            //     productsCount: productsData.data.length,
+            //     totalPages: productsData.last_page
+            // });
         } catch (err: any) {
             setError(err.message || 'Failed to load category');
         } finally {

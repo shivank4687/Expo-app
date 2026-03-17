@@ -2,16 +2,26 @@
 export const colors = {
   // Primary Brand Colors
   primary: {
-    50: '#f0f9ff',
-    100: '#e0f2fe',
-    200: '#bae6fd',
-    300: '#7dd3fc',
-    400: '#38bdf8',
-    500: '#0ea5e9', // Main primary
-    600: '#0284c7',
-    700: '#0369a1',
-    800: '#075985',
-    900: '#0c4a6e',
+    // 50: '#f0f9ff',
+    // 100: '#e0f2fe',
+    // 200: '#bae6fd',
+    // 300: '#7dd3fc',
+    // 400: '#38bdf8',
+    // 500: '#0ea5e9', // Main primary
+    // 600: '#0284c7',
+    // 700: '#0369a1',
+    // 800: '#075985',
+    // 900: '#0c4a6e',
+    50: '#e6f2f1',
+    100: '#b3d9d6',
+    200: '#80c0bb',
+    300: '#4da7a0',
+    400: '#1a8e85',
+    500: '#00615E', // Main supplier primary (dark teal)
+    600: '#004e4b',
+    700: '#003b39',
+    800: '#002827',
+    900: '#001515',
   },
 
   // Secondary Colors
@@ -70,7 +80,7 @@ export const colors = {
 
   // Background Colors
   background: {
-    default: '#ffffff',
+    default: '#FCF7EA',
     paper: '#f9fafb',
     dark: '#111827',
   },

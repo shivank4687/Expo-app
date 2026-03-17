@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { parseValidDate } from '@/shared/utils/dateUtils';
 
 interface BuyerSpendDiscount {
     id: string;
@@ -64,10 +65,14 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
     };
 
     const formatDate = (dateString?: string) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
+        const date = parseValidDate(dateString);
+        return date ? date.toLocaleDateString() : '';
     };
+
+    const holidayStartDate = parseValidDate(data?.holiday_start_date);
+    const holidayEndDate = parseValidDate(data?.holiday_end_date);
+    const discountSpecialStartDate = parseValidDate(data?.discount_special_start_date);
+    const discountSpecialEndDate = parseValidDate(data?.discount_special_end_date);
 
     return (
         <View style={styles.container}>
@@ -331,8 +336,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         style={styles.dateInputHalf}
                         onPress={() => setShowHolidayStartPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: data?.holiday_start_date ? '#000000' : '#666666' }]}>
-                            {data?.holiday_start_date ? formatDate(data.holiday_start_date) : 'Start date'}
+                        <Text style={[styles.dateInputText, { color: holidayStartDate ? '#000000' : '#666666' }]}>
+                            {holidayStartDate ? formatDate(data?.holiday_start_date) : 'Start date'}
                         </Text>
                         <Ionicons name="calendar-outline" size={16} color="#666666" />
                     </TouchableOpacity>
@@ -341,8 +346,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         style={styles.dateInputHalf}
                         onPress={() => setShowHolidayEndPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: data?.holiday_end_date ? '#000000' : '#666666' }]}>
-                            {data?.holiday_end_date ? formatDate(data.holiday_end_date) : 'End date'}
+                        <Text style={[styles.dateInputText, { color: holidayEndDate ? '#000000' : '#666666' }]}>
+                            {holidayEndDate ? formatDate(data?.holiday_end_date) : 'End date'}
                         </Text>
                         <Ionicons name="calendar-outline" size={16} color="#666666" />
                     </TouchableOpacity>
@@ -394,8 +399,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         style={styles.dateInputHalf}
                         onPress={() => setShowDiscountStartPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: data?.discount_special_start_date ? '#000000' : '#666666' }]}>
-                            {data?.discount_special_start_date ? formatDate(data.discount_special_start_date) : 'Start date'}
+                        <Text style={[styles.dateInputText, { color: discountSpecialStartDate ? '#000000' : '#666666' }]}>
+                            {discountSpecialStartDate ? formatDate(data?.discount_special_start_date) : 'Start date'}
                         </Text>
                         <Ionicons name="calendar-outline" size={16} color="#666666" />
                     </TouchableOpacity>
@@ -404,8 +409,8 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         style={styles.dateInputHalf}
                         onPress={() => setShowDiscountEndPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: data?.discount_special_end_date ? '#000000' : '#666666' }]}>
-                            {data?.discount_special_end_date ? formatDate(data.discount_special_end_date) : 'End date'}
+                        <Text style={[styles.dateInputText, { color: discountSpecialEndDate ? '#000000' : '#666666' }]}>
+                            {discountSpecialEndDate ? formatDate(data?.discount_special_end_date) : 'End date'}
                         </Text>
                         <Ionicons name="calendar-outline" size={16} color="#666666" />
                     </TouchableOpacity>
@@ -419,7 +424,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
             <DateTimePickerModal
                 isVisible={showHolidayStartPicker}
                 mode="date"
-                date={data?.holiday_start_date ? new Date(data.holiday_start_date) : new Date()}
+                date={holidayStartDate || new Date()}
                 onConfirm={(date) => {
                     onChange('holiday_start_date', date.toISOString().split('T')[0]);
                     setShowHolidayStartPicker(false);
@@ -430,7 +435,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
             <DateTimePickerModal
                 isVisible={showHolidayEndPicker}
                 mode="date"
-                date={data?.holiday_end_date ? new Date(data.holiday_end_date) : new Date()}
+                date={holidayEndDate || new Date()}
                 onConfirm={(date) => {
                     onChange('holiday_end_date', date.toISOString().split('T')[0]);
                     setShowHolidayEndPicker(false);
@@ -441,7 +446,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
             <DateTimePickerModal
                 isVisible={showDiscountStartPicker}
                 mode="date"
-                date={data?.discount_special_start_date ? new Date(data.discount_special_start_date) : new Date()}
+                date={discountSpecialStartDate || new Date()}
                 onConfirm={(date) => {
                     onChange('discount_special_start_date', date.toISOString().split('T')[0]);
                     setShowDiscountStartPicker(false);
@@ -452,7 +457,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
             <DateTimePickerModal
                 isVisible={showDiscountEndPicker}
                 mode="date"
-                date={data?.discount_special_end_date ? new Date(data.discount_special_end_date) : new Date()}
+                date={discountSpecialEndDate || new Date()}
                 onConfirm={(date) => {
                     onChange('discount_special_end_date', date.toISOString().split('T')[0]);
                     setShowDiscountEndPicker(false);
@@ -897,4 +902,3 @@ const styles = StyleSheet.create({
         color: '#00615E',
     },
 });
-

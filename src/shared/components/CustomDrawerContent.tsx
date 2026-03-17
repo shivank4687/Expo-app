@@ -1,17 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutThunk } from '@/store/slices/authSlice';
-import { fetchCoreConfig } from '@/store/slices/coreSlice';
 import { fetchCategories } from '@/store/slices/categorySlice';
 import { fetchCMSPages } from '@/store/slices/cmsSlice';
+import { fetchCoreConfig } from '@/store/slices/coreSlice';
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
-import { DrawerSection, DrawerItem } from './DrawerSection';
-import { Category } from '@/services/api/categories.api';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DrawerItem, DrawerSection } from './DrawerSection';
 
 export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     const { t } = useTranslation();
@@ -186,6 +185,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: theme.colors.background.default,
     },
     profileSection: {
         padding: theme.spacing.lg,
