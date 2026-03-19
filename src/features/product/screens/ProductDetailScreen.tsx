@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     bottomBar: {
         flexDirection: 'row',
         padding: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         ...theme.shadows.lg,
         alignItems: 'center',
         gap: theme.spacing.md,

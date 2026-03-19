@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { COLORS } from '../../styles/colors';
 import RFQDetailsTab from '../components/RFQDetailsTab';
 import RFQQuotesTab from '../components/RFQQuotesTab';
 import RFQMessagesTab from '../components/RFQMessagesTab';
+import { TabGroup, type Tab } from '@/shared/components';
 
 type TabView = 'details' | 'quotes' | 'messages';
 const TABS: TabView[] = ['details', 'quotes', 'messages'];
@@ -65,12 +66,20 @@ export function RFQDetailsScreen() {
         }
     };
 
-    const handleTabPress = (tab: TabView) => {
+    const tabs = useMemo<Tab[]>(() =>
+        TABS.map((tab) => ({
+            id: tab,
+            label: tab.charAt(0).toUpperCase() + tab.slice(1),
+        })),
+    []);
+
+    const handleTabPress = useCallback((tabId: string) => {
+        const tab = tabId as TabView;
         setActiveTab(tab);
         if (tab === 'messages') {
             setUnreadCount(0);
         }
-    };
+    }, []);
 
     const handleSend = async (text: string) => {
         if (!text.trim()) return;
@@ -94,28 +103,25 @@ export function RFQDetailsScreen() {
 
             {/* Tab Bar */}
             <View style={styles.tabsWrapper}>
-                <View style={styles.tabsContainer}>
-                    {TABS.map((tab) => (
-                        <TouchableOpacity
-                            key={tab}
-                            style={[styles.tab, activeTab === tab && styles.tabActive]}
-                            onPress={() => handleTabPress(tab)}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </Text>
-                            {/* Unread badge — only on the Messages tab */}
-                            {tab === 'messages' && unreadCount > 0 && activeTab !== 'messages' && (
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>
-                                        {unreadCount > 99 ? '99+' : unreadCount}
-                                    </Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <TabGroup
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={handleTabPress}
+                    containerStyle={styles.tabsContainer}
+                    tabStyle={styles.tab}
+                    activeTabStyle={styles.tabActive}
+                    tabTextStyle={styles.tabText}
+                    activeTabTextStyle={styles.tabTextActive}
+                    renderTabBadge={(tab, isActive) =>
+                        tab.id === 'messages' && unreadCount > 0 && !isActive ? (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>
+                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                </Text>
+                            </View>
+                        ) : null
+                    }
+                />
             </View>
 
             {/* Content */}

@@ -75,6 +75,13 @@ export const CategoryDetailScreen: React.FC = () => {
 
     // Use the name from params if available, otherwise use loaded category name
     const displayName = category?.name || name || 'Category';
+    const headerOptions = {
+        title: displayName,
+        headerBackTitle: 'Back',
+        headerStyle: {
+            backgroundColor: theme.colors.background.default,
+        },
+    };
 
     useEffect(() => {
         if (id) {
@@ -233,8 +240,10 @@ export const CategoryDetailScreen: React.FC = () => {
     if (isLoading) {
         return (
             <>
-                <Stack.Screen options={{ title: displayName, headerBackTitle: 'Back' }} />
-                <LoadingSpinner />
+                <Stack.Screen options={headerOptions} />
+                <View style={styles.loadingContainer}>
+                    <LoadingSpinner />
+                </View>
             </>
         );
     }
@@ -242,7 +251,7 @@ export const CategoryDetailScreen: React.FC = () => {
     if (error || !category) {
         return (
             <>
-                <Stack.Screen options={{ title: displayName, headerBackTitle: 'Back' }} />
+                <Stack.Screen options={headerOptions} />
                 <ErrorMessage message={error || 'Category not found'} onRetry={loadCategoryData} />
             </>
         );
@@ -250,7 +259,7 @@ export const CategoryDetailScreen: React.FC = () => {
 
     return (
         <>
-            <Stack.Screen options={{ title: displayName, headerBackTitle: 'Back' }} />
+            <Stack.Screen options={headerOptions} />
             <FlatList
                 style={styles.container}
                 data={hasNoChildren ? products : []}
@@ -409,7 +418,7 @@ const styles = StyleSheet.create({
     },
     childCategoriesSection: {
         paddingVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         marginTop: theme.spacing.sm,
     },
     childCategoriesContent: {
@@ -460,7 +469,7 @@ const styles = StyleSheet.create({
     productsSection: {
         marginTop: theme.spacing.sm,
         paddingVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     productCarouselItem: {
         width: 180,
@@ -470,7 +479,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.lg,
         paddingTop: theme.spacing.lg,
         paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         marginTop: theme.spacing.sm,
     },
     gridContent: {
@@ -493,6 +502,12 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.secondary,
+    },
+    loadingContainer: {
+        flex: 1,
+        backgroundColor: theme.colors.background.default,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     emptyState: {
         paddingVertical: theme.spacing.xl * 2,

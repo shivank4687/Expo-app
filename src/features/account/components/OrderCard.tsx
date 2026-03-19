@@ -21,7 +21,7 @@ interface OrderCardProps {
  */
 const getStatusColor = (status: string): string => {
     const statusLower = status.toLowerCase();
-    
+
     switch (statusLower) {
         case 'pending':
         case 'pending_payment':
@@ -85,7 +85,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
             </View>
 
             {/* View Details Button */}
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.viewButton}
                 onPress={handleViewDetails}
                 activeOpacity={0.7}
@@ -101,7 +101,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.spacing.md,
         marginHorizontal: theme.spacing.md,
         marginVertical: theme.spacing.sm,

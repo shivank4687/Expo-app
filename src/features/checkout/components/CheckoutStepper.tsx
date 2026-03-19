@@ -33,7 +33,7 @@ const STEP_LABELS: Record<CheckoutStep, string> = {
 
 export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep, completedSteps }) => {
     const { t } = useTranslation();
-    
+
     const currentStepIndex = STEPS.indexOf(currentStep);
 
     const getStepStatus = (step: CheckoutStep, index: number) => {
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
     },

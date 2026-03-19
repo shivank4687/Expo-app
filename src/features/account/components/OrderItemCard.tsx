@@ -23,18 +23,18 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
     const [fetchedImageUrl, setFetchedImageUrl] = useState<string | null>(null);
 
     // Try multiple possible image URL locations from order item
-    const imageUrlFromItem = item.base_image?.small_image_url || 
-                             item.base_image?.medium_image_url || 
-                             item.base_image?.large_image_url || 
-                             item.product_image ||
-                             (item as any).image?.url ||
-                             (item as any).image_url ||
-                             (item as any).base_image?.original_image_url ||
-                             (item as any).product?.base_image?.medium_image_url ||
-                             (item as any).product?.base_image?.small_image_url ||
-                             (item as any).product?.thumbnail ||
-                             (item as any).images?.[0]?.url ||
-                             (item as any).images?.[0]?.medium_image_url;
+    const imageUrlFromItem = item.base_image?.small_image_url ||
+        item.base_image?.medium_image_url ||
+        item.base_image?.large_image_url ||
+        item.product_image ||
+        (item as any).image?.url ||
+        (item as any).image_url ||
+        (item as any).base_image?.original_image_url ||
+        (item as any).product?.base_image?.medium_image_url ||
+        (item as any).product?.base_image?.small_image_url ||
+        (item as any).product?.thumbnail ||
+        (item as any).images?.[0]?.url ||
+        (item as any).images?.[0]?.medium_image_url;
 
     // If no image in order item, try to fetch from product API
     useEffect(() => {
@@ -42,9 +42,9 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
             productsApi.getProductById(item.product_id)
                 .then((product) => {
                     const productImageUrl = product.thumbnail ||
-                                          (product.images && product.images.length > 0 && product.images[0]?.url) ||
-                                          (product as any).base_image?.medium_image_url || 
-                                          (product as any).base_image?.small_image_url;
+                        (product.images && product.images.length > 0 && product.images[0]?.url) ||
+                        (product as any).base_image?.medium_image_url ||
+                        (product as any).base_image?.small_image_url;
                     if (productImageUrl) {
                         setFetchedImageUrl(productImageUrl);
                     }
@@ -65,7 +65,7 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
     };
 
     return (
-        <TouchableOpacity 
+        <TouchableOpacity
             style={styles.card}
             onPress={handleProductPress}
             activeOpacity={0.7}
@@ -111,14 +111,14 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
                     <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>
-                                {t('orders.sku', 'SKU')}: 
+                                {t('orders.sku', 'SKU')}:
                             </Text>
                             <Text style={styles.infoValue}>{item.sku}</Text>
                         </View>
                         {item.qty_ordered > 0 && (
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoLabel}>
-                                    {t('orders.quantity', 'Qty')}: 
+                                    {t('orders.quantity', 'Qty')}:
                                 </Text>
                                 <Text style={styles.infoValue}>{item.qty_ordered}</Text>
                             </View>
@@ -129,7 +129,7 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
                     <View style={styles.priceRow}>
                         <View style={styles.priceInfo}>
                             <Text style={styles.priceLabel}>
-                                {t('orders.price', 'Price')}: 
+                                {t('orders.price', 'Price')}:
                             </Text>
                             <Text style={styles.priceValue}>
                                 {item.formatted_price_incl_tax || item.formatted_price}
@@ -137,7 +137,7 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
                         </View>
                         <View style={styles.totalInfo}>
                             <Text style={styles.totalLabel}>
-                                {t('orders.subtotal', 'Subtotal')}: 
+                                {t('orders.subtotal', 'Subtotal')}:
                             </Text>
                             <Text style={styles.totalValue}>
                                 {item.formatted_total_incl_tax || item.formatted_total}
@@ -152,7 +152,7 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         marginHorizontal: theme.spacing.md,
         marginVertical: theme.spacing.xs,

@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     },
     header: {
         padding: theme.spacing.xl,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     greeting: {
         fontSize: theme.typography.fontSize.md,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: '48%',
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.lg,
         margin: '1%',
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     },
     section: {
         marginTop: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         padding: theme.spacing.lg,
     },
     sectionTitle: {

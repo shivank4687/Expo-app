@@ -183,123 +183,125 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
             <Card variant="elevated" style={styles.card}>
-                {/* Product Image */}
-                <View style={styles.imageContainer}>
-                    <ProductImage
-                        imageUrl={productData.imageUrl}
-                        style={styles.image}
-                        recyclingKey={product.id?.toString()}
-                        priority="low"
-                    />
+                <View style={styles.cardBody}>
+                    {/* Product Image */}
+                    <View style={styles.imageContainer}>
+                        <ProductImage
+                            imageUrl={productData.imageUrl}
+                            style={styles.image}
+                            recyclingKey={product.id?.toString()}
+                            priority="low"
+                        />
 
-                    {/* Wishlist Heart Icon */}
-                    <TouchableOpacity
-                        style={styles.wishlistButton}
-                        onPress={handleToggleWishlist}
-                        disabled={isTogglingWishlist}
-                        activeOpacity={0.7}
-                    >
-                        {isTogglingWishlist ? (
-                            <ActivityIndicator size="small" color={theme.colors.error.main} />
-                        ) : (
-                            <Ionicons
-                                name={isInWishlist ? 'heart' : 'heart-outline'}
-                                size={24}
-                                color={isInWishlist ? theme.colors.error.main : '#6B7280'}
-                                style={styles.heartIcon}
-                            />
-                        )}
-                    </TouchableOpacity>
+                        {/* Wishlist Heart Icon */}
+                        <TouchableOpacity
+                            style={styles.wishlistButton}
+                            onPress={handleToggleWishlist}
+                            disabled={isTogglingWishlist}
+                            activeOpacity={0.7}
+                        >
+                            {isTogglingWishlist ? (
+                                <ActivityIndicator size="small" color={theme.colors.error.main} />
+                            ) : (
+                                <Ionicons
+                                    name={isInWishlist ? 'heart' : 'heart-outline'}
+                                    size={24}
+                                    color={isInWishlist ? theme.colors.error.main : '#6B7280'}
+                                    style={styles.heartIcon}
+                                />
+                            )}
+                        </TouchableOpacity>
 
-                    {/* Sale Badge - Shows when product is on sale */}
-                    {productData.isOnSale && product.in_stock ? (
-                        <View style={styles.saleBadge}>
-                            <Text style={styles.saleText}>{t('product.sale')}</Text>
-                        </View>
-                    ) : null}
+                        {/* Sale Badge - Shows when product is on sale */}
+                        {productData.isOnSale && product.in_stock ? (
+                            <View style={styles.saleBadge}>
+                                <Text style={styles.saleText}>{t('product.sale')}</Text>
+                            </View>
+                        ) : null}
 
-                    {/* New Badge - Shows when product is new and not on sale */}
-                    {!productData.isOnSale && productData.isNew && product.in_stock ? (
-                        <View style={styles.newBadge}>
-                            <Text style={styles.newText}>{t('product.new')}</Text>
-                        </View>
-                    ) : null}
+                        {/* New Badge - Shows when product is new and not on sale */}
+                        {!productData.isOnSale && productData.isNew && product.in_stock ? (
+                            <View style={styles.newBadge}>
+                                <Text style={styles.newText}>{t('product.new')}</Text>
+                            </View>
+                        ) : null}
 
-                    {/* Out of Stock Badge */}
-                    {!product.in_stock ? (
-                        <View style={styles.outOfStockBadge}>
-                            <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
-                        </View>
-                    ) : null}
-                </View>
+                        {/* Out of Stock Badge */}
+                        {!product.in_stock ? (
+                            <View style={styles.outOfStockBadge}>
+                                <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
+                            </View>
+                        ) : null}
+                    </View>
 
-                {/* Product Info */}
-                <View style={styles.info}>
-                    <Text style={styles.name} numberOfLines={2}>
-                        {productData.name}
-                    </Text>
+                    {/* Product Info */}
+                    <View style={styles.info}>
+                        <Text style={styles.name} numberOfLines={2}>
+                            {productData.name}
+                        </Text>
 
-                    {productData.rating > 0 ? (
-                        <View style={styles.ratingContainer}>
-                            <Ionicons
-                                name="star"
-                                size={RATING_ICON_SIZE}
-                                color={theme.colors.warning.main}
-                            />
-                            <Text style={styles.rating}>
-                                {productData.rating.toFixed(1)}
-                            </Text>
-                            {productData.reviewCount > 0 ? (
-                                <Text style={styles.reviewCount}>
-                                    ({productData.reviewCount})
+                        {productData.rating > 0 ? (
+                            <View style={styles.ratingContainer}>
+                                <Ionicons
+                                    name="star"
+                                    size={RATING_ICON_SIZE}
+                                    color={theme.colors.warning.main}
+                                />
+                                <Text style={styles.rating}>
+                                    {productData.rating.toFixed(1)}
                                 </Text>
-                            ) : null}
-                        </View>
-                    ) : null}
-
-                    <View style={styles.priceWrapper}>
-                        {/* Price Label for Configurable/Grouped Products */}
-                        {/* Always reserve space for price label to maintain consistent card height */}
-                        <View style={styles.priceLabelContainer}>
-                            {productData.priceLabel ? (
-                                <Text style={styles.priceLabel}>
-                                    {productData.priceLabel}
-                                </Text>
-                            ) : null}
-                        </View>
-
-                        <View style={styles.priceRow}>
-                            <View style={styles.priceContainer}>
-                                {productData.hasDiscount ? (
-                                    <>
-                                        <Text style={styles.specialPrice}>
-                                            {formatters.formatPrice(productData.currentPrice)}
-                                        </Text>
-                                        <Text style={styles.originalPrice}>
-                                            {formatters.formatPrice(productData.originalPrice)}
-                                        </Text>
-                                    </>
-                                ) : (
-                                    <Text style={styles.price}>
-                                        {formatters.formatPrice(product.price)}
+                                {productData.reviewCount > 0 ? (
+                                    <Text style={styles.reviewCount}>
+                                        ({productData.reviewCount})
                                     </Text>
-                                )}
+                                ) : null}
+                            </View>
+                        ) : null}
+
+                        <View style={styles.priceWrapper}>
+                            {/* Price Label for Configurable/Grouped Products */}
+                            {/* Always reserve space for price label to maintain consistent card height */}
+                            <View style={styles.priceLabelContainer}>
+                                {productData.priceLabel ? (
+                                    <Text style={styles.priceLabel}>
+                                        {productData.priceLabel}
+                                    </Text>
+                                ) : null}
                             </View>
 
-                            {/* RFQ Button - Only show if product has supplier and user is authenticated */}
-                            {product.supplier?.id && isAuthenticated ? (
-                                <TouchableOpacity
-                                    style={styles.rfqButton}
-                                    onPress={handleRFQPress}
-                                    activeOpacity={0.7}
-                                >
-                                    <Ionicons
-                                        name="document-text-outline"
-                                        size={16}
-                                        color={theme.colors.primary[500]}
-                                    />
-                                </TouchableOpacity>
-                            ) : null}
+                            <View style={styles.priceRow}>
+                                <View style={styles.priceContainer}>
+                                    {productData.hasDiscount ? (
+                                        <>
+                                            <Text style={styles.specialPrice}>
+                                                {formatters.formatPrice(productData.currentPrice)}
+                                            </Text>
+                                            <Text style={styles.originalPrice}>
+                                                {formatters.formatPrice(productData.originalPrice)}
+                                            </Text>
+                                        </>
+                                    ) : (
+                                        <Text style={styles.price}>
+                                            {formatters.formatPrice(product.price)}
+                                        </Text>
+                                    )}
+                                </View>
+
+                                {/* RFQ Button - Only show if product has supplier and user is authenticated */}
+                                {product.supplier?.id && isAuthenticated ? (
+                                    <TouchableOpacity
+                                        style={styles.rfqButton}
+                                        onPress={handleRFQPress}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons
+                                            name="document-text-outline"
+                                            size={16}
+                                            color={theme.colors.primary[500]}
+                                        />
+                                    </TouchableOpacity>
+                                ) : null}
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -338,12 +340,23 @@ const styles = StyleSheet.create({
     card: {
         padding: 0,
         overflow: 'hidden',
+        backgroundColor: theme.colors.background.default,
+    },
+    cardBody: {
+        borderWidth: 1,
+        borderColor: theme.colors.border.card_light,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderTopRightRadius: theme.borderRadius.lg,
+        overflow: 'hidden',
     },
     imageContainer: {
         width: '100%',
         height: 150,
         position: 'relative',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: theme.colors.background.default,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderTopRightRadius: theme.borderRadius.lg,
+        overflow: 'hidden',
     },
     image: {
         width: '100%',

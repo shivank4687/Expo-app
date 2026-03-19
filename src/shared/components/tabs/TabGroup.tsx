@@ -1,6 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS } from '../styles/colors';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    StyleProp,
+    TextStyle,
+    ViewStyle,
+    ReactNode,
+} from 'react-native';
+import { COLORS } from '@features/supplier-panel/styles/colors';
 
 export interface Tab {
     id: string;
@@ -11,15 +20,31 @@ interface TabGroupProps {
     tabs: Tab[];
     activeTab: string;
     onTabChange: (tabId: string) => void;
+    containerStyle?: StyleProp<ViewStyle>;
+    tabStyle?: StyleProp<ViewStyle>;
+    activeTabStyle?: StyleProp<ViewStyle>;
+    tabTextStyle?: StyleProp<TextStyle>;
+    activeTabTextStyle?: StyleProp<TextStyle>;
+    renderTabBadge?: (tab: Tab, isActive: boolean) => ReactNode;
 }
 
 /**
  * Reusable Tab Group Component
  * Displays a horizontal group of tabs with active/inactive states
  */
-export const TabGroup: React.FC<TabGroupProps> = ({ tabs, activeTab, onTabChange }) => {
+export const TabGroup: React.FC<TabGroupProps> = ({
+    tabs,
+    activeTab,
+    onTabChange,
+    containerStyle,
+    tabStyle,
+    activeTabStyle,
+    tabTextStyle,
+    activeTabTextStyle,
+    renderTabBadge,
+}) => {
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, containerStyle]}>
             {tabs.map((tab) => {
                 const isActive = tab.id === activeTab;
                 return (
@@ -27,17 +52,28 @@ export const TabGroup: React.FC<TabGroupProps> = ({ tabs, activeTab, onTabChange
                         key={tab.id}
                         style={[
                             styles.tab,
-                            isActive && styles.tabActive,
+                            tabStyle,
+                            isActive && [
+                                styles.tabActive,
+                                activeTabStyle,
+                            ],
                         ]}
                         onPress={() => onTabChange(tab.id)}
                         activeOpacity={0.7}
                     >
-                        <Text style={[
-                            styles.tabText,
-                            isActive && styles.tabTextActive,
-                        ]}>
+                        <Text
+                            style={[
+                                styles.tabText,
+                                tabTextStyle,
+                                isActive && [
+                                    styles.tabTextActive,
+                                    activeTabTextStyle,
+                                ],
+                            ]}
+                        >
                             {tab.label}
                         </Text>
+                        {renderTabBadge?.(tab, isActive)}
                     </TouchableOpacity>
                 );
             })}

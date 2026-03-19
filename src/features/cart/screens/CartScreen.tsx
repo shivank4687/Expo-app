@@ -325,7 +325,8 @@ export const CartScreen: React.FC = () => {
             </ScrollView>
 
             {/* Fixed Bottom Footer */}
-            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
+            {/* { paddingBottom: Math.max(insets.bottom, theme.spacing.md) } */}
+            <View style={[styles.footer]}>
                 <View style={styles.footerContent}>
                     <View style={styles.totalSection}>
                         <Text style={styles.footerLabel}>
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
     },
     section: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         marginHorizontal: theme.spacing.md,
         marginBottom: theme.spacing.md,
         borderRadius: theme.borderRadius.lg,
@@ -388,7 +389,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     expansionTitleContainer: {
         flexDirection: 'row',
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.md,
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.text.primary,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     applyButton: {
         backgroundColor: theme.colors.primary[500],
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
         ...theme.shadows.lg,

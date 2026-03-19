@@ -6,7 +6,7 @@ import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 
 export const ReviewsScreen: React.FC = () => {
     const { isLoading } = useRequireAuth();
-    
+
     // Placeholder - will be implemented with actual API
     const reviews: any[] = [];
 
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
     },
     reviewCard: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         padding: theme.spacing.lg,
         marginHorizontal: theme.spacing.md,
         marginVertical: theme.spacing.sm,

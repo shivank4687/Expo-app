@@ -17,7 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { useTranslation } from "react-i18next";
-import { supplierTheme } from "@/theme";
+import { supplierTheme, theme } from "@/theme";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;
@@ -107,19 +107,19 @@ function AppContent() {
       fontWeight: '600' as const,
     },
     headerBackImage: () => (
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginLeft: 4,
-          }}
-        >
-          <Ionicons name="arrow-back" size={20} color={inverseText} />
-        </View>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginLeft: 4,
+        }}
+      >
+        <Ionicons name="arrow-back" size={20} color={inverseText} />
+      </View>
     ),
   };
 
@@ -257,7 +257,7 @@ export default function RootLayout() {
         <PersistGate
           loading={
             <View
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+              style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.background.default }}
             >
               <ActivityIndicator size="large" />
             </View>

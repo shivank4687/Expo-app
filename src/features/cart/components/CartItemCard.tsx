@@ -7,6 +7,7 @@ import { CartItem } from '@/features/cart/types/cart.types';
 import { Card } from '@/shared/components/Card';
 import { ProductImage } from '@/shared/components/LazyImage';
 import { useToast } from '@/shared/components/Toast';
+import { QuantitySelector } from '@/shared/components/QuantitySelector';
 import { formatters } from '@/shared/utils/formatters';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { moveToWishlistThunk, removeFromCartThunk, updateCartItemThunk } from '@/store/slices/cartSlice';
@@ -15,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface CartItemCardProps {
     item: CartItem;
@@ -141,45 +142,14 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                             </View>
 
                             {/* Quantity Controls */}
-                            <View style={styles.quantityContainer}>
-                                <TouchableOpacity
-                                    style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
-                                    onPress={(e) => {
-                                        e.stopPropagation();
-                                        handleQuantityChange(item.quantity - 1);
-                                    }}
-                                    disabled={isUpdating || item.quantity <= 1}
-                                >
-                                    <Ionicons
-                                        name="remove"
-                                        size={20}
-                                        color={item.quantity <= 1 ? theme.colors.gray[400] : theme.colors.text.primary}
-                                    />
-                                </TouchableOpacity>
-
-                                <View style={styles.quantityDisplay}>
-                                    {isUpdating ? (
-                                        <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                                    ) : (
-                                        <Text style={styles.quantityText}>{item.quantity}</Text>
-                                    )}
-                                </View>
-
-                                <TouchableOpacity
-                                    style={styles.quantityButton}
-                                    onPress={(e) => {
-                                        e.stopPropagation();
-                                        handleQuantityChange(item.quantity + 1);
-                                    }}
-                                    disabled={isUpdating}
-                                >
-                                    <Ionicons
-                                        name="add"
-                                        size={20}
-                                        color={theme.colors.text.primary}
-                                    />
-                                </TouchableOpacity>
-                            </View>
+                            <QuantitySelector
+                                quantity={item.quantity}
+                                onIncrease={() => handleQuantityChange(item.quantity + 1)}
+                                onDecrease={() => handleQuantityChange(item.quantity - 1)}
+                                isLoading={isUpdating}
+                                minQuantity={1}
+                                disabled={isUpdating}
+                            />
                         </View>
                     </View>
                 </View>
@@ -228,6 +198,9 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         padding: 0,
         overflow: 'hidden',
+        backgroundColor: theme.colors.background.default,
+        borderWidth: 1,
+        borderColor: theme.colors.border.card_light,
     },
     mainContent: {
         padding: theme.spacing.md,
@@ -278,35 +251,8 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.text.primary,
     },
-    quantityContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    quantitySelectorWrapper: {
         marginVertical: theme.spacing.sm,
-    },
-    quantityButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: theme.colors.gray[300],
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: theme.colors.white,
-    },
-    quantityButtonDisabled: {
-        opacity: 0.5,
-    },
-    quantityDisplay: {
-        minWidth: 40,
-        height: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginHorizontal: theme.spacing.sm,
-    },
-    quantityText: {
-        fontSize: theme.typography.fontSize.md,
-        fontWeight: theme.typography.fontWeight.semiBold,
-        color: theme.colors.text.primary,
     },
     actionsContainer: {
         flexDirection: 'row',
@@ -315,7 +261,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
         paddingVertical: theme.spacing.sm,
-        backgroundColor: theme.colors.gray[50],
+        backgroundColor: theme.colors.background.default,
     },
     actionButton: {
         flexDirection: 'row',

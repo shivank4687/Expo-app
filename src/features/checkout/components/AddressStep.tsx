@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         padding: theme.spacing.md,
         paddingTop: theme.spacing.sm,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
         shadowColor: theme.colors.black,
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
         marginBottom: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     addressListCardSelected: {
         borderColor: theme.colors.primary[500],

@@ -38,9 +38,9 @@ export const MessagesListScreen: React.FC = () => {
             setThreads(response.data || []);
         } catch (err: any) {
             setError(err.message || 'Failed to load messages');
-            showToast({ 
-                message: err.message || 'Failed to load messages', 
-                type: 'error' 
+            showToast({
+                message: err.message || 'Failed to load messages',
+                type: 'error'
             });
         } finally {
             setIsLoading(false);
@@ -107,19 +107,19 @@ export const MessagesListScreen: React.FC = () => {
                         {formatDate(item.updated_at)}
                     </Text>
                 </View>
-                
+
                 <View style={styles.messagePreview}>
-                    <Text 
+                    <Text
                         style={[
                             styles.lastMessage,
                             item.last_message_role === 'supplier' && styles.unreadMessage,
-                        ]} 
+                        ]}
                         numberOfLines={1}
                     >
                         {item.last_message_role === 'supplier' && 'Supplier: '}
                         {item.last_message}
                     </Text>
-                    
+
                     {item.unread_count > 0 && (
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>
@@ -187,7 +187,7 @@ export const MessagesListScreen: React.FC = () => {
                     )}
                 </View>
             </View>
-            
+
             {threads.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200] || theme.colors.border.main,
-        backgroundColor: theme.colors.background.paper || theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     backButton: {
         padding: theme.spacing.xs,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     threadCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
         marginBottom: theme.spacing.md,

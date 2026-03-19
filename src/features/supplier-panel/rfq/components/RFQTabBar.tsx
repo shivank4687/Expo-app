@@ -40,11 +40,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
         borderBottomColor: '#E9E3D3',
+
     },
     scrollContent: {
         flexDirection: 'row',
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 5,
+
         gap: 8,
     },
     pill: {

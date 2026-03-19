@@ -60,9 +60,9 @@ export const ChatMessagesScreen: React.FC = () => {
             setMessages(response.data.messages || []);
         } catch (err: any) {
             setError(err.message || 'Failed to load messages');
-            showToast({ 
-                message: err.message || 'Failed to load messages', 
-                type: 'error' 
+            showToast({
+                message: err.message || 'Failed to load messages',
+                type: 'error'
             });
         } finally {
             setIsLoading(false);
@@ -78,7 +78,7 @@ export const ChatMessagesScreen: React.FC = () => {
 
         try {
             const response = await suppliersApi.sendThreadMessage(Number(threadId), messageToSend);
-            
+
             // Add the new message to the list
             setMessages(prev => [...prev, {
                 id: response.data.id,
@@ -95,9 +95,9 @@ export const ChatMessagesScreen: React.FC = () => {
             }, 100);
         } catch (err: any) {
             setMessageText(messageToSend); // Restore message on error
-            showToast({ 
-                message: err.message || 'Failed to send message', 
-                type: 'error' 
+            showToast({
+                message: err.message || 'Failed to send message',
+                type: 'error'
             });
         } finally {
             setIsSending(false);
@@ -106,16 +106,16 @@ export const ChatMessagesScreen: React.FC = () => {
 
     const formatMessageTime = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
+        return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
             minute: '2-digit',
-            hour12: true 
+            hour12: true
         });
     };
 
     const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
         const isCustomer = item.role === 'customer';
-        const showTime = index === messages.length - 1 || 
+        const showTime = index === messages.length - 1 ||
             new Date(item.created_at).getTime() - new Date(messages[index + 1].created_at).getTime() > 300000; // 5 minutes
 
         return (
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200] || theme.colors.border.main,
-        backgroundColor: theme.colors.background.paper || theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     backButton: {
         padding: theme.spacing.xs,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         paddingTop: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderTopWidth: 1,
         borderTopColor: theme.colors.border.main,
         ...theme.shadows.lg,

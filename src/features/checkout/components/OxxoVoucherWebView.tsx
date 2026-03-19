@@ -97,7 +97,7 @@ export const OxxoVoucherWebView: React.FC<OxxoVoucherWebViewProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     header: {
         flexDirection: 'row',
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
         paddingTop: theme.spacing.lg,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     headerTitle: {
         fontSize: theme.typography.fontSize.lg,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     },
     webView: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     loadingContainer: {
         position: 'absolute',
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     loadingText: {
         marginTop: theme.spacing.md,

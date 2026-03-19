@@ -7,9 +7,10 @@ import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { PickerModal } from '../../../../shared/components/PickerModal';
+import { TabGroup } from '@/shared/components';
 import { createSkydropxShipment } from '../../dashboard/api/shipments.api';
 import { consignmentOptions, packageOptions } from '../../shared/constants/shipmentOptions';
 
@@ -19,6 +20,17 @@ export function MyOrdersSection() {
     const { showToast } = useToast();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'pending' | 'shipped' | 'issues'>('pending');
+    const orderTabs = useMemo(
+        () => [
+            { id: 'pending', label: 'Pending' },
+            { id: 'shipped', label: 'Shipped' },
+            { id: 'issues', label: 'Issues' },
+        ],
+        [],
+    );
+    const handleTabChange = useCallback((tabId: string) => {
+        setActiveTab(tabId as 'pending' | 'shipped' | 'issues');
+    }, []);
     const [trackingNumbers, setTrackingNumbers] = useState<Record<number, string>>({});
     const [trackingPhotos, setTrackingPhotos] = useState<Record<number, ImagePicker.ImagePickerAsset>>({});
     const [creatingShipment, setCreatingShipment] = useState<Record<number, boolean>>({});
@@ -167,25 +179,8 @@ export function MyOrdersSection() {
         <View style={styles.ordersSection}>
             <Text style={styles.ordersSectionTitle}>My Orders</Text>
 
-            <View style={styles.orderTabs}>
-                <TouchableOpacity
-                    style={[styles.orderTab, activeTab === 'pending' && styles.orderTabActive]}
-                    onPress={() => setActiveTab('pending')}
-                >
-                    <Text style={[styles.orderTabText, activeTab === 'pending' && styles.orderTabTextActive]}>Pending</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.orderTab, activeTab === 'shipped' && styles.orderTabActive]}
-                    onPress={() => setActiveTab('shipped')}
-                >
-                    <Text style={[styles.orderTabText, activeTab === 'shipped' && styles.orderTabTextActive]}>Shipped</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.orderTab, activeTab === 'issues' && styles.orderTabActive]}
-                    onPress={() => setActiveTab('issues')}
-                >
-                    <Text style={[styles.orderTabText, activeTab === 'issues' && styles.orderTabTextActive]}>Issues</Text>
-                </TouchableOpacity>
+            <View style={styles.tabGroupWrapper}>
+                <TabGroup tabs={orderTabs} activeTab={activeTab} onTabChange={handleTabChange} />
             </View>
 
             {activeTab === 'pending' && (
@@ -474,38 +469,8 @@ const styles = StyleSheet.create({
         color: '#000000',
         alignSelf: 'stretch',
     },
-    orderTabs: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 4,
-        alignSelf: 'stretch',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 8,
-    },
-    orderTab: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 0,
-        flex: 1,
-        height: 34,
-        borderRadius: 4,
-    },
-    orderTabActive: {
-        backgroundColor: '#00615E',
-        borderWidth: 1,
-        borderColor: '#00615E',
-    },
-    orderTabText: {
-        fontFamily: 'Inter',
-        fontWeight: '400',
-        fontSize: 14,
-        lineHeight: 18,
-        color: '#000000',
-    },
-    orderTabTextActive: {
-        color: '#FFFFFF',
+    tabGroupWrapper: {
+        width: '100%',
     },
     ordersWarning: {
         fontFamily: 'Inter',

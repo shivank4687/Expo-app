@@ -94,12 +94,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     const getShippingMethodDetails = () => {
         console.log('🔍 Finding shipping method - selected:', selectedShippingMethod);
         console.log('🔍 Available shipping methods:', shippingMethods ? Object.keys(shippingMethods) : 'none');
-        
+
         if (!selectedShippingMethod || !shippingMethods) {
             console.log('❌ No selected method or no shipping methods available');
             return null;
         }
-        
+
         for (const [carrierCode, carrier] of Object.entries(shippingMethods)) {
             console.log(`🔍 Checking carrier: ${carrierCode}, rates:`, carrier.rates?.length);
             const rate = carrier.rates?.find(r => {
@@ -112,7 +112,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                 return rate;
             }
         }
-        
+
         console.log('❌ No matching shipping rate found');
         return null;
     };
@@ -126,7 +126,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     const shippingMethodDetails = getShippingMethodDetails();
     const paymentMethodDetails = getPaymentMethodDetails();
     const hasDiscount = cart.discount_amount > 0;
-    
+
     // Debug shipping details
     console.log('🚚 Shipping method details:', JSON.stringify(shippingMethodDetails, null, 2));
     console.log('🛒 Cart shipping data:', {
@@ -219,7 +219,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                 <Text style={styles.sectionTitle}>
                     {t('checkout.orderSummary', 'Order Summary')}
                 </Text>
-                
+
                 {cart.items.map((item) => (
                     <Card key={item.id} style={styles.productCard}>
                         <View style={styles.productRow}>
@@ -383,12 +383,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                             <View style={styles.priceRow}>
                                 <Text style={styles.priceLabel}>{t('cart.shipping')}</Text>
                                 <Text style={styles.priceValue}>
-                                    {shippingMethodDetails?.formatted_price || 
-                                     shippingMethodDetails?.base_formatted_price || 
-                                     cart.selected_shipping_rate?.formatted_price ||
-                                     cart.formatted_shipping_amount ||
-                                     (cart.shipping_amount !== undefined ? formatters.formatPrice(cart.shipping_amount) : null) ||
-                                     (shippingMethodDetails?.price !== undefined ? formatters.formatPrice(shippingMethodDetails.price) : '$0.00')}
+                                    {shippingMethodDetails?.formatted_price ||
+                                        shippingMethodDetails?.base_formatted_price ||
+                                        cart.selected_shipping_rate?.formatted_price ||
+                                        cart.formatted_shipping_amount ||
+                                        (cart.shipping_amount !== undefined ? formatters.formatPrice(cart.shipping_amount) : null) ||
+                                        (shippingMethodDetails?.price !== undefined ? formatters.formatPrice(shippingMethodDetails.price) : '$0.00')}
                                 </Text>
                             </View>
                         )}
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
     },
     expansionSection: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.lg,
         overflow: 'hidden',
         marginBottom: theme.spacing.md,

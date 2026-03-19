@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
         color: theme.colors.white,
     },
     headerCard: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         marginHorizontal: theme.spacing.md,
         marginBottom: theme.spacing.md,
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.sm,
     },
     methodsCard: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         marginHorizontal: theme.spacing.md,
         marginVertical: theme.spacing.sm,

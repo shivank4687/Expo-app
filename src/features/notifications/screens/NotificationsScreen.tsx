@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     backButton: {
         padding: theme.spacing.xs,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     },
     tabsContainer: {
         flexDirection: 'row',
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
     },
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     notificationItem: {
         flexDirection: 'row',
         padding: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[100],
     },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,14 +7,10 @@ import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
 import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
 import { createShipment, createSkydropxShipment, updateShipmentStatus } from '../../dashboard/api/shipments.api';
+import { Tab, TabGroup } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
 
 type TabType = 'details' | 'messages' | 'tracking';
-
-interface Tab {
-    id: TabType;
-    label: string;
-}
 
 export default function OrderDetailsScreen() {
     const router = useRouter();
@@ -27,6 +23,14 @@ export default function OrderDetailsScreen() {
 
     // Get order ID from route params
     const orderId = params.orderId ? parseInt(params.orderId as string) : 0;
+    const tabs = useMemo<Tab[]>(() => [
+        { id: 'details', label: 'Details' },
+        { id: 'messages', label: 'Messages' },
+        { id: 'tracking', label: 'Tracking' },
+    ], []);
+    const handleTabChange = useCallback((tabId: string) => {
+        setActiveTab(tabId as TabType);
+    }, []);
 
     // Drawer keeps this screen mounted; reset tab to default each time screen comes into focus
     // so navigating away and back always starts on the Details tab.
@@ -35,12 +39,6 @@ export default function OrderDetailsScreen() {
             setActiveTab('details');
         }, [])
     );
-
-    const tabs: Tab[] = [
-        { id: 'details', label: 'Details' },
-        { id: 'messages', label: 'Messages' },
-        { id: 'tracking', label: 'Tracking' },
-    ];
 
     const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
@@ -245,28 +243,11 @@ export default function OrderDetailsScreen() {
 
             {/* Tabs - Moved outside ScrollView for sticky behavior and better layout control */}
             <View style={styles.tabsWrapper}>
-                <View style={styles.tabsContainer}>
-                    {tabs.map((tab) => (
-                        <TouchableOpacity
-                            key={tab.id}
-                            style={[
-                                styles.tab,
-                                activeTab === tab.id && styles.tabActive,
-                            ]}
-                            onPress={() => setActiveTab(tab.id)}
-                            activeOpacity={0.7}
-                        >
-                            <Text
-                                style={[
-                                    styles.tabText,
-                                    activeTab === tab.id && styles.tabTextActive,
-                                ]}
-                            >
-                                {tab.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <TabGroup
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={handleTabChange}
+                />
             </View>
 
             {/* Content Area */}
@@ -342,41 +323,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 16,
         gap: 16,
-    },
-    tabsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 4,
-        minHeight: 42,
-        backgroundColor: COLORS.white,
-        borderRadius: 8,
-    },
-    tab: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        minHeight: 34,
-        borderRadius: 4,
-    },
-    tabActive: {
-        backgroundColor: '#00615E',
-        borderWidth: 1,
-        borderColor: '#00615E',
-    },
-    tabText: {
-        fontFamily: 'Inter',
-        fontWeight: '500',
-        fontSize: 14,
-        lineHeight: 18,
-        includeFontPadding: false,
-        textAlignVertical: 'center',
-        color: '#000000',
-    },
-    tabTextActive: {
-        color: '#FFFFFF',
     },
     comingSoonContainer: {
         alignItems: 'center',

@@ -43,13 +43,13 @@ export const CheckoutAuthModal: React.FC<CheckoutAuthModalProps> = ({ visible, o
             animationType="slide"
             onRequestClose={onClose}
         >
-            <TouchableOpacity 
-                style={styles.overlay} 
-                activeOpacity={1} 
+            <TouchableOpacity
+                style={styles.overlay}
+                activeOpacity={1}
                 onPress={onClose}
             >
-                <TouchableOpacity 
-                    activeOpacity={1} 
+                <TouchableOpacity
+                    activeOpacity={1}
                     style={styles.modalContainer}
                     onPress={(e) => e.stopPropagation()}
                 >
@@ -60,16 +60,16 @@ export const CheckoutAuthModal: React.FC<CheckoutAuthModalProps> = ({ visible, o
 
                     {/* Icon */}
                     <View style={styles.iconContainer}>
-                        <Ionicons 
-                            name="lock-closed-outline" 
-                            size={60} 
-                            color={theme.colors.primary[500]} 
+                        <Ionicons
+                            name="lock-closed-outline"
+                            size={60}
+                            color={theme.colors.primary[500]}
                         />
                     </View>
 
                     {/* Title */}
                     <Text style={styles.title}>{t('cart.loginToContinue')}</Text>
-                    
+
                     {/* Description */}
                     <Text style={styles.description}>
                         {t('cart.loginPrompt')}
@@ -82,7 +82,7 @@ export const CheckoutAuthModal: React.FC<CheckoutAuthModalProps> = ({ visible, o
                             onPress={handleLogin}
                             style={styles.button}
                         />
-                        
+
                         <Button
                             title={t('auth.signup')}
                             onPress={handleSignup}
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContainer: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderTopLeftRadius: theme.borderRadius.xl,
         borderTopRightRadius: theme.borderRadius.xl,
         padding: theme.spacing.xl,

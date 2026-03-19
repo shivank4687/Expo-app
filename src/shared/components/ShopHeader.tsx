@@ -166,7 +166,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                         </TouchableOpacity>
                     )}
 
-                    <TouchableOpacity style={styles.iconButton} onPress={handleCartPress}>
+                    {/* <TouchableOpacity style={styles.iconButton} onPress={handleCartPress}>
                         <View>
                             <Ionicons name="cart-outline" size={28} color={theme.colors.text.primary} />
                             {cartItemsCount > 0 && (
@@ -177,7 +177,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                                 </View>
                             )}
                         </View>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             </View>
         </View>

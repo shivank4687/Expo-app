@@ -52,7 +52,7 @@ export const MessageSupplierModal: React.FC<MessageSupplierModalProps> = ({
         try {
             // Import API dynamically to avoid circular dependencies
             const { suppliersApi } = await import('@/services/api/suppliers.api');
-            
+
             await suppliersApi.sendMessageToSupplier({
                 supplier_id: supplierId,
                 message: message.trim(),
@@ -61,7 +61,7 @@ export const MessageSupplierModal: React.FC<MessageSupplierModalProps> = ({
             // Reset form
             setMessage('');
             setError(null);
-            
+
             // Close modal and call success callback
             onClose();
             if (onSuccess) {
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderTopLeftRadius: theme.borderRadius.xl,
         borderTopRightRadius: theme.borderRadius.xl,
     },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
         color: theme.colors.text.primary,
         minHeight: 120,
         maxHeight: 200,
-        backgroundColor: theme.colors.background.paper || theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     textInputError: {
         borderColor: theme.colors.error.main,

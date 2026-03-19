@@ -24,37 +24,37 @@ const EditableField: React.FC<{
     secureTextEntry?: boolean;
     textContentType?: 'none' | 'password' | 'newPassword' | 'emailAddress' | 'name';
     autoComplete?: 'off' | 'password' | 'password-new' | 'email' | 'name';
-}> = ({ 
-    label, 
-    value, 
-    onChangeText, 
-    placeholder, 
-    keyboardType = 'default', 
-    error, 
-    required = false, 
+}> = ({
+    label,
+    value,
+    onChangeText,
+    placeholder,
+    keyboardType = 'default',
+    error,
+    required = false,
     secureTextEntry = false,
     textContentType,
     autoComplete
 }) => (
-    <View style={styles.fieldContainer}>
-        <Text style={styles.fieldLabel}>
-            {label} {required && <Text style={styles.required}>*</Text>}
-        </Text>
-        <TextInput
-            style={[styles.fieldInput, error && styles.fieldInputError]}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder || label}
-            placeholderTextColor={theme.colors.text.secondary}
-            keyboardType={keyboardType}
-            secureTextEntry={secureTextEntry}
-            autoCapitalize="none"
-            textContentType={textContentType}
-            autoComplete={autoComplete}
-        />
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
-);
+        <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>
+                {label} {required && <Text style={styles.required}>*</Text>}
+            </Text>
+            <TextInput
+                style={[styles.fieldInput, error && styles.fieldInputError]}
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={placeholder || label}
+                placeholderTextColor={theme.colors.text.secondary}
+                keyboardType={keyboardType}
+                secureTextEntry={secureTextEntry}
+                autoCapitalize="none"
+                textContentType={textContentType}
+                autoComplete={autoComplete}
+            />
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        </View>
+    );
 
 // Component for read-only info items
 const InfoItem: React.FC<{ label: string; value: string | undefined }> = ({ label, value }) => (
@@ -81,13 +81,13 @@ export const AccountInformationScreen: React.FC = () => {
     const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    
+
     // Password change state
     const [isPasswordSectionExpanded, setIsPasswordSectionExpanded] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    
+
     // Error state
     const [errors, setErrors] = useState({
         firstName: '',
@@ -121,7 +121,7 @@ export const AccountInformationScreen: React.FC = () => {
     const pickImage = async () => {
         // Request permissions
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
+
         if (permissionResult.granted === false) {
             Alert.alert(t('account.permissionRequired'), t('account.cameraPermissionMessage'));
             return;
@@ -139,11 +139,11 @@ export const AccountInformationScreen: React.FC = () => {
 
         if (!result.canceled && result.assets[0]) {
             const asset = result.assets[0];
-            
+
             // Validate file type
             const fileExtension = asset.uri.split('.').pop()?.toLowerCase();
             const validExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp'];
-            
+
             if (!validExtensions.includes(fileExtension || '')) {
                 setErrors(prev => ({
                     ...prev,
@@ -159,15 +159,17 @@ export const AccountInformationScreen: React.FC = () => {
                     t('account.largeImageMessage'),
                     [
                         { text: t('common.cancel'), style: 'cancel' },
-                        { text: t('account.continue'), onPress: () => {
-                            setSelectedImage(asset.uri);
-                            setErrors(prev => ({ ...prev, image: '' }));
-                        }}
+                        {
+                            text: t('account.continue'), onPress: () => {
+                                setSelectedImage(asset.uri);
+                                setErrors(prev => ({ ...prev, image: '' }));
+                            }
+                        }
                     ]
                 );
                 return;
             }
-            
+
             setSelectedImage(asset.uri);
             setErrors(prev => ({ ...prev, image: '' }));
         }
@@ -226,7 +228,7 @@ export const AccountInformationScreen: React.FC = () => {
             isValid = false;
         }
 
-            // Validate password fields if password section is expanded and any password field has value
+        // Validate password fields if password section is expanded and any password field has value
         if (isPasswordSectionExpanded && (currentPassword || newPassword || confirmPassword)) {
             if (!currentPassword.trim()) {
                 newErrors.currentPassword = t('account.currentPasswordRequired', 'Current password is required');
@@ -276,8 +278,8 @@ export const AccountInformationScreen: React.FC = () => {
         setIsSaving(true);
         try {
             // Format date of birth
-            const dobString = dateOfBirth 
-                ? dateOfBirth.toISOString().split('T')[0] 
+            const dobString = dateOfBirth
+                ? dateOfBirth.toISOString().split('T')[0]
                 : undefined;
 
             // Prepare update data
@@ -303,7 +305,7 @@ export const AccountInformationScreen: React.FC = () => {
                 const filename = selectedImage.split('/').pop() || 'profile.jpg';
                 const match = /\.(\w+)$/.exec(filename);
                 const type = match ? `image/${match[1]}` : 'image/jpeg';
-                
+
                 updateData.image = {
                     uri: selectedImage,
                     name: filename,
@@ -318,7 +320,7 @@ export const AccountInformationScreen: React.FC = () => {
             // The Redux store should now have the updated user with new avatar
             if (result.user) {
                 setSelectedImage(null);
-                
+
                 // Clear password fields and collapse section after successful password change
                 if (isPasswordSectionExpanded && currentPassword && newPassword) {
                     setCurrentPassword('');
@@ -327,12 +329,12 @@ export const AccountInformationScreen: React.FC = () => {
                     setIsPasswordSectionExpanded(false);
                 }
             }
-            
+
             // Show success toast
             const successMessage = (isPasswordSectionExpanded && currentPassword && newPassword)
                 ? t('account.profileAndPasswordUpdated', 'Profile and password updated successfully')
                 : t('account.profileUpdated', 'Profile updated successfully');
-            
+
             showToast({
                 message: successMessage,
                 type: 'success',
@@ -341,14 +343,14 @@ export const AccountInformationScreen: React.FC = () => {
         } catch (error: any) {
             // Set general error or specific field errors from API
             const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to update profile';
-            
+
             // Show error toast
             showToast({
                 message: errorMessage,
                 type: 'error',
                 duration: 4000,
             });
-            
+
             // Also set specific field errors if applicable
             setErrors(prev => ({
                 ...prev,
@@ -377,18 +379,18 @@ export const AccountInformationScreen: React.FC = () => {
     return (
         <>
             <Stack.Screen options={{ title: t('account.accountInfo'), headerBackTitle: t('common.back') }} />
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={100}
             >
-                <ScrollView 
+                <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                <View style={styles.header}>
-                    <View style={styles.avatarContainer}>
+                    <View style={styles.header}>
+                        <View style={styles.avatarContainer}>
                             {displayImage ? (
                                 <AvatarImage
                                     imageUrl={displayImage}
@@ -400,40 +402,40 @@ export const AccountInformationScreen: React.FC = () => {
                                     <Text style={styles.avatarInitials}>{initials}</Text>
                                 </View>
                             )}
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.editAvatarButton}
                                 onPress={pickImage}
                             >
-                            <Ionicons name="camera" size={20} color={theme.colors.white} />
-                        </TouchableOpacity>
-                    </View>
+                                <Ionicons name="camera" size={20} color={theme.colors.white} />
+                            </TouchableOpacity>
+                        </View>
                         {errors.image ? <Text style={styles.errorText}>{errors.image}</Text> : null}
-                    <Text style={styles.email}>{user.phone || user.email}</Text>
-                </View>
+                        <Text style={styles.email}>{user.phone || user.email}</Text>
+                    </View>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{t('account.personalDetails')}</Text>
-                        
-                        <EditableField 
-                            label={t('account.firstName')} 
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{t('account.personalDetails')}</Text>
+
+                        <EditableField
+                            label={t('account.firstName')}
                             value={firstName}
                             onChangeText={setFirstName}
                             placeholder={t('account.enterFirstName')}
                             error={errors.firstName}
                             required
                         />
-                        
-                        <EditableField 
-                            label={t('account.lastName')} 
+
+                        <EditableField
+                            label={t('account.lastName')}
                             value={lastName}
                             onChangeText={setLastName}
                             placeholder={t('account.enterLastName')}
                             error={errors.lastName}
                             required
                         />
-                        
-                        <EditableField 
-                            label={t('account.emailAddress')} 
+
+                        <EditableField
+                            label={t('account.emailAddress')}
                             value={email}
                             onChangeText={setEmail}
                             placeholder={t('account.enterEmail')}
@@ -441,7 +443,7 @@ export const AccountInformationScreen: React.FC = () => {
                             error={errors.email}
                             required
                         />
-                        
+
                         {/* <EditableField 
                             label="Phone Number" 
                             value={phone}
@@ -451,7 +453,7 @@ export const AccountInformationScreen: React.FC = () => {
                             error={errors.phone}
                             required
                         /> */}
-                        
+
                         {/* Gender Selector */}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>
@@ -489,9 +491,9 @@ export const AccountInformationScreen: React.FC = () => {
                             maximumDate={new Date()}
                         />
 
-                        
+
                         {/* Newsletter Checkbox */}
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.checkboxContainer}
                             onPress={() => setSubscribeNewsletter(!subscribeNewsletter)}
                             activeOpacity={0.7}
@@ -504,82 +506,82 @@ export const AccountInformationScreen: React.FC = () => {
                             <Text style={styles.checkboxLabel}>{t('account.subscribeNewsletter')}</Text>
                         </TouchableOpacity>
 
-                        <InfoItem 
-                            label={t('account.memberSince')} 
-                            value={user.created_at ? new Date(user.created_at).toLocaleDateString() : undefined} 
+                        <InfoItem
+                            label={t('account.memberSince')}
+                            value={user.created_at ? new Date(user.created_at).toLocaleDateString() : undefined}
                         />
-                </View>
+                    </View>
 
-                {/* Password Change Section */}
-                <View style={styles.passwordSection}>
-                    <TouchableOpacity 
-                        style={styles.sectionHeaderButton}
-                        onPress={() => setIsPasswordSectionExpanded(!isPasswordSectionExpanded)}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.sectionHeaderLeft}>
-                            <Ionicons name="lock-closed-outline" size={22} color={theme.colors.text.primary} />
-                            <Text style={styles.sectionTitle}>{t('account.changePassword', 'Change Password')}</Text>
-                        </View>
-                        <Ionicons 
-                            name={isPasswordSectionExpanded ? "chevron-up" : "chevron-down"} 
-                            size={22} 
-                            color={theme.colors.text.secondary} 
-                        />
-                    </TouchableOpacity>
+                    {/* Password Change Section */}
+                    <View style={styles.passwordSection}>
+                        <TouchableOpacity
+                            style={styles.sectionHeaderButton}
+                            onPress={() => setIsPasswordSectionExpanded(!isPasswordSectionExpanded)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.sectionHeaderLeft}>
+                                <Ionicons name="lock-closed-outline" size={22} color={theme.colors.text.primary} />
+                                <Text style={styles.sectionTitle}>{t('account.changePassword', 'Change Password')}</Text>
+                            </View>
+                            <Ionicons
+                                name={isPasswordSectionExpanded ? "chevron-up" : "chevron-down"}
+                                size={22}
+                                color={theme.colors.text.secondary}
+                            />
+                        </TouchableOpacity>
 
-                    {isPasswordSectionExpanded && (
-                        <View style={styles.passwordFields}>
-                            <EditableField 
-                                label={t('account.currentPassword', 'Current Password')} 
-                                value={currentPassword}
-                                onChangeText={setCurrentPassword}
-                                placeholder={t('account.enterCurrentPassword', 'Enter current password')}
-                                error={errors.currentPassword}
-                                required
-                                secureTextEntry
-                                textContentType="password"
-                                autoComplete="password"
-                            />
-                            
-                            <EditableField 
-                                label={t('account.newPassword', 'New Password')} 
-                                value={newPassword}
-                                onChangeText={setNewPassword}
-                                placeholder={t('account.enterNewPassword', 'Enter new password')}
-                                error={errors.newPassword}
-                                required
-                                secureTextEntry
-                                textContentType="none"
-                                autoComplete="off"
-                            />
-                            
-                            <EditableField 
-                                label={t('account.confirmPassword', 'Confirm Password')} 
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                placeholder={t('account.enterConfirmPassword', 'Re-enter new password')}
-                                error={errors.confirmPassword}
-                                required
-                                secureTextEntry
-                                textContentType="none"
-                                autoComplete="off"
-                            />
+                        {isPasswordSectionExpanded && (
+                            <View style={styles.passwordFields}>
+                                <EditableField
+                                    label={t('account.currentPassword', 'Current Password')}
+                                    value={currentPassword}
+                                    onChangeText={setCurrentPassword}
+                                    placeholder={t('account.enterCurrentPassword', 'Enter current password')}
+                                    error={errors.currentPassword}
+                                    required
+                                    secureTextEntry
+                                    textContentType="password"
+                                    autoComplete="password"
+                                />
 
-                            <Text style={styles.passwordHint}>
-                                {t('account.passwordHint', 'Password must be at least 6 characters')}
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                                <EditableField
+                                    label={t('account.newPassword', 'New Password')}
+                                    value={newPassword}
+                                    onChangeText={setNewPassword}
+                                    placeholder={t('account.enterNewPassword', 'Enter new password')}
+                                    error={errors.newPassword}
+                                    required
+                                    secureTextEntry
+                                    textContentType="none"
+                                    autoComplete="off"
+                                />
+
+                                <EditableField
+                                    label={t('account.confirmPassword', 'Confirm Password')}
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                    placeholder={t('account.enterConfirmPassword', 'Re-enter new password')}
+                                    error={errors.confirmPassword}
+                                    required
+                                    secureTextEntry
+                                    textContentType="none"
+                                    autoComplete="off"
+                                />
+
+                                <Text style={styles.passwordHint}>
+                                    {t('account.passwordHint', 'Password must be at least 6 characters')}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
 
                     {/* Add spacing for fixed button */}
                     <View style={{ height: 100 }} />
-            </ScrollView>
+                </ScrollView>
 
                 {/* Fixed Save Button */}
                 <View style={styles.fixedButtonContainer}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.saveButton, (isSaving || isUpdating) && styles.saveButtonDisabled]}
                         onPress={handleSave}
                         disabled={isSaving || isUpdating}
@@ -667,7 +669,7 @@ const styles = StyleSheet.create<{
     header: {
         alignItems: 'center',
         padding: theme.spacing.xl,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
     },
@@ -717,7 +719,7 @@ const styles = StyleSheet.create<{
     },
     section: {
         marginTop: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         paddingVertical: theme.spacing.lg,
         paddingHorizontal: theme.spacing.lg,
         borderTopWidth: 1,
@@ -726,7 +728,7 @@ const styles = StyleSheet.create<{
     },
     passwordSection: {
         marginTop: theme.spacing.lg,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         paddingVertical: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg,
         borderTopWidth: 1,
@@ -785,7 +787,7 @@ const styles = StyleSheet.create<{
         borderWidth: 1,
         borderColor: theme.colors.gray[300],
         borderRadius: theme.borderRadius.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     fieldInputError: {
         borderColor: '#EF4444',
@@ -835,7 +837,7 @@ const styles = StyleSheet.create<{
         borderRadius: theme.borderRadius.md,
         borderWidth: 1,
         borderColor: theme.colors.gray[300],
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         alignItems: 'center',
     },
     genderOptionActive: {
@@ -869,7 +871,7 @@ const styles = StyleSheet.create<{
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.md,
         borderTopWidth: 1,

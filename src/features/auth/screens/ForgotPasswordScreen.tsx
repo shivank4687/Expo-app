@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { CountryCodeDropdown } from '@/shared/components/CountryCodeDropdown';
+import { TabGroup } from '@/shared/components';
 import { validation } from '@/shared/utils/validation';
 import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
@@ -28,6 +29,21 @@ export const ForgotPasswordScreen: React.FC = () => {
     const dispatch = useAppDispatch();
     const { lastSelectedCountry } = useAppSelector(state => state.core);
     const selectedUserType = useAppSelector(state => state.auth.selectedUserType ?? 'customer');
+
+    const userTypeTabs = useMemo(
+        () => [
+            { id: 'customer', label: t('auth.customer', 'Customer') },
+            { id: 'supplier', label: t('auth.supplier', 'Supplier') },
+        ],
+        [t],
+    );
+
+    const handleUserTypeChange = useCallback(
+        (tabId: string) => {
+            dispatch(setSelectedUserType(tabId as 'customer' | 'supplier'));
+        },
+        [dispatch],
+    );
 
     const [phone, setPhone] = useState('');
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
@@ -148,41 +164,12 @@ export const ForgotPasswordScreen: React.FC = () => {
                         <Text style={styles.subtitle}>{t('auth.forgotPasswordSubtitle')}</Text>
                     </View>
 
-                    <View style={styles.toggleContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.toggleButton,
-                                selectedUserType === 'customer' && styles.toggleButtonActive,
-                            ]}
-                            onPress={() => dispatch(setSelectedUserType('customer'))}
-                            activeOpacity={0.8}
-                        >
-                            <Text
-                                style={[
-                                    styles.toggleButtonText,
-                                    selectedUserType === 'customer' && styles.toggleButtonTextActive,
-                                ]}
-                            >
-                                {t('auth.customer', 'Customer')}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.toggleButton,
-                                selectedUserType === 'supplier' && styles.toggleButtonActive,
-                            ]}
-                            onPress={() => dispatch(setSelectedUserType('supplier'))}
-                            activeOpacity={0.8}
-                        >
-                            <Text
-                                style={[
-                                    styles.toggleButtonText,
-                                    selectedUserType === 'supplier' && styles.toggleButtonTextActive,
-                                ]}
-                            >
-                                {t('auth.supplier', 'Supplier')}
-                            </Text>
-                        </TouchableOpacity>
+                    <View style={styles.tabGroupWrapper}>
+                        <TabGroup
+                            tabs={userTypeTabs}
+                            activeTab={selectedUserType}
+                            onTabChange={handleUserTypeChange}
+                        />
                     </View>
 
                     <View style={styles.form}>
@@ -278,37 +265,9 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.xl,
         alignItems: 'flex-start',
     },
-    toggleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: whiteColor,
-        borderRadius: 8,
-        padding: 4,
+    tabGroupWrapper: {
         marginBottom: theme.spacing.lg,
-    },
-    toggleButton: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-        borderRadius: 4,
-        height: 34,
-    },
-    toggleButtonActive: {
-        backgroundColor: primaryColor,
-        borderWidth: 1,
-        borderColor: primaryColor,
-    },
-    toggleButtonText: {
-        fontFamily: 'Inter',
-        fontWeight: '500',
-        fontSize: 14,
-        lineHeight: 18,
-        color: textPrimaryColor,
-    },
-    toggleButtonTextActive: {
-        color: textInverseColor,
+        width: '100%',
     },
     title: {
         fontSize: 32,

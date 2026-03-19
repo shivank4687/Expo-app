@@ -95,6 +95,7 @@ export const colors = {
 
   // Border Colors
   border: {
+    card_light: '#E9E3D3',
     light: '#e5e7eb',
     main: '#d1d5db',
     dark: '#9ca3af',

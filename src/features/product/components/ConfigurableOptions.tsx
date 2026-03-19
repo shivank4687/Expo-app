@@ -75,7 +75,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
 
         // Check if all attributes have selections
         const allSelected = attributes.every(attr => attr.selectedValue !== null);
-        
+
         if (!allSelected) {
             setSelectedVariantId(null);
             onVariantChange(null);
@@ -86,11 +86,11 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
         // config.index structure: { variant_id: { attribute_id: option_id } }
         const matchingVariantId = Object.keys(configurableConfig.index).find(variantId => {
             const variantIndex = configurableConfig.index[variantId];
-            
+
             return attributes.every(attr => {
                 const selectedOption = attr.options.find((opt: any) => opt.label === attr.selectedValue);
                 if (!selectedOption) return false;
-                
+
                 // Check if this variant has the selected option for this attribute
                 return variantIndex[attr.id] === selectedOption.id;
             });
@@ -99,35 +99,35 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
         if (matchingVariantId) {
             const variantId = parseInt(matchingVariantId);
             console.log('✅ Found matching variant:', variantId);
-            
+
             setSelectedVariantId(variantId);
-            
+
             // Find the actual variant object
             const variant = variants?.find(v => v.id === variantId);
             onVariantChange(variantId, variant);
-            
+
             // Update price from config
             if (onPriceChange) {
                 let finalPrice = null;
                 let regularPrice = null;
-                
+
                 if (configurableConfig.variant_prices && configurableConfig.variant_prices[variantId]) {
                     const priceData = configurableConfig.variant_prices[variantId];
                     console.log('💰 Price data structure:', JSON.stringify(priceData, null, 2));
-                    
+
                     // Structure: { regular: { price, formatted_price }, final: { price, formatted_price } }
                     finalPrice = priceData.final?.price || priceData.regular?.price;
                     regularPrice = priceData.regular?.price;
-                    
+
                     console.log('💰 From config - final:', finalPrice, 'regular:', regularPrice);
                 } else if (variant) {
                     // Fallback to variant object prices
                     finalPrice = variant.price;
                     regularPrice = variant.special_price ? variant.price : null;
-                    
+
                     console.log('💰 From variant - price:', finalPrice, 'special:', variant.special_price);
                 }
-                
+
                 if (finalPrice) {
                     console.log('✅ Calling onPriceChange with:', finalPrice, regularPrice);
                     onPriceChange(finalPrice, regularPrice);
@@ -135,34 +135,34 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
                     console.log('⚠️ No price data available');
                 }
             }
-            
+
             // Update images from config
             if (onImagesChange) {
                 let imagesToUse = null;
-                
+
                 if (configurableConfig.variant_images && configurableConfig.variant_images[variantId]) {
                     const images = configurableConfig.variant_images[variantId];
                     console.log('🖼️ Raw images from config:', JSON.stringify(images.slice(0, 2), null, 2));
-                    
+
                     // Transform images to correct format
                     imagesToUse = images.map((img: any, idx: number) => {
                         // Handle string URLs
                         if (typeof img === 'string') {
-                            return { 
-                                id: Date.now() + idx, 
-                                url: img, 
-                                path: img 
+                            return {
+                                id: Date.now() + idx,
+                                url: img,
+                                path: img
                             };
                         }
-                        
+
                         // Handle Bagisto image objects
-                        const url = img.url 
-                            || img.large_image_url 
-                            || img.medium_image_url 
-                            || img.original_image_url 
+                        const url = img.url
+                            || img.large_image_url
+                            || img.medium_image_url
+                            || img.original_image_url
                             || img.small_image_url
                             || img.path;
-                        
+
                         return {
                             id: img.id || Date.now() + idx,
                             url: url,
@@ -170,14 +170,14 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
                             alt: img.label || '',
                         };
                     }).filter((img: any) => img.url); // Filter out any without URLs
-                    
+
                     console.log('🖼️ Transformed images:', imagesToUse.length, 'First URL:', imagesToUse[0]?.url);
                 } else if (variant && variant.images && variant.images.length > 0) {
                     // Fallback to variant object images
                     console.log('🖼️ Using variant images:', variant.images.length);
                     imagesToUse = variant.images;
                 }
-                
+
                 if (imagesToUse && imagesToUse.length > 0) {
                     console.log('✅ Calling onImagesChange with', imagesToUse.length, 'images');
                     onImagesChange(imagesToUse);
@@ -194,7 +194,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
 
     const handleOptionSelect = (attributeId: number, optionLabel: string) => {
         console.log('🎯 Option selected:', optionLabel);
-        
+
         setAttributes(prev => prev.map((attr, index) => {
             if (attr.id === attributeId) {
                 return { ...attr, selectedValue: optionLabel };
@@ -223,7 +223,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
         // For subsequent attributes, filter based on previous selections
         const previousAttrs = attributes.slice(0, attrIndex);
         const allPreviousSelected = previousAttrs.every(attr => attr.selectedValue !== null);
-        
+
         if (!allPreviousSelected) {
             // Previous attributes not fully selected
             return [];
@@ -232,7 +232,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
         // Find which variants are still possible given previous selections
         const possibleVariantIds = Object.keys(configurableConfig.index).filter(variantId => {
             const variantIndex = configurableConfig.index[variantId];
-            
+
             return previousAttrs.every(prevAttr => {
                 const selectedOption = prevAttr.options.find((opt: any) => opt.label === prevAttr.selectedValue);
                 return selectedOption && variantIndex[prevAttr.id] === selectedOption.id;
@@ -258,7 +258,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
             {attributes.map((attribute, index) => {
                 const availableOptions = getAvailableOptions(attribute, index);
                 const isDisabled = index > 0 && !attributes[index - 1]?.selectedValue;
-                
+
                 return (
                     <View key={attribute.id} style={styles.card}>
                         <View style={styles.attributeHeader}>
@@ -269,7 +269,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
                                 </Text>
                             )}
                         </View>
-                        
+
                         {isDisabled ? (
                             <Text style={styles.disabledText}>
                                 Please select {attributes[index - 1]?.label?.toLowerCase() || 'previous option'} first
@@ -301,10 +301,10 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
                                                 />
                                                 {attribute.selectedValue === option.label && (
                                                     <View style={styles.colorCheckmark}>
-                                                        <Ionicons 
-                                                            name="checkmark" 
-                                                            size={10} 
-                                                            color={theme.colors.white} 
+                                                        <Ionicons
+                                                            name="checkmark"
+                                                            size={10}
+                                                            color={theme.colors.white}
                                                         />
                                                     </View>
                                                 )}
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
         gap: theme.spacing.md,
     },
     card: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.lg,
         borderWidth: 1,
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: theme.spacing.sm,
     },
-    
+
     // Color Swatch Styles
     colorSwatchWrapper: {
         width: 40,
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    
+
     // Image Swatch Styles
     imageSwatchWrapper: {
         width: 55,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingHorizontal: 4,
     },
-    
+
     // Text Swatch Styles (Sizes) - Grid Layout
     textSwatchGrid: {
         flexDirection: 'row',
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.full,
         borderWidth: 1,
         borderColor: theme.colors.border.main,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         minWidth: 50,
         justifyContent: 'center',
         alignItems: 'center',
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     textSwatchLabelActive: {
         color: theme.colors.white,
     },
-    
+
     // Summary Card
     summaryCard: {
         backgroundColor: theme.colors.success.light,

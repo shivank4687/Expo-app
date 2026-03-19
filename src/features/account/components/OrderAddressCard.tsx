@@ -22,7 +22,7 @@ export const OrderAddressCard: React.FC<OrderAddressCardProps> = ({ address, typ
     const addressArray = Array.isArray(addressLines) ? addressLines : [addressLines];
 
     const iconName = type === 'shipping' ? 'car-outline' : 'card-outline';
-    const title = type === 'shipping' 
+    const title = type === 'shipping'
         ? t('orders.shippingAddress', 'Shipping Address')
         : t('orders.billingAddress', 'Billing Address');
 
@@ -73,10 +73,10 @@ export const OrderAddressCard: React.FC<OrderAddressCardProps> = ({ address, typ
                 {/* Phone */}
                 {address.phone && (
                     <View style={styles.phoneRow}>
-                        <Ionicons 
-                            name="call-outline" 
-                            size={16} 
-                            color={theme.colors.text.secondary} 
+                        <Ionicons
+                            name="call-outline"
+                            size={16}
+                            color={theme.colors.text.secondary}
                         />
                         <Text style={styles.phone}>{address.phone}</Text>
                     </View>
@@ -85,10 +85,10 @@ export const OrderAddressCard: React.FC<OrderAddressCardProps> = ({ address, typ
                 {/* Email */}
                 {address.email && (
                     <View style={styles.emailRow}>
-                        <Ionicons 
-                            name="mail-outline" 
-                            size={16} 
-                            color={theme.colors.text.secondary} 
+                        <Ionicons
+                            name="mail-outline"
+                            size={16}
+                            color={theme.colors.text.secondary}
                         />
                         <Text style={styles.email}>{address.email}</Text>
                     </View>
@@ -100,7 +100,7 @@ export const OrderAddressCard: React.FC<OrderAddressCardProps> = ({ address, typ
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         marginHorizontal: theme.spacing.md,
         marginVertical: theme.spacing.sm,

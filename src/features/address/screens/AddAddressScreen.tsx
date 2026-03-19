@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
         paddingVertical: Platform.OS === 'ios' ? theme.spacing.md : theme.spacing.sm,
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.text.primary,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     inputError: {
         borderColor: theme.colors.error.main,

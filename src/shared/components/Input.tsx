@@ -10,6 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
 
+const INPUT_ICON_COLOR = '#7D8A8C';
+
 interface InputProps extends TextInputProps {
     label?: string;
     labelStyle?: any;
@@ -62,7 +64,7 @@ export const Input: React.FC<InputProps> = ({
                     <Ionicons
                         name={leftIcon}
                         size={20}
-                        color={theme.colors.neutral[400]}
+                        color={INPUT_ICON_COLOR}
                         style={styles.leftIcon}
                     />
                 ) : null}
@@ -70,7 +72,7 @@ export const Input: React.FC<InputProps> = ({
                 <TextInput
                     {...props}
                     style={[styles.input, style]}
-                    placeholderTextColor={theme.colors.neutral[400]}
+                placeholderTextColor="#7D8A8C"
                     secureTextEntry={actualSecureTextEntry}
                 />
 
@@ -83,7 +85,7 @@ export const Input: React.FC<InputProps> = ({
                         <Ionicons
                             name={isPasswordVisible ? 'eye-off' : 'eye'}
                             size={20}
-                            color={theme.colors.neutral[400]}
+                        color={INPUT_ICON_COLOR}
                         />
                     </TouchableOpacity>
                 )}
@@ -97,7 +99,7 @@ export const Input: React.FC<InputProps> = ({
                         <Ionicons
                             name={rightIcon}
                             size={20}
-                            color={theme.colors.neutral[400]}
+                        color={INPUT_ICON_COLOR}
                         />
                     </TouchableOpacity>
                 )}
@@ -115,16 +117,16 @@ const styles = StyleSheet.create({
     label: {
         fontSize: theme.typography.fontSize.sm,
         fontWeight: theme.typography.fontWeight.medium,
-        color: theme.colors.text.primary,
+        color: '#0A292D',
         marginBottom: theme.spacing.xs,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: theme.colors.border.main,
+        borderColor: '#E1D9CF',
         borderRadius: theme.borderRadius.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: '#FAF9F6',
         paddingHorizontal: theme.spacing.md,
     },
     inputContainerError: {
@@ -134,7 +136,8 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: theme.spacing.md,
         fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.primary,
+        color: '#0A292D',
+        fontFamily: 'Inter',
     },
     leftIcon: {
         marginRight: theme.spacing.sm,

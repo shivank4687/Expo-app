@@ -9,6 +9,6 @@ export * from './buttons';
 export * from './cards';
 
 export { default as Dropdown } from './Dropdown';
-export { TabGroup, type Tab } from './TabGroup';
+export { TabGroup, type Tab } from '@shared/components/tabs/TabGroup';
 export { default as InlineDropdown } from './InlineDropdown';
 export { ConfirmAlertModal, type AlertVariant } from './ConfirmAlertModal';

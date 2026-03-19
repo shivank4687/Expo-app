@@ -26,9 +26,9 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
             return null;
         }
 
-        const displayValue = typeof value === 'string' 
-            ? value 
-            : order.order_currency_code 
+        const displayValue = typeof value === 'string'
+            ? value
+            : order.order_currency_code
                 ? `${order.order_currency_code} ${value.toFixed(2)}`
                 : `$${value.toFixed(2)}`;
 
@@ -79,7 +79,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
                             {order.coupon_code && ` (${order.coupon_code})`}
                         </Text>
                         <Text style={[styles.summaryValue, styles.discountValue]}>
-                            -{order.formatted_discount_amount || (order.order_currency_code 
+                            -{order.formatted_discount_amount || (order.order_currency_code
                                 ? `${order.order_currency_code} ${Math.abs(order.discount_amount).toFixed(2)}`
                                 : `$${Math.abs(order.discount_amount).toFixed(2)}`)}
                         </Text>
@@ -123,7 +123,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         marginHorizontal: theme.spacing.md,
         marginVertical: theme.spacing.sm,

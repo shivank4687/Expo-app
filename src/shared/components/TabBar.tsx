@@ -1,9 +1,10 @@
-import { supplierTheme } from '@/theme';
+import { supplierTheme, theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppSelector } from '@/store/hooks';
 
 type TabDefinition = {
     name: string;
@@ -70,6 +71,7 @@ export function TabBar({
 
     const focusedRouteName = state.routes[state.index]?.name ?? '';
     const isMoreTabFocused = drawerRouteNames.has(focusedRouteName);
+    const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
 
     const [selectedOption, setSelectedOption] = useState<string>(drawerOptionsList[0]?.name ?? 'profile');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -190,11 +192,20 @@ export function TabBar({
                             activeOpacity={1}
                             style={[styles.tab, isFocused && styles.tabActive]}
                         >
-                            <Ionicons
-                                name={tab.icon}
-                                size={24}
-                                color={isFocused ? PRIMARY_COLOR : TEXT_SECONDARY_COLOR}
-                            />
+                            <View style={styles.iconWrapper}>
+                                <Ionicons
+                                    name={tab.icon}
+                                    size={24}
+                                    color={isFocused ? PRIMARY_COLOR : TEXT_SECONDARY_COLOR}
+                                />
+                                {tab.name === 'cart' && cartItemsCount > 0 && (
+                                    <View style={styles.badge}>
+                                        <Text style={styles.badgeText}>
+                                            {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={[styles.label, isFocused && styles.labelActive]}>
                                 {label}
                             </Text>
@@ -279,6 +290,27 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 56,
         borderRadius: 8,
+    },
+    iconWrapper: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badge: {
+        position: 'absolute',
+        top: -2,
+        right: -12,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: theme.colors.error.main,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+    },
+    badgeText: {
+        color: supplierTheme.colors.white,
+        fontSize: 10,
+        fontWeight: '600',
     },
     tabActive: {
         backgroundColor: TAB_ACTIVE_BACKGROUND,

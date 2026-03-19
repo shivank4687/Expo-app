@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
         width: '48%', // Ensure 2 items per row
         alignItems: 'center',
         marginBottom: theme.spacing.md,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.colors.background.default,
         gap: theme.spacing.sm,
         paddingHorizontal: theme.spacing.xs,
     },
