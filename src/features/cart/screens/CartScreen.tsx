@@ -3,7 +3,6 @@
  * Main cart screen with items, coupon, and price details
  */
 
-import { Button } from '@/shared/components/Button';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useToast } from '@/shared/components/Toast';
 import { formatters } from '@/shared/utils/formatters';
@@ -32,6 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CartItemCard } from '../components/CartItemCard';
 import { CheckoutAuthModal } from '../components/CheckoutAuthModal';
 import { EmptyCart } from '../components/EmptyCart';
+import { PriceDetailsSummaryCard } from '../components/PriceDetailsSummaryCard';
 
 export const CartScreen: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -158,12 +158,26 @@ export const CartScreen: React.FC = () => {
     // console.log('✅ Final amount to pay:', amountToPay);
 
     const formattedAmountToPay = formatters.formatPrice(amountToPay);
+    const formattedSubtotal =
+        cart.formatted_sub_total || formatters.formatPrice(cart.sub_total || cart.base_sub_total || 0);
+    const formattedTax =
+        cart.formatted_tax_total || formatters.formatPrice(cart.tax_total || cart.base_tax_total || 0);
+    const formattedDiscount =
+        cart.formatted_discount_amount || formatters.formatPrice(cart.discount_amount || discount);
+    const formattedGrandTotal =
+        cart.formatted_grand_total || formatters.formatPrice(cart.grand_total || cart.base_grand_total || 0);
 
     return (
         <View style={styles.container}>
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    {
+                        paddingBottom:
+                            theme.spacing['3xl'] + theme.spacing.md + Math.max(insets.bottom, theme.spacing.sm)
+                    }
+                ]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
@@ -263,7 +277,7 @@ export const CartScreen: React.FC = () => {
                 )}
 
                 {/* Price Details Section */}
-                <View style={styles.section}>
+                {/* <View style={styles.section}>
                     <TouchableOpacity
                         style={styles.expansionHeader}
                         onPress={() => setIsPriceDetailsExpanded(!isPriceDetailsExpanded)}
@@ -286,7 +300,6 @@ export const CartScreen: React.FC = () => {
 
                     {isPriceDetailsExpanded && (
                         <View style={styles.expansionContent}>
-                            {/* Subtotal */}
                             <View style={styles.priceRow}>
                                 <Text style={styles.priceLabel}>{t('cart.subtotal')}</Text>
                                 <Text style={styles.priceValue}>
@@ -294,7 +307,6 @@ export const CartScreen: React.FC = () => {
                                 </Text>
                             </View>
 
-                            {/* Discount */}
                             {hasDiscount && (
                                 <View style={styles.priceRow}>
                                     <Text style={[styles.priceLabel, styles.discountLabel]}>
@@ -309,7 +321,6 @@ export const CartScreen: React.FC = () => {
                                 </View>
                             )}
 
-                            {/* Tax */}
                             <View style={styles.priceRow}>
                                 <Text style={styles.priceLabel}>{t('cart.tax')}</Text>
                                 <Text style={styles.priceValue}>
@@ -318,33 +329,24 @@ export const CartScreen: React.FC = () => {
                             </View>
                         </View>
                     )}
-                </View>
+                </View> */}
 
-                {/* Bottom spacing for fixed footer */}
-                <View style={styles.bottomSpacing} />
             </ScrollView>
 
-            {/* Fixed Bottom Footer */}
-            {/* { paddingBottom: Math.max(insets.bottom, theme.spacing.md) } */}
-            <View style={[styles.footer]}>
-                <View style={styles.footerContent}>
-                    <View style={styles.totalSection}>
-                        <Text style={styles.footerLabel}>
-                            {t('cart.amountToPay')}
-                        </Text>
-                        <Text style={styles.footerAmount}>
-                            {formattedAmountToPay}
-                        </Text>
-                        <Text style={styles.footerNote}>
-                            {t('cart.shippingCalculatedAtCheckout', 'Shipping will be calculated at checkout')}
-                        </Text>
-                    </View>
-                    <Button
-                        title={t('cart.proceedToCheckout')}
-                        onPress={handleProceedToCheckout}
-                        style={styles.checkoutButton}
-                    />
-                </View>
+            <View
+                style={[
+                    styles.summaryCardFixed,
+                    //{ paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }
+                ]}
+            >
+                <PriceDetailsSummaryCard
+                    subtotal={formattedSubtotal}
+                    tax={formattedTax}
+                    discount={hasDiscount ? formattedDiscount : undefined}
+                    couponCode={cart.coupon_code}
+                    grandTotal={formattedGrandTotal}
+                    onCheckoutPress={handleProceedToCheckout}
+                />
             </View>
 
             {/* Checkout Auth Modal */}
@@ -383,6 +385,18 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.lg,
         overflow: 'hidden',
         ...theme.shadows.sm,
+    },
+    summaryCardFixed: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border.light,
+        backgroundColor: theme.colors.background.default,
+        ...theme.shadows.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingTop: theme.spacing.sm,
     },
     expansionHeader: {
         flexDirection: 'row',
@@ -481,47 +495,4 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         textTransform: 'uppercase',
     },
-    bottomSpacing: {
-        height: 120, // Space for fixed footer
-    },
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: theme.colors.background.default,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.gray[200],
-        ...theme.shadows.lg,
-    },
-    footerContent: {
-        padding: theme.spacing.md,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    totalSection: {
-        flex: 1,
-    },
-    footerLabel: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.secondary,
-        marginBottom: theme.spacing.xs,
-    },
-    footerAmount: {
-        fontSize: theme.typography.fontSize.xl,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.primary[500],
-        marginBottom: theme.spacing.xs,
-    },
-    footerNote: {
-        fontSize: theme.typography.fontSize.xs,
-        color: theme.colors.text.secondary,
-        fontStyle: 'italic',
-    },
-    checkoutButton: {
-        marginLeft: theme.spacing.md,
-        minWidth: 150,
-    },
 });
-

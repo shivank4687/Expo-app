@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 import { TrackingInfoCard, OrderChatView, OrderDetailsTab } from '../components';
 import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
 import { createShipment, createSkydropxShipment, updateShipmentStatus } from '../../dashboard/api/shipments.api';
-import { Tab, TabGroup } from '@/shared/components';
+import { Tab, TabGroup, TopHeader } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
 
 type TabType = 'details' | 'messages' | 'tracking';
@@ -31,6 +30,20 @@ export default function OrderDetailsScreen() {
     const handleTabChange = useCallback((tabId: string) => {
         setActiveTab(tabId as TabType);
     }, []);
+
+    const headerTitle = fromScreen === 'notifications'
+        ? 'Notifications'
+        : isFromDashboard
+            ? 'Dashboard'
+            : 'Orders';
+
+    const handleBackPress = () => {
+        if (fromScreen === 'notifications') {
+            router.push('/(supplier-drawer)/notifications' as any);
+        } else {
+            router.back();
+        }
+    };
 
     // Drawer keeps this screen mounted; reset tab to default each time screen comes into focus
     // so navigating away and back always starts on the Details tab.
@@ -216,30 +229,7 @@ export default function OrderDetailsScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Fixed Header */}
-            <View style={styles.header}>
-                <View style={styles.headerContent}>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => {
-                            if (fromScreen === 'notifications') {
-                                router.push('/(supplier-drawer)/notifications' as any);
-                            } else {
-                                router.back();
-                            }
-                        }}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="arrow-back" size={16} color="#000000" />
-                    </TouchableOpacity>
-
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.headerTitle}>
-                            {fromScreen === 'notifications' ? 'Notifications' : isFromDashboard ? 'Dashboard' : 'Orders'}
-                        </Text>
-                    </View>
-                </View>
-            </View>
+            <TopHeader title={headerTitle} onBack={handleBackPress} />
 
             {/* Tabs - Moved outside ScrollView for sticky behavior and better layout control */}
             <View style={styles.tabsWrapper}>
@@ -271,45 +261,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
-    },
-    header: {
-        backgroundColor: COLORS.background,
-        paddingTop: 60,
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        height: 32,
-    },
-    backButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 8,
-        width: 32,
-        height: 32,
-        backgroundColor: COLORS.white,
-        borderRadius: 8,
-        justifyContent: 'center',
-    },
-    titleContainer: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: 0,
-        gap: 4,
-        flex: 1,
-    },
-    headerTitle: {
-        fontFamily: 'Inter',
-        fontWeight: '400',
-        fontSize: 16,
-        color: '#000000',
-    },
-    content: {
-        padding: 16,
-        gap: 16,
     },
     tabsWrapper: {
         paddingHorizontal: 16,

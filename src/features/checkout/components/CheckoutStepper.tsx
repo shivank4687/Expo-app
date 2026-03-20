@@ -1,6 +1,6 @@
 /**
  * CheckoutStepper Component
- * Visual stepper showing checkout progress
+ * Vertical stepper showing checkout progress with accordion-style step content
  */
 
 import React from 'react';
@@ -13,6 +13,7 @@ import { CheckoutStep } from '../types/checkout.types';
 interface CheckoutStepperProps {
     currentStep: CheckoutStep;
     completedSteps: CheckoutStep[];
+    children: React.ReactNode;
 }
 
 const STEPS: CheckoutStep[] = ['address', 'shipping', 'payment', 'review'];
@@ -31,12 +32,18 @@ const STEP_LABELS: Record<CheckoutStep, string> = {
     review: 'Review',
 };
 
-export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep, completedSteps }) => {
+export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({
+    currentStep,
+    completedSteps,
+    children,
+}) => {
     const { t } = useTranslation();
 
-    const currentStepIndex = STEPS.indexOf(currentStep);
+    const childArray = React.Children.toArray(children);
 
-    const getStepStatus = (step: CheckoutStep, index: number) => {
+    const shouldHideIntermediateSteps = currentStep === 'review';
+
+    const getStepStatus = (step: CheckoutStep) => {
         if (completedSteps.includes(step)) return 'completed';
         if (step === currentStep) return 'active';
         return 'inactive';
@@ -45,61 +52,83 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep, c
     return (
         <View style={styles.container}>
             {STEPS.map((step, index) => {
-                const status = getStepStatus(step, index);
+                if (shouldHideIntermediateSteps && step !== 'review') {
+                    return null;
+                }
+
+                const status = getStepStatus(step);
                 const isLast = index === STEPS.length - 1;
+                const isActive = status === 'active';
+                const isCompleted = status === 'completed';
 
                 return (
-                    <React.Fragment key={step}>
-                        <View style={styles.stepContainer}>
-                            {/* Step Circle */}
-                            <View
-                                style={[
-                                    styles.stepCircle,
-                                    status === 'completed' && styles.stepCircleCompleted,
-                                    status === 'active' && styles.stepCircleActive,
-                                ]}
-                            >
-                                {status === 'completed' ? (
-                                    <Ionicons
-                                        name="checkmark"
-                                        size={20}
-                                        color={theme.colors.white}
-                                    />
-                                ) : (
-                                    <Ionicons
-                                        name={STEP_ICONS[step] as any}
-                                        size={18}
-                                        color={
-                                            status === 'active'
-                                                ? theme.colors.white
-                                                : theme.colors.gray[400]
-                                        }
+                    <View key={step} style={styles.stepWrapper}>
+                        {/* Step Header Row — commented out to hide stepper indicators */}
+                        {/* <View style={styles.stepHeader}>
+                            <View style={styles.indicatorColumn}>
+                                <View
+                                    style={[
+                                        styles.stepCircle,
+                                        isCompleted && styles.stepCircleCompleted,
+                                        isActive && styles.stepCircleActive,
+                                    ]}
+                                >
+                                    {isCompleted ? (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={18}
+                                            color={theme.colors.white}
+                                        />
+                                    ) : (
+                                        <Ionicons
+                                            name={STEP_ICONS[step] as any}
+                                            size={16}
+                                            color={
+                                                isActive
+                                                    ? theme.colors.white
+                                                    : theme.colors.gray[400]
+                                            }
+                                        />
+                                    )}
+                                </View>
+                                {!isLast && (
+                                    <View
+                                        style={[
+                                            styles.verticalLine,
+                                            isCompleted && styles.verticalLineCompleted,
+                                        ]}
                                     />
                                 )}
                             </View>
+                            <View style={styles.labelColumn}>
+                                <View style={styles.labelRow}>
+                                    <Text
+                                        style={[
+                                            styles.stepLabel,
+                                            isActive && styles.stepLabelActive,
+                                            isCompleted && styles.stepLabelCompleted,
+                                        ]}
+                                    >
+                                        {t(`checkout.steps.${step}`, STEP_LABELS[step])}
+                                    </Text>
+                                    {isCompleted && (
+                                        <View style={styles.completedBadge}>
+                                            <Text style={styles.completedBadgeText}>
+                                                {t('checkout.steps.done', 'Done')}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                        </View> */}
 
-                            {/* Step Label */}
-                            <Text
-                                style={[
-                                    styles.stepLabel,
-                                    status === 'active' && styles.stepLabelActive,
-                                    status === 'completed' && styles.stepLabelCompleted,
-                                ]}
-                            >
-                                {t(`checkout.steps.${step}`, STEP_LABELS[step])}
-                            </Text>
-                        </View>
-
-                        {/* Connector Line */}
-                        {!isLast && (
-                            <View
-                                style={[
-                                    styles.connector,
-                                    index < currentStepIndex && styles.connectorCompleted,
-                                ]}
-                            />
+                        {/* Step Content — shown for active and completed steps */}
+                        {(isActive || isCompleted) && (
+                            <View style={styles.stepContent}>
+                                {childArray[index]}
+                            </View>
                         )}
-                    </React.Fragment>
+                    </View>
                 );
             })}
         </View>
@@ -108,26 +137,28 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ currentStep, c
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
-        alignItems: 'center',
         paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        paddingBottom: theme.spacing.lg,
         backgroundColor: theme.colors.background.default,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200],
     },
-    stepContainer: {
+    stepWrapper: {
+        // Each step row
+    },
+    stepHeader: {
+        flexDirection: 'row',
+    },
+    indicatorColumn: {
         alignItems: 'center',
-        flex: 1,
+        width: 40,
     },
     stepCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: theme.colors.gray[200],
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: theme.spacing.xs,
     },
     stepCircleActive: {
         backgroundColor: theme.colors.primary[500],
@@ -135,27 +166,55 @@ const styles = StyleSheet.create({
     stepCircleCompleted: {
         backgroundColor: theme.colors.success.main,
     },
+    verticalLine: {
+        width: 2,
+        flex: 1,
+        minHeight: 24,
+        backgroundColor: theme.colors.gray[200],
+        marginTop: 4,
+        marginBottom: 4,
+    },
+    verticalLineCompleted: {
+        backgroundColor: theme.colors.success.main,
+    },
+    labelColumn: {
+        flex: 1,
+        paddingLeft: theme.spacing.sm,
+    },
+    labelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 36,
+    },
     stepLabel: {
-        fontSize: theme.typography.fontSize.xs,
+        fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.secondary,
-        textAlign: 'center',
         fontWeight: theme.typography.fontWeight.medium,
     },
     stepLabelActive: {
         color: theme.colors.primary[500],
         fontWeight: theme.typography.fontWeight.bold,
+        fontSize: theme.typography.fontSize.base,
     },
     stepLabelCompleted: {
         color: theme.colors.success.main,
     },
-    connector: {
-        width: 30,
-        height: 2,
-        backgroundColor: theme.colors.gray[200],
-        marginBottom: 20,
+    completedBadge: {
+        marginLeft: theme.spacing.sm,
+        backgroundColor: theme.colors.success.light ?? '#dcfce7',
+        borderRadius: 99,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
     },
-    connectorCompleted: {
-        backgroundColor: theme.colors.success.main,
+    completedBadgeText: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.success.main,
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    stepContent: {
+        paddingBottom: theme.spacing.sm,
+    },
+    labelSpacer: {
+        height: 12,
     },
 });
-

@@ -37,6 +37,7 @@ export interface PaymentMethod {
     method_title: string;
     description?: string;
     sort?: number;
+    image?: string;       // icon URL returned by the API (e.g. Bagisto returns this field)
 }
 
 export interface CheckoutAddress extends CartAddress {

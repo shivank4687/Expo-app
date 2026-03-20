@@ -8,8 +8,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/shared/components/Button';
 
 import { theme } from '@/theme';
 import { ShippingMethod } from '../types/checkout.types';
@@ -18,19 +16,14 @@ interface ShippingStepProps {
     shippingMethods: Record<string, ShippingMethod> | null;
     selectedMethod: string | null;
     onMethodSelect: (method: string) => void;
-    onProceed: () => void;
-    isProcessing?: boolean;
 }
 
 export const ShippingStep: React.FC<ShippingStepProps> = ({
     shippingMethods,
     selectedMethod,
     onMethodSelect,
-    onProceed,
-    isProcessing = false,
 }) => {
     const { t } = useTranslation();
-    const insets = useSafeAreaInsets();
     // Expand all carriers by default
     const [expandedCarriers, setExpandedCarriers] = useState<Set<string>>(
         new Set(shippingMethods ? Object.keys(shippingMethods) : [])
@@ -59,8 +52,6 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
             return newSet;
         });
     };
-
-    const canProceed = selectedMethod !== null;
 
     return (
         <View style={styles.container}>
@@ -180,15 +171,6 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                 })}
             </ScrollView>
 
-            {/* Fixed Button at Bottom */}
-            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
-                <Button
-                    title={t('checkout.proceedToPayment', 'Proceed to Payment')}
-                    onPress={onProceed}
-                    disabled={!canProceed || isProcessing}
-                    loading={isProcessing}
-                />
-            </View>
         </View>
     );
 };
@@ -201,20 +183,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: theme.spacing.md,
-        paddingBottom: theme.spacing.xl,
-    },
-    buttonContainer: {
-        padding: theme.spacing.md,
-        paddingTop: theme.spacing.sm,
-        backgroundColor: theme.colors.white,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.gray[200],
-        shadowColor: theme.colors.black,
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
+        paddingBottom: theme.spacing.xs,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,
@@ -434,4 +403,3 @@ const styles = StyleSheet.create({
         marginLeft: theme.spacing.sm,
     },
 });
-

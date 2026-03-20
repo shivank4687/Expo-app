@@ -3,33 +3,113 @@
  * Checkout payment method selection step
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
-import { Button } from '@/shared/components/Button';
 import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+
 import { PaymentMethod } from '../types/checkout.types';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PaymentStepProps {
     paymentMethods: PaymentMethod[] | null;
     selectedMethod: string | null;
     onMethodSelect: (method: string) => void;
-    onProceed: () => void;
-    isProcessing?: boolean;
 }
+
+// ─── Brand icon tiles ─────────────────────────────────────────────────────────
+
+/** Generic credit-card tile: orange base, two white stripe lines, red chip bar */
+const CreditCardIcon: React.FC = () => (
+    <View style={brandStyles.base}>
+        {/* orange background */}
+        <View style={[brandStyles.fill, { backgroundColor: '#EDA42D', borderRadius: 4 }]} />
+        {/* white stripe top */}
+        <View style={[brandStyles.stripe, { top: 17, borderTopWidth: 1, borderTopColor: '#FEFEFE' }]} />
+        {/* white stripe bottom */}
+        <View style={[brandStyles.stripe, { top: 32, borderTopWidth: 1.5, borderTopColor: '#FEFEFE' }]} />
+        {/* red chip bar */}
+        <View style={brandStyles.chipBar} />
+    </View>
+);
+
+/** PayPal tile: light-blue border, "P P" wordmark composed of coloured shapes */
+const PayPalIcon: React.FC = () => (
+    <View style={brandStyles.base}>
+        <View style={[brandStyles.fill, {
+            backgroundColor: '#F3FBFF',
+            borderRadius: 4,
+            borderWidth: 1,
+            borderColor: '#179BD7',
+        }]} />
+        {/* Dark-blue "P" left half */}
+        <View style={[brandStyles.ppLeft, { backgroundColor: '#253B80' }]} />
+        {/* Light-blue "P" right arc */}
+        <View style={[brandStyles.ppRight, { backgroundColor: '#179BD7' }]} />
+        {/* dark overlay to create letter shape */}
+        <View style={[brandStyles.ppOverlay, { backgroundColor: '#222D65' }]} />
+    </View>
+);
+
+/** Mastercard tile: cream background, overlapping circles (red + orange + blend) */
+const MastercardIcon: React.FC = () => (
+    <View style={brandStyles.base}>
+        <View style={[brandStyles.fill, { backgroundColor: '#FFF4EE', borderRadius: 4 }]} />
+        {/* red circle (left) */}
+        <View style={[brandStyles.mcCircle, { left: 13, backgroundColor: '#ED0006' }]} />
+        {/* orange circle (right) */}
+        <View style={[brandStyles.mcCircle, { left: 29, backgroundColor: '#F9A000' }]} />
+        {/* overlap blend in centre */}
+        <View style={[brandStyles.mcMiddle, { backgroundColor: '#FF5E00' }]} />
+    </View>
+);
+
+/** Cash icon for COD */
+const CashIcon: React.FC = () => (
+    <View style={[brandStyles.base, { backgroundColor: '#F0FDF4', borderRadius: 4, borderWidth: 1, borderColor: '#86EFAC', justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="cash-outline" size={26} color="#16A34A" />
+    </View>
+);
+
+/** Fallback / generic card icon */
+const GenericCardIcon: React.FC = () => (
+    <View style={[brandStyles.base, { backgroundColor: '#F8F8F8', borderRadius: 4, borderWidth: 1, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="card-outline" size={26} color="#555" />
+    </View>
+);
+
+const getBrandIcon = (method: PaymentMethod): React.ReactElement => {
+    // Prefer the icon URL returned by the API
+    if (method.image) {
+        return (
+            <View style={brandStyles.base}>
+                <Image
+                    source={{ uri: method.image }}
+                    style={brandStyles.apiImage}
+                    resizeMode="contain"
+                />
+            </View>
+        );
+    }
+
+    // Fallback to hand-crafted brand tiles
+    const key = method.method.toLowerCase();
+    if (key === 'paypal' || key === 'paypal_smart_button') return <PayPalIcon />;
+    if (key === 'cashondelivery') return <CashIcon />;
+    if (key === 'stripe' || key === 'stripeconnect' || key === 'razorpay' || key === 'moneytransfer') return <CreditCardIcon />;
+    return <GenericCardIcon />;
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export const PaymentStep: React.FC<PaymentStepProps> = ({
     paymentMethods,
     selectedMethod,
     onMethodSelect,
-    onProceed,
-    isProcessing = false,
 }) => {
     const { t } = useTranslation();
-    const insets = useSafeAreaInsets();
+
     if (!paymentMethods || paymentMethods.length === 0) {
         return (
             <View style={styles.container}>
@@ -42,114 +122,140 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
         );
     }
 
-    const canProceed = selectedMethod !== null;
-
     return (
         <View style={styles.container}>
-            {/* Scrollable Content */}
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.sectionTitle}>
-                    {t('checkout.selectPaymentMethod', 'Select Payment Method')}
-                </Text>
+                {/* ── Payment card matching Figma spec ── */}
+                <View style={styles.paymentCard}>
+                    {/* Title */}
+                    <Text style={styles.paymentTitle}>
+                        {t('checkout.paymentMethods', 'Payment methods')}
+                    </Text>
 
-                <Card style={styles.methodsCard}>
-                    {paymentMethods.map((method, index) => {
-                        const isSelected = selectedMethod === method.method;
-                        const isLast = index === paymentMethods.length - 1;
-
-                        return (
-                            <TouchableOpacity
-                                key={method.method}
-                                style={[
-                                    styles.methodItem,
-                                    isSelected && styles.methodItemSelected,
-                                    !isLast && styles.methodItemBorder,
-                                ]}
-                                onPress={() => onMethodSelect(method.method)}
-                                activeOpacity={0.7}
-                            >
-                                {/* Radio Button */}
-                                <View
+                    {/* Horizontal row of brand icon tiles */}
+                    <View style={styles.tilesRow}>
+                        {paymentMethods.map((method) => {
+                            const isSelected = selectedMethod === method.method;
+                            return (
+                                <TouchableOpacity
+                                    key={method.method}
                                     style={[
-                                        styles.radio,
-                                        isSelected && styles.radioSelected,
+                                        styles.tileWrapper,
+                                        isSelected && styles.tileWrapperSelected,
                                     ]}
+                                    onPress={() => onMethodSelect(method.method)}
+                                    activeOpacity={0.75}
                                 >
+                                    {getBrandIcon(method)}
                                     {isSelected && (
-                                        <View style={styles.radioInner} />
+                                        <View style={styles.tileCheckBadge}>
+                                            <Ionicons name="checkmark-circle" size={14} color={theme.colors.success.main} />
+                                        </View>
                                     )}
-                                </View>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
 
-                                {/* Method Icon */}
-                                <View style={styles.methodIconContainer}>
-                                    <Ionicons
-                                        name={getPaymentIcon(method.method)}
-                                        size={24}
-                                        color={isSelected ? theme.colors.primary[500] : theme.colors.text.secondary}
-                                    />
-                                </View>
-
-                                {/* Method Details */}
-                                <View style={styles.methodDetails}>
-                                    <Text
-                                        style={[
-                                            styles.methodTitle,
-                                            isSelected && styles.methodTitleSelected,
-                                        ]}
-                                    >
-                                        {method.method_title}
-                                    </Text>
-                                    {method.description && (
-                                        <Text style={styles.methodDescription}>
-                                            {method.description}
-                                        </Text>
-                                    )}
-                                </View>
-
-                                {/* Selected Indicator */}
-                                {isSelected && (
-                                    <Ionicons
-                                        name="checkmark-circle"
-                                        size={24}
-                                        color={theme.colors.success.main}
-                                    />
-                                )}
-                            </TouchableOpacity>
-                        );
-                    })}
-                </Card>
+                    {/* Selected method name */}
+                    {/* {selectedMethod && (
+                        <Text style={styles.selectedLabel}>
+                            {paymentMethods.find(m => m.method === selectedMethod)?.method_title ?? selectedMethod}
+                        </Text>
+                    )} */}
+                </View>
             </ScrollView>
-
-            {/* Fixed Button at Bottom */}
-            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
-                <Button
-                    title={t('checkout.proceedToReview', 'Proceed to Review')}
-                    onPress={onProceed}
-                    disabled={!canProceed || isProcessing}
-                    loading={isProcessing}
-                />
-            </View>
         </View>
     );
 };
 
-// Helper function to get payment icon
-const getPaymentIcon = (method: string): any => {
-    const iconMap: Record<string, string> = {
-        cashondelivery: 'cash-outline',
-        moneytransfer: 'arrow-forward-circle-outline',
-        paypal: 'logo-paypal',
-        stripe: 'card-outline',
-        stripeconnect: 'card-outline',
-        razorpay: 'card-outline',
-    };
+// ─── Brand icon styles ────────────────────────────────────────────────────────
 
-    return iconMap[method] || 'card-outline';
-};
+const brandStyles = StyleSheet.create({
+    base: {
+        width: 70,
+        height: 48,
+        borderRadius: 4,
+        overflow: 'hidden',
+        backgroundColor: '#F8F8F8',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    apiImage: {
+        width: 60,
+        height: 38,
+        borderRadius: 2,
+    },
+    fill: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    stripe: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        height: 0,
+    },
+    // Red chip bar centred vertically in 48px tile: top = (48 - 15) / 2 = 16.5
+    chipBar: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 16,
+        height: 15,
+        backgroundColor: '#ED1C24',
+    },
+    // PayPal shapes (container 70 × 48)
+    ppLeft: {
+        position: 'absolute',
+        left: 15,   // ~22% of 70
+        top: 10,    // ~22% of 48
+        width: 18,
+        height: 26,
+        borderRadius: 9,
+    },
+    ppRight: {
+        position: 'absolute',
+        left: 24,   // ~34% of 70
+        top: 14,    // ~30% of 48
+        width: 18,
+        height: 22,
+        borderRadius: 9,
+    },
+    ppOverlay: {
+        position: 'absolute',
+        left: 21,   // ~30% of 70
+        top: 10,    // ~22% of 48
+        width: 12,
+        height: 14,
+        borderRadius: 4,
+    },
+    // Mastercard shapes (container 70 × 48)
+    mcCircle: {
+        position: 'absolute',
+        top: 10,    // ~20% of 48
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+    },
+    mcMiddle: {
+        position: 'absolute',
+        left: 31,   // ~44% of 70
+        top: 13,    // ~27% of 48
+        width: 10,
+        height: 20,
+        borderRadius: 2,
+    },
+});
+
+// ─── Screen styles ─────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
     container: {
@@ -159,83 +265,53 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: theme.spacing.md,
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: theme.spacing.xs,
     },
-    buttonContainer: {
-        padding: theme.spacing.md,
-        paddingTop: theme.spacing.sm,
-        backgroundColor: theme.colors.white,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.gray[200],
-        shadowColor: theme.colors.black,
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
+    // Figma card
+    paymentCard: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        borderRadius: 8,
+        padding: 8,
+        gap: 12,
     },
-    sectionTitle: {
-        fontSize: theme.typography.fontSize.lg,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.md,
+    paymentTitle: {
+        fontFamily: 'Inter',
+        fontSize: 20,
+        fontWeight: '500',
+        lineHeight: 24,
+        color: '#000000',
     },
-    methodsCard: {
-        padding: 0,
-        overflow: 'hidden',
-        marginBottom: theme.spacing.md,
-    },
-    methodItem: {
+    tilesRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        padding: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        alignItems: 'flex-start',
+        gap: 20,
+        flexWrap: 'wrap',
     },
-    methodItemSelected: {
-        backgroundColor: theme.colors.primary[50],
-    },
-    methodItemBorder: {
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200],
-    },
-    radio: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+    tileWrapper: {
+        position: 'relative',
+        borderRadius: 4,
         borderWidth: 2,
-        borderColor: theme.colors.gray[400],
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: theme.spacing.md,
+        borderColor: 'transparent',
     },
-    radioSelected: {
+    tileWrapperSelected: {
         borderColor: theme.colors.primary[500],
-    },
-    radioInner: {
-        width: 12,
-        height: 12,
         borderRadius: 6,
-        backgroundColor: theme.colors.primary[500],
     },
-    methodIconContainer: {
-        marginRight: theme.spacing.md,
+    tileCheckBadge: {
+        position: 'absolute',
+        bottom: -6,
+        right: -6,
+        backgroundColor: '#fff',
+        borderRadius: 8,
     },
-    methodDetails: {
-        flex: 1,
-    },
-    methodTitle: {
-        fontSize: theme.typography.fontSize.md,
-        fontWeight: theme.typography.fontWeight.medium,
-        color: theme.colors.text.primary,
-    },
-    methodTitleSelected: {
-        fontWeight: theme.typography.fontWeight.bold,
-    },
-    methodDescription: {
-        fontSize: theme.typography.fontSize.xs,
+    selectedLabel: {
+        fontSize: 13,
         color: theme.colors.text.secondary,
-        marginTop: 2,
+        marginTop: 4,
     },
+    // Empty state
     messageCard: {
         padding: theme.spacing.lg,
         alignItems: 'center',

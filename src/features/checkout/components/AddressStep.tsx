@@ -3,28 +3,26 @@
  * Checkout address selection step
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '@/shared/components/Card';
-import { Button } from '@/shared/components/Button';
-import { theme } from '@/theme';
-import { CheckoutAddress } from '../types/checkout.types';
-import { addressApi } from '@/services/api/address.api';
-import { useToast } from '@/shared/components/Toast';
 import { Address } from '@/features/address/types/address.types';
+import { addressApi } from '@/services/api/address.api';
+import { Button } from '@/shared/components/Button';
+import { Card } from '@/shared/components/Card';
+import { useToast } from '@/shared/components/Toast';
+import { theme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { CheckoutAddress } from '../types/checkout.types';
 
 interface AddressStepProps {
     billingAddress: CheckoutAddress | null;
     shippingAddress: CheckoutAddress | null;
     sameAsBilling: boolean;
     onSameAsBillingChange: (value: boolean) => void;
-    onProceed: () => void;
     onAddressUpdate: (type: 'billing' | 'shipping', address: CheckoutAddress) => void;
-    isProcessing?: boolean;
+    isDefaultAddressLoading?: boolean;
 }
 
 export const AddressStep: React.FC<AddressStepProps> = ({
@@ -32,18 +30,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({
     shippingAddress,
     sameAsBilling,
     onSameAsBillingChange,
-    onProceed,
     onAddressUpdate,
-    isProcessing = false,
+    isDefaultAddressLoading = false,
 }) => {
     const { t } = useTranslation();
     const { showToast } = useToast();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const [showAddressListModal, setShowAddressListModal] = useState(false);
     const [addressType, setAddressType] = useState<'billing' | 'shipping'>('billing');
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+    const isInitialLoading = isDefaultAddressLoading && !billingAddress;
 
     // Load addresses from API
     const loadAddresses = async () => {
@@ -188,67 +185,66 @@ export const AddressStep: React.FC<AddressStepProps> = ({
     return (
         <View style={styles.container}>
             {/* Scrollable Content */}
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Billing Address */}
-                {renderAddressCard(
-                    billingAddress,
-                    t('address.billingAddress'),
-                    handleAddBillingAddress,
-                    handleChangeBillingAddress
-                )}
-
-                {/* Same as Billing Checkbox */}
-                <TouchableOpacity
-                    style={styles.checkboxContainer}
-                    onPress={() => onSameAsBillingChange(!sameAsBilling)}
-                    activeOpacity={0.7}
-                >
-                    <View
-                        style={[
-                            styles.checkbox,
-                            sameAsBilling && styles.checkboxChecked,
-                        ]}
-                    >
-                        {sameAsBilling && (
-                            <Ionicons
-                                name="checkmark"
-                                size={18}
-                                color={theme.colors.white}
-                            />
-                        )}
-                    </View>
-                    <Text style={styles.checkboxLabel}>
-                        {t('address.sameAsBilling')}
+            {isInitialLoading ? (
+                <View style={styles.initialLoadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                    <Text style={styles.initialLoadingText}>
+                        {t('checkout.loadingDefaultAddress', 'Loading default address...')}
                     </Text>
-                </TouchableOpacity>
+                </View>
+            ) : (
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Billing Address */}
+                    {renderAddressCard(
+                        billingAddress,
+                        t('address.billingAddress'),
+                        handleAddBillingAddress,
+                        handleChangeBillingAddress
+                    )}
 
-                {/* Shipping Address (if different from billing) */}
-                {!sameAsBilling && (
-                    <>
-                        <View style={styles.divider} />
-                        {renderAddressCard(
-                            shippingAddress,
-                            t('address.shippingAddress'),
-                            handleAddShippingAddress,
-                            handleChangeShippingAddress
-                        )}
-                    </>
-                )}
-            </ScrollView>
+                    {/* Same as Billing Checkbox */}
+                    <TouchableOpacity
+                        style={styles.checkboxContainer}
+                        onPress={() => onSameAsBillingChange(!sameAsBilling)}
+                        activeOpacity={0.7}
+                    >
+                        <View
+                            style={[
+                                styles.checkbox,
+                                sameAsBilling && styles.checkboxChecked,
+                            ]}
+                        >
+                            {sameAsBilling && (
+                                <Ionicons
+                                    name="checkmark"
+                                    size={18}
+                                    color={theme.colors.white}
+                                />
+                            )}
+                        </View>
+                        <Text style={styles.checkboxLabel}>
+                            {t('address.sameAsBilling')}
+                        </Text>
+                    </TouchableOpacity>
 
-            {/* Fixed Button at Bottom */}
-            <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
-                <Button
-                    title={t('checkout.proceedToShipping', 'Proceed to Shipping')}
-                    onPress={onProceed}
-                    disabled={!canProceed || isProcessing}
-                    loading={isProcessing}
-                />
-            </View>
+                    {/* Shipping Address (if different from billing) */}
+                    {!sameAsBilling && (
+                        <>
+                            <View style={styles.divider} />
+                            {renderAddressCard(
+                                shippingAddress,
+                                t('address.shippingAddress'),
+                                handleAddShippingAddress,
+                                handleChangeShippingAddress
+                            )}
+                        </>
+                    )}
+                </ScrollView>
+            )}
 
             {/* Address Selection Modal */}
             <Modal
@@ -354,20 +350,18 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: theme.spacing.md,
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: theme.spacing.xs,
     },
-    buttonContainer: {
+    initialLoadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
         padding: theme.spacing.md,
-        paddingTop: theme.spacing.sm,
-        backgroundColor: theme.colors.background.default,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.gray[200],
-        shadowColor: theme.colors.black,
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
+    },
+    initialLoadingText: {
+        marginTop: theme.spacing.md,
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.text.secondary,
     },
     addressCard: {
         marginBottom: theme.spacing.md,
@@ -560,4 +554,3 @@ const styles = StyleSheet.create({
         minWidth: 200,
     },
 });
-

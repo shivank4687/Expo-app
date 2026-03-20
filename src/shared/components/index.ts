@@ -7,3 +7,4 @@ export { Accordion } from './Accordion';
 export { RichTextEditor } from './RichTextEditor';
 export { InputModal } from './InputModal';
 export { TabGroup, type Tab } from './tabs/TabGroup';
+export { TopHeader } from './TopHeader';

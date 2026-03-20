@@ -16,8 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
-import { Button } from '@/shared/components/Button';
-import { ProductImage } from '@/shared/components/LazyImage';
+import { LazyImage, ProductImage } from '@/shared/components/LazyImage';
 import { theme } from '@/theme';
 import { Cart } from '@/features/cart/types/cart.types';
 import { CheckoutAddress, ShippingMethod, PaymentMethod } from '../types/checkout.types';
@@ -25,6 +24,8 @@ import { formatters } from '@/shared/utils/formatters';
 import { useAppDispatch } from '@/store/hooks';
 import { applyCouponThunk, removeCouponThunk } from '@/store/slices/cartSlice';
 import { useToast } from '@/shared/components/Toast';
+import { PriceDetailsSummaryCard } from '@/features/cart/components/PriceDetailsSummaryCard';
+import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
 
 interface ReviewStepProps {
     cart: Cart;
@@ -36,7 +37,7 @@ interface ReviewStepProps {
     selectedPaymentMethod: string | null;
     paymentMethods: PaymentMethod[] | null;
     onPlaceOrder: () => void;
-    isProcessing?: boolean;
+    isProcessing: boolean;
 }
 
 export const ReviewStep: React.FC<ReviewStepProps> = ({
@@ -49,7 +50,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     selectedPaymentMethod,
     paymentMethods,
     onPlaceOrder,
-    isProcessing = false,
+    isProcessing,
 }) => {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
@@ -125,7 +126,24 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
     const shippingMethodDetails = getShippingMethodDetails();
     const paymentMethodDetails = getPaymentMethodDetails();
+    const paymentImageSource = paymentMethodDetails
+        ? getAbsoluteImageUrl(paymentMethodDetails.image)
+        : undefined;
     const hasDiscount = cart.discount_amount > 0;
+    const subtotalValue = cart.formatted_sub_total || formatters.formatPrice(cart.sub_total);
+    const taxValue = cart.formatted_tax_total || formatters.formatPrice(cart.tax_total);
+    const discountValue = hasDiscount
+        ? cart.formatted_discount_amount || formatters.formatPrice(cart.discount_amount)
+        : undefined;
+    const shippingValue =
+        shippingMethodDetails?.formatted_price ||
+        shippingMethodDetails?.base_formatted_price ||
+        cart.selected_shipping_rate?.formatted_price ||
+        cart.formatted_shipping_amount ||
+        (cart.shipping_amount !== undefined ? formatters.formatPrice(cart.shipping_amount) : undefined) ||
+        (shippingMethodDetails?.price !== undefined ? formatters.formatPrice(shippingMethodDetails.price) : undefined);
+    const grandTotalValue =
+        cart.formatted_grand_total || formatters.formatPrice(cart.grand_total);
 
     // Debug shipping details
     console.log('🚚 Shipping method details:', JSON.stringify(shippingMethodDetails, null, 2));
@@ -202,14 +220,29 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                         {t('checkout.paymentMethod', 'Payment Method')}
                     </Text>
                     <Card style={styles.infoCard}>
-                        <Text style={styles.methodTitle}>
-                            {paymentMethodDetails.method_title}
-                        </Text>
-                        {paymentMethodDetails.description && (
-                            <Text style={styles.methodDescription}>
-                                {paymentMethodDetails.description}
-                            </Text>
-                        )}
+                        <View style={styles.paymentRow}>
+                            {paymentImageSource && (
+                                <LazyImage
+                                    source={paymentImageSource}
+                                    style={styles.paymentImage}
+                                    contentFit="contain"
+                                    transition={{ duration: 200 }}
+                                    priority="high"
+                                    placeholderIcon="card-outline"
+                                    accessibilityLabel={paymentMethodDetails.method_title}
+                                />
+                            )}
+                            <View style={styles.paymentContent}>
+                                <Text style={styles.methodTitle}>
+                                    {paymentMethodDetails.method_title}
+                                </Text>
+                                {paymentMethodDetails.description && (
+                                    <Text style={styles.methodDescription}>
+                                        {paymentMethodDetails.description}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
                     </Card>
                 </View>
             )}
@@ -332,7 +365,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             </View> */}
 
             {/* Price Details Section */}
-            <View style={styles.expansionSection}>
+            {/* <View style={styles.expansionSection}>
                 <TouchableOpacity
                     style={styles.expansionHeader}
                     onPress={() => setIsPriceDetailsExpanded(!isPriceDetailsExpanded)}
@@ -355,7 +388,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
                 {isPriceDetailsExpanded && (
                     <View style={styles.expansionContent}>
-                        {/* Subtotal */}
+                        
                         <View style={styles.priceRow}>
                             <Text style={styles.priceLabel}>{t('cart.subtotal')}</Text>
                             <Text style={styles.priceValue}>
@@ -363,7 +396,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                             </Text>
                         </View>
 
-                        {/* Discount */}
+                        
                         {hasDiscount && (
                             <View style={styles.priceRow}>
                                 <Text style={[styles.priceLabel, styles.discountLabel]}>
@@ -378,7 +411,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                             </View>
                         )}
 
-                        {/* Shipping */}
+                        
                         {(shippingMethodDetails || cart.selected_shipping_rate || selectedShippingMethod) && (
                             <View style={styles.priceRow}>
                                 <Text style={styles.priceLabel}>{t('cart.shipping')}</Text>
@@ -393,7 +426,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                             </View>
                         )}
 
-                        {/* Tax */}
+                        
                         <View style={styles.priceRow}>
                             <Text style={styles.priceLabel}>{t('cart.tax')}</Text>
                             <Text style={styles.priceValue}>
@@ -401,10 +434,10 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                             </Text>
                         </View>
 
-                        {/* Divider */}
+                        
                         <View style={styles.divider} />
 
-                        {/* Grand Total */}
+                        
                         <View style={styles.priceRow}>
                             <Text style={styles.totalLabel}>{t('cart.grandTotal')}</Text>
                             <Text style={styles.totalValue}>
@@ -413,16 +446,23 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                         </View>
                     </View>
                 )}
+            </View> */}
+
+            <View style={styles.section}>
+                <PriceDetailsSummaryCard
+                    subtotal={subtotalValue}
+                    tax={taxValue}
+                    discount={discountValue}
+                    couponCode={discountValue ? cart.coupon_code : undefined}
+                    shipping={shippingValue}
+                    grandTotal={grandTotalValue}
+                    onCheckoutPress={onPlaceOrder}
+                    buttonText={t('checkout.placeOrder', 'Place Order')}
+                    loading={isProcessing}
+                    disabled={isProcessing}
+                />
             </View>
 
-            {/* Place Order Button */}
-            <Button
-                title={t('checkout.placeOrder', 'Place Order')}
-                onPress={onPlaceOrder}
-                disabled={isProcessing}
-                loading={isProcessing}
-                style={styles.placeOrderButton}
-            />
         </ScrollView>
     );
 };
@@ -432,7 +472,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     container: {
-        padding: theme.spacing.md,
+        padding: theme.spacing.xs,
         paddingBottom: theme.spacing.xl * 2,
     },
     section: {
@@ -475,6 +515,20 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.xs,
         color: theme.colors.text.secondary,
         marginTop: 2,
+    },
+    paymentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    paymentImage: {
+        width: 48,
+        height: 48,
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.gray[100],
+        marginRight: theme.spacing.md,
+    },
+    paymentContent: {
+        flex: 1,
     },
     methodPrice: {
         fontSize: theme.typography.fontSize.md,
@@ -642,8 +696,4 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
     },
-    placeOrderButton: {
-        marginTop: theme.spacing.xl,
-    },
 });
-

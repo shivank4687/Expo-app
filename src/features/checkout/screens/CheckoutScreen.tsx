@@ -3,30 +3,35 @@
  * Main checkout flow with multi-step process
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
-import { theme } from '@/theme';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchCartThunk } from '@/store/slices/cartSlice';
-import { checkoutApi } from '@/services/api/checkout.api';
 import { addressApi } from '@/services/api/address.api';
+import { checkoutApi } from '@/services/api/checkout.api';
+import { TopHeader } from '@/shared/components';
+import { Button } from '@/shared/components/Button';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useToast } from '@/shared/components/Toast';
-import { CheckoutStepper } from '../components/CheckoutStepper';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCartThunk } from '@/store/slices/cartSlice';
+import { theme } from '@/theme';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddressStep } from '../components/AddressStep';
-import { ShippingStep } from '../components/ShippingStep';
+import { CheckoutStepper } from '../components/CheckoutStepper';
 import { PaymentStep } from '../components/PaymentStep';
-import { ReviewStep } from '../components/ReviewStep';
-import { StripeConnectWebView } from '../components/StripeConnectWebView';
 import { PaypalSmartButtonWebView } from '../components/PaypalSmartButtonWebView';
+import { ReviewStep } from '../components/ReviewStep';
+import { ShippingStep } from '../components/ShippingStep';
+import { StripeConnectWebView } from '../components/StripeConnectWebView';
 import {
-    CheckoutStep,
     CheckoutAddress,
-    ShippingMethod,
+    CheckoutStep,
     PaymentMethod,
+    ShippingMethod,
 } from '../types/checkout.types';
+
+const STEP_ORDER: CheckoutStep[] = ['address', 'shipping', 'payment', 'review'];
 
 export const CheckoutScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -35,10 +40,12 @@ export const CheckoutScreen: React.FC = () => {
     const { showToast } = useToast();
     const { cart, isLoading } = useAppSelector((state) => state.cart);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const insets = useSafeAreaInsets();
 
     const [currentStep, setCurrentStep] = useState<CheckoutStep>('address');
     const [completedSteps, setCompletedSteps] = useState<CheckoutStep[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isDefaultAddressLoading, setIsDefaultAddressLoading] = useState(true);
 
     // Address state
     const [billingAddress, setBillingAddress] = useState<CheckoutAddress | null>(null);
@@ -52,19 +59,61 @@ export const CheckoutScreen: React.FC = () => {
     // Payment state
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-    
+
     // Stripe Connect WebView state
     const [showStripeWebView, setShowStripeWebView] = useState(false);
     const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState<string | null>(null);
-    
+
     // PayPal Smart Button WebView state
     const [showPaypalWebView, setShowPaypalWebView] = useState(false);
     const [paypalApprovalUrl, setPaypalApprovalUrl] = useState<string | null>(null);
     const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
 
+    const resetShippingAndBeyond = () => {
+        setShippingMethods(null);
+        setSelectedShippingMethod(null);
+        setPaymentMethods(null);
+        setSelectedPaymentMethod(null);
+    };
+
+    const resetStepsAfter = (step: CheckoutStep) => {
+        const stepIndex = STEP_ORDER.indexOf(step);
+        if (stepIndex === -1) return;
+        setCompletedSteps((prev) =>
+            prev.filter((stepKey) => STEP_ORDER.indexOf(stepKey) < stepIndex)
+        );
+    };
+
+    const handleSameAsBillingChange = (value: boolean) => {
+        setSameAsBilling(value);
+        if (value && billingAddress) {
+            setShippingAddress(billingAddress);
+        } else if (!value) {
+            setShippingAddress(null);
+        }
+        resetShippingAndBeyond();
+        resetStepsAfter('address');
+        setCurrentStep('address');
+    };
+
+    const handleAddressUpdate = (type: 'billing' | 'shipping', address: CheckoutAddress) => {
+        if (type === 'billing') {
+            setBillingAddress(address);
+            if (sameAsBilling) {
+                setShippingAddress(address);
+            }
+        } else {
+            setShippingAddress(address);
+        }
+        resetShippingAndBeyond();
+        resetStepsAfter('address');
+        setCurrentStep('address');
+    };
+
     useEffect(() => {
         // Redirect if not authenticated
         if (!isAuthenticated) {
+            setIsDefaultAddressLoading(false);
             showToast({ message: t('checkout.loginRequired', 'Please login to checkout'), type: 'error' });
             router.replace('/login');
             return;
@@ -82,22 +131,23 @@ export const CheckoutScreen: React.FC = () => {
     }, [cart, isLoading, router]);
 
     const loadCheckoutData = async () => {
+        setIsDefaultAddressLoading(true);
         try {
             // Load cart
             await dispatch(fetchCartThunk()).unwrap();
 
             // Load customer addresses
             const addresses = await addressApi.getAddresses();
-            
+
             // Find default address
             const defaultAddress = addresses.find((addr: any) => addr.is_default || addr.default_address);
-            
+
             if (defaultAddress) {
                 // Convert to CheckoutAddress format
-                const addressLines = Array.isArray(defaultAddress.address) 
-                    ? defaultAddress.address 
+                const addressLines = Array.isArray(defaultAddress.address)
+                    ? defaultAddress.address
                     : (defaultAddress.address ? String(defaultAddress.address).split('\n') : []);
-                
+
                 const checkoutAddress: CheckoutAddress = {
                     id: defaultAddress.id,
                     first_name: defaultAddress.first_name,
@@ -111,13 +161,15 @@ export const CheckoutScreen: React.FC = () => {
                     postcode: defaultAddress.postcode,
                     phone: defaultAddress.phone,
                 };
-                
+
                 setBillingAddress(checkoutAddress);
                 // Also set as shipping by default
                 setShippingAddress(checkoutAddress);
             }
         } catch (error) {
             console.error('Error loading checkout data:', error);
+        } finally {
+            setIsDefaultAddressLoading(false);
         }
     };
 
@@ -144,7 +196,7 @@ export const CheckoutScreen: React.FC = () => {
                 };
             };
 
-            const payload :any= {
+            const payload: any = {
                 billing: {
                     ...transformAddress(billingAddress),
                     use_for_shipping: sameAsBilling,
@@ -170,7 +222,7 @@ export const CheckoutScreen: React.FC = () => {
                         rates: carrierData.rates || []
                     };
                 });
-                
+
                 console.log('[CheckoutScreen] Transformed shipping methods:', shippingMethods);
                 setShippingMethods(shippingMethods);
                 markStepComplete('address');
@@ -200,7 +252,7 @@ export const CheckoutScreen: React.FC = () => {
         const parts = selectedShippingMethod.split('_');
         // For "carrier_0_flat_flat", we need "flat_flat" (last 2 parts)
         const actualMethodCode = parts.length >= 2 ? parts.slice(-2).join('_') : selectedShippingMethod;
-        
+
         console.log('[CheckoutScreen] Actual method code to send:', actualMethodCode);
 
         setIsProcessing(true);
@@ -250,11 +302,12 @@ export const CheckoutScreen: React.FC = () => {
     };
 
     const handlePlaceOrder = async () => {
+        if (isProcessing) return;
         setIsProcessing(true);
         try {
             console.log('[CheckoutScreen] Starting place order...');
             const response = await checkoutApi.placeOrder();
-            
+
             console.log('[CheckoutScreen] Place order response received:', JSON.stringify(response, null, 2));
             console.log('[CheckoutScreen] Response analysis:', {
                 hasRedirectUrl: !!response.redirect_url,
@@ -263,15 +316,15 @@ export const CheckoutScreen: React.FC = () => {
                 hasOrder: !!(response.data?.order || response.order),
                 orderId: response.data?.order?.id || response.order?.id
             });
-            
+
             // Handle redirect URL (for payment methods that require external payment)
             if (response.redirect_url) {
                 console.log('[CheckoutScreen] Redirect URL detected:', response.redirect_url);
-                
+
                 // Check if it's PayPal Smart Button (paypal.com URL)
-                const isPaypalSmartButton = response.redirect_url.includes('paypal.com') && 
-                                           response.paypal_order_id;
-                
+                const isPaypalSmartButton = response.redirect_url.includes('paypal.com') &&
+                    response.paypal_order_id;
+
                 if (isPaypalSmartButton) {
                     // For PayPal Smart Button, show WebView to complete payment
                     setPaypalApprovalUrl(response.redirect_url);
@@ -280,11 +333,11 @@ export const CheckoutScreen: React.FC = () => {
                     setIsProcessing(false);
                     return;
                 }
-                
+
                 // Check if it's Stripe Connect (checkout.stripe.com URL)
-                const isStripeConnect = response.redirect_url.includes('checkout.stripe.com') || 
-                                       response.redirect_url.includes('stripe.com');
-                
+                const isStripeConnect = response.redirect_url.includes('checkout.stripe.com') ||
+                    response.redirect_url.includes('stripe.com');
+
                 if (isStripeConnect) {
                     // For Stripe Connect, show WebView to complete payment
                     setStripeCheckoutUrl(response.redirect_url);
@@ -292,7 +345,7 @@ export const CheckoutScreen: React.FC = () => {
                     setIsProcessing(false);
                     return;
                 }
-                
+
                 // For other payment methods like OXXO, order is created during redirect
                 // Check if order is in response.data.order
                 const order = response.data?.order || response.order;
@@ -301,8 +354,8 @@ export const CheckoutScreen: React.FC = () => {
                     console.log('[CheckoutScreen] Navigating to order success:', order.id);
                     // Clear cart
                     await dispatch(fetchCartThunk()).unwrap();
-                    showToast({ 
-                        message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                    showToast({
+                        message: t('checkout.orderPlaced', 'Order placed successfully!'),
                         type: 'success',
                         duration: 3000,
                     });
@@ -320,8 +373,8 @@ export const CheckoutScreen: React.FC = () => {
                     console.log('[CheckoutScreen] Navigating to order success:', order.id);
                     // Clear cart and show success message
                     await dispatch(fetchCartThunk()).unwrap();
-                    showToast({ 
-                        message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                    showToast({
+                        message: t('checkout.orderPlaced', 'Order placed successfully!'),
                         type: 'success',
                         duration: 3000,
                     });
@@ -333,8 +386,8 @@ export const CheckoutScreen: React.FC = () => {
                         order: response.order
                     });
                     // Fallback: navigate to orders page if no order ID
-                    showToast({ 
-                        message: t('checkout.orderPlaced', 'Order placed successfully!'), 
+                    showToast({
+                        message: t('checkout.orderPlaced', 'Order placed successfully!'),
                         type: 'info',
                         duration: 3000,
                     });
@@ -348,8 +401,8 @@ export const CheckoutScreen: React.FC = () => {
                 response: error.response?.data,
                 stack: error.stack
             });
-            showToast({ 
-                message: error.message || t('checkout.orderFailed', 'Failed to place order'), 
+            showToast({
+                message: error.message || t('checkout.orderFailed', 'Failed to place order'),
                 type: 'error',
                 duration: 4000,
             });
@@ -358,14 +411,69 @@ export const CheckoutScreen: React.FC = () => {
         }
     };
 
+    const addressStepReady = Boolean(billingAddress && (sameAsBilling || shippingAddress));
+    const shippingStepReady = Boolean(selectedShippingMethod);
+    const paymentStepReady = Boolean(selectedPaymentMethod);
+
+    const getActionButtonTitle = () => {
+        switch (currentStep) {
+            case 'address':
+                return t('checkout.proceedToShipping', 'Proceed to Shipping');
+            case 'shipping':
+                return t('checkout.proceedToPayment', 'Proceed to Payment');
+            case 'payment':
+                return t('checkout.proceedToReview', 'Proceed to Review');
+            case 'review':
+                return t('checkout.placeOrder', 'Place Order');
+            default:
+                return t('checkout.proceed', 'Proceed');
+        }
+    };
+
+    const isActionButtonDisabled = () => {
+        if (isProcessing) return true;
+
+        switch (currentStep) {
+            case 'address':
+                return !addressStepReady;
+            case 'shipping':
+                return !shippingStepReady;
+            case 'payment':
+                return !paymentStepReady;
+            case 'review':
+                return false;
+            default:
+                return true;
+        }
+    };
+
+    const handleActionButtonPress = () => {
+        if (isProcessing) return;
+
+        switch (currentStep) {
+            case 'address':
+                handleAddressComplete();
+                break;
+            case 'shipping':
+                handleShippingComplete();
+                break;
+            case 'payment':
+                handlePaymentComplete();
+                break;
+            case 'review':
+                handlePlaceOrder();
+                break;
+        }
+    };
+
     const handleStripeSuccess = async (orderId: number) => {
         // Close WebView
         setShowStripeWebView(false);
         setStripeCheckoutUrl(null);
-        
+
         // Clear cart
         await dispatch(fetchCartThunk()).unwrap();
-        
+
         // Navigate to order success screen
         router.replace(`/order-success/${orderId}`);
     };
@@ -388,10 +496,10 @@ export const CheckoutScreen: React.FC = () => {
         setShowPaypalWebView(false);
         setPaypalApprovalUrl(null);
         setPaypalOrderId(null);
-        
+
         // Clear cart
         await dispatch(fetchCartThunk()).unwrap();
-        
+
         // Navigate to order success screen
         router.replace(`/order-success/${orderId}`);
     };
@@ -417,74 +525,84 @@ export const CheckoutScreen: React.FC = () => {
         }
     };
 
-    if (isLoading || !cart || cart.items.length === 0) {
-        return <LoadingSpinner />;
-    }
+    const isCartReady = Boolean(cart && cart.items.length > 0);
+    const headerTitle = t('cart.checkout', 'Checkout');
 
     return (
         <View style={styles.container}>
-            {/* Stepper */}
-            <CheckoutStepper
-                currentStep={currentStep}
-                completedSteps={completedSteps}
+            <TopHeader
+                title={headerTitle}
+                onBack={() => router.back()}
+                backgroundColor={theme.colors.background.default}
             />
+            {isLoading || !isCartReady ? (
+                <View style={styles.loaderWrapper}>
+                    <LoadingSpinner />
+                </View>
+            ) : (
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Vertical Stepper with inline step content */}
+                    <CheckoutStepper
+                        currentStep={currentStep}
+                        completedSteps={completedSteps}
+                    >
+                        {/* Address Step */}
+                        <AddressStep
+                            billingAddress={billingAddress}
+                            shippingAddress={shippingAddress}
+                            sameAsBilling={sameAsBilling}
+                            onSameAsBillingChange={handleSameAsBillingChange}
+                            onAddressUpdate={handleAddressUpdate}
+                            isDefaultAddressLoading={isDefaultAddressLoading}
+                        />
 
-            {/* Step Content */}
-            <View style={styles.content}>
-                {currentStep === 'address' && (
-                    <AddressStep
-                        billingAddress={billingAddress}
-                        shippingAddress={shippingAddress}
-                        sameAsBilling={sameAsBilling}
-                        onSameAsBillingChange={setSameAsBilling}
-                        onProceed={handleAddressComplete}
-                        onAddressUpdate={(type, address) => {
-                            if (type === 'billing') {
-                                setBillingAddress(address);
-                            } else {
-                                setShippingAddress(address);
-                            }
-                        }}
-                        isProcessing={isProcessing}
-                    />
-                )}
+                        {/* Shipping Step */}
+                        <ShippingStep
+                            shippingMethods={shippingMethods}
+                            selectedMethod={selectedShippingMethod}
+                            onMethodSelect={setSelectedShippingMethod}
+                        />
 
-                {currentStep === 'shipping' && (
-                    <ShippingStep
-                        shippingMethods={shippingMethods}
-                        selectedMethod={selectedShippingMethod}
-                        onMethodSelect={setSelectedShippingMethod}
-                        onProceed={handleShippingComplete}
-                        isProcessing={isProcessing}
-                    />
-                )}
+                        {/* Payment Step */}
+                        <PaymentStep
+                            paymentMethods={paymentMethods}
+                            selectedMethod={selectedPaymentMethod}
+                            onMethodSelect={setSelectedPaymentMethod}
+                        />
 
-                {currentStep === 'payment' && (
-                    <PaymentStep
-                        paymentMethods={paymentMethods}
-                        selectedMethod={selectedPaymentMethod}
-                        onMethodSelect={setSelectedPaymentMethod}
-                        onProceed={handlePaymentComplete}
-                        isProcessing={isProcessing}
-                    />
-                )}
+                        {/* Review Step */}
+                        <ReviewStep
+                            cart={cart}
+                            billingAddress={billingAddress}
+                            shippingAddress={shippingAddress}
+                            sameAsBilling={sameAsBilling}
+                            selectedShippingMethod={selectedShippingMethod}
+                            shippingMethods={shippingMethods}
+                            selectedPaymentMethod={selectedPaymentMethod}
+                            paymentMethods={paymentMethods}
+                            onPlaceOrder={handlePlaceOrder}
+                            isProcessing={isProcessing}
+                        />
+                    </CheckoutStepper>
+                </ScrollView>
+            )}
 
-                {currentStep === 'review' && (
-                    <ReviewStep
-                        cart={cart}
-                        billingAddress={billingAddress}
-                        shippingAddress={shippingAddress}
-                        sameAsBilling={sameAsBilling}
-                        selectedShippingMethod={selectedShippingMethod}
-                        shippingMethods={shippingMethods}
-                        selectedPaymentMethod={selectedPaymentMethod}
-                        paymentMethods={paymentMethods}
-                        onPlaceOrder={handlePlaceOrder}
-                        isProcessing={isProcessing}
+            {currentStep !== 'review' && isCartReady && (
+                <View style={[styles.actionButtonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
+                    <Button
+                        title={getActionButtonTitle()}
+                        onPress={handleActionButtonPress}
+                        disabled={isActionButtonDisabled()}
+                        loading={isProcessing}
                     />
-                )}
-            </View>
-            
+                </View>
+            )}
+
             {/* Stripe Connect WebView Modal */}
             {stripeCheckoutUrl && (
                 <StripeConnectWebView
@@ -495,7 +613,7 @@ export const CheckoutScreen: React.FC = () => {
                     onError={handleStripeError}
                 />
             )}
-            
+
             {/* PayPal Smart Button WebView Modal */}
             {paypalApprovalUrl && paypalOrderId && (
                 <PaypalSmartButtonWebView
@@ -516,8 +634,21 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.default,
     },
-    content: {
+    scrollView: {
         flex: 1,
     },
+    scrollContent: {
+        flexGrow: 1,
+    },
+    actionButtonContainer: {
+        padding: theme.spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+        backgroundColor: theme.colors.background.default,
+    },
+    loaderWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });
-
