@@ -2,11 +2,14 @@ import { Drawer } from "expo-router/drawer";
 import { CustomDrawerContent } from "@/shared/components/CustomDrawerContent";
 import { ShopHeader } from "@/shared/components/ShopHeader";
 import { theme } from "@/theme";
+import { StatusBar } from "expo-status-bar";
 
 export default function DrawerLayout() {
   return (
-    <Drawer
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+    <>
+      <StatusBar style="dark" />
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         header: ({ options }) => <ShopHeader title={options.title} />,
         headerShown: true,
@@ -26,5 +29,6 @@ export default function DrawerLayout() {
         }}
       />
     </Drawer>
+    </>
   );
 }
