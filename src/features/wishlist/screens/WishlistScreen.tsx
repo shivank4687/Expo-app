@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +13,7 @@ import { ProductImage } from '@/shared/components/LazyImage';
 import { formatters } from '@/shared/utils/formatters';
 import { useToast } from '@/shared/components/Toast';
 import { Card } from '@/shared/components/Card';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 /**
  * WishlistScreen Component
@@ -245,21 +245,19 @@ export const WishlistScreen = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('wishlist.myWishlist')}</Text>
-                <View style={styles.headerRight}>
-                    {items.length > 0 && (
+            <TopHeader
+                title={t('wishlist.myWishlist')}
+                onBack={() => router.back()}
+                rightContent={
+                    items.length > 0 ? (
                         <Text style={styles.itemCount}>
                             {t('wishlist.itemsCount', { count: items.length })}
                         </Text>
-                    )}
-                </View>
-            </View>
+                    ) : undefined
+                }
+            />
 
             {/* Content */}
             {isLoading ? (
@@ -278,7 +276,7 @@ export const WishlistScreen = () => {
                     showsVerticalScrollIndicator={false}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -286,30 +284,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.default,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200],
-        backgroundColor: theme.colors.background.paper,
-    },
-    backButton: {
-        padding: theme.spacing.xs,
-    },
-    headerTitle: {
-        flex: 1,
-        fontSize: theme.typography.fontSize.xl,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        textAlign: 'center',
-    },
-    headerRight: {
-        minWidth: 40,
-        alignItems: 'flex-end',
     },
     itemCount: {
         fontSize: theme.typography.fontSize.sm,

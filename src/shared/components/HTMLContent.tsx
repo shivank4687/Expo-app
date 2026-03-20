@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, LayoutAnimation } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { theme } from '@/theme';
 
@@ -14,8 +14,7 @@ interface HTMLContentProps {
  * Properly handles HTML from Bagisto product descriptions
  */
 export const HTMLContent: React.FC<HTMLContentProps> = ({ html, baseStyle }) => {
-    const { width } = useWindowDimensions();
-    const [webViewHeight, setWebViewHeight] = useState(200);
+    const [webViewHeight, setWebViewHeight] = useState(10);
 
     // If no HTML content, return null
     if (!html || html.trim() === '') {
@@ -154,8 +153,11 @@ export const HTMLContent: React.FC<HTMLContentProps> = ({ html, baseStyle }) => 
             const data = JSON.parse(event.nativeEvent.data);
             
             if (data.type === 'height') {
-                // Add some padding to prevent content cutoff
-                setWebViewHeight(data.height + 20);
+                const newHeight = Math.max(10, data.height + 20);
+                if (Math.abs(webViewHeight - newHeight) > 10) {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setWebViewHeight(newHeight);
+                }
             } else if (data.type === 'link') {
                 // Handle link clicks - could open in browser
                 console.log('Link clicked:', data.url);

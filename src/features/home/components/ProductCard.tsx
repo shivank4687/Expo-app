@@ -33,7 +33,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
     const { isAddingToCart, lastAddedProductId } = useAppSelector((state) => state.cart);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { selectedCurrency } = useAppSelector((state) => state.core);
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+
+    const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
     const isAddingThisProduct = isAddingToCart && lastAddedProductId === product.id;
 
@@ -274,15 +277,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                     {productData.hasDiscount ? (
                                         <>
                                             <Text style={styles.specialPrice}>
-                                                {formatters.formatPrice(productData.currentPrice)}
+                                                {formatters.formatPrice(productData.currentPrice, currencySymbol)}
                                             </Text>
                                             <Text style={styles.originalPrice}>
-                                                {formatters.formatPrice(productData.originalPrice)}
+                                                {formatters.formatPrice(productData.originalPrice, currencySymbol)}
                                             </Text>
                                         </>
                                     ) : (
                                         <Text style={styles.price}>
-                                            {formatters.formatPrice(product.price)}
+                                            {formatters.formatPrice(product.price, currencySymbol)}
                                         </Text>
                                     )}
                                 </View>

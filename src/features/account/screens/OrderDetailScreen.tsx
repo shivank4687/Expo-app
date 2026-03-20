@@ -6,6 +6,7 @@
 import { OxxoVoucherWebView } from '@/features/checkout/components/OxxoVoucherWebView';
 import { Order, ordersApi } from '@/services/api/orders.api';
 import { useToast } from '@/shared/components/Toast';
+import { TopHeader } from '@/shared/components/TopHeader';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -180,11 +181,11 @@ export const OrderDetailScreen: React.FC = () => {
     if (isLoading) {
         return (
             <>
-                <Stack.Screen
-                    options={{
-                        title: t('orders.orderDetails', 'Order Details'),
-                        headerBackTitle: t('common.back', 'Back'),
-                    }}
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader
+                    title={t('orders.orderDetails', 'Order Details')}
+                    onBack={() => router.back()}
+                    backgroundColor={theme.colors.background.default}
                 />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
@@ -199,11 +200,11 @@ export const OrderDetailScreen: React.FC = () => {
     if (error || !order) {
         return (
             <>
-                <Stack.Screen
-                    options={{
-                        title: t('orders.orderDetails', 'Order Details'),
-                        headerBackTitle: t('common.back', 'Back'),
-                    }}
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader
+                    title={t('orders.orderDetails', 'Order Details')}
+                    onBack={() => router.back()}
+                    backgroundColor={theme.colors.background.default}
                 />
                 <View style={styles.errorContainer}>
                     <Ionicons
@@ -238,11 +239,11 @@ export const OrderDetailScreen: React.FC = () => {
 
     return (
         <>
-            <Stack.Screen
-                options={{
-                    title: `#${order.increment_id}`,
-                    headerBackTitle: t('common.back', 'Back'),
-                }}
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader
+                title={`#${order.increment_id}`}
+                onBack={() => router.back()}
+                backgroundColor={theme.colors.background.default}
             />
             <ScrollView
                 style={styles.container}
@@ -791,4 +792,3 @@ const voucherStyles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.medium,
     },
 });
-

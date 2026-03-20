@@ -11,6 +11,7 @@ import { updateProfileThunk } from '@/store/slices/authSlice';
 import { DatePickerInput } from '@/shared/components/DatePickerInput';
 import { useToast } from '@/shared/components/Toast';
 import { AvatarImage } from '@/shared/components/LazyImage';
+import { parseValidDate } from '@/shared/utils/dateUtils';
 
 // Component for editable fields - defined outside to prevent re-creation on each render
 const EditableField: React.FC<{
@@ -111,9 +112,8 @@ export const AccountInformationScreen: React.FC = () => {
             setEmail(user.email || '');
             setPhone(user.phone || '');
             setGender((user.gender as 'Male' | 'Female' | 'Other') || 'Male');
-            if (user.date_of_birth) {
-                setDateOfBirth(new Date(user.date_of_birth));
-            }
+            const parsedDob = parseValidDate(user.date_of_birth);
+            setDateOfBirth(parsedDob || undefined);
             setSubscribeNewsletter(user.subscribed_to_news_letter || false);
         }
     }, [user]);
@@ -414,7 +414,7 @@ export const AccountInformationScreen: React.FC = () => {
                     </View>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{t('account.personalDetails')}</Text>
+                        {/* <Text style={styles.sectionTitle}>{t('account.personalDetails')}</Text> */}
 
                         <EditableField
                             label={t('account.firstName')}

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { TopHeader } from '@/shared/components/TopHeader';
 import { productsApi } from '@/services/api/products.api';
 import { Product } from '../types/product.types';
 import { ProductGallery } from '../components/ProductGallery';
@@ -51,6 +51,9 @@ export const ProductDetailScreen: React.FC = () => {
 
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+    const { selectedCurrency } = useAppSelector((state) => state.core);
+
+    const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
     // Check if product is in wishlist
     const isInWishlist = useMemo(() => {
@@ -172,19 +175,19 @@ export const ProductDetailScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <>
-                <Stack.Screen options={{ title: t('product.productDetails'), headerBackTitle: t('product.back') }} />
+            <View style={styles.container}>
+                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} />
                 <LoadingSpinner />
-            </>
+            </View>
         );
     }
 
     if (error || !product) {
         return (
-            <>
-                <Stack.Screen options={{ title: t('product.productDetails') }} />
+            <View style={styles.container}>
+                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} />
                 <ErrorMessage message={error || t('product.productNotFound')} onRetry={loadProduct} />
-            </>
+            </View>
         );
     }
 
@@ -213,12 +216,7 @@ export const ProductDetailScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen
-                options={{
-                    title: product.name,
-                    headerBackTitle: t('product.back'),
-                }}
-            />
+            <TopHeader title={product.name} onBack={() => router.back()} />
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Image Gallery */}
@@ -285,10 +283,10 @@ export const ProductDetailScreen: React.FC = () => {
                                 {hasDiscount ? (
                                     <>
                                         <Text style={styles.specialPrice}>
-                                            {formatters.formatPrice(displayPrice)}
+                                            {formatters.formatPrice(displayPrice, currencySymbol)}
                                         </Text>
                                         <Text style={styles.originalPrice}>
-                                            {formatters.formatPrice(displayRegularPrice!)}
+                                            {formatters.formatPrice(displayRegularPrice!, currencySymbol)}
                                         </Text>
                                         <View style={styles.discountBadge}>
                                             <Text style={styles.discountText}>
@@ -298,7 +296,7 @@ export const ProductDetailScreen: React.FC = () => {
                                     </>
                                 ) : (
                                     <Text style={styles.price}>
-                                        {formatters.formatPrice(displayPrice)}
+                                        {formatters.formatPrice(displayPrice, currencySymbol)}
                                     </Text>
                                 )}
                             </View>

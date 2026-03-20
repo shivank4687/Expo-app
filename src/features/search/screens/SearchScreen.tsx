@@ -452,8 +452,9 @@ export const SearchScreen: React.FC = () => {
                 <TouchableOpacity
                     onPress={() => router.back()}
                     style={styles.backButton}
+                    activeOpacity={0.7}
                 >
-                    <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
+                    <Ionicons name="arrow-back" size={18} color={theme.colors.text.primary} />
                 </TouchableOpacity>
 
                 <View style={styles.searchInputContainer}>
@@ -552,7 +553,7 @@ export const SearchScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     header: {
         flexDirection: 'row',
@@ -560,13 +561,18 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingBottom: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
         ...theme.shadows.sm,
     },
     backButton: {
-        padding: theme.spacing.xs,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: theme.colors.gray[100],
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: theme.spacing.sm,
     },
     searchInputContainer: {
@@ -593,7 +599,7 @@ const styles = StyleSheet.create({
         marginLeft: theme.spacing.sm,
     },
     categoriesContainer: {
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],

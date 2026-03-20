@@ -19,6 +19,7 @@ import { AddressFormData } from '../types/address.types';
 import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { PickerModal, PickerItem } from '@/shared/components/PickerModal';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 export const AddAddressScreen: React.FC = () => {
     const router = useRouter();
@@ -231,20 +232,28 @@ export const AddAddressScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-                <Text style={styles.loadingText}>Loading address...</Text>
-            </View>
+            <>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader
+                    title={isEditMode ? 'Edit Address' : 'Add New Address'}
+                    onBack={() => router.back()}
+                    backgroundColor={theme.colors.background.default}
+                />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                    <Text style={styles.loadingText}>Loading address...</Text>
+                </View>
+            </>
         );
     }
 
     return (
         <View style={styles.container}>
-            <Stack.Screen
-                options={{
-                    title: isEditMode ? 'Edit Address' : 'Add New Address',
-                    headerBackTitle: 'Back',
-                }}
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader
+                title={isEditMode ? 'Edit Address' : 'Add New Address'}
+                onBack={() => router.back()}
+                backgroundColor={theme.colors.background.default}
             />
 
             <ScrollView
@@ -643,4 +652,3 @@ const styles = StyleSheet.create({
 });
 
 export default AddAddressScreen;
-

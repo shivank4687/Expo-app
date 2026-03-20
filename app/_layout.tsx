@@ -165,19 +165,23 @@ function AppContent() {
         <Stack.Screen
           name="contact-us"
           options={{
-            ...commonHeaderOptions,
-            title: "Contact Us",
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="product/[id]"
           options={{
-            title: "Product Details",
-            headerBackTitle: "Back",
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="wishlist"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="category/[id]"
           options={{
             headerShown: false,
           }}

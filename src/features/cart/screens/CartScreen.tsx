@@ -47,6 +47,7 @@ export const CartScreen: React.FC = () => {
     const [isPriceDetailsExpanded, setIsPriceDetailsExpanded] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [summaryHeight, setSummaryHeight] = useState(0);
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
@@ -173,10 +174,7 @@ export const CartScreen: React.FC = () => {
                 style={styles.scrollView}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    {
-                        paddingBottom:
-                            theme.spacing['3xl'] + theme.spacing.md + Math.max(insets.bottom, theme.spacing.sm)
-                    }
+                    { paddingBottom: summaryHeight }
                 ]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -334,10 +332,8 @@ export const CartScreen: React.FC = () => {
             </ScrollView>
 
             <View
-                style={[
-                    styles.summaryCardFixed,
-                    //{ paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }
-                ]}
+                style={[styles.summaryCardFixed]}
+                onLayout={(e) => setSummaryHeight(e.nativeEvent.layout.height)}
             >
                 <PriceDetailsSummaryCard
                     subtotal={formattedSubtotal}

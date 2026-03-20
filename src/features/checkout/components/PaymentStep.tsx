@@ -87,7 +87,7 @@ const getBrandIcon = (method: PaymentMethod): React.ReactElement => {
                 <Image
                     source={{ uri: method.image }}
                     style={brandStyles.apiImage}
-                    resizeMode="contain"
+                    resizeMode="cover"
                 />
             </View>
         );
@@ -186,9 +186,8 @@ const brandStyles = StyleSheet.create({
         alignItems: 'center',
     },
     apiImage: {
-        width: 60,
-        height: 38,
-        borderRadius: 2,
+        width: '100%',
+        height: '100%',
     },
     fill: {
         position: 'absolute',

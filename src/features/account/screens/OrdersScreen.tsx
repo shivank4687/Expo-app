@@ -68,11 +68,6 @@ export const OrdersScreen: React.FC = () => {
                 isLoadingRef.current = true;
             }
 
-            if (!append && !showRefreshing) {
-                setIsInitialLoad(false);
-                isInitialLoadRef.current = false;
-            }
-
             setError(null);
 
             const response = await ordersApi.getOrders({
@@ -142,6 +137,12 @@ export const OrdersScreen: React.FC = () => {
             setIsLoading(false);
             setIsLoadingMore(false);
             setIsRefreshing(false);
+
+            if (isInitialLoadRef.current && !append && !showRefreshing) {
+                setIsInitialLoad(false);
+                isInitialLoadRef.current = false;
+            }
+
             isLoadingRef.current = false;
             isLoadingMoreRef.current = false;
         }

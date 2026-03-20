@@ -9,6 +9,7 @@ import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
 import { FilterModal } from '@/shared/components/FilterModal';
+import { TopHeader } from '@/shared/components/TopHeader';
 import { theme } from '@/theme';
 import { useAppSelector } from '@/store/hooks';
 import { FilterState } from '@/types/filters.types';
@@ -198,27 +199,29 @@ export const ProductListScreen: React.FC = () => {
 
     if (isLoading && products.length === 0) {
         return (
-            <>
-                <Stack.Screen options={{ title: screenTitle, headerBackTitle: 'Back' }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader title={screenTitle} onBack={() => router.back()} />
                 <LoadingSpinner />
-            </>
+            </View>
         );
     }
 
     if (error && products.length === 0) {
         return (
-            <>
-                <Stack.Screen options={{ title: screenTitle, headerBackTitle: 'Back' }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader title={screenTitle} onBack={() => router.back()} />
                 <ErrorMessage message={error} onRetry={() => loadProducts(1, true)} />
-            </>
+            </View>
         );
     }
 
     return (
-        <>
-            <Stack.Screen options={{ title: screenTitle, headerBackTitle: 'Back' }} />
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader title={screenTitle} onBack={() => router.back()} />
             <FlatList
-                style={styles.container}
                 data={products}
                 numColumns={2}
                 keyExtractor={(item) => item.id.toString()}
@@ -281,7 +284,7 @@ export const ProductListScreen: React.FC = () => {
                 currentFilters={filters}
                 onApply={handleFilterApply}
             />
-        </>
+        </View>
     );
 };
 

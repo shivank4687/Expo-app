@@ -16,7 +16,11 @@ const CUSTOMER_TABS = [
 const CUSTOMER_DRAWER_OPTIONS = [{ name: "profile", label: "Profile" }];
 
 export default function TabLayout() {
-  const { isLoading } = useRequireAuth();
+  const { isLoading, isAuthenticated } = useRequireAuth();
+
+  const activeTabs = CUSTOMER_TABS.filter(
+    (tab) => !["orders", "profile"].includes(tab.name) || isAuthenticated
+  );
 
   if (isLoading) {
     return (
@@ -31,7 +35,7 @@ export default function TabLayout() {
       tabBar={(props) => (
         <TabBar
           {...props}
-          tabs={CUSTOMER_TABS}
+          tabs={activeTabs as any}
           drawerOptions={CUSTOMER_DRAWER_OPTIONS}
         />
       )}
@@ -45,6 +49,7 @@ export default function TabLayout() {
           name={tab.name}
           options={{
             title: tab.label,
+            href: tab.name === "orders" && !isAuthenticated ? null : undefined,
           }}
         />
       ))}

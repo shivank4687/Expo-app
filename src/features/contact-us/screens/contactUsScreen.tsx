@@ -12,7 +12,8 @@ import { theme } from '@/theme';
 import { Button } from '@/shared/components/Button';
 import { useAppSelector } from '@/store/hooks';
 import { contactApi } from '@/services/api/contact.api';
-import { Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { TopHeader } from '@/shared/components/TopHeader';
 import { useToast } from '@/shared/components/Toast';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +21,7 @@ export const ContactUsScreen = () => {
     const { user } = useAppSelector((state) => state.auth);
     const { showToast } = useToast();
     const { t } = useTranslation();
+    const router = useRouter();
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -114,7 +116,7 @@ export const ContactUsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: t('contact.title'), headerBackTitle: t('common.back') }} />
+            <TopHeader title={t('contact.title')} onBack={() => router.back()} />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}

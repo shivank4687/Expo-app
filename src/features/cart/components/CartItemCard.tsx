@@ -28,7 +28,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
     const { showToast } = useToast();
     const { t } = useTranslation();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { selectedCurrency } = useAppSelector((state) => state.core);
     const [isUpdating, setIsUpdating] = useState(false);
+
+    const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
     const imageUrl = item.product?.thumbnail || (item.product?.images && item.product.images[0]?.url);
     const subtotal = item.price * item.quantity;
@@ -126,30 +129,33 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                         {/* Product Details */}
                         <View style={styles.detailsContainer}>
                             <View style={styles.productInfoSection}>
-                                <Text style={styles.productName} numberOfLines={2}>
-                                    {item.name}
-                                </Text>
-
-                                <View style={styles.priceSection}>
-                                    <Text style={styles.price}>
-                                        {formatters.formatPrice(item.price)}
+                                <View style={styles.nameAndPrice}>
+                                    <Text style={styles.productName} numberOfLines={2}>
+                                        {item.name}
                                     </Text>
-                                    <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
-                                    <Text style={styles.subtotal}>
-                                        {formatters.formatPrice(subtotal)}
+                                    <Text style={styles.price}>
+                                        {formatters.formatPrice(item.price, currencySymbol)}
                                     </Text>
                                 </View>
                             </View>
 
-                            {/* Quantity Controls */}
-                            <QuantitySelector
-                                quantity={item.quantity}
-                                onIncrease={() => handleQuantityChange(item.quantity + 1)}
-                                onDecrease={() => handleQuantityChange(item.quantity - 1)}
-                                isLoading={isUpdating}
-                                minQuantity={1}
-                                disabled={isUpdating}
-                            />
+                            {/* Quantity Controls + Subtotal */}
+                            <View style={styles.qtyAndSubtotal}>
+                                <QuantitySelector
+                                    quantity={item.quantity}
+                                    onIncrease={() => handleQuantityChange(item.quantity + 1)}
+                                    onDecrease={() => handleQuantityChange(item.quantity - 1)}
+                                    isLoading={isUpdating}
+                                    minQuantity={1}
+                                    disabled={isUpdating}
+                                />
+                                <View style={styles.subtotalRow}>
+                                    <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
+                                    <Text style={styles.subtotal}>
+                                        {formatters.formatPrice(subtotal, currencySymbol)}
+                                    </Text>
+                                </View>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -210,7 +216,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: 100,
-        height: 120,
+        height: 90,
         borderRadius: theme.borderRadius.md,
         overflow: 'hidden',
         backgroundColor: theme.colors.gray[100],
@@ -227,20 +233,32 @@ const styles = StyleSheet.create({
     productInfoSection: {
         flex: 1,
     },
+    nameAndPrice: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.xs,
+    },
     productName: {
+        flex: 1,
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.text.primary,
-        marginBottom: theme.spacing.sm,
-    },
-    priceSection: {
-        marginTop: theme.spacing.xs,
     },
     price: {
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
-        marginBottom: theme.spacing.xs,
+    },
+    qtyAndSubtotal: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: theme.spacing.sm,
+    },
+    subtotalRow: {
+        flexDirection: 'column',
+        alignItems: 'flex-end',
     },
     subtotalLabel: {
         fontSize: theme.typography.fontSize.xs,

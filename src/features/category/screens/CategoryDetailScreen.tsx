@@ -11,10 +11,11 @@ import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
 import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { TopHeader } from '@/shared/components/TopHeader';
 const PRODUCTS_PER_PAGE = 12; // Increased for grid view
 
 /**
@@ -75,13 +76,6 @@ export const CategoryDetailScreen: React.FC = () => {
 
     // Use the name from params if available, otherwise use loaded category name
     const displayName = category?.name || name || 'Category';
-    const headerOptions = {
-        title: displayName,
-        headerBackTitle: 'Back',
-        headerStyle: {
-            backgroundColor: theme.colors.background.default,
-        },
-    };
 
     useEffect(() => {
         if (id) {
@@ -239,29 +233,29 @@ export const CategoryDetailScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <>
-                <Stack.Screen options={headerOptions} />
+            <View style={styles.container}>
+                <TopHeader title={displayName} onBack={() => router.back()} />
                 <View style={styles.loadingContainer}>
                     <LoadingSpinner />
                 </View>
-            </>
+            </View>
         );
     }
 
     if (error || !category) {
         return (
-            <>
-                <Stack.Screen options={headerOptions} />
+            <View style={styles.container}>
+                <TopHeader title={displayName} onBack={() => router.back()} />
                 <ErrorMessage message={error || 'Category not found'} onRetry={loadCategoryData} />
-            </>
+            </View>
         );
     }
 
     return (
-        <>
-            <Stack.Screen options={headerOptions} />
+        <View style={styles.container}>
+            <TopHeader title={displayName} onBack={() => router.back()} />
             <FlatList
-                style={styles.container}
+                style={styles.flatList}
                 data={hasNoChildren ? products : []}
                 numColumns={hasNoChildren ? 2 : undefined}
                 key={hasNoChildren ? 'grid' : 'list'} // Force re-render when switching layouts
@@ -332,20 +326,26 @@ export const CategoryDetailScreen: React.FC = () => {
                                         </TouchableOpacity>
                                     )}
                                 </View>
-                                <FlatList
-                                    data={products}
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    renderItem={({ item }) => (
-                                        <View style={styles.productCarouselItem}>
-                                            <ProductCard
-                                                product={item}
-                                                onPress={() => handleProductPress(item.id)}
-                                            />
-                                        </View>
-                                    )}
-                                />
+                                {products.length === 0 && !isLoading ? (
+                                    <View style={[styles.emptyState, { paddingVertical: theme.spacing.lg }]}>
+                                        <Text style={styles.emptyText}>{t('category.noProducts', 'No products found in this category')}</Text>
+                                    </View>
+                                ) : (
+                                    <FlatList
+                                        data={products}
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        keyExtractor={(item) => item.id.toString()}
+                                        renderItem={({ item }) => (
+                                            <View style={styles.productCarouselItem}>
+                                                <ProductCard
+                                                    product={item}
+                                                    onPress={() => handleProductPress(item.id)}
+                                                />
+                                            </View>
+                                        )}
+                                    />
+                                )}
                             </View>
                         )}
 
@@ -368,7 +368,7 @@ export const CategoryDetailScreen: React.FC = () => {
                 ListEmptyComponent={
                     hasNoChildren && !isLoading ? (
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyText}>No products found in this category</Text>
+                            <Text style={styles.emptyText}>{t('category.noProducts', 'No products found in this category')}</Text>
                         </View>
                     ) : null
                 }
@@ -402,7 +402,7 @@ export const CategoryDetailScreen: React.FC = () => {
                     />
                 </>
             )}
-        </>
+        </View>
     );
 };
 
@@ -410,6 +410,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.default,
+    },
+    flatList: {
+        flex: 1,
     },
     headerImage: {
         width: '100%',

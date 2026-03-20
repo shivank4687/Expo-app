@@ -8,8 +8,8 @@ import {
     RefreshControl,
     ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { theme } from '@/theme';
@@ -23,6 +23,7 @@ import {
 import { Notification } from '@/features/notifications/types/notification.types';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import { TopHeader } from '@/shared/components/TopHeader';
 import socketService from '@/services/socket.service';
 
 export const NotificationsScreen: React.FC = () => {
@@ -303,81 +304,75 @@ export const NotificationsScreen: React.FC = () => {
     const notifications = activeTab === 'messages' ? customerNotifications : orderNotifications;
     const hasData = orderNotifications.length > 0 || customerNotifications.length > 0;
 
-    if (isAuthLoading || (isInitialLoad && !hasData)) {
-        return (
-            <SafeAreaView style={styles.container} edges={['top']}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{t('notifications.title', 'Notifications')}</Text>
-                    <View style={styles.headerRight} />
-                </View>
-                <LoadingSpinner />
-            </SafeAreaView>
-        );
-    }
+    const markAllRightContent = totalUnread > 0 ? (
+        <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllButton} activeOpacity={0.7}>
+            <Text style={styles.markAllText}>{t('notifications.markAllRead', 'Mark all')}</Text>
+        </TouchableOpacity>
+    ) : undefined;
+
+    const showLoading = isAuthLoading || (isInitialLoad && !hasData);
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('notifications.title', 'Notifications')}</Text>
-                {totalUnread > 0 && (
-                    <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllButton}>
-                        <Text style={styles.markAllText}>{t('notifications.markAllRead', 'Mark all')}</Text>
-                    </TouchableOpacity>
-                )}
-                {totalUnread === 0 && <View style={styles.headerRight} />}
-            </View>
-
-            {/* Tabs */}
-            <View style={styles.tabsContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'messages' && styles.activeTab]}
-                    onPress={() => setActiveTab('messages')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'messages' && styles.activeTabText]}>
-                        {t('notifications.messages', 'Messages')}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'orders' && styles.activeTab]}
-                    onPress={() => setActiveTab('orders')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'orders' && styles.activeTabText]}>
-                        {t('notifications.orders', 'Orders')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Notifications List */}
-            <FlatList
-                data={notifications}
-                renderItem={renderNotification}
-                keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={styles.listContent}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={onRefresh}
-                        colors={[theme.colors.primary[500]]}
-                    />
-                }
-                ListEmptyComponent={renderEmptyState}
-                onEndReached={handleEndReached}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={() =>
-                    isLoadingMore ? (
-                        <View style={styles.loadingMore}>
-                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                        </View>
-                    ) : null
-                }
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader
+                title={t('notifications.title', 'Notifications')}
+                onBack={() => router.back()}
+                backgroundColor={theme.colors.background.default}
+                containerStyle={styles.topHeaderContainer}
+                rightContent={markAllRightContent}
+                rightContentStyle={markAllRightContent ? styles.headerRightOverride : undefined}
             />
-        </SafeAreaView>
+
+            {showLoading ? (
+                <LoadingSpinner />
+            ) : (
+                <>
+                    <View style={styles.tabsContainer}>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'messages' && styles.activeTab]}
+                            onPress={() => setActiveTab('messages')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'messages' && styles.activeTabText]}>
+                                {t('notifications.messages', 'Messages')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'orders' && styles.activeTab]}
+                            onPress={() => setActiveTab('orders')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'orders' && styles.activeTabText]}>
+                                {t('notifications.orders', 'Orders')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <FlatList
+                        data={notifications}
+                        renderItem={renderNotification}
+                        keyExtractor={(item) => item.id.toString()}
+                        contentContainerStyle={styles.listContent}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={isRefreshing}
+                                onRefresh={onRefresh}
+                                colors={[theme.colors.primary[500]]}
+                            />
+                        }
+                        ListEmptyComponent={renderEmptyState}
+                        onEndReached={handleEndReached}
+                        onEndReachedThreshold={0.5}
+                        ListFooterComponent={() =>
+                            isLoadingMore ? (
+                                <View style={styles.loadingMore}>
+                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                </View>
+                            ) : null
+                        }
+                    />
+                </>
+            )}
+        </View>
     );
 };
 
@@ -386,29 +381,15 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.default,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
+    topHeaderContainer: {
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
-        backgroundColor: theme.colors.background.default,
     },
-    backButton: {
-        padding: theme.spacing.xs,
-    },
-    headerTitle: {
-        flex: 1,
-        fontSize: theme.typography.fontSize.xl,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        textAlign: 'center',
-        marginHorizontal: theme.spacing.sm,
-    },
-    headerRight: {
-        minWidth: 60,
+    headerRightOverride: {
+        minWidth: 100,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'flex-end',
     },
     markAllButton: {
         padding: theme.spacing.xs,

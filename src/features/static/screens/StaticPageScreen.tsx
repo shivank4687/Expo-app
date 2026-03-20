@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { cmsApi, CMSPage } from '@/services/api/cms.api';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { theme } from '@/theme';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 /**
  * StaticPageScreen Component
@@ -14,6 +15,7 @@ import { theme } from '@/theme';
  */
 export const StaticPageScreen: React.FC = () => {
     const { page } = useLocalSearchParams<{ page: string }>();
+    const router = useRouter();
     const [pageData, setPageData] = useState<CMSPage | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -40,19 +42,21 @@ export const StaticPageScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <>
-                <Stack.Screen options={{ title: 'Loading...', headerBackTitle: 'Back' }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader title="Loading..." onBack={() => router.back()} />
                 <LoadingSpinner />
-            </>
+            </View>
         );
     }
 
     if (error || !pageData) {
         return (
-            <>
-                <Stack.Screen options={{ title: 'Error', headerBackTitle: 'Back' }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader title="Error" onBack={() => router.back()} />
                 <ErrorMessage message={error || 'Page not found'} onRetry={loadPage} />
-            </>
+            </View>
         );
     }
 
@@ -74,7 +78,7 @@ export const StaticPageScreen: React.FC = () => {
                     line-height: 1.6;
                     color: #374151;
                     padding: 20px;
-                    background-color: #fff;
+                    background-color: ${theme.colors.background.default};
                 }
                 h1, h2, h3, h4, h5, h6 {
                     margin-top: 24px;
@@ -128,8 +132,9 @@ export const StaticPageScreen: React.FC = () => {
     `;
 
     return (
-        <>
-            <Stack.Screen options={{ title: pageData.page_title, headerBackTitle: 'Back' }} />
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader title={pageData.page_title} onBack={() => router.back()} />
             <WebView
                 source={{ html: htmlContent }}
                 style={styles.webview}
@@ -137,11 +142,15 @@ export const StaticPageScreen: React.FC = () => {
                 scalesPageToFit={true}
                 startInLoadingState={true}
             />
-        </>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background.default,
+    },
     webview: {
         flex: 1,
         backgroundColor: theme.colors.white,

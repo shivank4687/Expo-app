@@ -164,19 +164,37 @@ export const AddressStep: React.FC<AddressStepProps> = ({
                         </View>
                     </>
                 ) : (
-                    <TouchableOpacity
-                        style={styles.addAddressButton}
-                        onPress={onAdd}
-                    >
-                        <Ionicons
-                            name="add-circle-outline"
-                            size={24}
-                            color={theme.colors.primary[500]}
-                        />
-                        <Text style={styles.addAddressText}>
-                            {t('checkout.addAddress', 'Add Address')}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={styles.emptyAddressContainer}>
+                        <TouchableOpacity
+                            style={styles.emptyStateButton}
+                            onPress={onChange}
+                        >
+                            <Ionicons
+                                name="list-outline"
+                                size={24}
+                                color={theme.colors.primary[500]}
+                            />
+                            <Text style={styles.emptyStateButtonText}>
+                                {t('checkout.chooseAddress', 'Choose Address')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <Text style={styles.orText}>- {t('common.or', 'OR')} -</Text>
+
+                        <TouchableOpacity
+                            style={styles.emptyStateButton}
+                            onPress={onAdd}
+                        >
+                            <Ionicons
+                                name="add-circle-outline"
+                                size={24}
+                                color={theme.colors.primary[500]}
+                            />
+                            <Text style={styles.emptyStateButtonText}>
+                                {t('checkout.addNewAddress', 'Add New Address')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
             </Card>
         );
@@ -413,22 +431,33 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.primary[500],
     },
-    addAddressButton: {
+    emptyAddressContainer: {
+        padding: theme.spacing.md,
+        alignItems: 'center',
+        gap: theme.spacing.md,
+    },
+    emptyStateButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: theme.spacing.sm,
-        padding: theme.spacing.xl,
-        borderWidth: 2,
+        padding: theme.spacing.md,
+        borderWidth: 1,
         borderStyle: 'dashed',
-        borderColor: theme.colors.gray[300],
+        borderColor: theme.colors.primary[300],
         borderRadius: theme.borderRadius.md,
-        margin: theme.spacing.md,
+        backgroundColor: theme.colors.primary[50],
+        width: '100%',
     },
-    addAddressText: {
+    emptyStateButtonText: {
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.semiBold,
-        color: theme.colors.primary[500],
+        color: theme.colors.primary[600],
+    },
+    orText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.secondary,
+        fontWeight: theme.typography.fontWeight.medium,
     },
     checkboxContainer: {
         flexDirection: 'row',

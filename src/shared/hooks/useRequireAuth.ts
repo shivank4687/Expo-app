@@ -20,7 +20,7 @@ export const useRequireAuth = () => {
         // Redirect to login if not authenticated
         if (!isAuthenticated) {
             console.log('[useRequireAuth] User not authenticated, redirecting to login');
-            router.replace('/login');
+            // router.replace('/login');
         }
     }, [isAuthenticated, isLoading, router]);
 

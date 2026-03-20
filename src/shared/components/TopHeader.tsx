@@ -22,6 +22,7 @@ interface TopHeaderProps {
     containerStyle?: StyleProp<ViewStyle>;
     titleStyle?: StyleProp<TextStyle>;
     subtitleStyle?: StyleProp<TextStyle>;
+    rightContentStyle?: StyleProp<ViewStyle>;
 }
 
 const DEFAULT_PADDING_TOP = Platform.OS === 'ios' ? 60 : 40;
@@ -36,6 +37,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     containerStyle,
     titleStyle,
     subtitleStyle,
+    rightContentStyle,
 }) => {
     const handleBack = () => {
         if (onBack) {
@@ -75,7 +77,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                     ) : null}
                 </View>
 
-                <View style={styles.rightContent}>
+                <View style={[styles.rightContent, rightContentStyle]}>
                     {rightContent ?? <View style={styles.backButtonPlaceholder} />}
                 </View>
             </View>
