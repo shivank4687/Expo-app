@@ -194,6 +194,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             style={styles.image}
                             recyclingKey={product.id?.toString()}
                             priority="low"
+                            contentFit="cover"
                         />
 
                         {/* Wishlist Heart Icon */}
@@ -235,14 +236,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                 <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
                             </View>
                         ) : null}
-                    </View>
 
-                    {/* Product Info */}
-                    <View style={styles.info}>
-                        <Text style={styles.name} numberOfLines={2}>
-                            {productData.name}
-                        </Text>
+                        {/* RFQ Button - Shows if product has supplier and user is authenticated */}
+                        {product.supplier?.id && isAuthenticated ? (
+                            <TouchableOpacity
+                                style={styles.rfqButton}
+                                onPress={handleRFQPress}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons
+                                    name="document-text-outline"
+                                    size={16}
+                                    color={theme.colors.primary[500]}
+                                />
+                            </TouchableOpacity>
+                        ) : null}
 
+                        {/* Rating Badge */}
                         {productData.rating > 0 ? (
                             <View style={styles.ratingContainer}>
                                 <Ionicons
@@ -260,6 +270,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                 ) : null}
                             </View>
                         ) : null}
+                    </View>
+
+                    {/* Product Info */}
+                    <View style={styles.info}>
+                        <Text style={styles.name} numberOfLines={1}>
+                            {productData.name}
+                        </Text>
 
                         <View style={styles.priceWrapper}>
                             {/* Price Label for Configurable/Grouped Products */}
@@ -280,7 +297,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                                 {formatters.formatPrice(productData.currentPrice, currencySymbol)}
                                             </Text>
                                             <Text style={styles.originalPrice}>
-                                                {formatters.formatPrice(productData.originalPrice, currencySymbol)}
+                                                {formatters.formatPriceWithoutCurrency(productData.originalPrice)}
                                             </Text>
                                         </>
                                     ) : (
@@ -289,21 +306,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                         </Text>
                                     )}
                                 </View>
-
-                                {/* RFQ Button - Only show if product has supplier and user is authenticated */}
-                                {product.supplier?.id && isAuthenticated ? (
-                                    <TouchableOpacity
-                                        style={styles.rfqButton}
-                                        onPress={handleRFQPress}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Ionicons
-                                            name="document-text-outline"
-                                            size={16}
-                                            color={theme.colors.primary[500]}
-                                        />
-                                    </TouchableOpacity>
-                                ) : null}
                             </View>
                         </View>
                     </View>
@@ -354,7 +356,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
-        height: 150,
+        height: 140,
         position: 'relative',
         backgroundColor: theme.colors.background.default,
         borderTopLeftRadius: theme.borderRadius.lg,
@@ -429,19 +431,33 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.semiBold,
     },
     info: {
-        padding: theme.spacing.md,
+        paddingHorizontal: theme.spacing.sm,
+        paddingTop: theme.spacing.sm,
+        paddingBottom: theme.spacing.xs,
     },
     name: {
         fontSize: theme.typography.fontSize.sm,
         fontWeight: theme.typography.fontWeight.medium,
         color: theme.colors.text.primary,
-        marginBottom: theme.spacing.xs,
-        height: 36, // Fixed height for 2 lines
+        marginBottom: 0,
+        height: 18, // Reduced height for tighter spacing
     },
     ratingContainer: {
+        position: 'absolute',
+        bottom: theme.spacing.sm,
+        left: theme.spacing.sm,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: theme.spacing.xs,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 2,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+        zIndex: 10,
     },
     rating: {
         fontSize: theme.typography.fontSize.xs,
@@ -455,23 +471,24 @@ const styles = StyleSheet.create({
         marginLeft: theme.spacing.xs,
     },
     priceWrapper: {
-        gap: 2,
-        minHeight: 40, // Fixed minimum height to ensure consistent card heights
+        gap: 0,
+        minHeight: 24, // Reduced height
     },
     priceLabelContainer: {
-        height: 16, // Fixed height for price label area to maintain consistent card heights
+        height: 14, // Restored height to prevent text clipping
         justifyContent: 'flex-start',
+        marginBottom: -10, // Negative margin pulls the price up instead
     },
     priceLabel: {
         fontSize: theme.typography.fontSize.xs,
         color: theme.colors.text.secondary,
-        lineHeight: 16,
+        lineHeight: 12,
     },
     priceRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 32, // Fixed height to match RFQ button height, ensures consistent card heights
+        minHeight: 24, // Reduced to decrease bottom spacing
     },
     priceContainer: {
         flexDirection: 'row',
@@ -479,13 +496,21 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     rfqButton: {
+        position: 'absolute',
+        bottom: theme.spacing.sm,
+        right: theme.spacing.sm,
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: theme.colors.primary[50] || '#EEF2FF',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: theme.spacing.xs,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 3,
+        zIndex: 10,
     },
     price: {
         fontSize: theme.typography.fontSize.lg,

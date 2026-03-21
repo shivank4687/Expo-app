@@ -28,7 +28,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CartItemCard } from '../components/CartItemCard';
+import { SupplierWiseCartItems } from '../components/SupplierWiseCartItems';
 import { CheckoutAuthModal } from '../components/CheckoutAuthModal';
 import { EmptyCart } from '../components/EmptyCart';
 import { PriceDetailsSummaryCard } from '../components/PriceDetailsSummaryCard';
@@ -43,7 +43,6 @@ export const CartScreen: React.FC = () => {
     const [couponCode, setCouponCode] = useState('');
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [isRemovingCoupon, setIsRemovingCoupon] = useState(false);
-    const [isCouponExpanded, setIsCouponExpanded] = useState(false);
     const [isPriceDetailsExpanded, setIsPriceDetailsExpanded] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -185,20 +184,14 @@ export const CartScreen: React.FC = () => {
                     <Text style={styles.sectionTitle}>
                         {t('cart.itemsInCart', { count: cart.items_count })}
                     </Text>
-                    {cart.items.map((item) => (
-                        <CartItemCard key={item.id} item={item} />
-                    ))}
+                    <SupplierWiseCartItems items={cart.items} />
                 </View>
 
                 {/* Apply Coupon Section - Only for authenticated users */}
                 {isAuthenticated && (
                     <View style={styles.section}>
-                        <TouchableOpacity
-                            style={styles.expansionHeader}
-                            onPress={() => setIsCouponExpanded(!isCouponExpanded)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.expansionTitleContainer}>
+                        <View style={{ padding: theme.spacing.md }}>
+                            <View style={[styles.expansionTitleContainer, { marginBottom: theme.spacing.sm }]}>
                                 <Ionicons
                                     name="pricetag-outline"
                                     size={20}
@@ -206,15 +199,8 @@ export const CartScreen: React.FC = () => {
                                 />
                                 <Text style={styles.expansionTitle}>{t('cart.applyCoupon')}</Text>
                             </View>
-                            <Ionicons
-                                name={isCouponExpanded ? 'chevron-up' : 'chevron-down'}
-                                size={24}
-                                color={theme.colors.text.secondary}
-                            />
-                        </TouchableOpacity>
 
-                        {isCouponExpanded && (
-                            <View style={styles.expansionContent}>
+                            <View>
                                 {cart.coupon_code ? (
                                     <View style={styles.appliedCouponContainer}>
                                         <View style={styles.appliedCouponInfo}>
@@ -270,7 +256,7 @@ export const CartScreen: React.FC = () => {
                                     </View>
                                 )}
                             </View>
-                        )}
+                        </View>
                     </View>
                 )}
 

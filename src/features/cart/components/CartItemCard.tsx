@@ -112,11 +112,11 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
     };
 
     return (
-        <TouchableOpacity onPress={handleProductPress} activeOpacity={0.9}>
-            <Card style={styles.card}>
-                <View style={styles.mainContent}>
-                    <View style={styles.topSection}>
-                        {/* Product Image */}
+        <Card style={styles.card}>
+            <View style={styles.mainContent}>
+                <View style={styles.topSection}>
+                    {/* Product Image */}
+                    <TouchableOpacity onPress={handleProductPress} activeOpacity={0.7}>
                         <View style={styles.imageContainer}>
                             <ProductImage
                                 imageUrl={imageUrl}
@@ -125,77 +125,79 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                                 priority="normal"
                             />
                         </View>
+                    </TouchableOpacity>
 
-                        {/* Product Details */}
-                        <View style={styles.detailsContainer}>
-                            <View style={styles.productInfoSection}>
-                                <View style={styles.nameAndPrice}>
+                    {/* Product Details */}
+                    <View style={styles.detailsContainer}>
+                        <View style={styles.productInfoSection}>
+                            <View style={styles.nameAndPrice}>
+                                <TouchableOpacity style={{ flex: 1, paddingRight: 8 }} onPress={handleProductPress} activeOpacity={0.7}>
                                     <Text style={styles.productName} numberOfLines={2}>
                                         {item.name}
                                     </Text>
-                                    <Text style={styles.price}>
-                                        {formatters.formatPrice(item.price, currencySymbol)}
-                                    </Text>
-                                </View>
+                                </TouchableOpacity>
+                                <Text style={styles.price}>
+                                    {formatters.formatPrice(item.price, currencySymbol)}
+                                </Text>
                             </View>
+                        </View>
 
-                            {/* Quantity Controls + Subtotal */}
-                            <View style={styles.qtyAndSubtotal}>
-                                <QuantitySelector
-                                    quantity={item.quantity}
-                                    onIncrease={() => handleQuantityChange(item.quantity + 1)}
-                                    onDecrease={() => handleQuantityChange(item.quantity - 1)}
-                                    isLoading={isUpdating}
-                                    minQuantity={1}
-                                    disabled={isUpdating}
-                                />
-                                <View style={styles.subtotalRow}>
-                                    <Text style={styles.subtotalLabel}>{t('cart.subtotal')}:</Text>
-                                    <Text style={styles.subtotal}>
-                                        {formatters.formatPrice(subtotal, currencySymbol)}
-                                    </Text>
-                                </View>
+                        {/* Quantity Controls + Subtotal */}
+                        <View style={styles.qtyAndSubtotal}>
+                            <QuantitySelector
+                                quantity={item.quantity}
+                                onIncrease={() => handleQuantityChange(item.quantity + 1)}
+                                onDecrease={() => handleQuantityChange(item.quantity - 1)}
+                                isLoading={isUpdating}
+                                minQuantity={1}
+                                disabled={isUpdating}
+                            />
+                            <View style={styles.subtotalRow}>
+                                <Text style={styles.subtotalLabel}>{t('cart.subtotal')}</Text>
+                                <Text style={styles.subtotal}>
+                                    {formatters.formatPrice(subtotal, currencySymbol)}
+                                </Text>
                             </View>
                         </View>
                     </View>
                 </View>
+            </View>
 
-                {/* Actions - Full Width at Bottom */}
-                <View style={styles.actionsContainer}>
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={(e) => {
-                            e?.stopPropagation?.();
-                            handleMoveToWishlist();
-                        }}
-                    >
-                        <Ionicons
-                            name="heart-outline"
-                            size={18}
-                            color={theme.colors.text.secondary}
-                        />
-                        <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
-                    </TouchableOpacity>
+            {/* Actions - Full Width at Bottom */}
+            <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={(e) => {
+                        e?.stopPropagation?.();
+                        handleMoveToWishlist();
+                    }}
+                >
+                    <Ionicons
+                        name="heart-outline"
+                        size={18}
+                        color={theme.colors.text.secondary}
+                    />
+                    <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
+                </TouchableOpacity>
 
-                    <View style={styles.actionDivider} />
+                <View style={styles.actionDivider} />
 
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={(e) => {
-                            e?.stopPropagation?.();
-                            handleRemove();
-                        }}
-                    >
-                        <Ionicons
-                            name="trash-outline"
-                            size={18}
-                            color={theme.colors.error.main}
-                        />
-                        <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
-                    </TouchableOpacity>
-                </View>
-            </Card>
-        </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={(e) => {
+                        e?.stopPropagation?.();
+                        handleRemove();
+                    }}
+                >
+                    <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color={theme.colors.error.main}
+                    />
+                    <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
+                </TouchableOpacity>
+            </View>
+        </Card>
     );
 };
 
@@ -240,7 +242,6 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.xs,
     },
     productName: {
-        flex: 1,
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.text.primary,
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     },
     subtotalRow: {
         flexDirection: 'column',
-        alignItems: 'flex-end',
+        alignItems: 'center',
     },
     subtotalLabel: {
         fontSize: theme.typography.fontSize.xs,

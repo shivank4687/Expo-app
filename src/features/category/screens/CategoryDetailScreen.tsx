@@ -12,6 +12,7 @@ import { SortModal } from '@/shared/components/SortModal';
 import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAppSelector } from '@/store/hooks';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -58,6 +59,20 @@ export const CategoryDetailScreen: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const { categories } = useAppSelector((state) => state.category);
+
+    // Helper to recursively find a category within the nested categories tree
+    const findCategoryById = (cats: Category[], targetId: number): Category | null => {
+        for (const cat of cats) {
+            if (cat.id === targetId) return cat;
+            if (cat.children && cat.children.length > 0) {
+                const found = findCategoryById(cat.children, targetId);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -112,10 +127,24 @@ export const CategoryDetailScreen: React.FC = () => {
                 }
             });
 
-            const [categoryData, productsData] = await Promise.all([
-                categoriesApi.getCategoryById(parseInt(id)),
-                productsApi.getProductsByCategory(parseInt(id), options),
+            const parsedId = parseInt(id);
+
+            // Try to find the category in the Redux store first
+            let categoryData = findCategoryById(categories, parsedId);
+
+            // Fetch products and (if needed) fallback category data in parallel
+            const productsPromise = productsApi.getProductsByCategory(parsedId, options);
+            const categoryPromise = !categoryData ? categoriesApi.getCategoryById(parsedId) : Promise.resolve(null);
+
+            const [productsData, fallbackCategoryData] = await Promise.all([
+                productsPromise,
+                categoryPromise,
             ]);
+
+            if (fallbackCategoryData) {
+                categoryData = fallbackCategoryData;
+            }
+
             setCategory(categoryData);
             setProducts(productsData.data);
             setCurrentPage(productsData.current_page || 1);

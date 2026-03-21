@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         padding: 4,
         gap: 8,
-        width: 136,
+        width: 116,
         height: 40,
         borderWidth: 1,
         borderColor: '#E9E3D3',
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
     quantityText: {
         fontFamily: 'Inter',
         fontWeight: '500',
-        fontSize: 11,
-        lineHeight: 15,
+        fontSize: 16,
+        lineHeight: 20,
         color: '#0A292D',
     },
 });

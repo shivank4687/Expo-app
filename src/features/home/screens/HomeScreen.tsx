@@ -54,7 +54,11 @@ export const HomeScreen: React.FC = () => {
     }, [loadData]);
 
     if (isLoading) {
-        return <LoadingSpinner />;
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <LoadingSpinner />
+            </View>
+        );
     }
 
     if (error) {

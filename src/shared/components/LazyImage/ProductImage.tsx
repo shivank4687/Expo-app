@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
+import { ImageContentFit } from 'expo-image';
 import { LazyImage } from './LazyImage';
 import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
 
@@ -9,6 +10,7 @@ interface ProductImageProps {
     onError?: () => void;
     priority?: 'low' | 'normal' | 'high';
     recyclingKey?: string;
+    contentFit?: ImageContentFit;
 }
 
 /**
@@ -29,6 +31,7 @@ export const ProductImage: React.FC<ProductImageProps> = ({
     onError,
     priority = 'normal',
     recyclingKey,
+    contentFit = 'contain',
 }) => {
     const absoluteUrl = getAbsoluteImageUrl(imageUrl);
 
@@ -36,7 +39,7 @@ export const ProductImage: React.FC<ProductImageProps> = ({
         <LazyImage
             source={absoluteUrl}
             style={style}
-            contentFit="contain"
+            contentFit={contentFit}
             transition={{ duration: 200 }}
             cachePolicy="memory-disk"
             priority={priority}

@@ -22,6 +22,26 @@ export const formatters = {
     },
 
     /**
+     * Format price without currency symbol
+     * Handles both number and string inputs from API
+     */
+    formatPriceWithoutCurrency(price: number | string | undefined | null): string {
+        if (price === undefined || price === null) {
+            return '0.00';
+        }
+        
+        // Convert string to number if needed
+        const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+        
+        // Check if valid number
+        if (isNaN(numPrice)) {
+            return '0.00';
+        }
+        
+        return numPrice.toFixed(2);
+    },
+
+    /**
      * Format date
      */
     formatDate(date: string | Date, format: 'short' | 'long' = 'short'): string {

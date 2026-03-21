@@ -41,6 +41,11 @@ export interface CartItem {
         regular_price?: number;
         special_price?: number;
         in_stock: boolean;
+        supplier?: {
+            id: number;
+            company_name: string;
+            url?: string;
+        };
     };
 }
 

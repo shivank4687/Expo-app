@@ -165,8 +165,8 @@ export const OrderDetailScreen: React.FC = () => {
                 message: t('orders.reorderSuccess', 'Items added to cart'),
                 type: 'success',
             });
-            // Navigate to cart
-            router.push('/cart');
+            // Navigate to cart tab
+            router.push('/(drawer)/(tabs)/cart');
         } catch (err: any) {
             console.error('[OrderDetailScreen] Error reordering:', err);
             showToast({

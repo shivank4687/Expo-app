@@ -15,8 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { productsApi } from '@/services/api/products.api';
-import { categoriesApi, Category } from '@/services/api/categories.api';
+import { Category } from '@/services/api/categories.api';
 import { Product } from '@/features/product/types/product.types';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCategories } from '@/store/slices/categorySlice';
 import { ProductCard } from '@/features/home/components/ProductCard';
 import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
@@ -35,7 +37,8 @@ import { SORT_OPTIONS } from '@/constants/sortOptions';
  */
 export const SearchScreen: React.FC = () => {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const dispatch = useAppDispatch();
     const searchInputRef = useRef<TextInput>(null);
 
     // Pagination constants
@@ -43,10 +46,9 @@ export const SearchScreen: React.FC = () => {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
+    const { categories, isLoading: isCategoriesLoading } = useAppSelector(state => state.category);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
     const [hasSearched, setHasSearched] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -72,22 +74,8 @@ export const SearchScreen: React.FC = () => {
      * Load parent categories on mount
      */
     useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                setIsCategoriesLoading(true);
-                const response = await categoriesApi.getCategories();
-                // Only get parent categories (those with parent_id === 1 or top-level categories)
-                const parentCategories = response.data || [];
-                setCategories(parentCategories);
-            } catch (err) {
-                console.error('[SearchScreen] Error loading categories:', err);
-            } finally {
-                setIsCategoriesLoading(false);
-            }
-        };
-
-        loadCategories();
-    }, []);
+        dispatch(fetchCategories({ locale: i18n.language }));
+    }, [dispatch, i18n.language]);
 
     /**
      * Perform search API call with pagination

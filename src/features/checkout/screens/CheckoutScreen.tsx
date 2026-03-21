@@ -246,12 +246,11 @@ export const CheckoutScreen: React.FC = () => {
 
         console.log('[CheckoutScreen] Selected shipping method (composite key):', selectedShippingMethod);
 
-        // Extract actual method code from composite key (e.g., "carrier_0_flat_flat" -> "flat_flat")
-        // ShippingStep creates keys as: ${carrierCode}_${rate.method}
-        // We need to extract the rate.method part which is after the last underscore
-        const parts = selectedShippingMethod.split('_');
-        // For "carrier_0_flat_flat", we need "flat_flat" (last 2 parts)
-        const actualMethodCode = parts.length >= 2 ? parts.slice(-2).join('_') : selectedShippingMethod;
+        // Extract actual method code by stripping the "carrier_N_" prefix that ShippingStep
+        // adds for uniqueness. The composite key is: `carrier_${index}_${rate.method}`.
+        // rate.method is the full backend code (e.g. "skydropxshipping_sk-paquetexpress_sin_recoleccion"),
+        // so we must remove only the leading "carrier_N_" part, not split/slice from the end.
+        const actualMethodCode = selectedShippingMethod.replace(/^carrier_\d+_/, '');
 
         console.log('[CheckoutScreen] Actual method code to send:', actualMethodCode);
 
