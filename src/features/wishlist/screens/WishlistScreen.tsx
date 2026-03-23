@@ -25,6 +25,8 @@ export const WishlistScreen = () => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const { items, isLoading, isRemoving, removingProductId } = useAppSelector((state) => state.wishlist);
+    const { selectedCurrency } = useAppSelector((state) => state.core);
+    const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
     useEffect(() => {
         // Fetch wishlist when component mounts
@@ -159,15 +161,15 @@ export const WishlistScreen = () => {
                                 {hasDiscount ? (
                                     <>
                                         <Text style={styles.specialPrice}>
-                                            {formatters.formatPrice(product.price)}
+                                            {formatters.formatPrice(product.price, currencySymbol)}
                                         </Text>
                                         <Text style={styles.originalPrice}>
-                                            {formatters.formatPrice(product.regular_price || product.price)}
+                                            {formatters.formatPriceWithoutCurrency(product.regular_price || product.price)}
                                         </Text>
                                     </>
                                 ) : (
                                     <Text style={styles.price}>
-                                        {formatters.formatPrice(product.price)}
+                                        {formatters.formatPrice(product.price, currencySymbol)}
                                     </Text>
                                 )}
                             </View>
