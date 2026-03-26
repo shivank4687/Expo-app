@@ -1,0 +1,261 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { reviewsApi } from '@/services/api/reviews.api';
+import { ProductReview } from '../types/review.types';
+import { theme } from '@/theme';
+import { useAppSelector } from '@/store/hooks';
+import { useRouter } from 'expo-router';
+
+interface ProductReviewCardProps {
+    productId: number;
+    totalReviews?: number;
+}
+
+export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId, totalReviews = 0 }) => {
+    const router = useRouter();
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const [reviews, setReviews] = useState<ProductReview[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [expandedReviewId, setExpandedReviewId] = useState<number | null>(null);
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const response = await reviewsApi.getProductReviews(productId, 1);
+                const reviewsData = response.data || response;
+                const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData.data || []);
+
+                // Show top 2 reviews in card
+                setReviews(reviewsList.slice(0, 5));
+            } catch (error) {
+                console.error('Failed to load top reviews:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (totalReviews > 0) {
+            fetchReviews();
+        } else {
+            setIsLoading(false);
+        }
+    }, [productId, totalReviews]);
+
+    const toggleExpand = (id: number) => {
+        setExpandedReviewId(prev => prev === id ? null : id);
+    };
+
+    const handleWriteReview = () => {
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
+        }
+        router.push(`/product/${productId}/write-review` as any);
+    };
+
+    return (
+        <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>Reviews {totalReviews > 0 ? `(${totalReviews})` : ''}</Text>
+                </View>
+                {totalReviews > 0 && (
+                    <TouchableOpacity style={styles.seeAllButton}>
+                        <Text style={styles.seeAllText}>See all</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {/* Reviews List */}
+            {isLoading ? (
+                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+            ) : reviews.length > 0 ? (
+                <View style={styles.reviewsListContainer}>
+                    {reviews.map((review) => {
+                        const isExpanded = expandedReviewId === review.id;
+
+                        return (
+                            <View key={review.id} style={styles.collapsedSection}>
+                                <TouchableOpacity
+                                    style={styles.collapsedContent}
+                                    onPress={() => toggleExpand(review.id)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.reviewHeaderLeft}>
+                                        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color="#000000" />
+                                        <Text style={styles.collapsedText} numberOfLines={1}>
+                                            {review.title}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.ratingContainer}>
+                                        <Text style={styles.ratingText}>{Number(review.rating).toFixed(1)}</Text>
+                                        <Ionicons name="star" size={12} color={theme.colors.warning.main} />
+                                    </View>
+                                </TouchableOpacity>
+
+                                {isExpanded && (
+                                    <View style={styles.expandedContent}>
+                                        <View style={styles.reviewerDetailsRow}>
+                                            <Text style={styles.reviewerName}>{review.name}</Text>
+                                            <Text style={styles.reviewDate}>
+                                                {new Date(review.created_at).toLocaleDateString()}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.reviewComment}>{review.comment}</Text>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    })}
+                </View>
+            ) : (
+                <Text style={styles.noReviewsText}>No reviews yet.</Text>
+            )}
+
+            {/* Write Review Button */}
+            {isAuthenticated ? (
+                <TouchableOpacity
+                    style={styles.writeReviewButton}
+                    onPress={handleWriteReview}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="create-outline" size={20} color="#1E3A8A" />
+                    <Text style={styles.writeReviewText}>Write a Review</Text>
+                </TouchableOpacity>
+            ) : null}
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        borderRadius: 8,
+        padding: 8,
+        gap: 12,
+        alignSelf: 'stretch',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        alignSelf: 'stretch',
+    },
+    titleContainer: {
+        flex: 1,
+    },
+    title: {
+        fontWeight: '700',
+        fontSize: 16,
+        color: '#000000',
+    },
+    seeAllButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        backgroundColor: 'rgba(0, 97, 94, 0.1)',
+        borderRadius: 50,
+    },
+    seeAllText: {
+        fontWeight: '600',
+        fontSize: 11,
+        color: '#00615E',
+    },
+    collapsedSection: {
+        flexDirection: 'column',
+        padding: 8,
+        borderWidth: 1,
+        borderColor: '#E9E3D3',
+        borderRadius: 8,
+        alignSelf: 'stretch',
+        marginBottom: 8,
+    },
+    reviewsListContainer: {
+        marginTop: 4,
+    },
+    collapsedContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flex: 1,
+    },
+    reviewHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        flex: 1,
+        paddingRight: 8,
+    },
+    collapsedText: {
+        fontWeight: '400',
+        fontSize: 11,
+        color: '#000000',
+        flexShrink: 1,
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    ratingText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#000000',
+    },
+    expandedContent: {
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#E9E3D3',
+    },
+    reviewerDetailsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    reviewerName: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: theme.colors.text.primary,
+    },
+    reviewDate: {
+        fontSize: 10,
+        color: theme.colors.text.secondary,
+    },
+    reviewComment: {
+        fontSize: 11,
+        color: theme.colors.text.secondary,
+        lineHeight: 16,
+    },
+    noReviewsText: {
+        fontSize: 12,
+        color: theme.colors.text.secondary,
+        textAlign: 'center',
+        paddingVertical: 8,
+    },
+    writeReviewButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#1E3A8A',
+        backgroundColor: '#FFFFFF',
+        marginTop: 4,
+    },
+    writeReviewText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1E3A8A',
+    },
+});

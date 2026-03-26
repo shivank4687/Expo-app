@@ -57,7 +57,7 @@ export const cartApi = {
             );
             // restApiClient.post already returns response.data
             if (!response.data) {
-                throw new Error('Invalid cart response');
+                throw new Error(response.message || 'Invalid cart response');
             }
             return response.data;
         } catch (error: any) {
@@ -76,7 +76,7 @@ export const cartApi = {
                 payload
             );
             if (!response.data) {
-                throw new Error('Invalid cart response');
+                throw new Error(response.message || 'Invalid cart response');
             }
             return response.data;
         } catch (error: any) {
@@ -111,7 +111,7 @@ export const cartApi = {
                 payload
             );
             if (!response.data) {
-                throw new Error('Invalid cart response');
+                throw new Error(response.message || 'Invalid cart response');
             }
             return response.data;
         } catch (error: any) {
@@ -129,7 +129,7 @@ export const cartApi = {
                 '/customer/cart/coupon'
             );
             if (!response.data) {
-                throw new Error('Invalid cart response');
+                throw new Error(response.message || 'Invalid cart response');
             }
             return response.data;
         } catch (error: any) {

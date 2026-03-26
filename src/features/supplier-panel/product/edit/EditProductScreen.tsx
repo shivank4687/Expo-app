@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
-import { EssentialCard, PriceStockCard, PriceStockVariantsCard, DetailsCard, SettingsCard } from '../add/components';
+import { EssentialCard, PriceStockCard, PriceStockVariantsCard, DetailsCard, SettingsCard, SpecificationsCard } from '../add/components';
 import { productAttributesApi, ProductAttribute } from '../add/api/product-attributes.api';
 import productsApi from '@/services/api/products.api';
 import { EssentialCardRef } from '../add/components/EssentialCard';
 import { PriceStockCardRef } from '../add/components/PriceStockCard';
 import { PriceStockVariantsCardRef } from '../add/components/PriceStockVariantsCard';
 import { DetailsCardRef } from '../add/components/DetailsCard';
+import { SpecificationsCardRef } from '../add/components/SpecificationsCard';
 import { SettingsCardRef } from '../add/components/SettingsCard';
 import { useToast } from '@/shared/components/Toast';
 
@@ -43,6 +44,7 @@ export default function EditProductScreen() {
     const priceStockCardRef = useRef<PriceStockCardRef>(null);
     const priceStockVariantsCardRef = useRef<PriceStockVariantsCardRef>(null);
     const detailsCardRef = useRef<DetailsCardRef>(null);
+    const specificationsCardRef = useRef<SpecificationsCardRef>(null);
     const settingsCardRef = useRef<SettingsCardRef>(null);
 
     // Fetch product attributes and product data on focus
@@ -192,6 +194,12 @@ export default function EditProductScreen() {
                             });
                         }
 
+                        if (specificationsCardRef.current) {
+                            specificationsCardRef.current.updateFields({
+                                specifications: product.specifications || [],
+                            });
+                        }
+
                         if (settingsCardRef.current) {
                             settingsCardRef.current.updateFields({
                                 new: product.new || false,
@@ -266,6 +274,7 @@ export default function EditProductScreen() {
                 ? (priceStockCardRef.current?.getData() || {})
                 : (priceStockVariantsCardRef.current?.getData() || {});
             const detailsData = detailsCardRef.current?.getData() || {};
+            const specificationsData = specificationsCardRef.current?.getData() || {};
             const settingsData = settingsCardRef.current?.getData() || {};
 
             // Combine all data
@@ -273,6 +282,7 @@ export default function EditProductScreen() {
                 ...essentialData,
                 ...priceStockData,
                 ...detailsData,
+                ...specificationsData,
                 ...settingsData,
                 type: productData.type,
                 attribute_family_id: attributeFamilyId,
@@ -363,6 +373,11 @@ export default function EditProductScreen() {
                     ref={detailsCardRef}
                     attributes={attributes}
                     onAttributesRefresh={refreshAttributes}
+                />
+
+                {/* Specifications Card */}
+                <SpecificationsCard
+                    ref={specificationsCardRef}
                 />
 
                 {/* Settings Card */}

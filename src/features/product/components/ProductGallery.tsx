@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from '
 import { ProductImage as ProductImageType } from '../types/product.types';
 import { ProductImage } from '@/shared/components/LazyImage';
 import { theme } from '@/theme';
+import { PriceBadge } from './PriceBadge';
+import { DiscountBadge } from './DiscountBadge';
 
 const { width } = Dimensions.get('window');
 const IMAGE_HEIGHT = 400;
@@ -14,13 +16,21 @@ interface ProductGalleryProps {
     isOnSale?: boolean;
     isNew?: boolean;
     inStock?: boolean;
+    priceLabel?: string;
+    formattedPrice?: string;
+    formattedRegularPrice?: string;
+    discountPercent?: number;
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({ 
     images, 
     isOnSale = false, 
     isNew = false, 
-    inStock = true 
+    inStock = true,
+    priceLabel,
+    formattedPrice,
+    formattedRegularPrice,
+    discountPercent
 }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const mainGalleryRef = useRef<FlatList>(null);
@@ -83,11 +93,29 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                     </View>
                 ) : null}
 
+                {/* Discount Badge */}
+                {discountPercent && discountPercent > 0 ? (
+                    <DiscountBadge 
+                        discountPercent={discountPercent}
+                        style={styles.discountBadge}
+                    />
+                ) : null}
+
                 {/* Out of Stock Badge */}
                 {!inStock ? (
                     <View style={styles.outOfStockBadge}>
                         <Text style={styles.outOfStockText}>Out of Stock</Text>
                     </View>
+                ) : null}
+
+                {/* Price Badge */}
+                {formattedPrice ? (
+                    <PriceBadge 
+                        priceLabel={priceLabel}
+                        formattedPrice={formattedPrice}
+                        formattedRegularPrice={formattedRegularPrice}
+                        style={styles.priceBadge} 
+                    />
                 ) : null}
             </View>
 
@@ -170,6 +198,12 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.semiBold,
         textTransform: 'uppercase',
     },
+    discountBadge: {
+        position: 'absolute',
+        top: theme.spacing.lg,
+        right: theme.spacing.lg,
+        zIndex: 10,
+    },
     outOfStockBadge: {
         position: 'absolute',
         bottom: 0,
@@ -185,6 +219,12 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
         fontWeight: theme.typography.fontWeight.semiBold,
         textTransform: 'uppercase',
+    },
+    priceBadge: {
+        position: 'absolute',
+        bottom: theme.spacing.lg,
+        right: theme.spacing.lg,
+        zIndex: 10,
     },
     thumbnailContainer: {
         paddingVertical: theme.spacing.md,

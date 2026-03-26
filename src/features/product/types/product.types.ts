@@ -44,6 +44,19 @@ export interface Product {
 
     // B2B Marketplace supplier information
     supplier?: SupplierInfo;
+
+    // Customer group pricing offers
+    customer_group_pricing_offers?: CustomerGroupPricingOffer[];
+
+    // Dynamic Product Specifications
+    specifications?: Array<{ key: string; value: string }>;
+}
+
+export interface CustomerGroupPricingOffer {
+    qty: number;
+    price: number;
+    formatted_price: string;
+    discount: string;
 }
 
 export interface SupplierInfo {
@@ -52,6 +65,8 @@ export interface SupplierInfo {
     url: string;
     rating?: number;
     total_reviews?: number;
+    minimum_order_amount?: number;
+    free_shipping_threshold?: number;
 }
 
 export interface ProductImage {

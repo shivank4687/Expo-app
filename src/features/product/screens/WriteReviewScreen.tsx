@@ -17,6 +17,7 @@ import { theme } from '@/theme';
 import { reviewsApi } from '@/services/api/reviews.api';
 import { Button } from '@/shared/components/Button';
 import { useToast } from '@/shared/components/Toast';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 export const WriteReviewScreen: React.FC = () => {
     const router = useRouter();
@@ -184,9 +185,12 @@ export const WriteReviewScreen: React.FC = () => {
         <View style={styles.container}>
             <Stack.Screen 
                 options={{ 
-                    title: 'Write a Review',
-                    headerBackTitle: 'Back',
+                    headerShown: false,
                 }} 
+            />
+            <TopHeader 
+                title="Write a Review" 
+                onBack={() => router.back()} 
             />
             
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>

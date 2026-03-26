@@ -4,6 +4,7 @@ import { EssentialCardRef } from '../components/EssentialCard';
 import { PriceStockCardRef } from '../components/PriceStockCard';
 import { PriceStockVariantsCardRef } from '../components/PriceStockVariantsCard';
 import { DetailsCardRef } from '../components/DetailsCard';
+import { SpecificationsCardRef } from '../components/SpecificationsCard';
 import { SettingsCardRef } from '../components/SettingsCard';
 
 export interface SubmissionRefs {
@@ -11,6 +12,7 @@ export interface SubmissionRefs {
     priceStockCardRef: React.RefObject<PriceStockCardRef | null>;
     priceStockVariantsCardRef: React.RefObject<PriceStockVariantsCardRef | null>;
     detailsCardRef: React.RefObject<DetailsCardRef | null>;
+    specificationsCardRef: React.RefObject<SpecificationsCardRef | null>;
     settingsCardRef: React.RefObject<SettingsCardRef | null>;
 }
 
@@ -40,6 +42,7 @@ export const handlePublish = async (
         ? refs.priceStockCardRef.current?.getData()
         : refs.priceStockVariantsCardRef.current?.getData();
     const detailsData = refs.detailsCardRef.current?.getData();
+    const specificationsData = refs.specificationsCardRef.current?.getData();
     const settingsData = refs.settingsCardRef.current?.getData();
 
     const fullProductData = {
@@ -48,6 +51,7 @@ export const handlePublish = async (
         ...essentialData,
         ...priceStockData,
         ...detailsData,
+        ...specificationsData,
     };
     // Validate required fields in both cards
     const isEssentialValid = refs.essentialCardRef.current?.validate();

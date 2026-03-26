@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
-import { EssentialCard, PriceStockCard, PriceStockVariantsCard, DetailsCard, SettingsCard } from './components';
+import { EssentialCard, PriceStockCard, PriceStockVariantsCard, DetailsCard, SettingsCard, SpecificationsCard } from './components';
 import { productAttributesApi, ProductAttribute } from './api/product-attributes.api';
 import productsApi from '@/services/api/products.api';
 import { EssentialCardRef } from './components/EssentialCard';
 import { PriceStockCardRef } from './components/PriceStockCard';
 import { PriceStockVariantsCardRef } from './components/PriceStockVariantsCard';
 import { DetailsCardRef } from './components/DetailsCard';
+import { SpecificationsCardRef } from './components/SpecificationsCard';
 import { SettingsCardRef } from './components/SettingsCard';
 import { handlePublish } from './submission/product-submission';
 import aiContentApi from '@/services/api/ai-content.api';
@@ -41,6 +42,7 @@ export default function AddProductScreen() {
     const priceStockCardRef = useRef<PriceStockCardRef>(null);
     const priceStockVariantsCardRef = useRef<PriceStockVariantsCardRef>(null);
     const detailsCardRef = useRef<DetailsCardRef>(null);
+    const specificationsCardRef = useRef<SpecificationsCardRef>(null);
     const settingsCardRef = useRef<SettingsCardRef>(null);
 
     // Reset state when screen is focused (e.g. when entering the screen anew)
@@ -92,6 +94,7 @@ export default function AddProductScreen() {
                     priceStockCardRef,
                     priceStockVariantsCardRef,
                     detailsCardRef,
+                    specificationsCardRef,
                     settingsCardRef,
                 },
                 activeTab,
@@ -192,6 +195,12 @@ export default function AddProductScreen() {
                     key={`details-${resetKey}`}
                     attributes={attributes}
                     onAttributesRefresh={fetchAttributes}
+                />
+
+                {/* Specifications Card */}
+                <SpecificationsCard
+                    ref={specificationsCardRef}
+                    key={`specifications-${resetKey}`}
                 />
 
                 {/* Settings Card */}

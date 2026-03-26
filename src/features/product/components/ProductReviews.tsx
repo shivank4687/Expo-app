@@ -36,24 +36,24 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
     const loadReviews = async (page: number) => {
         if (isLoading) return;
-        
+
         setIsLoading(true);
         try {
             const response = await reviewsApi.getProductReviews(productId, page);
             console.log('📦 Reviews response:', JSON.stringify(response, null, 2));
-            
+
             // Handle different response structures
             const reviewsData = response.data || response;
             const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData.data || []);
-            
+
             if (page === 1) {
                 setReviews(reviewsList);
             } else {
                 setReviews(prev => [...prev, ...reviewsList]);
             }
-            
+
             setCurrentPage(page);
-            
+
             // Check for pagination links
             const links = response.links || (response as any).meta?.links;
             setHasMore(!!(links?.next));
@@ -117,14 +117,14 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
         <View style={styles.header}>
             {/* Rating Summary */}
             <View style={styles.ratingSummary}>
-                <Text style={styles.averageRating}>{averageRating.toFixed(1)}</Text>
+                <Text style={styles.averageRating}>{(Number(averageRating) || 0).toFixed(1)}</Text>
                 <View style={styles.stars}>
                     {[1, 2, 3, 4, 5].map((star) => (
                         <Ionicons
                             key={star}
-                            name={star <= Math.round(averageRating) ? 'star' : 'star-outline'}
+                            name={star <= Math.round(Number(averageRating) || 0) ? 'star' : 'star-outline'}
                             size={20}
-                            color={star <= Math.round(averageRating) ? theme.colors.warning.main : theme.colors.gray[400]}
+                            color={star <= Math.round(Number(averageRating) || 0) ? theme.colors.warning.main : theme.colors.gray[400]}
                         />
                     ))}
                 </View>
@@ -133,7 +133,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
             {/* Write Review Button */}
             {isAuthenticated && (
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.writeReviewButton}
                     onPress={handleWriteReview}
                     activeOpacity={0.7}
@@ -147,9 +147,9 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
     const renderFooter = () => {
         if (!hasMore) return null;
-        
+
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.loadMoreButton}
                 onPress={handleLoadMore}
                 disabled={isLoading}
@@ -180,14 +180,14 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
     );
 
     return (
-        <Accordion 
+        <Accordion
             title={`Customer Reviews (${totalReviews})`}
             defaultExpanded={false}
             style={styles.accordion}
         >
             <View style={styles.container}>
                 {renderHeader()}
-                
+
                 {isLoading && reviews.length === 0 ? (
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} style={styles.loader} />
                 ) : reviews.length === 0 ? (

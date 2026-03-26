@@ -53,6 +53,8 @@ const transformProduct = (data: any): Product => {
             url: data.supplier.url,
             rating: data.supplier.rating ? parseFloat(data.supplier.rating.toString()) : 0,
             total_reviews: data.supplier.total_reviews || 0,
+            minimum_order_amount: data.supplier.minimum_order_amount,
+            free_shipping_threshold: data.supplier.free_shipping_threshold,
         } : undefined,
     };
 };

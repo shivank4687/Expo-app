@@ -45,6 +45,7 @@ export interface CartItem {
             id: number;
             company_name: string;
             url?: string;
+            minimum_order_amount?: number;
         };
     };
 }

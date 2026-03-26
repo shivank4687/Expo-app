@@ -21,6 +21,14 @@ import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { HTMLContent } from '@/shared/components/HTMLContent';
 import { Accordion } from '@/shared/components/Accordion';
+import { MoreCategories } from '../components/MoreCategories';
+import { MoreFromCategory } from '../components/MoreFromCategory';
+import { MoreFromOtherSuppliers } from '../components/MoreFromOtherSuppliers';
+import { SoldBy } from '../components/SoldBy';
+import { ProductTotals } from '../components/ProductTotals';
+import { PricingGroup } from '../components/PricingGroup';
+import { ProductSpecificationCard } from '../components/ProductSpecificationCard';
+import { ProductReviewCard } from '../components/ProductReviewCard';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -28,12 +36,14 @@ import { addToCartThunk } from '@/store/slices/cartSlice';
 import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import { useToast } from '@/shared/components/Toast';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const ProductDetailScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
     const { id } = useLocalSearchParams<{ id: string }>();
 
     const [product, setProduct] = useState<Product | null>(null);
@@ -225,6 +235,10 @@ export const ProductDetailScreen: React.FC = () => {
                     isOnSale={!!(product.on_sale || hasDiscount)}
                     isNew={!!(product.is_new || product.new === true || product.new === 1)}
                     inStock={product.in_stock}
+                    priceLabel={priceLabel}
+                    formattedPrice={formatters.formatPrice(displayPrice, currencySymbol)}
+                    formattedRegularPrice={(hasDiscount && displayRegularPrice) ? formatters.formatPrice(displayRegularPrice, currencySymbol) : undefined}
+                    discountPercent={(hasDiscount && displayRegularPrice) ? Math.round(((displayRegularPrice - displayPrice) / displayRegularPrice) * 100) : undefined}
                 />
 
                 {/* Product Info */}
@@ -233,6 +247,9 @@ export const ProductDetailScreen: React.FC = () => {
                     <View style={styles.header}>
                         <View style={styles.titleContainer}>
                             <Text style={styles.name}>{product.name}</Text>
+                            {product.supplier ? (
+                                <SoldBy supplier={product.supplier} />
+                            ) : null}
                         </View>
 
                         {/* Wishlist Button */}
@@ -254,7 +271,7 @@ export const ProductDetailScreen: React.FC = () => {
                     </View>
 
                     {/* Rating */}
-                    {product.rating && product.rating > 0 ? (
+                    {/* {product.rating && product.rating > 0 ? (
                         <View style={styles.ratingContainer}>
                             <View style={styles.stars}>
                                 {[1, 2, 3, 4, 5].map((star) => (
@@ -270,10 +287,10 @@ export const ProductDetailScreen: React.FC = () => {
                                 {product.rating.toFixed(1)} ({product.reviews_count || 0} {t('product.reviews')})
                             </Text>
                         </View>
-                    ) : null}
+                    ) : null} */}
 
                     {/* Price */}
-                    <View style={styles.priceSection}>
+                    {/* <View style={styles.priceSection}>
                         <View style={styles.priceLeftContainer}>
                             {priceLabel ? (
                                 <Text style={styles.priceLabel}>{priceLabel}</Text>
@@ -302,7 +319,7 @@ export const ProductDetailScreen: React.FC = () => {
                             </View>
                         </View>
 
-                        {/* Quantity Selector */}
+                        
                         {canAddToCart && showQuantityBox ? (
                             <View style={styles.quantityContainer}>
                                 <TouchableOpacity
@@ -322,7 +339,7 @@ export const ProductDetailScreen: React.FC = () => {
                                 </TouchableOpacity>
                             </View>
                         ) : null}
-                    </View>
+                    </View> */}
 
                     {/* Stock Status */}
                     {/* <View style={styles.stockContainer}>
@@ -341,15 +358,7 @@ export const ProductDetailScreen: React.FC = () => {
                         </Text>
                     </View> */}
 
-                    {/* Short Description */}
-                    {product.short_description ? (
-                        <View style={styles.shortDescriptionContainer}>
-                            <HTMLContent
-                                html={product.short_description}
-                                baseStyle={styles.htmlContent}
-                            />
-                        </View>
-                    ) : null}
+
 
                     {/* Configurable Product Options */}
                     {product.type === 'configurable' && (product.super_attributes || product.variants) ? (
@@ -375,6 +384,23 @@ export const ProductDetailScreen: React.FC = () => {
                             />
                         </View>
                     ) : null}
+
+
+
+                    {/* Pricing Group */}
+                    {product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0 ? (
+                        <View style={styles.section}>
+                            <PricingGroup offers={product.customer_group_pricing_offers} />
+                        </View>
+                    ) : null}
+
+                    <View style={styles.section}>
+                        <ProductSpecificationCard
+                            shortDescription={product.short_description}
+                            specifications={product.specifications}
+                            supplier={product.supplier}
+                        />
+                    </View>
 
                     {/* Description Accordion */}
                     {product.description ? (
@@ -511,12 +537,30 @@ export const ProductDetailScreen: React.FC = () => {
                     )}
 
                     {/* Customer Reviews Accordion */}
-                    <ProductReviews
+                    {/* <ProductReviews
                         productId={product.id}
                         averageRating={product.rating || 0}
                         totalReviews={product.reviews_count || 0}
-                    />
+                    /> */}
 
+                    {/* New Single Review Card */}
+                    <View style={styles.section}>
+                        <ProductReviewCard
+                            productId={product.id}
+                            totalReviews={Number(product.reviews_count) || 0}
+                        />
+                    </View>
+
+
+
+                    {/* More from Category */}
+                    <MoreFromCategory product={product} />
+
+                    {/* More from Other Suppliers */}
+                    <MoreFromOtherSuppliers product={product} />
+
+                    {/* More Categories (Child Categories Carousel) */}
+                    <MoreCategories product={product} />
                     {/* SKU */}
                     {/* <View style={styles.section}>
                         <Text style={styles.label}>
@@ -526,58 +570,35 @@ export const ProductDetailScreen: React.FC = () => {
                 </View>
             </ScrollView>
 
-            {/* Bottom Bar */}
+            {/* Product Totals Card */}
             {canAddToCart ? (
-                <View style={styles.bottomBar}>
-                    {/* Action Buttons Container */}
-                    <View style={styles.actionButtonsContainer}>
-                        {/* RFQ Button */}
-                        {/* RFQ Button */}
-                        {product?.supplier?.id && (
-                            isAuthenticated ? (
-                                <TouchableOpacity
-                                    style={styles.rfqButton}
-                                    onPress={() => {
-                                        router.push({
-                                            pathname: `/rfq/${product.supplier!.id}` as any,
-                                            params: {
-                                                productId: product.id.toString(),
-                                                productName: product.name,
-                                            }
-                                        });
-                                    }}
-                                >
-                                    <Ionicons name="document-text-outline" size={18} color={theme.colors.primary[500]} />
-                                    <Text style={styles.rfqButtonText}>
-                                        {t('product.requestForQuote')}
-                                    </Text>
-                                </TouchableOpacity>
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.rfqButton}
-                                    onPress={() => {
-                                        router.push('/login');
-                                    }}
-                                >
-                                    <Ionicons name="log-in-outline" size={18} color={theme.colors.primary[500]} />
-                                    <Text style={styles.rfqButtonText}>
-                                        {t('product.loginForRFQ')}
-                                    </Text>
-                                </TouchableOpacity>
-                            )
-                        )}
-
-                        {/* Add to Cart Button */}
-                        <Button
-                            title={isAddingToCart ? t('product.adding') : t('product.addToCart')}
-                            onPress={handleAddToCart}
-                            style={[
-                                styles.addToCartButton,
-                                (product?.supplier?.id && isAuthenticated) ? styles.addToCartButtonWithRFQ : undefined
-                            ]}
-                            disabled={isAddingToCart}
-                        />
-                    </View>
+                <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.lg, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
+                    <ProductTotals
+                        price={formatters.formatPrice(displayPrice * quantity, currencySymbol)}
+                        deliveryText="Delivery 22 Dec - 24 Dec"
+                        quantity={quantity}
+                        onIncreaseQty={() => handleQuantityChange(1)}
+                        onDecreaseQty={() => handleQuantityChange(-1)}
+                        showRfq={!!product?.supplier?.id}
+                        rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
+                        onRfqPress={() => {
+                            if (isAuthenticated) {
+                                router.push({
+                                    pathname: `/rfq/${product.supplier!.id}` as any,
+                                    params: {
+                                        productId: product.id.toString(),
+                                        productName: product.name,
+                                    }
+                                });
+                            } else {
+                                router.push('/login');
+                            }
+                        }}
+                        onAddToCart={handleAddToCart}
+                        addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
+                        isAddingToCart={isAddingToCart}
+                        showAddToCart={canAddToCart}
+                    />
                 </View>
             ) : null}
         </View>
@@ -590,7 +611,8 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.background.default,
     },
     content: {
-        padding: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.lg,
     },
     header: {
         flexDirection: 'row',
