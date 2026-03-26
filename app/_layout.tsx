@@ -175,6 +175,12 @@ function AppContent() {
           }}
         />
         <Stack.Screen
+          name="product/[id]/reviews"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="wishlist"
           options={{
             headerShown: false,

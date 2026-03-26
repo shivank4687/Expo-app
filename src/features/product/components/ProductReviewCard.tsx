@@ -62,7 +62,11 @@ export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId,
                     <Text style={styles.title}>Reviews {totalReviews > 0 ? `(${totalReviews})` : ''}</Text>
                 </View>
                 {totalReviews > 0 && (
-                    <TouchableOpacity style={styles.seeAllButton}>
+                    <TouchableOpacity
+                        style={styles.seeAllButton}
+                        onPress={() => router.push(`/product/${productId}/reviews` as any)}
+                        activeOpacity={0.7}
+                    >
                         <Text style={styles.seeAllText}>See all</Text>
                     </TouchableOpacity>
                 )}
