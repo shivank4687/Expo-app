@@ -218,7 +218,7 @@ export const LoginScreen: React.FC = () => {
                                         />
                                     ) : undefined
                                 }
-                                keyboardType={isPhoneInput ? "phone-pad" : "email-address"}
+                                keyboardType="email-address"
                                 autoCapitalize="none"
                                 autoComplete={isPhoneInput ? "tel" : "email"}
                                 containerStyle={styles.inputContainer}

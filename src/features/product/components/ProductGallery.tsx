@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from 'react-native';
 import { ProductImage as ProductImageType } from '../types/product.types';
@@ -20,17 +21,21 @@ interface ProductGalleryProps {
     formattedPrice?: string;
     formattedRegularPrice?: string;
     discountPercent?: number;
+    rating?: number;
+    reviewCount?: number;
 }
 
-export const ProductGallery: React.FC<ProductGalleryProps> = ({ 
-    images, 
-    isOnSale = false, 
-    isNew = false, 
+export const ProductGallery: React.FC<ProductGalleryProps> = ({
+    images,
+    isOnSale = false,
+    isNew = false,
     inStock = true,
     priceLabel,
     formattedPrice,
     formattedRegularPrice,
-    discountPercent
+    discountPercent,
+    rating,
+    reviewCount
 }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const mainGalleryRef = useRef<FlatList>(null);
@@ -95,10 +100,21 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
 
                 {/* Discount Badge */}
                 {discountPercent && discountPercent > 0 ? (
-                    <DiscountBadge 
+                    <DiscountBadge
                         discountPercent={discountPercent}
                         style={styles.discountBadge}
                     />
+                ) : null}
+
+                {/* Review Badge */}
+                {rating && rating > 0 && inStock ? (
+                    <View style={styles.reviewBadge}>
+                        <Ionicons name="star" size={12} color="#FFB800" />
+                        <Text style={styles.ratingText}>{Number(rating).toFixed(1)}</Text>
+                        {reviewCount && reviewCount > 0 ? (
+                            <Text style={styles.reviewCountText}>({reviewCount})</Text>
+                        ) : null}
+                    </View>
                 ) : null}
 
                 {/* Out of Stock Badge */}
@@ -110,11 +126,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
 
                 {/* Price Badge */}
                 {formattedPrice ? (
-                    <PriceBadge 
+                    <PriceBadge
                         priceLabel={priceLabel}
                         formattedPrice={formattedPrice}
                         formattedRegularPrice={formattedRegularPrice}
-                        style={styles.priceBadge} 
+                        style={styles.priceBadge}
                     />
                 ) : null}
             </View>
@@ -225,6 +241,30 @@ const styles = StyleSheet.create({
         bottom: theme.spacing.lg,
         right: theme.spacing.lg,
         zIndex: 10,
+    },
+    reviewBadge: {
+        position: 'absolute',
+        bottom: theme.spacing.lg,
+        left: theme.spacing.lg,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 4,
+        borderRadius: theme.borderRadius.full,
+        zIndex: 10,
+        ...theme.shadows.sm,
+    },
+    ratingText: {
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.text.primary,
+        marginLeft: 4,
+    },
+    reviewCountText: {
+        fontSize: 10,
+        color: theme.colors.text.secondary,
+        marginLeft: 2,
     },
     thumbnailContainer: {
         paddingVertical: theme.spacing.md,

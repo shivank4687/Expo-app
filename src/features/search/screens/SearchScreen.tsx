@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -17,8 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { productsApi } from '@/services/api/products.api';
 import { Category } from '@/services/api/categories.api';
 import { Product } from '@/features/product/types/product.types';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchCategories } from '@/store/slices/categorySlice';
+import { useAppSelector } from '@/store/hooks';
 import { ProductCard } from '@/features/home/components/ProductCard';
 import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
@@ -38,7 +37,6 @@ import { SORT_OPTIONS } from '@/constants/sortOptions';
 export const SearchScreen: React.FC = () => {
     const router = useRouter();
     const { t, i18n } = useTranslation();
-    const dispatch = useAppDispatch();
     const searchInputRef = useRef<TextInput>(null);
 
     // Pagination constants
@@ -69,13 +67,6 @@ export const SearchScreen: React.FC = () => {
     const isLoadingRef = useRef(false);
     const isLoadingMoreRef = useRef(false);
     const searchQueryRef = useRef('');
-
-    /**
-     * Load parent categories on mount
-     */
-    useEffect(() => {
-        dispatch(fetchCategories({ locale: i18n.language }));
-    }, [dispatch, i18n.language]);
 
     /**
      * Perform search API call with pagination
@@ -697,4 +688,3 @@ const styles = StyleSheet.create({
 });
 
 export default SearchScreen;
-

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
@@ -9,9 +9,11 @@ import { useAppSelector } from '@/store/hooks';
 
 interface SupplierWiseCartItemsProps {
     items: CartItem[];
+    /** Called whenever the minimum-order status changes. `true` = all suppliers met. */
+    onMinimumOrderStatus?: (allMet: boolean) => void;
 }
 
-export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ items }) => {
+export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ items, onMinimumOrderStatus }) => {
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
@@ -22,26 +24,41 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
         return acc;
     }, {} as Record<string, CartItem[]>);
 
+    // Derive whether every supplier's minimum order amount has been reached
+    const allMinimumsMet = Object.values(groupedItems).every((storeItems) => {
+        const minimumAmount = storeItems[0]?.product?.supplier?.minimum_order_amount;
+        if (!minimumAmount || minimumAmount <= 0) return true;
+        const storeTotal = storeItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+        return storeTotal >= minimumAmount;
+    });
+
+    useEffect(() => {
+        onMinimumOrderStatus?.(allMinimumsMet);
+    }, [allMinimumsMet]);
+
     return (
         <View>
             {Object.entries(groupedItems).map(([storeName, storeItems]) => {
                 const minimumAmount = storeItems[0]?.product?.supplier?.minimum_order_amount;
+                const storeTotal = storeItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
 
                 return (
                     <View key={storeName} style={styles.storeGroup}>
                         <View style={styles.storeHeader}>
-                            <Ionicons name="storefront-outline" size={18} color={theme.colors.text.secondary} />
                             <Text style={styles.storeTitle}>
-                                {storeName} <Text style={styles.storeCount}>x{storeItems.length}</Text>
+                                {storeName} x{storeItems.length}
+                            </Text>
+                            <Text style={styles.storeTotal}>
+                                Total {currencySymbol}{storeTotal.toFixed(2)}
                             </Text>
                         </View>
                         {storeItems.map((item) => (
                             <CartItemCard key={item.id} item={item} />
                         ))}
-                        
+
                         {!!minimumAmount && minimumAmount > 0 && (
                             <MinimumOrderProgressCard 
-                                currentAmount={storeItems.reduce((sum, item) => sum + item.total, 0)}
+                                currentAmount={storeTotal}
                                 minimumAmount={minimumAmount}
                                 currencySymbol={currencySymbol}
                             />
@@ -55,28 +72,45 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
 
 const styles = StyleSheet.create({
     storeGroup: {
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.lg,
+        backgroundColor: theme.colors.background.default,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.md,
+        // Shadow for iOS
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        // Elevation for Android
+        elevation: 2,
+        // Border as fallback or combined styling
+        borderWidth: 1,
+        borderColor: theme.colors.gray[200],
     },
     storeHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        gap: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.xs,
         paddingBottom: theme.spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
         marginBottom: theme.spacing.md,
+        gap: 10,
+        height: 17 + theme.spacing.sm, // To accommodate figma strictly plus bottom padding
     },
     storeTitle: {
-        fontSize: theme.typography.fontSize.md,
-        fontWeight: theme.typography.fontWeight.semiBold,
-        color: theme.colors.text.primary,
-        textTransform: 'uppercase',
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '700',
+        fontSize: 16,
+        color: '#000000',
     },
-    storeCount: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.secondary,
-        fontWeight: theme.typography.fontWeight.regular,
-        textTransform: 'none',
+    storeTotal: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        textAlign: 'right',
+        color: '#00615E',
     },
 });

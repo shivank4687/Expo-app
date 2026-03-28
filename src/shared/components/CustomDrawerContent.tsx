@@ -1,6 +1,5 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutThunk } from '@/store/slices/authSlice';
-import { fetchCategories } from '@/store/slices/categorySlice';
 import { fetchCMSPages } from '@/store/slices/cmsSlice';
 import { fetchCoreConfig } from '@/store/slices/coreSlice';
 import { theme } from '@/theme';
@@ -10,6 +9,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerItem, DrawerSection } from './DrawerSection';
 
 export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
@@ -20,6 +20,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     const { categories } = useAppSelector((state) => state.category);
     const { pages: cmsPages, isLoading: cmsLoading } = useAppSelector((state) => state.cms);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         // Initialize core config only if not already loaded
@@ -29,10 +30,9 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         }
     }, [dispatch, selectedLocale, selectedCurrency]);
 
-    // Load categories and CMS pages when locale changes
+    // Load CMS pages when locale changes
     useEffect(() => {
         if (selectedLocale?.code) {
-            dispatch(fetchCategories({ locale: selectedLocale.code }));
             dispatch(fetchCMSPages({ locale: selectedLocale.code }));
         }
     }, [selectedLocale?.code, dispatch]);
@@ -171,7 +171,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
             {/* Logout Button at Bottom */}
             {isAuthenticated && (
-                <View style={styles.footer}>
+                <View style={[styles.footer, { paddingBottom: insets.bottom + theme.spacing.lg }]}>
                     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                         <Ionicons name="log-out-outline" size={24} color={theme.colors.error.main} />
                         <Text style={styles.logoutText}>{t('auth.logout')}</Text>

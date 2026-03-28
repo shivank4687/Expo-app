@@ -29,8 +29,8 @@ const transformProduct = (data: any): Product => {
         regular_price: data.regular_price && typeof data.regular_price === 'string'
             ? parseFloat(data.regular_price)
             : data.regular_price,
-        rating: data.reviews?.average_rating || 0,
-        reviews_count: data.reviews?.total || 0,
+        rating: data.reviews?.average_rating ? parseFloat(data.reviews.average_rating) : 0,
+        reviews_count: data.reviews?.total ? parseInt(data.reviews.total, 10) : 0,
         in_stock: data.in_stock !== undefined ? data.in_stock : true,
         is_saleable: data.is_saleable !== undefined ? data.is_saleable : true,
         images: data.images || [],

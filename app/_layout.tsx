@@ -5,13 +5,14 @@ import { supplierPushNotificationService } from "@/services/notifications/suppli
 import { ToastContainer, ToastProvider } from "@/shared/components/Toast";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { checkAuthThunk } from "@/store/slices/authSlice";
+import { fetchCategories } from "@/store/slices/categorySlice";
 import { fetchCoreConfig } from "@/store/slices/coreSlice";
 import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
 import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
 import { persistor, store } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
@@ -29,6 +30,8 @@ function AppContent() {
   const segments = useSegments();
   const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
+  const { selectedLocale } = useAppSelector((state) => state.core);
+  const hasRefreshedCategories = useRef(false);
 
   // Setup CUSTOMER push notification handlers on app start
   useEffect(() => {
@@ -89,6 +92,22 @@ function AppContent() {
     }
     // Customer dashboard (shop) is accessible without authentication, so no redirect needed
   }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, segments, router]);
+
+  useEffect(() => {
+    if (!selectedLocale?.code) return;
+
+    const shouldForceRefresh = !hasRefreshedCategories.current;
+    if (shouldForceRefresh) {
+      hasRefreshedCategories.current = true;
+    }
+
+    dispatch(
+      fetchCategories({
+        locale: selectedLocale.code,
+        forceRefresh: shouldForceRefresh,
+      })
+    );
+  }, [dispatch, selectedLocale?.code]);
 
   const teal = supplierTheme.colors.primary[500];
   const inverseText = supplierTheme.colors.text.inverse;

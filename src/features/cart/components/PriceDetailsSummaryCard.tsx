@@ -65,6 +65,11 @@ export const PriceDetailsSummaryCard: React.FC<PriceDetailsSummaryCardProps> = (
                     </View>
                 </>
             )}
+            {disabled && !loading && (
+                <Text style={styles.minimumOrderHint}>
+                    {t('cart.minimumOrderNotMet', 'Meet the minimum order for all stores to proceed')}
+                </Text>
+            )}
             <TouchableOpacity
                 style={[
                     styles.button,
@@ -147,5 +152,11 @@ const styles = StyleSheet.create({
         color: '#F5F5F5',
         fontSize: 16,
         fontWeight: '500'
+    },
+    minimumOrderHint: {
+        marginTop: theme.spacing.sm,
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.error.main,
+        textAlign: 'center',
     }
 });

@@ -18,6 +18,7 @@ import { ProductReview } from '../types/review.types';
 import { theme } from '@/theme';
 import { useAppSelector } from '@/store/hooks';
 import { TopHeader } from '@/shared/components';
+import { MediaGalleryModal, MediaItem } from '@/shared/modals';
 
 export const ProductReviewsScreen: React.FC = () => {
     const router = useRouter();
@@ -36,6 +37,15 @@ export const ProductReviewsScreen: React.FC = () => {
     const [averageRating, setAverageRating] = useState(0);
     const [hasMore, setHasMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
+    const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+    const [isGalleryVisible, setIsGalleryVisible] = useState(false);
+
+    const openGallery = (media: MediaItem[], index = 0) => {
+        setGalleryMedia(media);
+        setGalleryInitialIndex(index);
+        setIsGalleryVisible(true);
+    };
 
     useEffect(() => {
         setReviews([]);
@@ -161,22 +171,43 @@ export const ProductReviewsScreen: React.FC = () => {
         router.push(`/product/${productId}/write-review` as any);
     };
 
-    const renderReviewItem = ({ item }: { item: ProductReview }) => (
-        <View style={styles.reviewCard}>
-            <View style={styles.reviewHeader}>
-                <Text style={styles.reviewTitle}>{item.title}</Text>
-                <View style={styles.ratingBadge}>
-                    <Text style={styles.ratingText}>{Number(item.rating).toFixed(1)}</Text>
-                    <Ionicons name="star" size={14} color={theme.colors.warning.main} />
+    const renderReviewItem = ({ item }: { item: ProductReview }) => {
+        const mediaItems: MediaItem[] = (item.images || []).map((a) => ({
+            type: a.type,
+            url: a.url,
+        }));
+        const hasMedia = mediaItems.length > 0;
+
+        return (
+            <View style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewTitle}>{item.title}</Text>
+                    <View style={styles.ratingBadge}>
+                        <Text style={styles.ratingText}>{Number(item.rating).toFixed(1)}</Text>
+                        <Ionicons name="star" size={14} color={theme.colors.warning.main} />
+                    </View>
                 </View>
+                <View style={styles.metaRow}>
+                    <Text style={styles.reviewerName}>{item.name}</Text>
+                    <Text style={styles.reviewDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                </View>
+                <Text style={styles.reviewComment}>{item.comment}</Text>
+
+                {hasMedia && (
+                    <TouchableOpacity
+                        style={styles.mediaButton}
+                        onPress={() => openGallery(mediaItems)}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="images-outline" size={14} color={theme.colors.primary[500]} />
+                        <Text style={styles.mediaButtonText}>
+                            View Media ({mediaItems.length})
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
-            <View style={styles.metaRow}>
-                <Text style={styles.reviewerName}>{item.name}</Text>
-                <Text style={styles.reviewDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
-            </View>
-            <Text style={styles.reviewComment}>{item.comment}</Text>
-        </View>
-    );
+        );
+    };
 
     const renderFooter = () => {
         if (!hasMore) return null;
@@ -251,6 +282,13 @@ export const ProductReviewsScreen: React.FC = () => {
                     </>
                 )}
             </View>
+
+            <MediaGalleryModal
+                visible={isGalleryVisible}
+                media={galleryMedia}
+                initialIndex={galleryInitialIndex}
+                onClose={() => setIsGalleryVisible(false)}
+            />
         </View>
     );
 };
@@ -371,5 +409,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#1E3A8A',
+    },
+    mediaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        alignSelf: 'flex-start',
+        marginTop: theme.spacing.sm,
+        paddingVertical: 5,
+        paddingHorizontal: theme.spacing.sm,
+        backgroundColor: `${theme.colors.primary[500]}14`,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: `${theme.colors.primary[500]}33`,
+    },
+    mediaButtonText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: theme.colors.primary[500],
     },
 });

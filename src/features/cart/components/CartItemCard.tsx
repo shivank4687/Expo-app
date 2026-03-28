@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
     },
     subtotal: {
-        fontSize: theme.typography.fontSize.sm,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.text.primary,
     },

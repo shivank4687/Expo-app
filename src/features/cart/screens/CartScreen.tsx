@@ -46,6 +46,7 @@ export const CartScreen: React.FC = () => {
     const [isPriceDetailsExpanded, setIsPriceDetailsExpanded] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [allMinimumsMet, setAllMinimumsMet] = useState(true);
     const [summaryHeight, setSummaryHeight] = useState(0);
     const insets = useSafeAreaInsets();
 
@@ -184,7 +185,10 @@ export const CartScreen: React.FC = () => {
                     <Text style={styles.sectionTitle}>
                         {t('cart.itemsInCart', { count: cart.items_count })}
                     </Text>
-                    <SupplierWiseCartItems items={cart.items} />
+                    <SupplierWiseCartItems
+                        items={cart.items}
+                        onMinimumOrderStatus={setAllMinimumsMet}
+                    />
                 </View>
 
                 {/* Apply Coupon Section - Only for authenticated users */}
@@ -328,6 +332,7 @@ export const CartScreen: React.FC = () => {
                     couponCode={cart.coupon_code}
                     grandTotal={formattedGrandTotal}
                     onCheckoutPress={handleProceedToCheckout}
+                    disabled={!allMinimumsMet}
                 />
             </View>
 

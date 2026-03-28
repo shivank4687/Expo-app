@@ -126,8 +126,18 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         keyboardType="numeric"
                         value={data?.preparation_time_days?.toString() || ''}
                         onChangeText={(value) => {
-                            const numValue = value ? parseInt(value) : null;
-                            if (numValue && numValue > 10) return;
+                            if (!value) {
+                                onChange('preparation_time_days', null);
+                                return;
+                            }
+                            // Strip non-numeric characters
+                            const numericString = value.replace(/[^0-9]/g, '');
+                            if (!numericString) return;
+                            
+                            const numValue = parseInt(numericString, 10);
+                            // Must be > 0 and <= 10
+                            if (numValue === 0 || numValue > 10) return;
+                            
                             onChange('preparation_time_days', numValue);
                         }}
                         textContentType="none"
@@ -336,20 +346,44 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         style={styles.dateInputHalf}
                         onPress={() => setShowHolidayStartPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: holidayStartDate ? '#000000' : '#666666' }]}>
+                        <Text style={[styles.dateInputText, { color: holidayStartDate ? '#000000' : '#666666' }]} numberOfLines={1}>
                             {holidayStartDate ? formatDate(data?.holiday_start_date) : 'Start date'}
                         </Text>
-                        <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        {holidayStartDate ? (
+                            <TouchableOpacity
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    onChange('holiday_start_date', null);
+                                }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close-circle" size={16} color="#666666" />
+                            </TouchableOpacity>
+                        ) : (
+                            <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.dateInputHalf}
                         onPress={() => setShowHolidayEndPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: holidayEndDate ? '#000000' : '#666666' }]}>
+                        <Text style={[styles.dateInputText, { color: holidayEndDate ? '#000000' : '#666666' }]} numberOfLines={1}>
                             {holidayEndDate ? formatDate(data?.holiday_end_date) : 'End date'}
                         </Text>
-                        <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        {holidayEndDate ? (
+                            <TouchableOpacity
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    onChange('holiday_end_date', null);
+                                }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close-circle" size={16} color="#666666" />
+                            </TouchableOpacity>
+                        ) : (
+                            <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        )}
                     </TouchableOpacity>
                 </View>
                 {errors?.holiday_end_date && (
@@ -399,20 +433,44 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         style={styles.dateInputHalf}
                         onPress={() => setShowDiscountStartPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: discountSpecialStartDate ? '#000000' : '#666666' }]}>
+                        <Text style={[styles.dateInputText, { color: discountSpecialStartDate ? '#000000' : '#666666' }]} numberOfLines={1}>
                             {discountSpecialStartDate ? formatDate(data?.discount_special_start_date) : 'Start date'}
                         </Text>
-                        <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        {discountSpecialStartDate ? (
+                            <TouchableOpacity
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    onChange('discount_special_start_date', null);
+                                }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close-circle" size={16} color="#666666" />
+                            </TouchableOpacity>
+                        ) : (
+                            <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.dateInputHalf}
                         onPress={() => setShowDiscountEndPicker(true)}
                     >
-                        <Text style={[styles.dateInputText, { color: discountSpecialEndDate ? '#000000' : '#666666' }]}>
+                        <Text style={[styles.dateInputText, { color: discountSpecialEndDate ? '#000000' : '#666666' }]} numberOfLines={1}>
                             {discountSpecialEndDate ? formatDate(data?.discount_special_end_date) : 'End date'}
                         </Text>
-                        <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        {discountSpecialEndDate ? (
+                            <TouchableOpacity
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    onChange('discount_special_end_date', null);
+                                }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close-circle" size={16} color="#666666" />
+                            </TouchableOpacity>
+                        ) : (
+                            <Ionicons name="calendar-outline" size={16} color="#666666" />
+                        )}
                     </TouchableOpacity>
                 </View>
                 {errors?.discount_special_end_date && (

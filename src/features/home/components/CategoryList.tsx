@@ -1,12 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
 import { Category } from '@/services/api/categories.api';
 import { useTranslation } from 'react-i18next';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { fetchCategories } from '@/store/slices/categorySlice';
+import { useAppSelector } from '@/store/hooks';
 
 const CATEGORY_ICON_SIZE = 24;
 
@@ -112,15 +111,7 @@ const CategorySection: React.FC<{
 export const CategoryList: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
-    const dispatch = useAppDispatch();
-    const { selectedLocale } = useAppSelector((state) => state.core);
     const { categories, isLoading } = useAppSelector((state) => state.category);
-
-    useEffect(() => {
-        if (selectedLocale?.code) {
-            dispatch(fetchCategories({ locale: selectedLocale.code }));
-        }
-    }, [selectedLocale?.code, dispatch]);
 
     const handleCategoryPress = useCallback((categoryId: number, categoryName: string) => {
         router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}` as any);

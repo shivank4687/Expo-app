@@ -239,6 +239,8 @@ export const ProductDetailScreen: React.FC = () => {
                     formattedPrice={formatters.formatPrice(displayPrice, currencySymbol)}
                     formattedRegularPrice={(hasDiscount && displayRegularPrice) ? formatters.formatPrice(displayRegularPrice, currencySymbol) : undefined}
                     discountPercent={(hasDiscount && displayRegularPrice) ? Math.round(((displayRegularPrice - displayPrice) / displayRegularPrice) * 100) : undefined}
+                    rating={product.rating}
+                    reviewCount={product.reviews_count}
                 />
 
                 {/* Product Info */}

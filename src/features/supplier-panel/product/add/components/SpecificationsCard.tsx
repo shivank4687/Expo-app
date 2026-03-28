@@ -9,7 +9,7 @@ export interface Specification {
 }
 
 export interface SpecificationsCardRef {
-    getData: () => ({ specifications: Specification[] });
+    getData: () => ({ specifications: Specification[], specifications_sent: number });
     updateFields: (data: any) => void;
 }
 
@@ -20,7 +20,8 @@ const SpecificationsCard = forwardRef<SpecificationsCardRef, {}>((props, ref) =>
         getData: () => {
             // Filter out empty key/value pairs before returning
             return {
-                specifications: specifications.filter(spec => spec.key.trim() !== '' && spec.value.trim() !== '')
+                specifications: specifications.filter(spec => spec.key.trim() !== '' && spec.value.trim() !== ''),
+                specifications_sent: 1
             };
         },
         updateFields: (data) => {

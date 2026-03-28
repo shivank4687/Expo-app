@@ -12,7 +12,7 @@ import {
     Alert,
     Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -27,10 +27,12 @@ import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { ProductCard } from '@/features/home/components/ProductCard';
 import { Product } from '@/features/product/types/product.types';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 export const RFQScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { showToast } = useToast();
     const { supplierId, productId, productName } = useLocalSearchParams<{
         supplierId: string;
@@ -482,22 +484,17 @@ export const RFQScreen: React.FC = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.safeArea}>
+            <TopHeader
+                title={t('rfq.title', 'Request for Quote')}
+                onBack={() => router.back()}
+            />
+
             <KeyboardAvoidingView
                 style={styles.keyboardContainer}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>
-                        {t('rfq.title', 'Request for Quote')}
-                    </Text>
-                    <View style={styles.headerRight} />
-                </View>
 
                 <ScrollView
                     style={styles.scrollView}
@@ -881,7 +878,10 @@ export const RFQScreen: React.FC = () => {
                 </ScrollView>
 
                 {/* Submit Button */}
-                <View style={styles.footer}>
+                <View style={[
+                    styles.footer,
+                    { paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }
+                ]}>
                     <Button
                         title={
                             isSubmitting
@@ -892,56 +892,32 @@ export const RFQScreen: React.FC = () => {
                         disabled={isSubmitting || products.length === 0}
                         loading={isSubmitting}
                         fullWidth
-                        size="large"
+                        size="medium"
                     />
                 </View>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
     },
     keyboardContainer: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200] || theme.colors.border.main,
-        backgroundColor: theme.colors.background.paper || theme.colors.white,
-    },
-    backButton: {
-        padding: theme.spacing.xs,
-    },
-    headerTitle: {
-        flex: 1,
-        fontSize: theme.typography.fontSize.xl,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-        textAlign: 'center',
-        marginHorizontal: theme.spacing.sm,
-    },
-    headerRight: {
-        minWidth: 40,
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        padding: theme.spacing.lg,
-        paddingBottom: 100, // Space for footer button
+        padding: theme.spacing.xs,
+        paddingBottom: 120, // Space for footer button + extra buffer
     },
     section: {
-        marginBottom: theme.spacing.xl,
-        backgroundColor: theme.colors.white,
+        marginBottom: theme.spacing.lg,
+        backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.lg,
     },
@@ -1025,7 +1001,7 @@ const styles = StyleSheet.create({
         borderColor: theme.colors.gray[200],
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
         marginBottom: theme.spacing.md,
     },
     productCardHeader: {
@@ -1075,9 +1051,10 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: theme.colors.white,
-        padding: theme.spacing.lg,
-        borderTopWidth: 1,
+        backgroundColor: theme.colors.background.default,
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.sm,
+        //  borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
         ...theme.shadows.lg,
     },
