@@ -48,10 +48,10 @@ export const StripeConnectWebView: React.FC<StripeConnectWebViewProps> = ({
     const CANCEL_URL_PATTERN = /stripeconnect.*cancel|stripe.*cancel/i;
     const SESSION_ID_PATTERN = /[?&]session_id=([^&#]+)/;
 
-    const handleNavigationStateChange = async (navState: WebViewNavigation) => {
-        const { url } = navState;
+    const handleUrlChange = async (url: string) => {
+        if (!url) return;
         
-        console.log('[StripeConnectWebView] Navigation state changed:', url);
+        console.log('[StripeConnectWebView] checkUrl:', url);
 
         // Extract session_id from URL first (it might be in success URL)
         const sessionIdMatch = url.match(SESSION_ID_PATTERN);
@@ -74,18 +74,9 @@ export const StripeConnectWebView: React.FC<StripeConnectWebViewProps> = ({
                 console.log('[StripeConnectWebView] Calling success API with session_id:', sessionId);
                 const response = await stripeConnectApi.processSuccess(sessionId);
                 
-                console.log('[StripeConnectWebView] Success API response:', JSON.stringify(response, null, 2));
-                console.log('[StripeConnectWebView] Response validation:', {
-                    hasSuccess: 'success' in response,
-                    success: response.success,
-                    hasData: 'data' in response,
-                    hasOrder: !!(response.data?.order),
-                    orderId: response.data?.order?.id,
-                    message: response.message
-                });
-
+                console.log('[StripeConnectWebView] Success API response received');
+                
                 // Check if response indicates success and has order data
-                // Handle different response structures
                 const orderId = response.data?.order?.id || response.order?.id || response.data?.id;
                 const isSuccess = response.success === true || response.success === 'true' || (orderId && response.success !== false);
                 
@@ -97,30 +88,12 @@ export const StripeConnectWebView: React.FC<StripeConnectWebViewProps> = ({
                     });
                     onSuccess(orderId);
                 } else {
-                    // Log detailed error information
-                    console.error('[StripeConnectWebView] Payment processing failed - Response structure:', {
-                        fullResponse: response,
-                        success: response.success,
-                        successType: typeof response.success,
-                        hasData: !!response.data,
-                        hasOrder: !!response.data?.order,
-                        orderId: response.data?.order?.id,
-                        directOrderId: response.order?.id,
-                        dataId: response.data?.id,
-                        message: response.message,
-                        allKeys: Object.keys(response || {})
-                    });
+                    console.error('[StripeConnectWebView] Payment processing failed - Invalid response structure');
                     const errorMsg = response.message || 'Payment processing failed - Invalid response structure';
                     throw new Error(errorMsg);
                 }
             } catch (error: any) {
                 console.error('[StripeConnectWebView] Error processing success:', error);
-                console.error('[StripeConnectWebView] Error details:', {
-                    message: error.message,
-                    response: error.response?.data,
-                    status: error.response?.status,
-                    stack: error.stack
-                });
                 const errorMessage = error.response?.data?.message || error.message || t('checkout.paymentError', 'Payment processing failed');
                 showToast({
                     message: errorMessage,
@@ -135,6 +108,7 @@ export const StripeConnectWebView: React.FC<StripeConnectWebViewProps> = ({
 
         // Check for cancel URL
         if (CANCEL_URL_PATTERN.test(url)) {
+            console.log('[StripeConnectWebView] Cancel URL detected:', url);
             showToast({
                 message: t('checkout.paymentCancelled', 'Payment was cancelled'),
                 type: 'info',
@@ -142,6 +116,11 @@ export const StripeConnectWebView: React.FC<StripeConnectWebViewProps> = ({
             onCancel();
             return;
         }
+    };
+
+    const handleNavigationStateChange = (navState: WebViewNavigation) => {
+        console.log('[StripeConnectWebView] Navigation state changed:', navState.url);
+        handleUrlChange(navState.url);
     };
 
     const handleClose = () => {
@@ -218,11 +197,44 @@ export const StripeConnectWebView: React.FC<StripeConnectWebViewProps> = ({
                     source={{ uri: checkoutUrl }}
                     style={styles.webView}
                     onNavigationStateChange={handleNavigationStateChange}
-                    onLoadStart={() => setIsLoading(true)}
-                    onLoadEnd={() => setIsLoading(false)}
+                    onShouldStartLoadWithRequest={(request) => {
+                        const { url } = request;
+                        console.log('[StripeConnectWebView] onShouldStartLoadWithRequest:', url);
+                        
+                        // Check if this is a success or cancel URL
+                        const isSuccess = SUCCESS_URL_PATTERN.test(url);
+                        const isCancel = CANCEL_URL_PATTERN.test(url);
+                        
+                        if (isSuccess || isCancel) {
+                            console.log('[StripeConnectWebView] Intercepting URL:', url);
+                            handleUrlChange(url);
+                            return false; // Stop loading the success/cancel page in the WebView
+                        }
+                        
+                        return true;
+                    }}
+                    onLoadStart={(syntheticEvent) => {
+                        const { nativeEvent } = syntheticEvent;
+                        console.log('[StripeConnectWebView] onLoadStart:', nativeEvent.url);
+                        setIsLoading(true);
+                        // Redundant check in case onShouldStartLoadWithRequest was skipped
+                        handleUrlChange(nativeEvent.url);
+                    }}
+                    onLoadEnd={(syntheticEvent) => {
+                        const { nativeEvent } = syntheticEvent;
+                        console.log('[StripeConnectWebView] onLoadEnd:', nativeEvent.url);
+                        setIsLoading(false);
+                    }}
+                    onLoadProgress={(syntheticEvent) => {
+                        const { nativeEvent } = syntheticEvent;
+                        if (nativeEvent.progress === 1) {
+                            console.log('[StripeConnectWebView] onLoadProgress 100%:', nativeEvent.url);
+                            handleUrlChange(nativeEvent.url);
+                        }
+                    }}
                     onError={(syntheticEvent) => {
                         const { nativeEvent } = syntheticEvent;
-                        console.error('[StripeConnectWebView] WebView error:', nativeEvent);
+                        console.log('[StripeConnectWebView] WebView error:', nativeEvent);
                         onError(nativeEvent.description || t('checkout.webViewError', 'Failed to load payment page'));
                     }}
                     startInLoadingState={true}

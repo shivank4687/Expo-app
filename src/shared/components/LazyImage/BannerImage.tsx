@@ -8,6 +8,7 @@ interface BannerImageProps {
     style?: StyleProp<ViewStyle>;
     onError?: () => void;
     priority?: 'low' | 'normal' | 'high';
+    contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
 /**
@@ -29,6 +30,7 @@ export const BannerImage: React.FC<BannerImageProps> = ({
     style,
     onError,
     priority = 'high',
+    contentFit = 'cover'
 }) => {
     const absoluteUrl = getAbsoluteImageUrl(imageUrl);
 
@@ -36,7 +38,7 @@ export const BannerImage: React.FC<BannerImageProps> = ({
         <LazyImage
             source={absoluteUrl}
             style={style}
-            contentFit="cover"
+            contentFit={contentFit}
             transition={{ duration: 300 }}
             cachePolicy="memory-disk"
             priority={priority}

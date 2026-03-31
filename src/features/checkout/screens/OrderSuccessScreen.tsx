@@ -27,14 +27,14 @@ export const OrderSuccessScreen: React.FC = () => {
             router.replace('/(drawer)/(tabs)');
             return;
         }
-        
+
         // Fetch order details to get voucher information
         loadOrder();
     }, [id, router]);
 
     const loadOrder = useCallback(async () => {
         if (!id) return;
-        
+
         try {
             setIsLoading(true);
             const response = await ordersApi.getOrder(parseInt(id));
@@ -78,12 +78,13 @@ export const OrderSuccessScreen: React.FC = () => {
     if (isLoadingOrder) {
         return (
             <>
-                <Stack.Screen 
-                    options={{ 
+                <Stack.Screen
+                    options={{
+                        headerShown: false,
                         title: t('checkout.orderSuccess.title', 'Order Placed'),
                         headerBackVisible: false,
                         headerLeft: () => null,
-                    }} 
+                    }}
                 />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
@@ -94,12 +95,12 @@ export const OrderSuccessScreen: React.FC = () => {
 
     return (
         <>
-            <Stack.Screen 
-                options={{ 
+            <Stack.Screen
+                options={{
                     title: t('checkout.orderSuccess.title', 'Order Placed'),
                     headerBackVisible: false,
                     headerLeft: () => null,
-                }} 
+                }}
             />
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
                 {/* Success Icon */}
@@ -128,7 +129,7 @@ export const OrderSuccessScreen: React.FC = () => {
                         <Text style={styles.voucherTitle}>
                             {t('checkout.oxxo.paymentInstruction', 'Complete Your Payment')}
                         </Text>
-                        
+
                         <View style={styles.voucherNumberContainer}>
                             <Text style={styles.voucherNumberLabel}>
                                 {t('checkout.oxxo.refNumber', 'Reference Number')}
@@ -147,7 +148,7 @@ export const OrderSuccessScreen: React.FC = () => {
                             </Text>
                         )}
 
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.voucherButton}
                             onPress={handleViewVoucher}
                             activeOpacity={0.7}
@@ -173,7 +174,7 @@ export const OrderSuccessScreen: React.FC = () => {
 
                 {/* Action Buttons */}
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.primaryButton}
                         onPress={handleContinueShopping}
                         activeOpacity={0.7}
@@ -183,7 +184,7 @@ export const OrderSuccessScreen: React.FC = () => {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.secondaryButton}
                         onPress={handleViewOrder}
                         activeOpacity={0.7}
@@ -210,7 +211,7 @@ export const OrderSuccessScreen: React.FC = () => {
                     </View>
                 </View>
             </ScrollView>
-            
+
             {/* OXXO Voucher WebView Modal */}
             {order?.payment?.additional?.voucher_url && (
                 <OxxoVoucherWebView
@@ -226,6 +227,7 @@ export const OrderSuccessScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingTop: theme.spacing.xl,
         backgroundColor: theme.colors.white,
     },
     contentContainer: {

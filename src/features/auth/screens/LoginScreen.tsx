@@ -8,7 +8,11 @@ import { validation } from '@/shared/utils/validation';
 import { useAppDispatch } from '@/store/hooks';
 import { loginThunk, setSelectedUserType } from '@/store/slices/authSlice';
 import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
+import { socialLoginThunk } from '@/store/slices/authSlice';
+import { GoogleSignin, statusCodes } from '@/services/googleAuth';
 import { supplierTheme, theme } from '@/theme';
+
+
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -169,6 +173,68 @@ export const LoginScreen: React.FC = () => {
         }
     };
 
+    // Google Sign-In Configuration
+    useEffect(() => {
+        if (Platform.OS !== 'web') {
+            GoogleSignin.configure({
+                // Web Client ID from Google Cloud Console (synced with backend)
+                webClientId: '196127222713-n8e0kegh0k7sdhf62osf5og3qc3ju6pd.apps.googleusercontent.com',
+
+                offlineAccess: true,
+                forceCodeForRefreshToken: true,
+            });
+        }
+    }, []);
+
+    const handleGoogleLogin = async () => {
+        setIsLoggingIn(true);
+        try {
+            await GoogleSignin.hasPlayServices();
+            const response = await GoogleSignin.signIn();
+            const idToken = response.data?.idToken;
+
+            if (idToken) {
+                await dispatch(socialLoginThunk({
+                    token: idToken,
+                    provider: 'google',
+                    user_type: selectedUserType,
+                })).unwrap();
+
+                showToast({
+                    message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
+                    type: 'success',
+                    duration: 3000,
+                });
+
+                // Navigate after short delay
+                setTimeout(() => {
+                    if (router.canGoBack()) {
+                        router.dismissAll();
+                    }
+                    if (selectedUserType === 'supplier') {
+                        router.replace('/(supplier-drawer)/(supplier-tabs)');
+                    } else {
+                        router.replace('/(drawer)/(tabs)');
+                    }
+                }, 500);
+            }
+        } catch (error: any) {
+            console.log('Google Sign-In Error:', error);
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                // User cancelled the flow
+            } else {
+                showToast({
+                    message: error.message || t('auth.socialLoginFailed', 'Social login failed. Please try again.'),
+                    type: 'error',
+                    duration: 4000,
+                });
+            }
+        } finally {
+            setIsLoggingIn(false);
+        }
+    };
+
+
     const handleSignupPress = () => {
         router.push('/signup');
     };
@@ -266,13 +332,15 @@ export const LoginScreen: React.FC = () => {
                                     <TouchableOpacity
                                         style={styles.googleButton}
                                         activeOpacity={1}
-                                        onPress={() => { }}
+                                        onPress={handleGoogleLogin}
+                                        disabled={isLoggingIn}
                                     >
                                         <GoogleIcon width={18} height={18} />
                                         <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle', 'Continue with Google')}</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
+
                         </View>
 
                         <View style={styles.signupContainer}>

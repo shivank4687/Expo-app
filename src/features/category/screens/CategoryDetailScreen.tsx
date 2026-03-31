@@ -319,6 +319,7 @@ export const CategoryDetailScreen: React.FC = () => {
                                 imageUrl={typeof category.image === 'string' ? category.image : undefined}
                                 style={styles.headerImage}
                                 priority="high"
+                                contentFit="contain"
                             />
                         )}
 

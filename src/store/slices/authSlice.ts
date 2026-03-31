@@ -137,6 +137,58 @@ export const loginThunk = createAsyncThunk(
     }
 );
 
+export const socialLoginThunk = createAsyncThunk(
+    'auth/socialLogin',
+    async (data: { token: string; provider: 'google' | 'facebook' | 'apple'; user_type?: 'customer' | 'supplier' }, { rejectWithValue }) => {
+        try {
+            const response = await authApi.socialLogin({
+                ...data,
+                device_name: 'mobile_app',
+            });
+
+            console.log('Social Login Response:', JSON.stringify(response, null, 2));
+
+            // Handle nested response structure
+            let user = response.user;
+            let token = response.token;
+
+            if (!user && (response as any).data) {
+                if ((response as any).data.id || (response as any).data.email) {
+                    user = (response as any).data;
+                } else if ((response as any).data.user) {
+                    user = (response as any).data.user;
+                    token = (response as any).data.token || token;
+                }
+            }
+
+            if (!user) {
+                console.error('Could not find user in social login response');
+            }
+
+            // Store in secure storage
+            if (token && typeof token === 'string') {
+                await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+            }
+
+            if (user) {
+                await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+            }
+
+            // Register device token for push notifications
+            try {
+                await expoPushNotificationService.registerToken();
+            } catch (notificationError) {
+                console.error('Failed to register push notification token:', notificationError);
+            }
+
+            return { user, token };
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Social login failed');
+        }
+    }
+);
+
+
 
 export const signupThunk = createAsyncThunk(
     'auth/signup',
@@ -370,6 +422,26 @@ const authSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.payload as string;
             });
+
+        // Social Login
+        builder
+            .addCase(socialLoginThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(socialLoginThunk.fulfilled, (state, action) => {
+                state.user = action.payload.user;
+                state.token = action.payload.token;
+                state.isAuthenticated = true;
+                state.isLoading = false;
+                state.error = null;
+                setGlobalToken(action.payload.token);
+            })
+            .addCase(socialLoginThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
 
         // Signup
         builder

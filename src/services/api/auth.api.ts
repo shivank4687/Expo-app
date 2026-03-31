@@ -31,6 +31,22 @@ export const authApi = {
     },
 
     /**
+     * Social login/signup for mobile app
+     */
+    async socialLogin(data: {
+        token: string;
+        provider: 'google' | 'facebook' | 'apple';
+        device_name?: string;
+        user_type?: 'customer' | 'supplier';
+    }): Promise<AuthResponse> {
+        return restApiClient.post<AuthResponse>(API_ENDPOINTS.SOCIAL_LOGIN, {
+            ...data,
+            device_name: data.device_name || 'mobile_app',
+        });
+    },
+
+
+    /**
      * Register new user
      * Returns either OTP verification required response or direct registration response
      */

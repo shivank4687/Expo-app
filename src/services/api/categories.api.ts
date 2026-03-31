@@ -8,8 +8,14 @@ export interface Category {
     description?: string;
     image?: string;
     parent_id?: number;
+    logo_url?: string;
+    banner_url?: string;
     children?: Category[];
     logo?: {
+        large_image_url?: string;
+        original_image_url?: string;
+    };
+    banner?: {
         large_image_url?: string;
         original_image_url?: string;
     };
@@ -28,7 +34,9 @@ export const categoriesApi = {
             name: cat.name,
             slug: cat.slug,
             description: cat.description,
-            image: cat.logo?.original_image_url || cat.logo?.large_image_url || cat.banner?.large_image_url,
+            logo_url: cat.logo_url,
+            banner_url: cat.banner_url,
+            image: cat.logo_url || cat.banner_url || cat.logo?.original_image_url || cat.logo?.large_image_url || cat.banner?.large_image_url,
             parent_id: cat.parent_id,
             logo: cat.logo ? {
                 large_image_url: cat.logo.large_image_url,
@@ -67,7 +75,8 @@ export const categoriesApi = {
             // The backend already returns the tree structure with nested children
             const categories = Array.isArray(response) ? response : (response.data || []);
 
-            console.log('[Categories API] Loaded categories:', categories.length);
+
+            console.log('[Categories API] All Loaded categories:', JSON.stringify(categories, null, 2));
 
             // Map and ensure children arrays exist
             const mappedCategories = categories.map((cat: any) => this.mapCategory(cat));
@@ -101,20 +110,14 @@ export const categoriesApi = {
             //console.log('Subcategories raw response:', childrenResponse);
             const children = childrenResponse.data || childrenResponse;
             //console.log('Subcategories data:', children);
-            category.children = Array.isArray(children) ? children.map((cat: any) => ({
-                ...cat,
-                image: cat.logo_url || cat.image,
-            })) : [];
+            category.children = Array.isArray(children) ? children.map((cat: any) => this.mapCategory(cat)) : [];
             //console.log('Mapped children:', category.children);
         } catch (error) {
             console.error('Error fetching children for category', id, error);
             category.children = [];
         }
 
-        return {
-            ...category,
-            image: category.logo_url || category.image,
-        };
+        return this.mapCategory(category);
     },
 
     /**

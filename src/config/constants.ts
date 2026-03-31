@@ -18,7 +18,9 @@ export const API_ENDPOINTS = {
     CHECK_DUPLICATE: '/customer/check-duplicate',
     VERIFY_OTP: '/customer/verify-otp',
     RESEND_OTP: '/customer/resend-otp',
+    SOCIAL_LOGIN: '/customer/social-login',
     LOGOUT: '/customer/logout',
+
     REFRESH_TOKEN: '/customer/refresh-token',
     FORGOT_PASSWORD_PHONE: '/customer/forgot-password-phone',
     RESET_PASSWORD: '/customer/reset-password',

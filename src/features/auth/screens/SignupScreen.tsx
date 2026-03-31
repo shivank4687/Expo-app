@@ -11,8 +11,11 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { signupThunk, setSelectedUserType } from '@/store/slices/authSlice';
+import { signupThunk, setSelectedUserType, socialLoginThunk } from '@/store/slices/authSlice';
+import { GoogleSignin, statusCodes } from '@/services/googleAuth';
 import { Input } from '@/shared/components/Input';
+
+
 import { Button } from '@/shared/components/Button';
 import { CountryCodeDropdown } from '@/shared/components/CountryCodeDropdown';
 import { TabGroup } from '@/shared/components';
@@ -21,6 +24,8 @@ import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
+import { GoogleIcon } from '@/assets/icons/GoogleIcon';
+
 
 export const SignupScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -487,6 +492,64 @@ export const SignupScreen: React.FC = () => {
         }
     };
 
+    // Google Sign-In Configuration
+    useEffect(() => {
+        if (Platform.OS !== 'web') {
+            GoogleSignin.configure({
+                // Web Client ID from Google Cloud Console (synced with backend)
+                webClientId: '196127222713-n8e0kegh0k7sdhf62osf5og3qc3ju6pd.apps.googleusercontent.com',
+
+                offlineAccess: true,
+                forceCodeForRefreshToken: true,
+            });
+        }
+    }, []);
+
+    const handleGoogleSignup = async () => {
+        try {
+            await GoogleSignin.hasPlayServices();
+            const response = await GoogleSignin.signIn();
+            const idToken = response.data?.idToken;
+
+            if (idToken) {
+                await dispatch(socialLoginThunk({
+                    token: idToken,
+                    provider: 'google',
+                    user_type: selectedUserType,
+                })).unwrap();
+
+                showToast({
+                    message: t('auth.signupSuccess', 'Account created successfully! Welcome aboard.'),
+                    type: 'success',
+                    duration: 3000,
+                });
+
+                // Navigate after successful login
+                setTimeout(() => {
+                    if (router.canGoBack()) {
+                        router.dismissAll();
+                    }
+                    if (selectedUserType === 'supplier') {
+                        router.replace('/(supplier-drawer)/(supplier-tabs)');
+                    } else {
+                        router.replace('/(drawer)/(tabs)');
+                    }
+                }, 500);
+            }
+        } catch (error: any) {
+            console.log('Google Sign-Up Error:', error);
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                // User cancelled
+            } else {
+                showToast({
+                    message: error.message || t('auth.socialSignupFailed', 'Social signup failed. Please try again.'),
+                    type: 'error',
+                });
+            }
+        }
+    };
+
+
     const handleLoginPress = () => {
         router.back();
     };
@@ -657,6 +720,21 @@ export const SignupScreen: React.FC = () => {
                                 style={styles.signUpButton}
                             />
 
+                            {selectedUserType === 'customer' && (
+                                <>
+                                    <Text style={styles.orText}>{t('auth.or', 'or')}</Text>
+
+                                    <TouchableOpacity
+                                        style={styles.googleButton}
+                                        activeOpacity={1}
+                                        onPress={handleGoogleSignup}
+                                    >
+                                        <GoogleIcon width={18} height={18} />
+                                        <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle', 'Continue with Google')}</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+
                             <View style={styles.loginContainer}>
                                 <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
                                 <TouchableOpacity onPress={handleLoginPress}>
@@ -664,6 +742,7 @@ export const SignupScreen: React.FC = () => {
                                 </TouchableOpacity>
                             </View>
                         </View>
+
                     </View>
                 </ScrollView>
             </View>
@@ -785,11 +864,38 @@ const styles = StyleSheet.create({
         height: 40,
         paddingVertical: 0,
     },
+    orText: {
+        fontFamily: 'Inter',
+        fontSize: 16,
+        lineHeight: 26,
+        textAlign: 'center',
+        color: textSecondaryColor,
+        marginVertical: 4,
+    },
+    googleButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 10,
+        backgroundColor: whiteColor,
+        borderWidth: 1,
+        borderColor: borderLightColor,
+        borderRadius: 10,
+        height: 48,
+        width: '100%',
+        gap: 10,
+    },
+    googleButtonText: {
+        fontFamily: 'Inter',
+        fontSize: 16,
+        color: textPrimaryColor,
+    },
     loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         marginTop: theme.spacing.lg,
     },
+
     loginText: {
         fontSize: 16,
         lineHeight: 26,
