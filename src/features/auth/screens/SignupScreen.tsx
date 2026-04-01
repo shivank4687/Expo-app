@@ -720,8 +720,6 @@ export const SignupScreen: React.FC = () => {
                                 style={styles.signUpButton}
                             />
 
-                            {selectedUserType === 'customer' && (
-                                <>
                                     <Text style={styles.orText}>{t('auth.or', 'or')}</Text>
 
                                     <TouchableOpacity
@@ -732,8 +730,7 @@ export const SignupScreen: React.FC = () => {
                                         <GoogleIcon width={18} height={18} />
                                         <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle', 'Continue with Google')}</Text>
                                     </TouchableOpacity>
-                                </>
-                            )}
+
 
                             <View style={styles.loginContainer}>
                                 <Text style={styles.loginText}>{t('auth.alreadyHaveAccount')} </Text>
