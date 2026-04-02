@@ -1,14 +1,20 @@
 import React, { useState, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-interface MessageInputProps {
+export interface ChatMessageInputProps {
     onSend: (message: string) => void;
     disabled?: boolean;
     hideAttachment?: boolean;
+    placeholder?: string;
 }
 
-export default function OrderMessageInput({ onSend, disabled = false, hideAttachment = false }: MessageInputProps) {
+export default function ChatMessageInput({
+    onSend,
+    disabled = false,
+    hideAttachment = false,
+    placeholder = 'Enter here...',
+}: ChatMessageInputProps) {
     const [message, setMessage] = useState('');
     const inputRef = useRef<TextInput>(null);
 
@@ -33,7 +39,7 @@ export default function OrderMessageInput({ onSend, disabled = false, hideAttach
             <TextInput
                 ref={inputRef}
                 style={styles.input}
-                placeholder="Enter here..."
+                placeholder={placeholder}
                 placeholderTextColor="#6B7280"
                 value={message}
                 onChangeText={setMessage}

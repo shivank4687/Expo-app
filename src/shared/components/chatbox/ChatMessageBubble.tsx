@@ -1,17 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-interface MessageBubbleProps {
+export type ChatSenderType = 'customer' | 'supplier';
+
+export interface ChatMessageBubbleProps {
     message: string;
-    senderType: 'customer' | 'supplier';
-    senderName: string;
-    timestamp: string;
+    senderType: ChatSenderType;
+    senderName?: string;
+    timestamp?: string;
 }
 
-export default function OrderMessageBubble({
-    message,
-    senderType,
-}: MessageBubbleProps) {
+export default function ChatMessageBubble({ message, senderType }: ChatMessageBubbleProps) {
     const isSupplier = senderType === 'supplier';
 
     return (
@@ -40,7 +39,6 @@ export default function OrderMessageBubble({
     );
 }
 
-
 const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
@@ -53,11 +51,11 @@ const styles = StyleSheet.create({
     },
 
     supplierRow: {
-        justifyContent: 'flex-end', // 🔥 stick to right
+        justifyContent: 'flex-end',
     },
 
     bubble: {
-        maxWidth: '75%',           // 🔥 prevents full-width bubbles
+        maxWidth: '75%',
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 12,

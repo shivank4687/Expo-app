@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { getOrderMessages, sendOrderMessage, OrderMessage } from '../api/order-messages.api';
-import OrderMessageBubble from './OrderMessageBubble';
-import OrderMessageInput from './OrderMessageInput';
+import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
 import socketService from '@/services/socket/socketService';
 import { useAppSelector } from '@/store/hooks';
 
@@ -156,7 +155,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
                     </View>
                 ) : (
                     messages.map((msg) => (
-                        <OrderMessageBubble
+                        <ChatMessageBubble
                             key={msg.id}
                             message={msg.message}
                             senderType={msg.sender_type}
@@ -169,7 +168,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
 
             {/* Message Input */}
             <View style={styles.inputContainer}>
-                <OrderMessageInput onSend={handleSendMessage} disabled={sending} />
+                <ChatMessageInput onSend={handleSendMessage} disabled={sending} />
             </View>
         </KeyboardAvoidingView>
     );

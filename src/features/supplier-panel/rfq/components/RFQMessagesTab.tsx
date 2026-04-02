@@ -8,8 +8,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
-import OrderMessageBubble from '../../order-details/components/OrderMessageBubble';
-import OrderMessageInput from '../../order-details/components/OrderMessageInput';
+import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
 import { RFQMessage } from '../api/rfq.api';
 
 interface RFQMessagesTabProps {
@@ -65,7 +64,7 @@ export default function RFQMessagesTab({
                     messages.map((item) => {
                         const isSupplier = item.customer_id === null;
                         return (
-                            <OrderMessageBubble
+                            <ChatMessageBubble
                                 key={String(item.id)}
                                 message={item.message}
                                 senderType={isSupplier ? 'supplier' : 'customer'}
@@ -77,7 +76,7 @@ export default function RFQMessagesTab({
                 )}
             </ScrollView>
             <View style={styles.inputContainer}>
-                <OrderMessageInput onSend={onSend} disabled={sending} hideAttachment={true} />
+                <ChatMessageInput onSend={onSend} disabled={sending} hideAttachment={true} />
             </View>
         </KeyboardAvoidingView>
     );
