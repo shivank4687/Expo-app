@@ -28,18 +28,30 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
 
     // Socket.IO real-time integration
     useEffect(() => {
-        // Connect to Socket.IO with supplier authentication
-        const socketToken = resolvedSupplierId ? `supplier_${resolvedSupplierId}` : undefined;
+        if (!resolvedSupplierId) return;
+
+        const socketToken = `supplier_${resolvedSupplierId}`;
+        const room = `order:${supplierOrderId}:${resolvedSupplierId}`;
+
+        // Join room safely — handles both "already connected" and "just connecting" cases
+        const joinRoom = () => {
+            console.log('📡 Supplier joining order room:', room);
+            socketService.joinRoom(room);
+        };
+
+        // Connect (no-op if already connected with same token)
         socketService.connect(socketToken, 'supplier');
 
-        // Join the order room
-        if (resolvedSupplierId) {
-            socketService.joinOrderRoom(supplierOrderId, resolvedSupplierId);
+        // If already connected, join immediately; otherwise wait for connect event
+        if (socketService.isConnected()) {
+            joinRoom();
+        } else {
+            socketService.onConnect(joinRoom);
         }
 
         // Listen for new messages
         socketService.onNewMessage((data) => {
-            console.log('📨 New message received via Socket.IO:', data);
+            console.log('📨 New supplier message received via Socket.IO:', data);
 
             if (data.message) {
                 const newMessage: OrderMessage = {
@@ -52,7 +64,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
                     created_at: data.message.created_at,
                 };
 
-                // Add message to list if it's not already there
+                // Add message only if not already present (dedup)
                 setMessages(prev => {
                     const exists = prev.some(msg => msg.id === newMessage.id);
                     if (exists) return prev;
@@ -63,10 +75,9 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
 
         // Cleanup on unmount
         return () => {
-            if (resolvedSupplierId) {
-                socketService.leaveOrderRoom(supplierOrderId, resolvedSupplierId);
-            }
+            socketService.leaveOrderRoom(supplierOrderId, resolvedSupplierId);
             socketService.offNewMessage();
+            socketService.offConnect(joinRoom);
         };
     }, [supplierOrderId, resolvedSupplierId]);
 
@@ -109,7 +120,11 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
                 created_at: response.data.created_at,
             };
 
-            setMessages(prev => [...prev, newMessage]);
+            setMessages(prev => {
+                const exists = prev.some(msg => msg.id === newMessage.id);
+                if (exists) return prev;
+                return [...prev, newMessage];
+            });
         } catch (err: any) {
             console.error('Failed to send message:', err);
             setError('Failed to send message');

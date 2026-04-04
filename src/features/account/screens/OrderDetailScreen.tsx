@@ -26,6 +26,8 @@ import {
 import { OrderAddressCard } from '../components/OrderAddressCard';
 import { OrderItemCard } from '../components/OrderItemCard';
 import { OrderSummaryCard } from '../components/OrderSummaryCard';
+import { OrderChatView } from '../components/OrderChatView';
+import { TabGroup, Tab } from '@/shared/components/tabs/TabGroup';
 
 /**
  * Get status color based on order status
@@ -62,6 +64,12 @@ export const OrderDetailScreen: React.FC = () => {
     const [isCanceling, setIsCanceling] = useState(false);
     const [isReordering, setIsReordering] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'details' | 'messages'>('details');
+
+    const tabs = React.useMemo<Tab[]>(() => [
+        { id: 'details', label: t('orders.tabs.details', 'Details') },
+        { id: 'messages', label: t('orders.tabs.messages', 'Messages') },
+    ], [t]);
 
     const loadOrder = useCallback(async (showLoader = true) => {
         if (!id) {
@@ -100,14 +108,15 @@ export const OrderDetailScreen: React.FC = () => {
         }
     }, [id, showToast]);
 
-    useEffect(() => {
-        loadOrder();
-    }, [loadOrder]);
+    // useEffect(() => {
+    //     loadOrder();
+    // }, [loadOrder]);
 
     useFocusEffect(
         useCallback(() => {
             // Reload order when screen comes into focus
             loadOrder(false);
+            setActiveTab('details');
         }, [loadOrder])
     );
 
@@ -238,189 +247,213 @@ export const OrderDetailScreen: React.FC = () => {
     const canReorder = order.can_reorder !== false;
 
     return (
-        <>
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
             <TopHeader
                 title={`#${order.increment_id}`}
                 onBack={() => router.back()}
                 backgroundColor={theme.colors.background.default}
             />
-            <ScrollView
-                style={styles.container}
-                contentContainerStyle={styles.content}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={handleRefresh}
-                        colors={[theme.colors.primary[500]]}
-                        tintColor={theme.colors.primary[500]}
-                    />
-                }
-            >
-                {/* Order Header Card */}
-                <View style={styles.headerCard}>
-                    <View style={styles.headerRow}>
-                        <View style={styles.headerLeft}>
-                            <Text style={styles.orderNumber}>
-                                {t('orders.orderNumber', 'Order #')}{order.increment_id}
-                            </Text>
-                            <Text style={styles.orderDate}>
-                                {t('orders.placedOn', 'Placed on')} {formattedDate}
-                            </Text>
-                        </View>
-                        <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-                            <Text style={styles.statusText}>
-                                {order.status_label || order.status}
-                            </Text>
-                        </View>
-                    </View>
 
-                    {/* Action Buttons */}
-                    {(canCancel || canReorder) && (
-                        <View style={styles.actionButtons}>
-                            {canReorder && (
-                                <TouchableOpacity
-                                    style={[styles.actionButton, styles.reorderButton]}
-                                    onPress={handleReorder}
-                                    disabled={isReordering}
-                                    activeOpacity={0.7}
-                                >
-                                    {isReordering ? (
-                                        <ActivityIndicator size="small" color={theme.colors.white} />
-                                    ) : (
-                                        <>
-                                            <Ionicons
-                                                name="repeat-outline"
-                                                size={18}
-                                                color={theme.colors.white}
-                                            />
-                                            <Text style={styles.actionButtonText}>
-                                                {t('orders.reorder', 'Reorder')}
-                                            </Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            )}
-                            {canCancel && (
-                                <TouchableOpacity
-                                    style={[styles.actionButton, styles.cancelButton]}
-                                    onPress={handleCancelOrder}
-                                    disabled={isCanceling}
-                                    activeOpacity={0.7}
-                                >
-                                    {isCanceling ? (
-                                        <ActivityIndicator size="small" color={theme.colors.error.main} />
-                                    ) : (
-                                        <>
-                                            <Ionicons
-                                                name="close-circle-outline"
-                                                size={18}
-                                                color={theme.colors.error.main}
-                                            />
-                                            <Text style={[styles.actionButtonText, styles.cancelButtonText]}>
-                                                {t('orders.cancel', 'Cancel Order')}
-                                            </Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
+            <View style={styles.tabsWrapper}>
+                <TabGroup
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={(tabId) => setActiveTab(tabId as 'details' | 'messages')}
+                />
+            </View>
+
+            {activeTab === 'messages' ? (
+                <View style={styles.chatWrapper}>
+                    <OrderChatView orderId={order.id} />
                 </View>
-
-                {/* Order Items */}
-                {order.items && order.items.length > 0 && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>
-                            {t('orders.itemsOrdered', 'Items Ordered')} ({order.items.length})
-                        </Text>
-                        {order.items.map((item) => (
-                            <OrderItemCard key={item.id} item={item} />
-                        ))}
-                    </View>
-                )}
-
-                {/* Order Summary */}
-                <OrderSummaryCard order={order} />
-
-                {/* Shipping Address */}
-                {order.shipping_address && (
-                    <OrderAddressCard
-                        address={order.shipping_address}
-                        type="shipping"
-                    />
-                )}
-
-                {/* Billing Address */}
-                {order.billing_address && (
-                    <OrderAddressCard
-                        address={order.billing_address}
-                        type="billing"
-                    />
-                )}
-
-                {/* Payment & Shipping Methods */}
-                {(order.payment_title || order.shipping_title) && (
-                    <View style={styles.methodsCard}>
-                        <Text style={styles.sectionTitle}>
-                            {t('orders.paymentShipping', 'Payment & Shipping')}
-                        </Text>
-                        {/* Always show payment method section */}
-                        <View style={styles.methodRow}>
-                            <Ionicons
-                                name="card-outline"
-                                size={20}
-                                color={theme.colors.text.secondary}
-                            />
-                            <View style={styles.methodInfo}>
-                                <Text style={styles.methodLabel}>
-                                    {t('orders.paymentMethod', 'Payment Method')}
+            ) : (
+                <ScrollView
+                    style={styles.container}
+                    contentContainerStyle={styles.content}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={handleRefresh}
+                            colors={[theme.colors.primary[500]]}
+                            tintColor={theme.colors.primary[500]}
+                        />
+                    }
+                >
+                    {/* Order Header Card */}
+                    <View style={styles.headerCard}>
+                        <View style={styles.headerRow}>
+                            <View style={styles.headerLeft}>
+                                <Text style={styles.orderNumber}>
+                                    {t('orders.orderNumber', 'Order #')}{order.increment_id}
                                 </Text>
-                                <Text style={styles.methodValue}>
-                                    {order.payment_title || t('orders.notAvailable', 'Not available')}
+                                <Text style={styles.orderDate}>
+                                    {t('orders.placedOn', 'Placed on')} {formattedDate}
                                 </Text>
-
-                                {/* OXXO Voucher Details */}
-                                {order.payment?.method === 'stripeoxxo' &&
-                                    order.payment?.additional &&
-                                    typeof order.payment.additional === 'object' &&
-                                    (order.payment.additional.voucher_number || order.payment.additional.voucher_url) && (
-                                        <OxxoVoucherSection
-                                            order={order}
-                                            voucher={order.payment.additional}
-                                            onVoucherUpdated={loadOrder}
-                                        />
-                                    )}
+                            </View>
+                            <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+                                <Text style={styles.statusText}>
+                                    {order.status_label || order.status}
+                                </Text>
                             </View>
                         </View>
-                        {/* Always show shipping method section */}
-                        {order.shipping_title && (
+
+                        {/* Action Buttons */}
+                        {(canCancel || canReorder) && (
+                            <View style={styles.actionButtons}>
+                                {canReorder && (
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, styles.reorderButton]}
+                                        onPress={handleReorder}
+                                        disabled={isReordering}
+                                        activeOpacity={0.7}
+                                    >
+                                        {isReordering ? (
+                                            <ActivityIndicator size="small" color={theme.colors.white} />
+                                        ) : (
+                                            <>
+                                                <Ionicons
+                                                    name="repeat-outline"
+                                                    size={18}
+                                                    color={theme.colors.white}
+                                                />
+                                                <Text style={styles.actionButtonText}>
+                                                    {t('orders.reorder', 'Reorder')}
+                                                </Text>
+                                            </>
+                                        )}
+                                    </TouchableOpacity>
+                                )}
+                                {canCancel && (
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, styles.cancelButton]}
+                                        onPress={handleCancelOrder}
+                                        disabled={isCanceling}
+                                        activeOpacity={0.7}
+                                    >
+                                        {isCanceling ? (
+                                            <ActivityIndicator size="small" color={theme.colors.error.main} />
+                                        ) : (
+                                            <>
+                                                <Ionicons
+                                                    name="close-circle-outline"
+                                                    size={18}
+                                                    color={theme.colors.error.main}
+                                                />
+                                                <Text style={[styles.actionButtonText, styles.cancelButtonText]}>
+                                                    {t('orders.cancel', 'Cancel Order')}
+                                                </Text>
+                                            </>
+                                        )}
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Order Items */}
+                    {order.items && order.items.length > 0 && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>
+                                {t('orders.itemsOrdered', 'Items Ordered')} ({order.items.length})
+                            </Text>
+                            {order.items.map((item) => (
+                                <OrderItemCard key={item.id} item={item} />
+                            ))}
+                        </View>
+                    )}
+
+                    {/* Order Summary */}
+                    <OrderSummaryCard order={order} />
+
+                    {/* Shipping Address */}
+                    {order.shipping_address && (
+                        <OrderAddressCard
+                            address={order.shipping_address}
+                            type="shipping"
+                        />
+                    )}
+
+                    {/* Billing Address */}
+                    {order.billing_address && (
+                        <OrderAddressCard
+                            address={order.billing_address}
+                            type="billing"
+                        />
+                    )}
+
+                    {/* Payment & Shipping Methods */}
+                    {(order.payment_title || order.shipping_title) && (
+                        <View style={styles.methodsCard}>
+                            <Text style={styles.sectionTitle}>
+                                {t('orders.paymentShipping', 'Payment & Shipping')}
+                            </Text>
+                            {/* Always show payment method section */}
                             <View style={styles.methodRow}>
                                 <Ionicons
-                                    name="car-outline"
+                                    name="card-outline"
                                     size={20}
                                     color={theme.colors.text.secondary}
                                 />
                                 <View style={styles.methodInfo}>
                                     <Text style={styles.methodLabel}>
-                                        {t('orders.shippingMethod', 'Shipping Method')}
+                                        {t('orders.paymentMethod', 'Payment Method')}
                                     </Text>
-                                    <Text style={styles.methodValue}>{order.shipping_title}</Text>
+                                    <Text style={styles.methodValue}>
+                                        {order.payment_title || t('orders.notAvailable', 'Not available')}
+                                    </Text>
+
+                                    {/* OXXO Voucher Details */}
+                                    {order.payment?.method === 'stripeoxxo' &&
+                                        order.payment?.additional &&
+                                        typeof order.payment.additional === 'object' &&
+                                        (order.payment.additional.voucher_number || order.payment.additional.voucher_url) && (
+                                            <OxxoVoucherSection
+                                                order={order}
+                                                voucher={order.payment.additional}
+                                                onVoucherUpdated={loadOrder}
+                                            />
+                                        )}
                                 </View>
                             </View>
-                        )}
-                    </View>
-                )}
+                            {/* Always show shipping method section */}
+                            {order.shipping_title && (
+                                <View style={styles.methodRow}>
+                                    <Ionicons
+                                        name="car-outline"
+                                        size={20}
+                                        color={theme.colors.text.secondary}
+                                    />
+                                    <View style={styles.methodInfo}>
+                                        <Text style={styles.methodLabel}>
+                                            {t('orders.shippingMethod', 'Shipping Method')}
+                                        </Text>
+                                        <Text style={styles.methodValue}>{order.shipping_title}</Text>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+                    )}
 
-                {/* Bottom Spacing */}
-                <View style={styles.bottomSpacing} />
-            </ScrollView>
-        </>
+                    {/* Bottom Spacing */}
+                    <View style={styles.bottomSpacing} />
+                </ScrollView>
+            )}
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+        backgroundColor: theme.colors.background.default,
+    },
+    tabsWrapper: {
+        paddingHorizontal: theme.spacing.md,
+        paddingBottom: theme.spacing.sm,
+        backgroundColor: theme.colors.background.default,
+    },
+    chatWrapper: {
         flex: 1,
         backgroundColor: theme.colors.background.default,
     },

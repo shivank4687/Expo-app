@@ -40,6 +40,16 @@ class SocketService {
 
     // ─── Order rooms ────────────────────────────────────────────────────────────
 
+    joinRoom(room: string) {
+        console.log('Joining room:', room);
+        this.socket?.emit('join-room', { room });
+    }
+
+    leaveRoom(room: string) {
+        console.log('Leaving room:', room);
+        this.socket?.emit('leave-room', { room });
+    }
+
     joinOrderRoom(supplierOrderId: number, supplierId: number) {
         const room = `order:${supplierOrderId}:${supplierId}`;
         console.log('Joining order room:', room);
@@ -78,6 +88,16 @@ class SocketService {
 
     offRFQNewMessage() {
         this.socket?.off('rfq:new-message');
+    }
+
+    // ─── Connect lifecycle ────────────────────────────────────────────────────────
+
+    onConnect(callback: () => void) {
+        this.socket?.on('connect', callback);
+    }
+
+    offConnect(callback: () => void) {
+        this.socket?.off('connect', callback);
     }
 
     // ─── Utilities ───────────────────────────────────────────────────────────────

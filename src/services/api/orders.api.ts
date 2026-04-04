@@ -121,6 +121,30 @@ interface OrdersResponse {
     };
 }
 
+export interface OrderMessageSupplier {
+    id: number;
+    supplier_order_id: number;
+    company_name: string;
+    unread_count: number;
+}
+
+export interface OrderMessage {
+    id: number;
+    message: string;
+    sender_type: 'customer' | 'supplier';
+    sender_name: string;
+    is_read: boolean;
+    attachments: string[] | null;
+    created_at: string;
+}
+
+export interface OrderMessagesResponse {
+    suppliers: OrderMessageSupplier[];
+    supplier_id: number;
+    data: OrderMessage[];
+    unread_count: number;
+}
+
 /**
  * Orders API endpoints
  */
@@ -226,6 +250,54 @@ export const ordersApi = {
         } catch (error: any) {
             console.error('Renew voucher error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to renew voucher');
+        }
+    },
+
+    /**
+     * Get order messages
+     */
+    getOrderMessages: async (orderId: number, supplierId?: number): Promise<OrderMessagesResponse> => {
+        try {
+            const response = await restApiClient.get<OrderMessagesResponse>(
+                `/customer/orders/${orderId}/messages`,
+                { params: supplierId ? { supplier_id: supplierId } : undefined }
+            );
+            return response;
+        } catch (error: any) {
+            console.error('Get order messages error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to fetch order messages');
+        }
+    },
+
+    /**
+     * Send order message
+     */
+    sendOrderMessage: async (orderId: number, supplierId: number, message: string): Promise<any> => {
+        try {
+            const response = await restApiClient.post(
+                `/customer/orders/${orderId}/messages`,
+                { supplier_id: supplierId, message }
+            );
+            return response;
+        } catch (error: any) {
+            console.error('Send order message error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to send message');
+        }
+    },
+
+    /**
+     * Mark order messages as read
+     */
+    markMessagesAsRead: async (orderId: number, supplierId: number): Promise<any> => {
+        try {
+            const response = await restApiClient.post(
+                `/customer/orders/${orderId}/messages/read-all`,
+                { supplier_id: supplierId }
+            );
+            return response;
+        } catch (error: any) {
+            console.error('Mark messages read error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to mark messages as read');
         }
     },
 };

@@ -8,28 +8,29 @@ export interface ChatMessageBubbleProps {
     senderType: ChatSenderType;
     senderName?: string;
     timestamp?: string;
+    currentUserType?: ChatSenderType; // Added to distinguish who is viewing the chat
 }
 
-export default function ChatMessageBubble({ message, senderType }: ChatMessageBubbleProps) {
-    const isSupplier = senderType === 'supplier';
+export default function ChatMessageBubble({ message, senderType, currentUserType = 'supplier' }: ChatMessageBubbleProps) {
+    const isCurrentUser = senderType === currentUserType;
 
     return (
         <View
             style={[
                 styles.row,
-                isSupplier ? styles.supplierRow : styles.customerRow,
+                isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
             ]}
         >
             <View
                 style={[
                     styles.bubble,
-                    isSupplier ? styles.supplierBubble : styles.customerBubble,
+                    isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
                 ]}
             >
                 <Text
                     style={[
                         styles.messageText,
-                        isSupplier ? styles.supplierText : styles.customerText,
+                        isCurrentUser ? styles.currentUserText : styles.otherUserText,
                     ]}
                 >
                     {message}
@@ -46,11 +47,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
     },
 
-    customerRow: {
+    otherUserRow: {
         justifyContent: 'flex-start',
     },
 
-    supplierRow: {
+    currentUserRow: {
         justifyContent: 'flex-end',
     },
 
@@ -61,12 +62,12 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
 
-    customerBubble: {
+    otherUserBubble: {
         backgroundColor: '#FFFFFF',
         borderBottomLeftRadius: 0,
     },
 
-    supplierBubble: {
+    currentUserBubble: {
         backgroundColor: '#00615E',
         borderBottomRightRadius: 0,
     },
@@ -77,11 +78,11 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 
-    customerText: {
+    otherUserText: {
         color: '#000000',
     },
 
-    supplierText: {
+    currentUserText: {
         color: '#FFFFFF',
     },
 });
