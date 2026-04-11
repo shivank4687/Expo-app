@@ -88,7 +88,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 const styles = StyleSheet.create({
     header: {
         paddingTop: DEFAULT_PADDING_TOP,
-        paddingBottom: 16,
+        paddingBottom: 12,
         paddingHorizontal: 16,
     },
     headerContent: {

@@ -357,7 +357,8 @@ const styles = StyleSheet.create({
         paddingBottom: theme.spacing.md,
     },
     itemsSection: {
-        padding: theme.spacing.md,
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.sm,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,

@@ -388,6 +388,7 @@
     "searching": "Searching...",
     "searchForProducts": "Search for Products",
     "searchPlaceholder": "Enter a product name or keyword to start searching",
+    "loadingMore": "Loading more...",
     "noProductsFound": "No Products Found",
     "noProductsMessage": "We couldn't find any products matching \"{{query}}\"",
     "tryDifferentKeywords": "Try different keywords or check your spelling",

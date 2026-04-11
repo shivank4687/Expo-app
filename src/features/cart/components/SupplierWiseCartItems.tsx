@@ -24,6 +24,14 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
         return acc;
     }, {} as Record<string, CartItem[]>);
 
+    const isSupplierOnHoliday = (supplier: any) => {
+        if (!supplier?.holiday_start_date || !supplier?.holiday_end_date) return false;
+        const now = new Date();
+        const start = new Date(supplier.holiday_start_date);
+        const end = new Date(supplier.holiday_end_date);
+        return now >= start && now <= end;
+    };
+
     // Derive whether every supplier's minimum order amount has been reached
     const allMinimumsMet = Object.values(groupedItems).every((storeItems) => {
         const minimumAmount = storeItems[0]?.product?.supplier?.minimum_order_amount;
@@ -40,14 +48,24 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
         <View>
             {Object.entries(groupedItems).map(([storeName, storeItems]) => {
                 const minimumAmount = storeItems[0]?.product?.supplier?.minimum_order_amount;
+                const freeShippingEnable = storeItems[0]?.product?.supplier?.free_shipping_enable;
+                const freeShippingThreshold = storeItems[0]?.product?.supplier?.free_shipping_threshold;
                 const storeTotal = storeItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
 
                 return (
                     <View key={storeName} style={styles.storeGroup}>
                         <View style={styles.storeHeader}>
-                            <Text style={styles.storeTitle}>
-                                {storeName} x{storeItems.length}
-                            </Text>
+                            <View style={styles.storeTitleContainer}>
+                                <Text style={styles.storeTitle}>
+                                    {storeName} x{storeItems.length}
+                                </Text>
+                                {isSupplierOnHoliday(storeItems[0]?.product?.supplier) && (
+                                    <View style={styles.holidayBadge}>
+                                        <View style={styles.pulseIndicator} />
+                                        <Text style={styles.holidayText}>ON HOLIDAY</Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={styles.storeTotal}>
                                 Total {currencySymbol}{storeTotal.toFixed(2)}
                             </Text>
@@ -56,10 +74,12 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
                             <CartItemCard key={item.id} item={item} />
                         ))}
 
-                        {!!minimumAmount && minimumAmount > 0 && (
-                            <MinimumOrderProgressCard 
+                        {((!!minimumAmount && minimumAmount > 0) || (!!freeShippingEnable && (freeShippingThreshold || 0) > 0)) && (
+                            <MinimumOrderProgressCard
                                 currentAmount={storeTotal}
-                                minimumAmount={minimumAmount}
+                                minimumAmount={minimumAmount || 0}
+                                freeShippingEnable={freeShippingEnable}
+                                freeShippingThreshold={freeShippingThreshold}
                                 currencySymbol={currencySymbol}
                             />
                         )}
@@ -75,7 +95,8 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.lg,
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
         // Shadow for iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -91,12 +112,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingBottom: theme.spacing.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200],
+        paddingBottom: theme.spacing.xxs,
+        // borderBottomWidth: 1,
+        // borderBottomColor: theme.colors.gray[200],
         marginBottom: theme.spacing.md,
         gap: 10,
-        height: 17 + theme.spacing.sm, // To accommodate figma strictly plus bottom padding
     },
     storeTitle: {
         fontFamily: 'Inter',
@@ -112,5 +132,30 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'right',
         color: '#00615E',
+    },
+    storeTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    holidayBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEF3C7', // amber-100
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        gap: 4,
+    },
+    holidayText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#B45309', // amber-700
+    },
+    pulseIndicator: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#F59E0B', // amber-500
     },
 });

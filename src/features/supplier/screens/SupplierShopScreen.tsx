@@ -465,6 +465,14 @@ export const SupplierShopScreen: React.FC = () => {
         return count;
     };
 
+    const isSupplierOnHoliday = (supplierData: any) => {
+        if (!supplierData?.holiday_start_date || !supplierData?.holiday_end_date) return false;
+        const now = new Date();
+        const start = new Date(supplierData.holiday_start_date);
+        const end = new Date(supplierData.holiday_end_date);
+        return now >= start && now <= end;
+    };
+
     const renderBanner = () => {
         if (!supplier?.banner_url) return null;
 
@@ -496,6 +504,12 @@ export const SupplierShopScreen: React.FC = () => {
                             <View style={styles.verifiedBadge}>
                                 <Ionicons name="checkmark-circle" size={20} color={theme.colors.success.main} />
                                 <Text style={styles.verifiedText}>{t('supplier.verified', 'Verified')}</Text>
+                            </View>
+                        )}
+                        {isSupplierOnHoliday(supplier) && (
+                            <View style={styles.holidayBadge}>
+                                <View style={styles.pulseIndicator} />
+                                <Text style={styles.holidayText}>ON HOLIDAY</Text>
                             </View>
                         )}
                     </View>
@@ -1426,6 +1440,8 @@ const styles = StyleSheet.create({
     companyNameRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: theme.spacing.xs,
         marginBottom: theme.spacing.xs,
     },
     companyName: {
@@ -1433,6 +1449,27 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.text.primary,
         marginRight: theme.spacing.sm,
+    },
+    holidayBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEF3C7',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        gap: 4,
+        marginLeft: 4,
+    },
+    holidayText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#B45309',
+    },
+    pulseIndicator: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#F59E0B',
     },
     verifiedBadge: {
         flexDirection: 'row',

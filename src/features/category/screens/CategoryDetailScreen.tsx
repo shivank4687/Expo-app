@@ -1,5 +1,4 @@
 import { SORT_OPTIONS } from '@/constants/sortOptions';
-import { ProductCard } from '@/features/home/components/ProductCard';
 import { Product } from '@/features/product/types/product.types';
 import { categoriesApi, Category } from '@/services/api/categories.api';
 import { productsApi } from '@/services/api/products.api';
@@ -13,43 +12,13 @@ import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAppSelector } from '@/store/hooks';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { TopHeader } from '@/shared/components/TopHeader';
+import { StyleSheet, View, Keyboard, TextInput } from 'react-native';
+import { SearchHeader } from '@/features/search/components/SearchHeader';
+import { CategoryProductGrid } from '../components/CategoryProductGrid';
 const PRODUCTS_PER_PAGE = 12; // Increased for grid view
 
-/**
- * SubcategoryCard Component
- * Displays subcategory image with lazy loading
- */
-interface SubcategoryCardProps {
-    category: Category;
-    onPress: () => void;
-}
-
-const SubcategoryCard: React.FC<SubcategoryCardProps> = ({ category, onPress }) => {
-    const imageUrl = category.logo?.large_image_url || category.image;
-
-    return (
-        <TouchableOpacity
-            style={styles.childCategoryCard}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <View style={styles.childCategoryImageContainer}>
-                <CategoryImage
-                    imageUrl={imageUrl}
-                    style={styles.childCategoryImage}
-                    priority="normal"
-                />
-            </View>
-            <Text style={styles.childCategoryName} numberOfLines={2}>
-                {category.name}
-            </Text>
-        </TouchableOpacity>
-    );
-};
 
 export const CategoryDetailScreen: React.FC = () => {
     const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
@@ -92,6 +61,17 @@ export const CategoryDetailScreen: React.FC = () => {
     // Use the name from params if available, otherwise use loaded category name
     const displayName = category?.name || name || 'Category';
 
+    // Search state
+    const [searchQuery, setSearchQuery] = useState(displayName);
+    const searchInputRef = useRef<TextInput>(null);
+
+    // Use a ref to track the applied query for pagination and mode checks
+    const appliedQueryRef = useRef(displayName);
+
+    // Check if we are actively in global search mode based on the *applied* query
+    const isSearchMode = appliedQueryRef.current.trim() !== '' && 
+                         appliedQueryRef.current.trim().toLowerCase() !== displayName.toLowerCase();
+
     useEffect(() => {
         if (id) {
             loadCategoryData();
@@ -133,7 +113,18 @@ export const CategoryDetailScreen: React.FC = () => {
             let categoryData = findCategoryById(categories, parsedId);
 
             // Fetch products and (if needed) fallback category data in parallel
-            const productsPromise = productsApi.getProductsByCategory(parsedId, options);
+            let productsPromise;
+            
+            // Recalculate mode locally to avoid closure staleness immediately after ref mutation
+            const currentAppliedQuery = appliedQueryRef.current.trim();
+            const currentIsSearchMode = currentAppliedQuery !== '' && 
+                                        currentAppliedQuery.toLowerCase() !== displayName.toLowerCase();
+
+            if (currentIsSearchMode) {
+                productsPromise = productsApi.searchProducts(currentAppliedQuery, options);
+            } else {
+                productsPromise = productsApi.getProductsByCategory(parsedId, options);
+            }
             const categoryPromise = !categoryData ? categoriesApi.getCategoryById(parsedId) : Promise.resolve(null);
 
             const [productsData, fallbackCategoryData] = await Promise.all([
@@ -147,8 +138,9 @@ export const CategoryDetailScreen: React.FC = () => {
 
             setCategory(categoryData);
             setProducts(productsData.data);
-            setCurrentPage(productsData.current_page || 1);
-            setTotalPages(productsData.last_page || 1);
+            const meta = productsData.meta;
+            setCurrentPage(productsData.current_page || meta?.current_page || 1);
+            setTotalPages(productsData.last_page || meta?.last_page || 1);
             // console.log('CategoryDetailScreen - Category loaded:', {
             //     id: categoryData.id,
             //     name: categoryData.name,
@@ -196,10 +188,21 @@ export const CategoryDetailScreen: React.FC = () => {
                 }
             });
 
-            const productsData = await productsApi.getProductsByCategory(parseInt(id), options);
+            // Recalculate mode locally
+            const currentAppliedQuery = appliedQueryRef.current.trim();
+            const currentIsSearchMode = currentAppliedQuery !== '' && 
+                                        currentAppliedQuery.toLowerCase() !== displayName.toLowerCase();
+
+            let productsData;
+            if (currentIsSearchMode) {
+                productsData = await productsApi.searchProducts(currentAppliedQuery, options);
+            } else {
+                productsData = await productsApi.getProductsByCategory(parseInt(id), options);
+            }
             setProducts([...products, ...productsData.data]);
-            setCurrentPage(productsData.current_page || nextPage);
-            setTotalPages(productsData.last_page || totalPages);
+            const meta = productsData.meta;
+            setCurrentPage(productsData.current_page || meta?.current_page || nextPage);
+            setTotalPages(productsData.last_page || meta?.last_page || totalPages);
         } catch (err: any) {
             console.error('Failed to load more products:', err);
         } finally {
@@ -210,18 +213,51 @@ export const CategoryDetailScreen: React.FC = () => {
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            const productsData = await productsApi.getProductsByCategory(parseInt(id), {
+            const options = {
                 per_page: PRODUCTS_PER_PAGE,
                 page: 1,
-            });
+            };
+            // Recalculate mode locally
+            const currentAppliedQuery = appliedQueryRef.current.trim();
+            const currentIsSearchMode = currentAppliedQuery !== '' && 
+                                        currentAppliedQuery.toLowerCase() !== displayName.toLowerCase();
+
+            let productsData;
+            if (currentIsSearchMode) {
+                productsData = await productsApi.searchProducts(currentAppliedQuery, options);
+            } else {
+                productsData = await productsApi.getProductsByCategory(parseInt(id), options);
+            }
             setProducts(productsData.data);
-            setCurrentPage(1);
-            setTotalPages(productsData.last_page || 1);
+            const meta = productsData.meta;
+            setCurrentPage(productsData.current_page || meta?.current_page || 1);
+            setTotalPages(productsData.last_page || meta?.last_page || 1);
         } catch (err: any) {
             console.error('Failed to refresh products:', err);
         } finally {
             setIsRefreshing(false);
         }
+    };
+
+    const handleSearch = () => {
+        Keyboard.dismiss();
+        appliedQueryRef.current = searchQuery;
+        setCurrentPage(1);
+        setTotalPages(1);
+        loadCategoryData();
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        appliedQueryRef.current = '';
+        Keyboard.dismiss();
+        setCurrentPage(1);
+        setTotalPages(1);
+        loadCategoryData();
+    };
+
+    const handleVoiceSearch = () => {
+        console.log('Voice search pressed');
     };
 
     const handleProductPress = (productId: number) => {
@@ -230,10 +266,6 @@ export const CategoryDetailScreen: React.FC = () => {
 
     const handleChildCategoryPress = (categoryId: number, categoryName: string) => {
         router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}`);
-    };
-
-    const handleViewAllProducts = () => {
-        router.push(`/product-list/${id}`);
     };
 
     const handleLoadMore = () => {
@@ -260,10 +292,21 @@ export const CategoryDetailScreen: React.FC = () => {
     // Check if category has no children (leaf category)
     const hasNoChildren = !category?.children || category.children.length === 0;
 
+    const renderHeader = () => (
+        <SearchHeader
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            handleSearch={handleSearch}
+            handleClearSearch={handleClearSearch}
+            handleVoiceSearch={handleVoiceSearch}
+            searchInputRef={searchInputRef}
+        />
+    );
+
     if (isLoading) {
         return (
             <View style={styles.container}>
-                <TopHeader title={displayName} onBack={() => router.back()} />
+                {renderHeader()}
                 <View style={styles.loadingContainer}>
                     <LoadingSpinner />
                 </View>
@@ -274,7 +317,7 @@ export const CategoryDetailScreen: React.FC = () => {
     if (error || !category) {
         return (
             <View style={styles.container}>
-                <TopHeader title={displayName} onBack={() => router.back()} />
+                {renderHeader()}
                 <ErrorMessage message={error || 'Category not found'} onRetry={loadCategoryData} />
             </View>
         );
@@ -282,156 +325,44 @@ export const CategoryDetailScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <TopHeader title={displayName} onBack={() => router.back()} />
-            <FlatList
-                style={styles.flatList}
-                data={hasNoChildren ? products : []}
-                numColumns={hasNoChildren ? 2 : undefined}
-                key={hasNoChildren ? 'grid' : 'list'} // Force re-render when switching layouts
-                keyExtractor={(item) => item.id.toString()}
-                columnWrapperStyle={hasNoChildren ? styles.row : undefined}
-                contentContainerStyle={hasNoChildren ? styles.gridContent : undefined}
-                renderItem={hasNoChildren ? ({ item }) => (
-                    <View style={styles.productItem}>
-                        <ProductCard
-                            product={item}
-                            onPress={() => handleProductPress(item.id)}
-                        />
-                    </View>
-                ) : null}
-                onEndReached={hasNoChildren ? handleLoadMore : undefined}
-                onEndReachedThreshold={0.5}
-                refreshControl={
-                    hasNoChildren ? (
-                        <RefreshControl
-                            refreshing={isRefreshing}
-                            onRefresh={handleRefresh}
-                            colors={[theme.colors.primary[500]]}
-                            tintColor={theme.colors.primary[500]}
-                        />
-                    ) : undefined
-                }
-                ListHeaderComponent={
-                    <>
-                        {/* Category Header Image */}
-                        {category.image && (
-                            <BannerImage
-                                imageUrl={typeof category.image === 'string' ? category.image : undefined}
-                                style={styles.headerImage}
-                                priority="high"
-                                contentFit="contain"
-                            />
-                        )}
-
-                        {/* Child Categories Carousel */}
-                        {category.children && category.children.length > 0 && (
-                            <View style={styles.childCategoriesSection}>
-                                <View style={styles.sectionHeader}>
-                                    <Text style={styles.sectionTitle}>Subcategories</Text>
-                                </View>
-                                <FlatList
-                                    data={category.children}
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    contentContainerStyle={styles.childCategoriesContent}
-                                    renderItem={({ item }) => (
-                                        <SubcategoryCard
-                                            category={item}
-                                            onPress={() => handleChildCategoryPress(item.id, item.name)}
-                                        />
-                                    )}
-                                />
-                            </View>
-                        )}
-
-                        {/* Products Section - Carousel for categories with children */}
-                        {!hasNoChildren && (
-                            <View style={styles.productsSection}>
-                                <View style={styles.sectionHeader}>
-                                    <Text style={styles.sectionTitle}>Products</Text>
-                                    {products.length >= PRODUCTS_PER_PAGE && (
-                                        <TouchableOpacity onPress={handleViewAllProducts}>
-                                            <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                                {products.length === 0 && !isLoading ? (
-                                    <View style={[styles.emptyState, { paddingVertical: theme.spacing.lg }]}>
-                                        <Text style={styles.emptyText}>{t('category.noProducts', 'No products found in this category')}</Text>
-                                    </View>
-                                ) : (
-                                    <FlatList
-                                        data={products}
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        keyExtractor={(item) => item.id.toString()}
-                                        renderItem={({ item }) => (
-                                            <View style={styles.productCarouselItem}>
-                                                <ProductCard
-                                                    product={item}
-                                                    onPress={() => handleProductPress(item.id)}
-                                                />
-                                            </View>
-                                        )}
-                                    />
-                                )}
-                            </View>
-                        )}
-
-                        {/* Section header for grid view */}
-                        {hasNoChildren && products.length > 0 && (
-                            <View style={styles.gridSectionHeader}>
-                                <Text style={styles.sectionTitle}>Products</Text>
-                            </View>
-                        )}
-                    </>
-                }
-                ListFooterComponent={
-                    hasNoChildren && isLoadingMore ? (
-                        <View style={styles.loadingMore}>
-                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            <Text style={styles.loadingText}>Loading more products...</Text>
-                        </View>
-                    ) : null
-                }
-                ListEmptyComponent={
-                    hasNoChildren && !isLoading ? (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyText}>{t('category.noProducts', 'No products found in this category')}</Text>
-                        </View>
-                    ) : null
-                }
+            {renderHeader()}
+            <CategoryProductGrid
+                category={category}
+                products={products}
+                isLoading={isLoading}
+                isLoadingMore={isLoadingMore}
+                isRefreshing={isRefreshing}
+                showSubcategories={!isSearchMode}
+                onProductPress={handleProductPress}
+                onChildCategoryPress={handleChildCategoryPress}
+                onLoadMore={handleLoadMore}
+                onRefresh={handleRefresh}
             />
 
-            {/* Filter Bar - Only show for leaf categories */}
-            {hasNoChildren && (
-                <>
-                    <ProductFilterBar
-                        onSortPress={() => setIsSortModalVisible(true)}
-                        onFilterPress={() => setIsFilterModalVisible(true)}
-                        filterCount={getActiveFilterCount()}
-                    />
+            {/* Filter Bar */}
+            <ProductFilterBar
+                onSortPress={() => setIsSortModalVisible(true)}
+                onFilterPress={() => setIsFilterModalVisible(true)}
+                filterCount={getActiveFilterCount()}
+            />
 
-                    {/* Sort Modal */}
-                    <SortModal
-                        visible={isSortModalVisible}
-                        onClose={() => setIsSortModalVisible(false)}
-                        options={SORT_OPTIONS}
-                        selectedValue={sortBy}
-                        onSelect={handleSortSelect}
-                    />
+            {/* Sort Modal */}
+            <SortModal
+                visible={isSortModalVisible}
+                onClose={() => setIsSortModalVisible(false)}
+                options={SORT_OPTIONS}
+                selectedValue={sortBy}
+                onSelect={handleSortSelect}
+            />
 
-                    {/* Filter Modal */}
-                    <FilterModal
-                        visible={isFilterModalVisible}
-                        onClose={() => setIsFilterModalVisible(false)}
-                        categoryId={parseInt(id)}
-                        currentFilters={filters}
-                        onApply={handleFilterApply}
-                    />
-                </>
-            )}
+            {/* Filter Modal */}
+            <FilterModal
+                visible={isFilterModalVisible}
+                onClose={() => setIsFilterModalVisible(false)}
+                categoryId={parseInt(id)}
+                currentFilters={filters}
+                onApply={handleFilterApply}
+            />
         </View>
     );
 };
@@ -441,114 +372,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.default,
     },
-    flatList: {
-        flex: 1,
-    },
-    headerImage: {
-        width: '100%',
-        height: 200,
-        resizeMode: 'cover',
-    },
-    childCategoriesSection: {
-        paddingVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.background.default,
-        marginTop: theme.spacing.sm,
-    },
-    childCategoriesContent: {
-        paddingHorizontal: theme.spacing.md,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: theme.spacing.lg,
-        marginBottom: theme.spacing.md,
-    },
-    sectionTitle: {
-        fontSize: theme.typography.fontSize.lg,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.text.primary,
-    },
-    viewAllText: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.primary[500],
-        fontWeight: theme.typography.fontWeight.semiBold,
-    },
-    childCategoryCard: {
-        width: 110,
-        marginHorizontal: theme.spacing.sm,
-        alignItems: 'center',
-    },
-    childCategoryImageContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        marginBottom: theme.spacing.sm,
-        overflow: 'hidden',
-        ...theme.shadows.sm,
-    },
-    childCategoryImage: {
-        width: '100%',
-        height: '100%',
-    },
-    childCategoryName: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.primary,
-        textAlign: 'center',
-        fontWeight: theme.typography.fontWeight.medium,
-        lineHeight: 18,
-        paddingHorizontal: theme.spacing.xs,
-    },
-    productsSection: {
-        marginTop: theme.spacing.sm,
-        paddingVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.background.default,
-    },
-    productCarouselItem: {
-        width: 180,
-        marginLeft: theme.spacing.md,
-    },
-    gridSectionHeader: {
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.lg,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.background.default,
-        marginTop: theme.spacing.sm,
-    },
-    gridContent: {
-        paddingHorizontal: theme.spacing.sm,
-        paddingBottom: 80, // Add padding for fixed filter bar
-    },
-    row: {
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.sm,
-        marginBottom: theme.spacing.md,
-    },
-    productItem: {
-        width: '48%',
-    },
-    loadingMore: {
-        paddingVertical: theme.spacing.lg,
-        alignItems: 'center',
-        gap: theme.spacing.sm,
-    },
-    loadingText: {
-        fontSize: theme.typography.fontSize.sm,
-        color: theme.colors.text.secondary,
-    },
     loadingContainer: {
         flex: 1,
         backgroundColor: theme.colors.background.default,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    emptyState: {
-        paddingVertical: theme.spacing.xl * 2,
-        alignItems: 'center',
-    },
-    emptyText: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.text.secondary,
     },
 });
 

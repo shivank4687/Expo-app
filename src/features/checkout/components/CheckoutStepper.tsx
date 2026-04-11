@@ -14,6 +14,7 @@ interface CheckoutStepperProps {
     currentStep: CheckoutStep;
     completedSteps: CheckoutStep[];
     children: React.ReactNode;
+    onStepLayout?: (step: CheckoutStep, y: number) => void;
 }
 
 const STEPS: CheckoutStep[] = ['address', 'shipping', 'payment', 'review'];
@@ -36,12 +37,11 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({
     currentStep,
     completedSteps,
     children,
+    onStepLayout,
 }) => {
     const { t } = useTranslation();
 
     const childArray = React.Children.toArray(children);
-
-    const shouldHideIntermediateSteps = currentStep === 'review';
 
     const getStepStatus = (step: CheckoutStep) => {
         if (completedSteps.includes(step)) return 'completed';
@@ -52,9 +52,6 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({
     return (
         <View style={styles.container}>
             {STEPS.map((step, index) => {
-                if (shouldHideIntermediateSteps && step !== 'review') {
-                    return null;
-                }
 
                 const status = getStepStatus(step);
                 const isLast = index === STEPS.length - 1;
@@ -62,7 +59,13 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({
                 const isCompleted = status === 'completed';
 
                 return (
-                    <View key={step} style={styles.stepWrapper}>
+                    <View
+                        key={step}
+                        style={styles.stepWrapper}
+                        onLayout={(event) =>
+                            onStepLayout?.(step, event.nativeEvent.layout.y)
+                        }
+                    >
                         {/* Step Header Row — commented out to hide stepper indicators */}
                         {/* <View style={styles.stepHeader}>
                             <View style={styles.indicatorColumn}>

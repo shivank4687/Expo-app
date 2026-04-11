@@ -32,14 +32,20 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
 
         return total || 0;
     }, [cart?.items, supplier?.id]);
-
+    console.log(supplier)
     const minimumAmount = supplier?.minimum_order_amount ?? 0;
     const freeShippingThreshold = supplier?.free_shipping_threshold ?? 0;
-    const showProgress = isAuthenticated && minimumAmount > 0;
+    const freeShippingEnable = supplier?.free_shipping_enable ?? false;
+
+    const showProgress = isAuthenticated && (minimumAmount > 0 || (freeShippingEnable && freeShippingThreshold > 0));
+
     const progressRatio = minimumAmount > 0 ? Math.min(currentAmount / minimumAmount, 1) : 0;
     const progressPercent = `${Math.round(progressRatio * 100)}%`;
     const remaining = Math.max(minimumAmount - currentAmount, 0);
     const hasMetMinimum = currentAmount >= minimumAmount;
+
+    const freeShippingRemaining = Math.max(freeShippingThreshold - currentAmount, 0);
+    const hasMetFreeShipping = currentAmount >= freeShippingThreshold;
 
     return (
         <View style={styles.container}>
@@ -100,9 +106,14 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
                     <>
                         <View style={styles.supplierRow}>
                             <Text style={styles.supplierLabel}>Supplier minimum order</Text>
-                            {freeShippingThreshold > 0 && (
+                            {freeShippingEnable && freeShippingThreshold > 0 && (
                                 <View style={styles.freeShippingBadge}>
-                                    <Text style={styles.freeShippingText}>Free Shipping</Text>
+                                    <Text style={styles.freeShippingText}>
+                                        {hasMetFreeShipping
+                                            ? 'Free Shipping Met 🎉'
+                                            : `Add ${currencySymbol}${freeShippingRemaining.toFixed(0)} for Free Shipping`
+                                        }
+                                    </Text>
                                 </View>
                             )}
                         </View>

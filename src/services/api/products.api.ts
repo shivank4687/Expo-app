@@ -54,6 +54,7 @@ const transformProduct = (data: any): Product => {
             rating: data.supplier.rating ? parseFloat(data.supplier.rating.toString()) : 0,
             total_reviews: data.supplier.total_reviews || 0,
             minimum_order_amount: data.supplier.minimum_order_amount,
+            free_shipping_enable: data.supplier.free_shipping_enable,
             free_shipping_threshold: data.supplier.free_shipping_threshold,
         } : undefined,
     };

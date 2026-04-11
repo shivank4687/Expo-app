@@ -66,6 +66,7 @@ export interface SupplierInfo {
     rating?: number;
     total_reviews?: number;
     minimum_order_amount?: number;
+    free_shipping_enable?: boolean;
     free_shipping_threshold?: number;
 }
 

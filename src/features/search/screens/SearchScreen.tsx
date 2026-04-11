@@ -7,7 +7,6 @@ import {
     TextInput,
     FlatList,
     ActivityIndicator,
-    Platform,
     Keyboard,
     ScrollView,
 } from 'react-native';
@@ -23,6 +22,7 @@ import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
 import { FilterModal } from '@/shared/components/FilterModal';
 import { theme } from '@/theme';
+import { SearchHeader } from '../components/SearchHeader';
 import { FilterState } from '@/types/filters.types';
 import { SORT_OPTIONS } from '@/constants/sortOptions';
 
@@ -90,6 +90,7 @@ export const SearchScreen: React.FC = () => {
                 isLoadingMoreRef.current = true;
             } else {
                 setIsLoading(true);
+                setProducts([]);
                 isLoadingRef.current = true;
                 setHasSearched(true);
             }
@@ -410,6 +411,7 @@ export const SearchScreen: React.FC = () => {
      * Render results count
      */
     const renderResultsHeader = () => {
+        return null;
         if (!hasSearched || products.length === 0 || isLoading) {
             return null;
         }
@@ -427,55 +429,15 @@ export const SearchScreen: React.FC = () => {
     return (
         <View style={styles.container}>
             {/* Custom Search Header */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={styles.backButton}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name="arrow-back" size={18} color={theme.colors.text.primary} />
-                </TouchableOpacity>
-
-                <View style={styles.searchInputContainer}>
-                    <Ionicons
-                        name="search-outline"
-                        size={20}
-                        color={theme.colors.text.secondary}
-                    />
-                    <TextInput
-                        ref={searchInputRef}
-                        style={styles.searchInput}
-                        placeholder={t('search.searchProducts')}
-                        placeholderTextColor={theme.colors.text.secondary}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        onSubmitEditing={handleSearch}
-                        returnKeyType="search"
-                        autoFocus
-                        autoCorrect={false}
-                        autoCapitalize="none"
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity
-                            onPress={handleClearSearch}
-                            style={styles.clearIcon}
-                        >
-                            <Ionicons
-                                name="close-circle"
-                                size={20}
-                                color={theme.colors.text.secondary}
-                            />
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                <TouchableOpacity
-                    onPress={handleVoiceSearch}
-                    style={styles.micButton}
-                >
-                    <Ionicons name="mic-outline" size={24} color={theme.colors.text.primary} />
-                </TouchableOpacity>
-            </View>
+            <SearchHeader
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                handleSearch={handleSearch}
+                handleClearSearch={handleClearSearch}
+                handleVoiceSearch={handleVoiceSearch}
+                searchInputRef={searchInputRef}
+                autoFocus={true}
+            />
 
             {/* Category Chips Carousel */}
             {renderCategoryChips()}
@@ -534,49 +496,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background.default,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: theme.spacing.md,
-        paddingHorizontal: theme.spacing.md,
-        backgroundColor: theme.colors.background.default,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200],
-        ...theme.shadows.sm,
-    },
-    backButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: theme.colors.gray[100],
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: theme.spacing.sm,
-    },
-    searchInputContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: theme.colors.gray[100],
-        borderRadius: theme.borderRadius.full,
-        paddingHorizontal: theme.spacing.md,
-        height: 44,
-    },
-    searchInput: {
-        flex: 1,
-        marginLeft: theme.spacing.sm,
-        fontSize: theme.typography.fontSize.md,
-        color: theme.colors.text.primary,
-        paddingVertical: 0, // Remove default padding for better alignment
-    },
-    clearIcon: {
-        padding: theme.spacing.xs,
-    },
-    micButton: {
-        padding: theme.spacing.xs,
-        marginLeft: theme.spacing.sm,
-    },
+
     categoriesContainer: {
         backgroundColor: theme.colors.background.default,
         paddingVertical: theme.spacing.md,
@@ -586,16 +506,16 @@ const styles = StyleSheet.create({
     },
     categoriesScrollContent: {
         paddingHorizontal: theme.spacing.md,
-        gap: theme.spacing.sm,
+        gap: theme.spacing.xxs,
     },
     categoryChip: {
-        paddingHorizontal: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.sm,
         paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.full,
+        borderRadius: theme.borderRadius.lg,
         backgroundColor: theme.colors.gray[100],
         borderWidth: 1,
         borderColor: theme.colors.gray[200],
-        marginRight: theme.spacing.sm,
+        marginRight: theme.spacing.xs,
     },
     categoryChipText: {
         fontSize: theme.typography.fontSize.sm,

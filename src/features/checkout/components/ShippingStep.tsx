@@ -149,14 +149,21 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                                 {t('checkout.storewiseShipping', 'Storewise Shipping:')}
                                                             </Text>
                                                             {rate.supplier_breakdown.map((breakdown, idx) => (
-                                                                <View key={idx} style={styles.breakdownItem}>
-                                                                    <Text style={styles.breakdownStoreName}>
-                                                                        {breakdown.store_name}
-                                                                    </Text>
-                                                                    <Text style={styles.breakdownPrice}>
-                                                                        {breakdown.formatted_price}
-                                                                    </Text>
-                                                                </View>
+                                                                    <View key={idx} style={styles.breakdownItem}>
+                                                                        <View style={styles.breakdownInfo}>
+                                                                            <Text style={styles.breakdownStoreName}>
+                                                                                {breakdown.store_name}
+                                                                            </Text>
+                                                                            {breakdown.days && (
+                                                                                <Text style={styles.breakdownDays}>
+                                                                                    {t('checkout.estDelivery', 'Est. Delivery')}: {breakdown.days} {t('checkout.days', 'Days')}
+                                                                                </Text>
+                                                                            )}
+                                                                        </View>
+                                                                        <Text style={styles.breakdownPrice}>
+                                                                            {breakdown.formatted_price}
+                                                                        </Text>
+                                                                    </View>
                                                             ))}
                                                         </View>
                                                     )}
@@ -401,5 +408,14 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.medium,
         color: theme.colors.primary[500],
         marginLeft: theme.spacing.sm,
+    },
+    breakdownInfo: {
+        flex: 1,
+    },
+    breakdownDays: {
+        fontSize: 10,
+        color: theme.colors.text.secondary,
+        fontStyle: 'italic',
+        marginTop: 2,
     },
 });

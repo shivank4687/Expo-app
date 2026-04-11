@@ -1,16 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { formatters } from '@/shared/utils/formatters';
+import { theme } from '@/theme';
 
 interface MinimumOrderProgressCardProps {
     currentAmount: number;
     minimumAmount: number;
+    freeShippingEnable?: boolean;
+    freeShippingThreshold?: number;
     currencySymbol?: string;
 }
 
 export const MinimumOrderProgressCard: React.FC<MinimumOrderProgressCardProps> = ({
     currentAmount,
     minimumAmount,
+    freeShippingEnable = false,
+    freeShippingThreshold = 0,
     currencySymbol = 'MX$',
 }) => {
     // Calculate progress percentage (capped at 100%)
@@ -21,14 +26,23 @@ export const MinimumOrderProgressCard: React.FC<MinimumOrderProgressCardProps> =
 
     const remainingAmount = Math.max(0, minimumAmount - currentAmount);
 
+    const freeShippingRemaining = Math.max(freeShippingThreshold - currentAmount, 0);
+    const hasMetFreeShipping = currentAmount >= freeShippingThreshold;
+
     return (
         <View style={styles.container}>
             {/* Supplier Minimum Order & Free Shipping */}
             <View style={styles.supplierRow}>
                 <Text style={styles.supplierLabel}>Supplier minimum order</Text>
-                <View style={styles.freeShippingBadge}>
-                    <Text style={styles.freeShippingText}>Free Shipping</Text>
-                </View>
+                {freeShippingEnable && freeShippingThreshold > 0 && (
+                    <View style={styles.freeShippingBadge}>
+                        <Text style={styles.freeShippingText}>
+                            {hasMetFreeShipping
+                                ? 'Free Shipping Met 🎉'
+                                : `Add ${formatters.formatPrice(freeShippingRemaining, currencySymbol)} for Free Shipping`}
+                        </Text>
+                    </View>
+                )}
             </View>
 
             {/* Progress Box */}
@@ -51,11 +65,11 @@ export const MinimumOrderProgressCard: React.FC<MinimumOrderProgressCardProps> =
                 )}
 
                 <View style={styles.progressBarTrack}>
-                    <View 
+                    <View
                         style={[
-                            styles.progressBarFill, 
+                            styles.progressBarFill,
                             { width: `${progressPercent}%` }
-                        ]} 
+                        ]}
                     />
                 </View>
             </View>
@@ -69,7 +83,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E9E3D3',
         borderRadius: 8,
-        padding: 8,
+        paddingHorizontal: 8,
+        paddingVertical: theme.spacing.sm,
         gap: 12,
         alignSelf: 'stretch',
         marginBottom: 16,
@@ -78,9 +93,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 8,
-        paddingHorizontal: 8,
-        marginTop: 4,
+        //paddingVertical: theme.spacing.xs,
+        //paddingHorizontal: 8,
+        marginTop: 0,
     },
     supplierLabel: {
         fontSize: 11,

@@ -12,8 +12,9 @@ import { useToast } from '@/shared/components/Toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
 import { theme } from '@/theme';
+import { formatters } from '@/shared/utils/formatters';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,14 +25,30 @@ import { PaypalSmartButtonWebView } from '../components/PaypalSmartButtonWebView
 import { ReviewStep } from '../components/ReviewStep';
 import { ShippingStep } from '../components/ShippingStep';
 import { StripeConnectWebView } from '../components/StripeConnectWebView';
+import { PriceDetailsSummaryCard } from '@/features/cart/components/PriceDetailsSummaryCard';
 import {
     CheckoutAddress,
     CheckoutStep,
+    ShippingRate,
     PaymentMethod,
     ShippingMethod,
 } from '../types/checkout.types';
 
 const STEP_ORDER: CheckoutStep[] = ['address', 'shipping', 'payment', 'review'];
+
+const findSelectedShippingRate = (
+    selectedMethod: string | null,
+    shippingMethods: Record<string, ShippingMethod> | null
+): ShippingRate | null => {
+    if (!selectedMethod || !shippingMethods) return null;
+    for (const carrier of Object.values(shippingMethods)) {
+        const rate = carrier.rates?.find((r) => `${r.carrier}_${r.method}` === selectedMethod);
+        if (rate) {
+            return rate;
+        }
+    }
+    return null;
+};
 
 export const CheckoutScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -46,6 +63,7 @@ export const CheckoutScreen: React.FC = () => {
     const [completedSteps, setCompletedSteps] = useState<CheckoutStep[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isDefaultAddressLoading, setIsDefaultAddressLoading] = useState(true);
+    const [hasLoadedCartOnce, setHasLoadedCartOnce] = useState(false);
 
     // Address state
     const [billingAddress, setBillingAddress] = useState<CheckoutAddress | null>(null);
@@ -68,6 +86,9 @@ export const CheckoutScreen: React.FC = () => {
     const [showPaypalWebView, setShowPaypalWebView] = useState(false);
     const [paypalApprovalUrl, setPaypalApprovalUrl] = useState<string | null>(null);
     const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
+    const scrollViewRef = useRef<ScrollView | null>(null);
+    const stepPositionsRef = useRef<Record<CheckoutStep, number>>({});
+    const [reviewSummaryHeight, setReviewSummaryHeight] = useState(0);
 
     const resetShippingAndBeyond = () => {
         setShippingMethods(null);
@@ -75,6 +96,18 @@ export const CheckoutScreen: React.FC = () => {
         setPaymentMethods(null);
         setSelectedPaymentMethod(null);
     };
+
+    const handleStepLayout = (step: CheckoutStep, y: number) => {
+        stepPositionsRef.current[step] = y;
+        if (currentStep === step) {
+            scrollViewRef.current?.scrollTo({ y, animated: true });
+        }
+    };
+
+    const shippingMethodDetails = useMemo(
+        () => findSelectedShippingRate(selectedShippingMethod, shippingMethods),
+        [selectedShippingMethod, shippingMethods]
+    );
 
     const resetStepsAfter = (step: CheckoutStep) => {
         const stepIndex = STEP_ORDER.indexOf(step);
@@ -129,6 +162,19 @@ export const CheckoutScreen: React.FC = () => {
             router.replace('/cart');
         }
     }, [cart, isLoading, router]);
+
+    useEffect(() => {
+        if (cart && !hasLoadedCartOnce) {
+            setHasLoadedCartOnce(true);
+        }
+    }, [cart, hasLoadedCartOnce]);
+
+    useEffect(() => {
+        const targetY = stepPositionsRef.current[currentStep];
+        if (typeof targetY === 'number') {
+            scrollViewRef.current?.scrollTo({ y: targetY, animated: true });
+        }
+    }, [currentStep]);
 
     const loadCheckoutData = async () => {
         setIsDefaultAddressLoading(true);
@@ -525,7 +571,38 @@ export const CheckoutScreen: React.FC = () => {
     };
 
     const isCartReady = Boolean(cart && cart.items.length > 0);
+    const subtotalValue =
+        cart?.formatted_sub_total ||
+        formatters.formatPrice(cart?.sub_total || cart?.base_sub_total || 0);
+    const taxValue =
+        cart?.formatted_tax_total ||
+        formatters.formatPrice(cart?.tax_total || cart?.base_tax_total || 0);
+    const hasDiscount = Boolean(cart?.discount_amount || cart?.base_discount_amount);
+    const discountValue = hasDiscount
+        ? cart?.formatted_discount_amount ||
+          formatters.formatPrice(cart?.discount_amount || cart?.base_discount_amount || 0)
+        : undefined;
+    const shippingValue =
+        shippingMethodDetails?.formatted_price ||
+        shippingMethodDetails?.base_formatted_price ||
+        cart?.selected_shipping_rate?.formatted_price ||
+        cart?.formatted_shipping_amount ||
+        (cart?.shipping_amount !== undefined
+            ? formatters.formatPrice(cart.shipping_amount)
+            : undefined) ||
+        (shippingMethodDetails?.price !== undefined
+            ? formatters.formatPrice(shippingMethodDetails.price)
+            : undefined);
+    const grandTotalValue =
+        cart?.formatted_grand_total ||
+        formatters.formatPrice(cart?.grand_total || cart?.base_grand_total || 0);
     const headerTitle = t('cart.checkout', 'Checkout');
+    const scrollContentStyle = [
+        styles.scrollContent,
+        currentStep === 'review'
+            ? { paddingBottom: reviewSummaryHeight || theme.spacing.lg }
+            : undefined,
+    ];
 
     return (
         <View style={styles.container}>
@@ -534,14 +611,15 @@ export const CheckoutScreen: React.FC = () => {
                 onBack={() => router.back()}
                 backgroundColor={theme.colors.background.default}
             />
-            {isLoading || !isCartReady ? (
+            {(!hasLoadedCartOnce && (isLoading || !isCartReady || isDefaultAddressLoading)) ? (
                 <View style={styles.loaderWrapper}>
                     <LoadingSpinner />
                 </View>
             ) : (
                 <ScrollView
+                    ref={scrollViewRef}
                     style={styles.scrollView}
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={scrollContentStyle}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -549,6 +627,7 @@ export const CheckoutScreen: React.FC = () => {
                     <CheckoutStepper
                         currentStep={currentStep}
                         completedSteps={completedSteps}
+                        onStepLayout={handleStepLayout}
                     >
                         {/* Address Step */}
                         <AddressStep
@@ -581,14 +660,41 @@ export const CheckoutScreen: React.FC = () => {
                             shippingAddress={shippingAddress}
                             sameAsBilling={sameAsBilling}
                             selectedShippingMethod={selectedShippingMethod}
-                            shippingMethods={shippingMethods}
+                            shippingMethodDetails={shippingMethodDetails}
                             selectedPaymentMethod={selectedPaymentMethod}
                             paymentMethods={paymentMethods}
-                            onPlaceOrder={handlePlaceOrder}
                             isProcessing={isProcessing}
                         />
                     </CheckoutStepper>
                 </ScrollView>
+            )}
+
+            {currentStep === 'review' && isCartReady && cart && (
+                <View
+                    style={[
+                        styles.reviewSummaryFixed,
+                        { paddingBottom: Math.max(insets.bottom, theme.spacing.md) },
+                    ]}
+                    onLayout={({ nativeEvent }) => {
+                        const height = nativeEvent.layout.height;
+                        if (reviewSummaryHeight !== height) {
+                            setReviewSummaryHeight(height);
+                        }
+                    }}
+                >
+                    <PriceDetailsSummaryCard
+                        subtotal={subtotalValue}
+                        tax={taxValue}
+                        discount={discountValue}
+                        couponCode={discountValue ? cart.coupon_code : undefined}
+                        shipping={shippingValue}
+                        grandTotal={grandTotalValue}
+                        onCheckoutPress={handlePlaceOrder}
+                        buttonText={t('checkout.placeOrder', 'Place Order')}
+                        loading={isProcessing}
+                        disabled={isProcessing}
+                    />
+                </View>
             )}
 
             {currentStep !== 'review' && isCartReady && (
@@ -649,5 +755,17 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    reviewSummaryFixed: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border.light,
+        backgroundColor: theme.colors.background.default,
+        ...theme.shadows.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingTop: theme.spacing.sm,
     },
 });

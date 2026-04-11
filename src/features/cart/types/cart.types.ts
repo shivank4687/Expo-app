@@ -46,6 +46,10 @@ export interface CartItem {
             company_name: string;
             url?: string;
             minimum_order_amount?: number;
+            free_shipping_enable?: boolean;
+            free_shipping_threshold?: number;
+            holiday_start_date?: string;
+            holiday_end_date?: string;
         };
     };
 }

@@ -106,7 +106,34 @@ export default function CategoriesTab() {
           <ActivityIndicator size="large" color={theme.colors.primary[500]} />
         </View>
       ) : (
-        <View style={styles.splitWrapper}>
+        <View style={styles.container}>
+          {/* Top Parent Categories Navigation */}
+          <View style={styles.topNavContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.topNavContent}
+            >
+              {categories.map((category) => {
+                const isSelected = category.id === selectedParent?.id;
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[styles.parentTab, isSelected && styles.parentTabSelected]}
+                    onPress={() => handleParentSelect(category.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.parentTabText, isSelected && styles.parentTabTextSelected]}>
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Left Sidebar (Commented Out) */}
+          {/* 
           <View style={styles.sidebar}>
             <ScrollView contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
               {categories.map((category) => {
@@ -129,6 +156,7 @@ export default function CategoriesTab() {
               })}
             </ScrollView>
           </View>
+          */}
 
           <ScrollView style={styles.detailPane} contentContainerStyle={styles.detailContent}>
             {selectedParent?.children && selectedParent.children.length > 0 ? (
@@ -148,10 +176,42 @@ export default function CategoriesTab() {
 }
 
 const styles = StyleSheet.create({
-  splitWrapper: {
+  container: {
     flex: 1,
-    flexDirection: 'row',
     backgroundColor: theme.colors.background.default,
+  },
+  topNavContainer: {
+    backgroundColor: theme.colors.background.default,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.gray[100],
+    paddingVertical: theme.spacing.sm,
+  },
+  topNavContent: {
+    paddingHorizontal: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  parentTab: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs + 2,
+    // marginRight: theme.spacing.xxs,
+    borderRadius: theme.spacing.sm,
+    backgroundColor: theme.colors.background.secondary,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  parentTabSelected: {
+    backgroundColor: theme.colors.primary[50],
+    borderColor: theme.colors.primary[200],
+  },
+  parentTabText: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  parentTabTextSelected: {
+    color: theme.colors.primary[600],
+    fontWeight: theme.typography.fontWeight.bold,
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
@@ -175,7 +235,6 @@ const styles = StyleSheet.create({
   },
   parentTileSelected: {
     borderColor: theme.colors.primary[500],
-    //borderWidth: 2,
     backgroundColor: theme.colors.primary[50],
   },
   parentImageWrapper: {
@@ -202,17 +261,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailContent: {
-    padding: theme.spacing.lg,
+    padding: theme.spacing.sm,
     paddingBottom: theme.spacing.xl,
   },
   sectionRow: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.xs,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
   },
   sectionTitle: {
     fontSize: theme.typography.fontSize.lg,

@@ -14,3 +14,6 @@ export { ThumbDownIcon } from './ThumbDownIcon';
 export { EyeViewIcon } from './EyeViewIcon';
 export { MessageIcon } from './MessageIcon';
 export { NotificationIcon } from './NotificationIcon';
+export { OxxoIcon } from './OxxoIcon';
+export { PaypalIcon } from './PaypalIcon';
+export { StripeIcon } from './StripeIcon';

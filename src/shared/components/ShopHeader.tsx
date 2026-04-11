@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: theme.colors.background.default,
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: theme.spacing.md,
+        paddingBottom: theme.spacing.xs,
         paddingHorizontal: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],

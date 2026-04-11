@@ -627,6 +627,8 @@ export interface SupplierProfile {
     percentage_ratings: { [key: number]: number };
     recent_reviews: SupplierReview[];
     total_products: number;
+    holiday_start_date?: string | null;
+    holiday_end_date?: string | null;
 }
 
 export interface SupplierReview {

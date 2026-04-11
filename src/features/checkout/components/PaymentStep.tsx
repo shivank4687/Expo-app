@@ -10,6 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 
+import { OxxoIcon, PaypalIcon, StripeIcon } from '@/assets/icons';
 import { PaymentMethod } from '../types/checkout.types';
 
 interface PaymentStepProps {
@@ -19,51 +20,6 @@ interface PaymentStepProps {
 }
 
 // ─── Brand icon tiles ─────────────────────────────────────────────────────────
-
-/** Generic credit-card tile: orange base, two white stripe lines, red chip bar */
-const CreditCardIcon: React.FC = () => (
-    <View style={brandStyles.base}>
-        {/* orange background */}
-        <View style={[brandStyles.fill, { backgroundColor: '#EDA42D', borderRadius: 4 }]} />
-        {/* white stripe top */}
-        <View style={[brandStyles.stripe, { top: 17, borderTopWidth: 1, borderTopColor: '#FEFEFE' }]} />
-        {/* white stripe bottom */}
-        <View style={[brandStyles.stripe, { top: 32, borderTopWidth: 1.5, borderTopColor: '#FEFEFE' }]} />
-        {/* red chip bar */}
-        <View style={brandStyles.chipBar} />
-    </View>
-);
-
-/** PayPal tile: light-blue border, "P P" wordmark composed of coloured shapes */
-const PayPalIcon: React.FC = () => (
-    <View style={brandStyles.base}>
-        <View style={[brandStyles.fill, {
-            backgroundColor: '#F3FBFF',
-            borderRadius: 4,
-            borderWidth: 1,
-            borderColor: '#179BD7',
-        }]} />
-        {/* Dark-blue "P" left half */}
-        <View style={[brandStyles.ppLeft, { backgroundColor: '#253B80' }]} />
-        {/* Light-blue "P" right arc */}
-        <View style={[brandStyles.ppRight, { backgroundColor: '#179BD7' }]} />
-        {/* dark overlay to create letter shape */}
-        <View style={[brandStyles.ppOverlay, { backgroundColor: '#222D65' }]} />
-    </View>
-);
-
-/** Mastercard tile: cream background, overlapping circles (red + orange + blend) */
-const MastercardIcon: React.FC = () => (
-    <View style={brandStyles.base}>
-        <View style={[brandStyles.fill, { backgroundColor: '#FFF4EE', borderRadius: 4 }]} />
-        {/* red circle (left) */}
-        <View style={[brandStyles.mcCircle, { left: 13, backgroundColor: '#ED0006' }]} />
-        {/* orange circle (right) */}
-        <View style={[brandStyles.mcCircle, { left: 29, backgroundColor: '#F9A000' }]} />
-        {/* overlap blend in centre */}
-        <View style={[brandStyles.mcMiddle, { backgroundColor: '#FF5E00' }]} />
-    </View>
-);
 
 /** Cash icon for COD */
 const CashIcon: React.FC = () => (
@@ -80,6 +36,15 @@ const GenericCardIcon: React.FC = () => (
 );
 
 const getBrandIcon = (method: PaymentMethod): React.ReactElement => {
+    const key = method.method.toLowerCase();
+
+    // Use high-quality local SVG overrides (now matching global icon assets)
+    if (key === 'paypal' || key === 'paypal_smart_button') return <PaypalIcon />;
+    if (key === 'stripe' || key === 'stripeconnect' || key === 'razorpay' || key === 'moneytransfer') {
+        return <StripeIcon />;
+    }
+    if (key === 'oxxo' || key === 'stripeoxxo') return <OxxoIcon />;
+
     // Prefer the icon URL returned by the API
     if (method.image) {
         return (
@@ -94,10 +59,7 @@ const getBrandIcon = (method: PaymentMethod): React.ReactElement => {
     }
 
     // Fallback to hand-crafted brand tiles
-    const key = method.method.toLowerCase();
-    if (key === 'paypal' || key === 'paypal_smart_button') return <PayPalIcon />;
     if (key === 'cashondelivery') return <CashIcon />;
-    if (key === 'stripe' || key === 'stripeconnect' || key === 'razorpay' || key === 'moneytransfer') return <CreditCardIcon />;
     return <GenericCardIcon />;
 };
 
@@ -196,62 +158,6 @@ const brandStyles = StyleSheet.create({
         right: 0,
         bottom: 0,
     },
-    stripe: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        height: 0,
-    },
-    // Red chip bar centred vertically in 48px tile: top = (48 - 15) / 2 = 16.5
-    chipBar: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 16,
-        height: 15,
-        backgroundColor: '#ED1C24',
-    },
-    // PayPal shapes (container 70 × 48)
-    ppLeft: {
-        position: 'absolute',
-        left: 15,   // ~22% of 70
-        top: 10,    // ~22% of 48
-        width: 18,
-        height: 26,
-        borderRadius: 9,
-    },
-    ppRight: {
-        position: 'absolute',
-        left: 24,   // ~34% of 70
-        top: 14,    // ~30% of 48
-        width: 18,
-        height: 22,
-        borderRadius: 9,
-    },
-    ppOverlay: {
-        position: 'absolute',
-        left: 21,   // ~30% of 70
-        top: 10,    // ~22% of 48
-        width: 12,
-        height: 14,
-        borderRadius: 4,
-    },
-    // Mastercard shapes (container 70 × 48)
-    mcCircle: {
-        position: 'absolute',
-        top: 10,    // ~20% of 48
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-    },
-    mcMiddle: {
-        position: 'absolute',
-        left: 31,   // ~44% of 70
-        top: 13,    // ~27% of 48
-        width: 10,
-        height: 20,
-        borderRadius: 2,
-    },
 });
 
 // ─── Screen styles ─────────────────────────────────────────────────────────────
@@ -285,7 +191,7 @@ const styles = StyleSheet.create({
     tilesRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 20,
+        gap: 10,
         flexWrap: 'wrap',
     },
     tileWrapper: {

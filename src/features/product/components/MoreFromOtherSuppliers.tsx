@@ -30,18 +30,25 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
     useEffect(() => {
         const fetchRelated = async () => {
             try {
-                // Fetch up to 15 to increase the chance of finding different suppliers
-                const options = { per_page: 15, page: 1, locale: selectedLocale?.code };
+                const options: any = { 
+                    per_page: 4, 
+                    page: 1, 
+                    locale: selectedLocale?.code,
+                };
+
+                if (product.id) {
+                    options.exclude_product_id = product.id;
+                }
+                
+                if (currentSupplierId) {
+                    options.exclude_supplier_id = currentSupplierId;
+                }
+
                 const response = categoryId 
                     ? await productsApi.getProductsByCategory(categoryId, options)
                     : await productsApi.getProducts(options);
                 
-                // Exclude current product and entirely exclude the current supplier
-                const filtered = response.data
-                    .filter(p => p.id !== product.id && p.supplier?.id !== currentSupplierId)
-                    .slice(0, 4);
-                
-                setRelatedProducts(filtered);
+                setRelatedProducts(response.data);
             } catch (error) {
                 console.error('Failed to load related supplier products:', error);
             } finally {

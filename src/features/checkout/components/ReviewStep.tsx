@@ -19,12 +19,11 @@ import { Card } from '@/shared/components/Card';
 import { LazyImage, ProductImage } from '@/shared/components/LazyImage';
 import { theme } from '@/theme';
 import { Cart } from '@/features/cart/types/cart.types';
-import { CheckoutAddress, ShippingMethod, PaymentMethod } from '../types/checkout.types';
+import { CheckoutAddress, ShippingRate, PaymentMethod } from '../types/checkout.types';
 import { formatters } from '@/shared/utils/formatters';
 import { useAppDispatch } from '@/store/hooks';
 import { applyCouponThunk, removeCouponThunk } from '@/store/slices/cartSlice';
 import { useToast } from '@/shared/components/Toast';
-import { PriceDetailsSummaryCard } from '@/features/cart/components/PriceDetailsSummaryCard';
 import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
 
 interface ReviewStepProps {
@@ -33,10 +32,9 @@ interface ReviewStepProps {
     shippingAddress: CheckoutAddress | null;
     sameAsBilling: boolean;
     selectedShippingMethod: string | null;
-    shippingMethods: Record<string, ShippingMethod> | null;
+    shippingMethodDetails: ShippingRate | null;
     selectedPaymentMethod: string | null;
     paymentMethods: PaymentMethod[] | null;
-    onPlaceOrder: () => void;
     isProcessing: boolean;
 }
 
@@ -46,10 +44,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     shippingAddress,
     sameAsBilling,
     selectedShippingMethod,
-    shippingMethods,
+    shippingMethodDetails,
     selectedPaymentMethod,
     paymentMethods,
-    onPlaceOrder,
     isProcessing,
 }) => {
     const { t } = useTranslation();
@@ -91,59 +88,15 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
         }
     };
 
-    // Get selected shipping method details
-    const getShippingMethodDetails = () => {
-        console.log('🔍 Finding shipping method - selected:', selectedShippingMethod);
-        console.log('🔍 Available shipping methods:', shippingMethods ? Object.keys(shippingMethods) : 'none');
-
-        if (!selectedShippingMethod || !shippingMethods) {
-            console.log('❌ No selected method or no shipping methods available');
-            return null;
-        }
-
-        for (const [carrierCode, carrier] of Object.entries(shippingMethods)) {
-            console.log(`🔍 Checking carrier: ${carrierCode}, rates:`, carrier.rates?.length);
-            const rate = carrier.rates?.find(r => {
-                const methodKey = `${r.carrier}_${r.method}`;
-                console.log(`  - Checking rate: ${methodKey} === ${selectedShippingMethod}`);
-                return methodKey === selectedShippingMethod;
-            });
-            if (rate) {
-                console.log('✅ Found shipping rate:', rate);
-                return rate;
-            }
-        }
-
-        console.log('❌ No matching shipping rate found');
-        return null;
-    };
-
     // Get selected payment method details
     const getPaymentMethodDetails = () => {
         if (!selectedPaymentMethod || !paymentMethods) return null;
         return paymentMethods.find(p => p.method === selectedPaymentMethod);
     };
-
-    const shippingMethodDetails = getShippingMethodDetails();
     const paymentMethodDetails = getPaymentMethodDetails();
     const paymentImageSource = paymentMethodDetails
         ? getAbsoluteImageUrl(paymentMethodDetails.image)
         : undefined;
-    const hasDiscount = cart.discount_amount > 0;
-    const subtotalValue = cart.formatted_sub_total || formatters.formatPrice(cart.sub_total);
-    const taxValue = cart.formatted_tax_total || formatters.formatPrice(cart.tax_total);
-    const discountValue = hasDiscount
-        ? cart.formatted_discount_amount || formatters.formatPrice(cart.discount_amount)
-        : undefined;
-    const shippingValue =
-        shippingMethodDetails?.formatted_price ||
-        shippingMethodDetails?.base_formatted_price ||
-        cart.selected_shipping_rate?.formatted_price ||
-        cart.formatted_shipping_amount ||
-        (cart.shipping_amount !== undefined ? formatters.formatPrice(cart.shipping_amount) : undefined) ||
-        (shippingMethodDetails?.price !== undefined ? formatters.formatPrice(shippingMethodDetails.price) : undefined);
-    const grandTotalValue =
-        cart.formatted_grand_total || formatters.formatPrice(cart.grand_total);
 
     // Debug shipping details
     console.log('🚚 Shipping method details:', JSON.stringify(shippingMethodDetails, null, 2));
@@ -447,21 +400,6 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                     </View>
                 )}
             </View> */}
-
-            <View style={styles.section}>
-                <PriceDetailsSummaryCard
-                    subtotal={subtotalValue}
-                    tax={taxValue}
-                    discount={discountValue}
-                    couponCode={discountValue ? cart.coupon_code : undefined}
-                    shipping={shippingValue}
-                    grandTotal={grandTotalValue}
-                    onCheckoutPress={onPlaceOrder}
-                    buttonText={t('checkout.placeOrder', 'Place Order')}
-                    loading={isProcessing}
-                    disabled={isProcessing}
-                />
-            </View>
 
         </ScrollView>
     );

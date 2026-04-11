@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { parseValidDate } from '@/shared/utils/dateUtils';
+import { ToggleSlider } from '@/shared/components/ToggleSlider';
 
 interface BuyerSpendDiscount {
     id: string;
@@ -96,23 +97,37 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                 <Text style={styles.description}>Set a minimum order amount required to place an order</Text>
             </View>
 
-            {/* Free shipping starting at */}
+            {/* Free shipping */}
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Free shipping starting at</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter free shipping threshold"
-                        placeholderTextColor="#666666"
-                        keyboardType="numeric"
-                        value={data?.free_shipping_threshold?.toString() || ''}
-                        onChangeText={(value) => onChange('free_shipping_threshold', value ? parseFloat(value) : null)}
-                        textContentType="none"
-                        autoComplete="off"
+                <View style={styles.rowSpaceBetween}>
+                    <Text style={styles.label}>Free shipping</Text>
+                    <ToggleSlider
+                        isActive={!!data?.free_shipping_enabled}
+                        onToggle={() => onChange('free_shipping_enabled', !data?.free_shipping_enabled)}
                     />
                 </View>
-                <Text style={styles.description}>Free shipping applies when cart total reaches this amount</Text>
+                <Text style={styles.description}>Enable free shipping for orders above a certain amount</Text>
             </View>
+
+            {/* Free shipping starting at */}
+            {data?.free_shipping_enabled && (
+                <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Free shipping starting at</Text>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter free shipping threshold"
+                            placeholderTextColor="#666666"
+                            keyboardType="numeric"
+                            value={data?.free_shipping_threshold?.toString() || ''}
+                            onChangeText={(value) => onChange('free_shipping_threshold', value ? parseFloat(value) : null)}
+                            textContentType="none"
+                            autoComplete="off"
+                        />
+                    </View>
+                    <Text style={styles.description}>Free shipping applies when cart total reaches this amount</Text>
+                </View>
+            )}
 
             {/* Preparation time */}
             <View style={styles.fieldContainer}>

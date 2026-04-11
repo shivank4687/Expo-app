@@ -11,6 +11,7 @@ export interface SupplierBreakdown {
     store_name: string;
     formatted_price: string;
     base_amount: number;
+    days?: number | string;
 }
 
 export interface ShippingRate {
