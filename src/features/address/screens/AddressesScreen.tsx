@@ -19,6 +19,7 @@ import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 export const AddressesScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -101,7 +102,8 @@ export const AddressesScreen: React.FC = () => {
     if (error && addresses.length === 0) {
         return (
             <View style={styles.container}>
-                <Stack.Screen options={{ title: 'Addresses', headerBackTitle: 'Back' }} />
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader title="Addresses" onBack={() => router.back()} />
                 <ErrorMessage message={error} onRetry={() => loadAddresses(true)} />
             </View>
         );
@@ -109,7 +111,8 @@ export const AddressesScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: 'Addresses', headerBackTitle: 'Back' }} />
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader title="Addresses" onBack={() => router.back()} />
             
             <ScrollView
                 style={styles.scrollView}

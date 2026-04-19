@@ -294,7 +294,7 @@
     "addFirstAddress": "Add your first address to continue",
     "billingAddress": "Billing Address",
     "shippingAddress": "Shipping Address",
-    "sameAsBilling": "Same as billing address"
+    "sameAsBilling": "Use same as for shipping address"
   },
   "orders": {
     "orders": "Orders",

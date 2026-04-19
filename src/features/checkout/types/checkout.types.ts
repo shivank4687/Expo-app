@@ -9,9 +9,10 @@ export type CheckoutStep = 'address' | 'shipping' | 'payment' | 'review';
 
 export interface SupplierBreakdown {
     store_name: string;
-    formatted_price: string;
+    formatted_price: string | null;
     base_amount: number;
     days?: number | string;
+    unavailable?: boolean;
 }
 
 export interface ShippingRate {

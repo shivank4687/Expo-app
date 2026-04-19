@@ -100,6 +100,9 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                     {carrier.rates.map((rate) => {
                                         const methodKey = `${carrierCode}_${rate.method}`;
                                         const isSelected = selectedMethod === methodKey;
+                                        const isUnavailable = rate.supplier_breakdown?.some(
+                                            (b) => b.unavailable === true
+                                        ) ?? false;
 
                                         return (
                                             <TouchableOpacity
@@ -107,15 +110,18 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                 style={[
                                                     styles.rateItem,
                                                     isSelected && styles.rateItemSelected,
+                                                    isUnavailable && styles.rateItemDisabled,
                                                 ]}
-                                                onPress={() => onMethodSelect(methodKey)}
-                                                activeOpacity={0.7}
+                                                onPress={() => !isUnavailable && onMethodSelect(methodKey)}
+                                                activeOpacity={isUnavailable ? 1 : 0.7}
+                                                disabled={isUnavailable}
                                             >
                                                 {/* Radio Button */}
                                                 <View
                                                     style={[
                                                         styles.radio,
                                                         isSelected && styles.radioSelected,
+                                                        isUnavailable && styles.radioDisabled,
                                                     ]}
                                                 >
                                                     {isSelected && (
@@ -127,10 +133,16 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                 <View style={styles.rateDetails}>
                                                     {/* Title and Price Row */}
                                                     <View style={styles.rateTitleRow}>
-                                                        <Text style={styles.rateTitle}>
+                                                        <Text style={[
+                                                            styles.rateTitle,
+                                                            isUnavailable && styles.rateTitleDisabled,
+                                                        ]}>
                                                             {rate.method_title}
                                                         </Text>
-                                                        <Text style={styles.ratePrice}>
+                                                        <Text style={[
+                                                            styles.ratePrice,
+                                                            isUnavailable && styles.ratePriceDisabled,
+                                                        ]}>
                                                             {rate.formatted_price || rate.base_formatted_price}
                                                         </Text>
                                                     </View>
@@ -142,6 +154,16 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                         </Text>
                                                     )}
 
+                                                    {/* Unavailability Warning Badge */}
+                                                    {isUnavailable && (
+                                                        <View style={styles.unavailableBadge}>
+                                                            <Ionicons name="warning-outline" size={12} color="#DC2626" />
+                                                            <Text style={styles.unavailableText}>
+                                                                Shipping unavailable for some suppliers
+                                                            </Text>
+                                                        </View>
+                                                    )}
+
                                                     {/* Store-wise Shipping Breakdown */}
                                                     {rate.supplier_breakdown && rate.supplier_breakdown.length > 0 && (
                                                         <View style={styles.breakdownContainer}>
@@ -149,6 +171,14 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                                 {t('checkout.storewiseShipping', 'Storewise Shipping:')}
                                                             </Text>
                                                             {rate.supplier_breakdown.map((breakdown, idx) => (
+                                                                breakdown.unavailable ? (
+                                                                    <View key={idx} style={styles.breakdownItemUnavailable}>
+                                                                        <Ionicons name="warning-outline" size={11} color="#DC2626" />
+                                                                        <Text style={styles.breakdownUnavailableText}>
+                                                                            Shipping not available from {breakdown.store_name}
+                                                                        </Text>
+                                                                    </View>
+                                                                ) : (
                                                                     <View key={idx} style={styles.breakdownItem}>
                                                                         <View style={styles.breakdownInfo}>
                                                                             <Text style={styles.breakdownStoreName}>
@@ -164,6 +194,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                                             {breakdown.formatted_price}
                                                                         </Text>
                                                                     </View>
+                                                                )
                                                             ))}
                                                         </View>
                                                     )}
@@ -417,5 +448,42 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
         fontStyle: 'italic',
         marginTop: 2,
+    },
+    rateItemDisabled: {
+        backgroundColor: theme.colors.gray[50],
+        opacity: 0.65,
+    },
+    radioDisabled: {
+        borderColor: theme.colors.gray[300],
+    },
+    rateTitleDisabled: {
+        color: theme.colors.text.secondary,
+    },
+    ratePriceDisabled: {
+        color: theme.colors.gray[400],
+    },
+    unavailableBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: theme.spacing.xs,
+        marginBottom: theme.spacing.xs,
+    },
+    unavailableText: {
+        fontSize: theme.typography.fontSize.xs,
+        color: '#DC2626',
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    breakdownItemUnavailable: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: theme.spacing.xs,
+    },
+    breakdownUnavailableText: {
+        fontSize: theme.typography.fontSize.xs,
+        color: '#DC2626',
+        fontWeight: theme.typography.fontWeight.medium,
+        flex: 1,
     },
 });

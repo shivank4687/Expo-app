@@ -12,6 +12,8 @@ import { DatePickerInput } from '@/shared/components/DatePickerInput';
 import { useToast } from '@/shared/components/Toast';
 import { AvatarImage } from '@/shared/components/LazyImage';
 import { parseValidDate } from '@/shared/utils/dateUtils';
+import { TopHeader } from '@/shared/components/TopHeader';
+import { useRouter } from 'expo-router';
 
 // Component for editable fields - defined outside to prevent re-creation on each render
 const EditableField: React.FC<{
@@ -65,9 +67,10 @@ const InfoItem: React.FC<{ label: string; value: string | undefined }> = ({ labe
     </View>
 );
 
-export const AccountInformationScreen: React.FC = () => {
+export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ showHeader = true }) => {
     const { t } = useTranslation();
     const { user, isLoading } = useRequireAuth();
+    const router = useRouter();
     const dispatch = useAppDispatch();
     const { isLoading: isUpdating } = useAppSelector(state => state.auth);
     const { showToast } = useToast();
@@ -177,12 +180,13 @@ export const AccountInformationScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <>
-                <Stack.Screen options={{ title: 'Account Information', headerBackTitle: 'Back' }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                {showHeader && <TopHeader title="Account Information" onBack={() => router.back()} />}
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
                 </View>
-            </>
+            </View>
         );
     }
 
@@ -377,10 +381,11 @@ export const AccountInformationScreen: React.FC = () => {
     const displayImage = selectedImage || user.avatar;
 
     return (
-        <>
-            <Stack.Screen options={{ title: t('account.accountInfo'), headerBackTitle: t('common.back') }} />
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+            {showHeader && <TopHeader title={t('account.accountInfo')} onBack={() => router.back()} />}
             <KeyboardAvoidingView
-                style={styles.container}
+                style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={100}
             >
@@ -603,7 +608,7 @@ export const AccountInformationScreen: React.FC = () => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
-        </>
+        </View>
     );
 };
 

@@ -158,15 +158,16 @@ export const ordersApi = {
         limit?: number;
         sort?: string;
         order?: 'asc' | 'desc';
+        status?: string;
     }): Promise<OrdersResponse> => {
         try {
             const response = await restApiClient.get<any>(
                 '/customer/orders',
                 { params: { sort: 'id', order: 'desc', page: 1, limit: 20, ...params } }
             );
-            
-            console.log('[orders.api] Raw response:', JSON.stringify(response, null, 2));
-            
+
+            // console.log('[orders.api] Raw response:', JSON.stringify(response, null, 2));
+
             // Handle different response structures
             // If response has data property, use it; otherwise use response directly
             if (response.data && Array.isArray(response.data)) {
@@ -298,6 +299,23 @@ export const ordersApi = {
         } catch (error: any) {
             console.error('Mark messages read error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to mark messages as read');
+        }
+    },
+
+    /**
+     * Get customer statistics
+     */
+    getCustomerStats: async (): Promise<{
+        total_orders: number;
+        total_spend: number;
+        formatted_total_spend: string;
+    }> => {
+        try {
+            const response = await restApiClient.get<any>('/customer/orders/stats');
+            return response.data;
+        } catch (error: any) {
+            console.error('Get customer stats error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to fetch customer stats');
         }
     },
 };

@@ -17,3 +17,9 @@ export { NotificationIcon } from './NotificationIcon';
 export { OxxoIcon } from './OxxoIcon';
 export { PaypalIcon } from './PaypalIcon';
 export { StripeIcon } from './StripeIcon';
+export { ShippingTruckIcon } from './ShippingTruckIcon';
+export { DollarToPayIcon } from './DollarToPayIcon';
+export { OrderProcessingIcon } from './OrderProcessingIcon';
+export { DeliveredIcon } from './DeliveredIcon';
+export { ReturnOrderIcon } from './ReturnOrderIcon';
+

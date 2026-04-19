@@ -4,7 +4,11 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
-
+import { CustomerStats } from '../components/CustomerStats';
+import { ShortcutsCard } from '../components/ShortcutsCard';
+import { BuyerToolsCard } from '../components/BuyerToolsCard';
+import { AccountCard } from '../components/AccountCard';
+import { OrderShortcutsCard } from '../components/OrderShortcutsCard';
 export const DashboardScreen: React.FC = () => {
     const { user, isLoading } = useRequireAuth();
     const router = useRouter();
@@ -33,12 +37,18 @@ export const DashboardScreen: React.FC = () => {
         <>
             <Stack.Screen options={{ title: 'Dashboard', headerBackTitle: 'Back' }} />
             <ScrollView style={styles.container}>
-                <View style={styles.header}>
+                {/* <View style={styles.header}>
                     <Text style={styles.greeting}>Welcome back,</Text>
                     <Text style={styles.userName}>{user?.name || 'User'}!</Text>
-                </View>
+                </View> */}
 
-                <View style={styles.cardsGrid}>
+                <CustomerStats />
+                <ShortcutsCard />
+                <OrderShortcutsCard />
+                <BuyerToolsCard />
+                <AccountCard />
+
+                {/* <View style={styles.cardsGrid}>
                     <DashboardCard
                         icon="receipt-outline"
                         title="Orders"
@@ -77,7 +87,7 @@ export const DashboardScreen: React.FC = () => {
                         <Text style={styles.actionText}>Notifications</Text>
                         <Ionicons name="chevron-forward" size={24} color={theme.colors.text.secondary} />
                     </TouchableOpacity>
-                </View>
+                </View> */}
             </ScrollView>
         </>
     );

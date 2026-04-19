@@ -248,6 +248,24 @@ function AppContent() {
           }}
         />
         <Stack.Screen
+          name="orders"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="orders-list"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="orders/[id]"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="quotes/[quoteId]"
           options={{
             headerShown: false,
@@ -255,6 +273,36 @@ function AppContent() {
         />
         <Stack.Screen
           name="quotes/quote-response-detail"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="addresses"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="account-info"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="preferences"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="language-selection"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="currency-selection"
           options={{
             headerShown: false,
           }}

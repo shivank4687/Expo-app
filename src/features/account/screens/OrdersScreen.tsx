@@ -7,11 +7,13 @@ import { Order, ordersApi } from '@/services/api/orders.api';
 import { useToast } from '@/shared/components/Toast';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 import { theme } from '@/theme';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { OrderCard } from '../components/OrderCard';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 const ORDERS_PER_PAGE = 10;
 
@@ -19,6 +21,12 @@ export const OrdersScreen: React.FC = () => {
     const { t } = useTranslation();
     const { isLoading: isAuthLoading } = useRequireAuth();
     const { showToast } = useToast();
+    const { status } = useLocalSearchParams<{ status?: string }>();
+    const router = useRouter();
+    const segments = useSegments();
+
+    // Check if the screen is being shown inside the (tabs) group
+    const isStandalone = !segments.includes('(tabs)');
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -75,6 +83,7 @@ export const OrdersScreen: React.FC = () => {
                 limit: ORDERS_PER_PAGE,
                 sort: 'id',
                 order: 'desc',
+                status,
             });
 
             const newOrders = response.data || [];
@@ -149,14 +158,20 @@ export const OrdersScreen: React.FC = () => {
     }, [t, showToast]);
 
     /**
-     * Initial load - fetch first page
+     * Load orders on focus
      */
-    useEffect(() => {
-        if (!isAuthLoading && isInitialLoadRef.current) {
-            console.log('[OrdersScreen] Initial load triggered');
-            loadOrders(1, false, false);
-        }
-    }, [isAuthLoading, loadOrders]);
+    useFocusEffect(
+        useCallback(() => {
+            if (!isAuthLoading) {
+                // To make it feel "new", reset state to show full-screen loader every time
+                setIsInitialLoad(true);
+                isInitialLoadRef.current = true;
+                setOrders([]);
+                
+                loadOrders(1, false, false);
+            }
+        }, [isAuthLoading, loadOrders])
+    );
 
     /**
      * Handle pull-to-refresh
@@ -231,7 +246,18 @@ export const OrdersScreen: React.FC = () => {
     if (isAuthLoading || (isInitialLoad && isLoading)) {
         return (
             <>
-                <Stack.Screen options={{ title: t('orders.title', 'My Orders'), headerBackTitle: t('common.back', 'Back') }} />
+                {isStandalone && (
+                    <>
+                        <Stack.Screen options={{ headerShown: false }} />
+                        <TopHeader 
+                            title={status ? t(`orders.status.${status}`, status.charAt(0).toUpperCase() + status.slice(1)) : t('orders.title', 'My Orders')}
+                            onBack={() => router.back()}
+                        />
+                    </>
+                )}
+                {!isStandalone && (
+                    <Stack.Screen options={{ title: t('orders.title', 'My Orders'), headerBackTitle: t('common.back', 'Back') }} />
+                )}
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
                 </View>
@@ -241,12 +267,23 @@ export const OrdersScreen: React.FC = () => {
 
     return (
         <>
-            <Stack.Screen
-                options={{
-                    title: t('orders.title', 'My Orders'),
-                    headerBackTitle: t('common.back', 'Back')
-                }}
-            />
+            {isStandalone && (
+                <>
+                    <Stack.Screen options={{ headerShown: false }} />
+                    <TopHeader 
+                        title={status ? t(`orders.status.${status}`, status.charAt(0).toUpperCase() + status.slice(1)) : t('orders.title', 'My Orders')}
+                        onBack={() => router.back()}
+                    />
+                </>
+            )}
+            {!isStandalone && (
+                <Stack.Screen
+                    options={{
+                        title: t('orders.title', 'My Orders'),
+                        headerBackTitle: t('common.back', 'Back')
+                    }}
+                />
+            )}
             <View style={styles.container}>
                 {error && !orders.length ? (
                     <View style={styles.errorContainer}>

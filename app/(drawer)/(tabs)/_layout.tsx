@@ -13,7 +13,10 @@ const CUSTOMER_TABS = [
   { name: "profile", label: "More", icon: "person-circle-outline" },
 ];
 
-const CUSTOMER_DRAWER_OPTIONS = [{ name: "profile", label: "Profile" }];
+const CUSTOMER_DRAWER_OPTIONS = [
+  { name: "profile", label: "Profile" },
+  { name: "dashboard", label: "Dashboard" },
+];
 
 export default function TabLayout() {
   const { isLoading, isAuthenticated } = useRequireAuth();
@@ -53,6 +56,13 @@ export default function TabLayout() {
           }}
         />
       ))}
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          href: null,
+          title: "Dashboard",
+        }}
+      />
     </Tabs>
   );
 }

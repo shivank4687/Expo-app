@@ -294,7 +294,7 @@
     "addFirstAddress": "Agrega tu primera dirección para continuar",
     "billingAddress": "Dirección de Facturación",
     "shippingAddress": "Dirección de Envío",
-    "sameAsBilling": "Igual que la dirección de facturación"
+    "sameAsBilling": "Usar la misma dirección para el envío"
   },
   "orders": {
     "orders": "Pedidos",

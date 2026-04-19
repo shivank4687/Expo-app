@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCoreConfig, setCurrency } from '@/store/slices/coreSlice';
 import { Currency } from '@/services/api/core.api';
 import { useTranslation } from 'react-i18next';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 export const CurrencySelectionScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -51,20 +52,23 @@ export const CurrencySelectionScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <>
-                <Stack.Screen options={{ title: t('settings.selectCurrency'), headerBackTitle: t('common.back') }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader title={t('settings.selectCurrency')} onBack={() => router.back()} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
                     <Text style={styles.loadingText}>{t('settings.loadingCurrencies')}</Text>
                 </View>
-            </>
+            </View>
         );
     }
 
     return (
-        <>
-            <Stack.Screen options={{ title: t('settings.selectCurrency'), headerBackTitle: t('common.back') }} />
-            <ScrollView style={styles.container}>
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader title={t('settings.selectCurrency')} onBack={() => router.back()} />
+            
+            <ScrollView style={{ flex: 1 }}>
                 {currencies.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="cash-outline" size={48} color={theme.colors.gray[400]} />
@@ -105,7 +109,7 @@ export const CurrencySelectionScreen: React.FC = () => {
                     ))
                 )}
             </ScrollView>
-        </>
+        </View>
     );
 };
 

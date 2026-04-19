@@ -10,6 +10,7 @@ import cmsReducer from './slices/cmsSlice';
 import cartReducer from './slices/cartSlice';
 import wishlistReducer from './slices/wishlistSlice';
 import notificationReducer from './slices/notificationSlice';
+import customerStatsReducer from './slices/customerStatsSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -55,6 +56,7 @@ const rootReducer = combineReducers({
     cart: cartReducer,
     wishlist: wishlistReducer,
     notifications: notificationReducer,
+    customerStats: customerStatsReducer,
 });
 
 // Persisted reducer

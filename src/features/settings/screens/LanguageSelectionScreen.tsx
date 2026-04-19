@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCoreConfig, setLocale } from '@/store/slices/coreSlice';
 import { Locale } from '@/services/api/core.api';
 import { useTranslation } from 'react-i18next';
+import { TopHeader } from '@/shared/components/TopHeader';
 
 export const LanguageSelectionScreen: React.FC = () => {
     const { t } = useTranslation();
@@ -52,20 +53,23 @@ export const LanguageSelectionScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <>
-                <Stack.Screen options={{ title: t('settings.selectLanguage'), headerBackTitle: t('common.back') }} />
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <TopHeader title={t('settings.selectLanguage')} onBack={() => router.back()} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
                     <Text style={styles.loadingText}>{t('settings.loadingLanguages')}</Text>
                 </View>
-            </>
+            </View>
         );
     }
 
     return (
-        <>
-            <Stack.Screen options={{ title: t('settings.selectLanguage'), headerBackTitle: t('common.back') }} />
-            <ScrollView style={styles.container}>
+        <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <TopHeader title={t('settings.selectLanguage')} onBack={() => router.back()} />
+            
+            <ScrollView style={{ flex: 1 }}>
                 {locales.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="language-outline" size={48} color={theme.colors.gray[400]} />
@@ -104,7 +108,7 @@ export const LanguageSelectionScreen: React.FC = () => {
                     ))
                 )}
             </ScrollView>
-        </>
+        </View>
     );
 };
 
