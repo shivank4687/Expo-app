@@ -22,7 +22,7 @@ export const BuyerToolsCard = () => {
             {/* List */}
             <View style={styles.listContainer}>
                 {/* 1. Coupons & credits */}
-                <TouchableOpacity style={styles.listItem}>
+                <TouchableOpacity style={styles.listItem} onPress={() => router.push('/coupons')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="pricetag-outline" size={20} color="#00615E" />
                     </View>
@@ -49,7 +49,7 @@ export const BuyerToolsCard = () => {
                 </TouchableOpacity>
 
                 {/* 3. Security */}
-                <TouchableOpacity style={styles.listItem}>
+                <TouchableOpacity style={styles.listItem} onPress={() => router.push('/security')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="lock-closed-outline" size={20} color="#00615E" />
                     </View>

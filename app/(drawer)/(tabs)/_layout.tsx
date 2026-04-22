@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { TabBar } from "@/shared/components/TabBar";
-import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
+import { useAppSelector } from "@/store/hooks";
 import { Tabs } from "expo-router";
 import React from "react";
 import { theme } from "@/theme";
@@ -14,12 +14,12 @@ const CUSTOMER_TABS = [
 ];
 
 const CUSTOMER_DRAWER_OPTIONS = [
-  { name: "profile", label: "Profile" },
+  //{ name: "profile", label: "Profile" },
   { name: "dashboard", label: "Dashboard" },
 ];
 
 export default function TabLayout() {
-  const { isLoading, isAuthenticated } = useRequireAuth();
+  const { isLoading, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const activeTabs = CUSTOMER_TABS.filter(
     (tab) => !["orders", "profile"].includes(tab.name) || isAuthenticated

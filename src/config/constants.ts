@@ -59,6 +59,7 @@ export const API_ENDPOINTS = {
     // Customer
     PROFILE: '/customer/profile',
     UPDATE_PROFILE: '/customer/profile',
+    UPDATE_SECURITY: '/customer/security',
     ADDRESSES: '/customer/addresses',
     NEWSLETTER_SUBSCRIPTION: '/customer/subscription',
 

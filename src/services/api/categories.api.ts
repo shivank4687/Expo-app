@@ -76,7 +76,7 @@ export const categoriesApi = {
             const categories = Array.isArray(response) ? response : (response.data || []);
 
 
-            console.log('[Categories API] All Loaded categories:', JSON.stringify(categories, null, 2));
+            // console.log('[Categories API] All Loaded categories:', JSON.stringify(categories, null, 2));
 
             // Map and ensure children arrays exist
             const mappedCategories = categories.map((cat: any) => this.mapCategory(cat));

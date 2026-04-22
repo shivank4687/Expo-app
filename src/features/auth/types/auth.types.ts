@@ -11,6 +11,7 @@ export interface User {
     gender?: string;
     date_of_birth?: string;
     subscribed_to_news_letter?: boolean;
+    two_factor_enabled?: boolean;
     created_at?: string;
 }
 
@@ -56,15 +57,22 @@ export interface NewsletterSubscriptionRequest {
 }
 
 export interface AuthResponse {
-    token: string;
-    user: User;
+    token?: string;
+    user?: User;
     expires_in?: number;
+    requires_otp_verification?: boolean;
+    verification_token?: string;
+    type?: 'customer' | 'supplier' | 'login_2fa';
+    phone?: string;
+    otp_expiry?: string;
+    resend_available_at?: string;
+    message?: string;
 }
 
 export interface OtpVerificationRequest {
     verification_token: string;
     otp: string;
-    type?: 'customer' | 'supplier' | 'password_reset';
+    type?: 'customer' | 'supplier' | 'password_reset' | 'login_2fa';
     device_name: string;
 }
 
@@ -75,7 +83,7 @@ export interface OtpVerificationResponse extends AuthResponse {
 
 export interface ResendOtpRequest {
     verification_token: string;
-    type?: 'customer' | 'supplier' | 'password_reset';
+    type?: 'customer' | 'supplier' | 'password_reset' | 'login_2fa';
 }
 
 export interface ResendOtpResponse {

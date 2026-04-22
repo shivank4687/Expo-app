@@ -266,6 +266,12 @@ function AppContent() {
           }}
         />
         <Stack.Screen
+          name="security"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="quotes/[quoteId]"
           options={{
             headerShown: false,
@@ -303,6 +309,12 @@ function AppContent() {
         />
         <Stack.Screen
           name="currency-selection"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="coupons"
           options={{
             headerShown: false,
           }}

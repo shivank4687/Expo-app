@@ -17,10 +17,13 @@ export const useRequireAuth = () => {
         // Wait for auth check to complete
         if (isLoading) return;
 
-        // Redirect to login if not authenticated
+        // Redirect to home if not authenticated
         if (!isAuthenticated) {
-            console.log('[useRequireAuth] User not authenticated, redirecting to login');
-            // router.replace('/login');
+            console.log('[useRequireAuth] User not authenticated, redirecting to home');
+            // Use setTimeout to avoid navigation conflicts during state updates
+            setTimeout(() => {
+                router.replace('/');
+            }, 0);
         }
     }, [isAuthenticated, isLoading, router]);
 

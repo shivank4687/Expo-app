@@ -106,7 +106,9 @@ export const OtpVerificationScreen: React.FC = () => {
             })).unwrap();
 
             showToast({
-                message: t('auth.signupSuccess', 'Account created successfully! Welcome aboard.'),
+                message: verificationType === 'login_2fa'
+                    ? t('auth.loginSuccess', 'Login successful! Welcome back.')
+                    : t('auth.signupSuccess', 'Account created successfully! Welcome aboard.'),
                 type: 'success',
                 duration: 3000,
             });

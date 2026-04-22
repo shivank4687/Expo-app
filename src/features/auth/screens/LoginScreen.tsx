@@ -146,7 +146,19 @@ export const LoginScreen: React.FC = () => {
                 }, 500);
             } else {
                 // Customer login
-                await dispatch(loginThunk(loginPayload)).unwrap();
+                const result = await dispatch(loginThunk(loginPayload)).unwrap();
+
+                if (result.requiresOtp) {
+                    router.push({
+                        pathname: '/otp-verification',
+                        params: {
+                            verificationToken: result.verificationToken,
+                            phone: result.phone,
+                            type: result.type,
+                        }
+                    });
+                    return;
+                }
 
                 showToast({
                     message: t('auth.loginSuccess', 'Login successful! Welcome back.'),

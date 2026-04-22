@@ -145,6 +145,13 @@ export const authApi = {
     },
 
     /**
+     * Update customer security settings
+     */
+    async updateSecuritySettings(data: { two_factor_enabled: boolean }): Promise<{ data: User; message: string }> {
+        return restApiClient.put(API_ENDPOINTS.UPDATE_SECURITY, data);
+    },
+
+    /**
      * Check if email or phone already exists
      */
     async checkDuplicate(data: {

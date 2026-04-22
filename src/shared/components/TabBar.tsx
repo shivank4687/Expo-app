@@ -56,6 +56,7 @@ export function TabBar({
     drawerOptions,
 }: TabBarProps) {
     const insets = useSafeAreaInsets();
+    const selectedUserType = useAppSelector((state) => state.auth.selectedUserType);
     const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 28) : 0;
 
     const tabsList = useMemo(() => (tabs && tabs.length > 0 ? tabs : DEFAULT_TABS), [tabs]);
@@ -68,12 +69,21 @@ export function TabBar({
         () => new Set(drawerOptionsList.map((option) => option.name)),
         [drawerOptionsList],
     );
+    const defaultDrawerOptionName = useMemo(() => {
+        const customerDashboardOption = drawerOptionsList.find((option) => option.name === 'dashboard');
+
+        if (selectedUserType === 'customer' && customerDashboardOption) {
+            return customerDashboardOption.name;
+        }
+
+        return drawerOptionsList[0]?.name ?? 'profile';
+    }, [drawerOptionsList, selectedUserType]);
 
     const focusedRouteName = state.routes[state.index]?.name ?? '';
     const isMoreTabFocused = drawerRouteNames.has(focusedRouteName);
     const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
 
-    const [selectedOption, setSelectedOption] = useState<string>(drawerOptionsList[0]?.name ?? 'profile');
+    const [selectedOption, setSelectedOption] = useState<string>(defaultDrawerOptionName);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerHeight = useRef(new Animated.Value(0)).current;
     const visibleTabs = tabsList
@@ -85,8 +95,8 @@ export function TabBar({
         .filter((entry): entry is { tab: TabDefinition; route: TabRoute } => Boolean(entry));
 
     useEffect(() => {
-        setSelectedOption(drawerOptionsList[0]?.name ?? 'profile');
-    }, [drawerOptionsList]);
+        setSelectedOption(defaultDrawerOptionName);
+    }, [defaultDrawerOptionName]);
 
     useEffect(() => {
         if (focusedRouteName && drawerRouteNames.has(focusedRouteName)) {
@@ -164,7 +174,8 @@ export function TabBar({
                             if (isFocused) {
                                 setIsDrawerOpen((prev) => !prev);
                             } else if (!event.defaultPrevented) {
-                                navigation.navigate(route.name);
+                                setSelectedOption(defaultDrawerOptionName);
+                                navigation.navigate(defaultDrawerOptionName);
                             }
                             return;
                         }

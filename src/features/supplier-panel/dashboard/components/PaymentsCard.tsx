@@ -43,7 +43,7 @@ export const PaymentsCard: React.FC = () => {
             </View>
             <View style={styles.metricContent}>
                 <Text style={styles.metricValue}>{formattedAmount}</Text>
-                <Text style={styles.metricSubtext}>Released after delivery (+5 days max.)</Text>
+                <Text style={styles.metricSubtext}>Released after delivery</Text>
             </View>
         </View>
     );

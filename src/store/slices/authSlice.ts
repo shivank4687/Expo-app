@@ -108,6 +108,16 @@ export const loginThunk = createAsyncThunk(
                 token = (response as any).data.data.token || (response as any).data.token || token;
             }
 
+            // Add check for 2FA OTP requirement
+            if (response.requires_otp_verification) {
+                return {
+                    requiresOtp: true,
+                    verificationToken: response.verification_token,
+                    phone: response.phone,
+                    type: response.type || 'login_2fa',
+                };
+            }
+
             if (!user) {
                 console.error('Could not find user in response');
             }
@@ -130,7 +140,7 @@ export const loginThunk = createAsyncThunk(
                 // Don't fail login if notification registration fails
             }
 
-            return { user, token };
+            return { requiresOtp: false, user, token };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Login failed');
         }
@@ -364,6 +374,31 @@ export const updateProfileThunk = createAsyncThunk(
     }
 );
 
+export const updateSecurityThunk = createAsyncThunk(
+    'auth/updateSecurity',
+    async (data: { two_factor_enabled: boolean }, { rejectWithValue }) => {
+        try {
+            const response = await authApi.updateSecuritySettings(data);
+
+            // Handle nested response structure
+            let user = response.data;
+            if (!user && (response as any).data?.data) {
+                user = (response as any).data.data;
+            }
+
+            // Store updated user data
+            if (user) {
+                await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+            }
+
+            return { user, message: response.message || (response as any).message };
+        } catch (error: any) {
+            console.error('Update Security Error:', error);
+            return rejectWithValue(error.response?.data?.message || 'Security update failed');
+        }
+    }
+);
+
 // Slice
 const authSlice = createSlice({
     name: 'auth',
@@ -410,13 +445,16 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(loginThunk.fulfilled, (state, action) => {
-                state.user = action.payload.user;
-                state.token = action.payload.token;
-                state.isAuthenticated = true;
                 state.isLoading = false;
                 state.error = null;
-                // Set global token for API client
-                setGlobalToken(action.payload.token);
+                
+                if (!(action.payload as any).requiresOtp) {
+                    state.user = action.payload.user;
+                    state.token = action.payload.token;
+                    state.isAuthenticated = true;
+                    // Set global token for API client
+                    setGlobalToken(action.payload.token);
+                }
             })
             .addCase(loginThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -540,6 +578,24 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateProfileThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
+        // Update Security
+        builder
+            .addCase(updateSecurityThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(updateSecurityThunk.fulfilled, (state, action) => {
+                if (action.payload.user) {
+                    state.user = action.payload.user;
+                }
+                state.isLoading = false;
+                state.error = null;
+            })
+            .addCase(updateSecurityThunk.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             });
