@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { useAppSelector } from '@/store/hooks';
 
 /**
@@ -12,20 +12,25 @@ import { useAppSelector } from '@/store/hooks';
 export const useRequireAuth = () => {
     const router = useRouter();
     const { isAuthenticated, isLoading, user } = useAppSelector((state) => state.auth);
+    const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
+    const segments = useSegments();
 
     useEffect(() => {
         // Wait for auth check to complete
-        if (isLoading) return;
+        if (isLoading || isSupplierLoading) return;
 
-        // Redirect to home if not authenticated
-        if (!isAuthenticated) {
-            console.log('[useRequireAuth] User not authenticated, redirecting to home');
+        // Check if we are on an auth screen
+        const isAuthScreen = ['login', 'signup', 'otp-verification', 'forgot-password', 'reset-password', 'index'].includes(segments[0] as string);
+
+        // Redirect to home if not authenticated and NOT on an auth screen
+        if (!isAuthenticated && !isSupplierAuthenticated && !isAuthScreen) {
+            console.log('[useRequireAuth] User not authenticated on protected route, redirecting to home');
             // Use setTimeout to avoid navigation conflicts during state updates
             setTimeout(() => {
                 router.replace('/');
             }, 0);
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [isAuthenticated, isSupplierAuthenticated, isLoading, isSupplierLoading, router, segments]);
 
     return {
         isAuthenticated,

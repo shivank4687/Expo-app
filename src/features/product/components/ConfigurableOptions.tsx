@@ -396,7 +396,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        gap: theme.spacing.md,
+        gap: theme.spacing.xs,
     },
     card: {
         backgroundColor: theme.colors.background.default,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
         padding: theme.spacing.lg,
         borderWidth: 1,
         borderColor: theme.colors.border.main,
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.xs,
         ...theme.shadows.sm,
     },
     attributeHeader: {

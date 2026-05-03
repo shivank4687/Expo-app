@@ -184,7 +184,12 @@
     "requestForQuote": "Request for Quote",
     "loginForRFQ": "Login for RFQ",
     "adding": "Adding...",
-    "inStock": "In Stock"
+    "inStock": "In Stock",
+    "immediateShipping": "In Stock — Ready to ship",
+    "immediateShippingDesc": "This item is shipped immediately after order.",
+    "madeToOrder": "Made to Order",
+    "productionTime": "Production time: {{days}} days",
+    "madeToOrderQty": "Minimum order quantity: {{qty}} units"
   },
   "cart": {
     "cart": "Cart",
@@ -294,7 +299,7 @@
     "addFirstAddress": "Add your first address to continue",
     "billingAddress": "Billing Address",
     "shippingAddress": "Shipping Address",
-    "sameAsBilling": "Use same as for shipping address"
+    "sameAsBilling": "Use same address for shipping address"
   },
   "orders": {
     "orders": "Orders",

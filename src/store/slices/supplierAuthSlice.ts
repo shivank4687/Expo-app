@@ -62,11 +62,25 @@ export const supplierLoginThunk = createAsyncThunk(
                 loginPayload.phone_country_id = credentials.phone_country_id;
             }
 
-            const response = await supplierAuthApi.login(loginPayload);
+            const response = (await supplierAuthApi.login(loginPayload)) as any;
+
+            // Add check for 2FA OTP requirement
+            if (response.requires_otp_verification) {
+                return {
+                    requiresOtp: true,
+                    verificationToken: response.verification_token,
+                    phone: response.phone,
+                    type: response.type || 'login_2fa',
+                };
+            }
 
             // Store token and supplier data
-            await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, response.token);
-            await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(response.data));
+            if (response.token) {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, response.token);
+            }
+            if (response.data) {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(response.data));
+            }
 
             // Set global token for API client
             setGlobalToken(response.token);
@@ -81,6 +95,7 @@ export const supplierLoginThunk = createAsyncThunk(
             }
 
             return {
+                requiresOtp: false,
                 supplier: response.data,
                 token: response.token,
             };
@@ -114,6 +129,36 @@ export const supplierLogoutThunk = createAsyncThunk(
             await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
             await secureStorage.removeItem(STORAGE_KEYS.SUPPLIER_DATA);
             setGlobalToken(null);
+        }
+    }
+);
+
+export const sendSupplierPhoneOtpThunk = createAsyncThunk(
+    'supplierAuth/sendPhoneOtp',
+    async (data: { phone: string; phone_country_id: number; dial_code: string }, { rejectWithValue }) => {
+        try {
+            const response = await supplierAuthApi.sendPhoneOtp(data);
+            return response;
+        } catch (error: any) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to send OTP');
+        }
+    }
+);
+
+export const verifySupplierPhoneOtpThunk = createAsyncThunk(
+    'supplierAuth/verifyPhoneOtp',
+    async (data: { verification_token: string; otp: string }, { rejectWithValue }) => {
+        try {
+            const response = await supplierAuthApi.verifyPhoneOtp(data);
+            
+            // Store updated supplier data
+            if (response.data) {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(response.data));
+            }
+            
+            return response;
+        } catch (error: any) {
+            return rejectWithValue(error?.response?.data?.message || 'OTP verification failed');
         }
     }
 );
@@ -165,10 +210,15 @@ const supplierAuthSlice = createSlice({
             })
             .addCase(supplierLoginThunk.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.supplier = action.payload.supplier;
-                state.token = action.payload.token;
-                state.isAuthenticated = true;
                 state.error = null;
+
+                if (!(action.payload as any).requiresOtp) {
+                    state.supplier = action.payload.supplier;
+                    state.token = action.payload.token;
+                    state.isAuthenticated = true;
+                    // Set global token for API client
+                    setGlobalToken(action.payload.token);
+                }
             })
             .addCase(supplierLoginThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -195,6 +245,24 @@ const supplierAuthSlice = createSlice({
                 state.supplier = null;
                 state.token = null;
                 state.isAuthenticated = false;
+            });
+
+        // Verify Phone OTP (Update profile upon success)
+        builder
+            .addCase(verifySupplierPhoneOtpThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(verifySupplierPhoneOtpThunk.fulfilled, (state, action) => {
+                if (action.payload.data) {
+                    state.supplier = action.payload.data;
+                }
+                state.isLoading = false;
+                state.error = null;
+            })
+            .addCase(verifySupplierPhoneOtpThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
             });
     },
 });

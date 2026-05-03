@@ -341,6 +341,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 20,
         color: '#F5F5F5',
+        includeFontPadding: false,
     },
     profileInfo: {
         flexDirection: 'column',
@@ -353,15 +354,15 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 16,
-        lineHeight: 16,
         color: '#000000',
+        includeFontPadding: false,
     },
     descriptionText: {
         fontFamily: 'Inter',
         fontWeight: '400',
         fontSize: 14,
-        lineHeight: 17,
         color: '#666666',
+        includeFontPadding: false,
     },
     actionButtons: {
         flexDirection: 'row',
@@ -408,8 +409,8 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '700',
         fontSize: 9,
-        lineHeight: 11,
         color: '#FFFFFF',
+        includeFontPadding: false,
     },
     infoCardContainer: {
         flexDirection: 'row',
@@ -451,15 +452,15 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 16,
-        lineHeight: 19,
         color: '#000000',
+        includeFontPadding: false,
     },
     infoDescription: {
         fontFamily: 'Inter',
         fontWeight: '400',
         fontSize: 14,
-        lineHeight: 20,
         color: '#666666',
+        includeFontPadding: false,
     },
     metricsGrid: {
         flexDirection: 'row',

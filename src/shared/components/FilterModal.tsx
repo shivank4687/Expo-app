@@ -37,7 +37,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 filtersApi.getMaxPrice(categoryId),
             ]);
             setAvailableFilters(filtersData.data || []);
-            setMaxPrice(maxPriceData);
+            setMaxPrice(Number(maxPriceData));
             setHasLoaded(true); // Mark as loaded after successful fetch
         } catch (error) {
             console.error('Failed to load filters:', error);
@@ -47,12 +47,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     }, [categoryId]);
 
     useEffect(() => {
-        // Only load filters once when modal first becomes visible
-        // Don't reload on subsequent opens unless categoryId changes
-        if (visible && !hasLoaded) {
+        // Load filters in the background so they are ready when the user opens the modal
+        if (categoryId && !hasLoaded && !isLoading) {
             loadFilters();
         }
-    }, [visible, hasLoaded, loadFilters]);
+    }, [categoryId, hasLoaded, isLoading, loadFilters]);
 
     // Reset hasLoaded when categoryId changes to reload filters for new category
     useEffect(() => {
@@ -93,7 +92,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
     const getPriceRange = (): [number, number] => {
         if (filters.price) {
-            const [min, max] = filters.price.split(',').map(Number);
+            const [min, max] = filters.price.split(',').map(val => Number(val));
             return [min, max];
         }
         return [0, maxPrice];
@@ -106,6 +105,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             visible={visible}
             animationType="slide"
             onRequestClose={onClose}
+            hardwareAccelerated={true}
         >
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.container}>

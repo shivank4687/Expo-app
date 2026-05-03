@@ -26,15 +26,15 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
     useEffect(() => {
         const fetchRelated = async () => {
             console.log('🔍 MoreFromCategory: categoryId resolved as', categoryId, 'Product categories:', product.categories);
-            
+
             try {
                 // Fetch up to 5 so we can filter out the current product and still have 4
                 // Fallback to general products if no category is found on the product detail
                 const options = { per_page: 5, page: 1, locale: selectedLocale?.code };
-                const response = categoryId 
+                const response = categoryId
                     ? await productsApi.getProductsByCategory(categoryId, options)
                     : await productsApi.getProducts(options);
-                
+
                 const filtered = response.data.filter(p => p.id !== product.id).slice(0, 4);
                 console.log(`📦 Loaded ${filtered.length} related products`);
                 setRelatedProducts(filtered);
@@ -62,9 +62,9 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
 
     return (
         <View style={styles.container}>
-            <DetailCard 
-                title={categoryId ? `More from ${categoryName}` : "You may also like"} 
-                badgeText="View All" 
+            <DetailCard
+                title={categoryId ? `More from ${categoryName}` : "You may also like"}
+                badgeText="View All"
                 onBadgePress={() => {
                     if (categoryId) {
                         router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}`);
@@ -76,9 +76,9 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
                 <View style={styles.gridContainer}>
                     {relatedProducts.map(item => (
                         <View key={item.id} style={styles.cardWrapper}>
-                            <ProductCard 
-                                product={item} 
-                                onPress={() => router.push(`/product/${item.id}`)} 
+                            <ProductCard
+                                product={item}
+                                onPress={() => router.push(`/product/${item.id}`)}
                             />
                         </View>
                     ))}
@@ -90,7 +90,7 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: theme.spacing.lg,
+        //marginTop: theme.spacing.xs,
     },
     loadingContainer: {
         padding: theme.spacing.xl,
@@ -101,10 +101,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginTop: theme.spacing.md,
+        //marginTop: theme.spacing.xxs,
     },
     cardWrapper: {
-        width: '48%',
-        marginBottom: theme.spacing.md,
+        width: '49%',
+        marginBottom: theme.spacing.xs,
     }
 });

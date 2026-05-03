@@ -25,7 +25,8 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SupplierWiseCartItems } from '../components/SupplierWiseCartItems';
@@ -116,7 +117,7 @@ export const CartScreen: React.FC = () => {
         return <EmptyCart />;
     }
 
-    const hasDiscount = (cart.discount_amount || 0) > 0;
+    const hasDiscount = Number(cart.discount || 0) !== 0;
 
     // Debug: Log cart structure
     // console.log('🛒 Cart object keys:', Object.keys(cart));
@@ -134,7 +135,7 @@ export const CartScreen: React.FC = () => {
     // Calculate amount to pay WITHOUT shipping
     // Use || 0 to handle undefined values
     const subtotal = Number(cart.sub_total || cart.base_sub_total || 0);
-    const discount = Number(cart.discount_amount || cart.base_discount_amount || 0);
+    const discount = Number(cart.discount || cart.base_discount || 0);
     const tax = Number(cart.tax_total || cart.base_tax_total || 0);
     const grandTotal = Number(cart.grand_total || cart.base_grand_total || 0);
 
@@ -164,10 +165,9 @@ export const CartScreen: React.FC = () => {
     const formattedTax =
         cart.formatted_tax_total || formatters.formatPrice(cart.tax_total || cart.base_tax_total || 0);
     const formattedDiscount =
-        cart.formatted_discount_amount || formatters.formatPrice(cart.discount_amount || discount);
+        cart.formatted_discount || formatters.formatPrice(cart.discount || discount);
     const formattedGrandTotal =
         cart.formatted_grand_total || formatters.formatPrice(cart.grand_total || cart.base_grand_total || 0);
-
     return (
         <View style={styles.container}>
             <ScrollView
@@ -206,29 +206,34 @@ export const CartScreen: React.FC = () => {
 
                             <View>
                                 {cart.coupon_code ? (
-                                    <View style={styles.appliedCouponContainer}>
-                                        <View style={styles.appliedCouponInfo}>
+                                    <View style={styles.appliedCouponSection}>
+                                        <View style={styles.appliedCodeContainer}>
                                             <Ionicons
                                                 name="checkmark-circle"
-                                                size={20}
+                                                size={18}
                                                 color={theme.colors.success.main}
+                                                style={{ marginRight: 8 }}
                                             />
-                                            <Text style={styles.appliedCouponText}>
+                                            <Text style={styles.appliedCodeText}>
                                                 {cart.coupon_code}
                                             </Text>
                                         </View>
                                         <TouchableOpacity
+                                            style={styles.removeCouponButton}
                                             onPress={handleRemoveCoupon}
                                             disabled={isRemovingCoupon}
                                         >
                                             {isRemovingCoupon ? (
                                                 <ActivityIndicator size="small" color={theme.colors.error.main} />
                                             ) : (
-                                                <Ionicons
-                                                    name="close-circle"
-                                                    size={24}
-                                                    color={theme.colors.error.main}
-                                                />
+                                                <>
+                                                    <Ionicons
+                                                        name="close-circle-outline"
+                                                        size={20}
+                                                        color={theme.colors.error.main}
+                                                    />
+                                                    <Text style={styles.removeButtonText}>{t('common.remove', 'REMOVE')}</Text>
+                                                </>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -368,7 +373,7 @@ const styles = StyleSheet.create({
     },
     section: {
         backgroundColor: theme.colors.background.default,
-        marginHorizontal: theme.spacing.md,
+        marginHorizontal: theme.spacing.sm,
         marginBottom: theme.spacing.md,
         borderRadius: theme.borderRadius.lg,
         overflow: 'hidden',
@@ -438,24 +443,41 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.semiBold,
     },
-    appliedCouponContainer: {
+    appliedCouponSection: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: theme.spacing.md,
-        backgroundColor: theme.colors.success.light,
+        backgroundColor: theme.colors.gray[50],
         borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.sm,
+        borderStyle: 'dashed',
+        borderWidth: 1,
+        borderColor: theme.colors.gray[300],
     },
-    appliedCouponInfo: {
+    appliedCodeContainer: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.spacing.sm,
     },
-    appliedCouponText: {
-        fontSize: theme.typography.fontSize.md,
-        fontWeight: theme.typography.fontWeight.semiBold,
-        color: theme.colors.success.dark,
+    appliedCodeText: {
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 1.5,
+        color: theme.colors.primary[600],
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
         textTransform: 'uppercase',
+    },
+    removeCouponButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingLeft: theme.spacing.sm,
+        borderLeftWidth: 1,
+        borderLeftColor: theme.colors.gray[300],
+    },
+    removeButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: theme.colors.error.main,
     },
     priceRow: {
         flexDirection: 'row',
@@ -484,3 +506,5 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
 });
+
+export default CartScreen;

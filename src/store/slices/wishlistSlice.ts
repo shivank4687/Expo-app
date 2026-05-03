@@ -13,6 +13,8 @@ interface WishlistState {
   isLoading: boolean;
   isRemoving: boolean;
   removingProductId: number | null;
+  isMovingToCart: boolean;
+  movingToCartProductId: number | null;
   error: string | null;
 }
 
@@ -21,6 +23,8 @@ const initialState: WishlistState = {
   isLoading: false,
   isRemoving: false,
   removingProductId: null,
+  isMovingToCart: false,
+  movingToCartProductId: null,
   error: null,
 };
 
@@ -178,7 +182,9 @@ const wishlistSlice = createSlice({
 
     // Move to cart
     builder
-      .addCase(moveToCartThunk.pending, (state) => {
+      .addCase(moveToCartThunk.pending, (state, action) => {
+        state.isMovingToCart = true;
+        state.movingToCartProductId = action.meta.arg.productId;
         state.error = null;
       })
       .addCase(moveToCartThunk.fulfilled, (state, action) => {
@@ -186,6 +192,8 @@ const wishlistSlice = createSlice({
           "[wishlistSlice] Move to cart fulfilled, updating items:",
           action.payload
         );
+        state.isMovingToCart = false;
+        state.movingToCartProductId = null;
         state.items = action.payload;
         console.log(
           "[wishlistSlice] State updated, items count:",
@@ -194,6 +202,8 @@ const wishlistSlice = createSlice({
       })
       .addCase(moveToCartThunk.rejected, (state, action) => {
         console.error("[wishlistSlice] Move to cart rejected:", action.payload);
+        state.isMovingToCart = false;
+        state.movingToCartProductId = null;
         state.error = action.payload as string;
       });
 
@@ -214,6 +224,8 @@ const wishlistSlice = createSlice({
       state.items = [];
       state.error = null;
       state.removingProductId = null;
+      state.isMovingToCart = false;
+      state.movingToCartProductId = null;
     });
   },
 });

@@ -24,7 +24,7 @@ export const WishlistScreen = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
-    const { items, isLoading, isRemoving, removingProductId } = useAppSelector((state) => state.wishlist);
+    const { items, isLoading, isRemoving, removingProductId, isMovingToCart, movingToCartProductId } = useAppSelector((state) => state.wishlist);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
@@ -68,7 +68,7 @@ export const WishlistScreen = () => {
                     onPress: async () => {
                         try {
                             await dispatch(removeFromWishlistThunk(item.product.id)).unwrap();
-                            showToast({ message: t('wishlist.removed'), type: 'success' });
+                            // showToast({ message: t('wishlist.removed'), type: 'success' });
                         } catch (error: any) {
                             showToast({ message: error || t('wishlist.removeFailed'), type: 'error' });
                         }
@@ -80,7 +80,7 @@ export const WishlistScreen = () => {
 
     const handleMoveToCart = async (item: WishlistItem, e: any) => {
         e.stopPropagation();
-        
+
         if (!item.product.in_stock) {
             showToast({ message: t('product.outOfStock'), type: 'error' });
             return;
@@ -88,21 +88,21 @@ export const WishlistScreen = () => {
 
         try {
             console.log('[WishlistScreen] Moving item to cart:', item.product.id);
-            
+
             // Move item from wishlist to cart
             await dispatch(moveToCartThunk({
                 productId: item.product.id,
                 quantity: 1,
             })).unwrap();
-            
+
             console.log('[WishlistScreen] Item moved to cart successfully');
-            
+
             // Fetch updated cart to update the cart icon count in header
             console.log('[WishlistScreen] Fetching updated cart to refresh header count...');
             await dispatch(fetchCartThunk());
             console.log('[WishlistScreen] Cart updated');
-            
-            showToast({ message: t('wishlist.movedToCart', 'Moved to cart successfully'), type: 'success' });
+
+            // showToast({ message: t('wishlist.movedToCart', 'Moved to cart successfully'), type: 'success' });
         } catch (error: any) {
             console.error('[WishlistScreen] Failed to move to cart:', error);
             showToast({ message: error || t('wishlist.failedToMoveCart', 'Failed to move to cart'), type: 'error' });
@@ -113,9 +113,10 @@ export const WishlistScreen = () => {
         const product = item.product;
         const hasDiscount = product.on_sale || (product.regular_price && product.regular_price > product.price);
         const isRemovingThis = isRemoving && removingProductId === product.id;
+        const isMovingThisToCart = isMovingToCart && movingToCartProductId === product.id;
 
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 onPress={() => handleProductPress(product.id)}
                 activeOpacity={0.7}
                 style={styles.itemContainer}
@@ -130,7 +131,7 @@ export const WishlistScreen = () => {
                                 recyclingKey={product.id?.toString()}
                                 priority="low"
                             />
-                            
+
                             {/* Out of Stock Badge */}
                             {!product.in_stock && (
                                 <View style={styles.outOfStockBadge}>
@@ -179,30 +180,36 @@ export const WishlistScreen = () => {
 
                     {/* Actions - Full Width at Bottom */}
                     <View style={styles.actionsContainer}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.actionButton}
                             onPress={(e) => {
                                 e?.stopPropagation?.();
                                 handleMoveToCart(item, e);
                             }}
-                            disabled={!product.in_stock}
+                            disabled={!product.in_stock || isMovingThisToCart}
                         >
-                            <Ionicons 
-                                name="cart-outline" 
-                                size={18} 
-                                color={product.in_stock ? theme.colors.text.secondary : theme.colors.gray[400]} 
-                            />
-                            <Text style={[
-                                styles.actionText,
-                                !product.in_stock && styles.actionTextDisabled
-                            ]}>
-                                {t('wishlist.moveToCart', 'Move to Cart')}
-                            </Text>
+                            {isMovingThisToCart ? (
+                                <ActivityIndicator size="small" color={theme.colors.text.secondary} />
+                            ) : (
+                                <>
+                                    <Ionicons
+                                        name="cart-outline"
+                                        size={18}
+                                        color={product.in_stock ? theme.colors.text.secondary : theme.colors.gray[400]}
+                                    />
+                                    <Text style={[
+                                        styles.actionText,
+                                        !product.in_stock && styles.actionTextDisabled
+                                    ]}>
+                                        {t('wishlist.moveToCart', 'Move to Cart')}
+                                    </Text>
+                                </>
+                            )}
                         </TouchableOpacity>
 
                         <View style={styles.actionDivider} />
 
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.actionButton}
                             onPress={(e) => {
                                 e?.stopPropagation?.();
@@ -214,10 +221,10 @@ export const WishlistScreen = () => {
                                 <ActivityIndicator size="small" color={theme.colors.error.main} />
                             ) : (
                                 <>
-                                    <Ionicons 
-                                        name="trash-outline" 
-                                        size={18} 
-                                        color={theme.colors.error.main} 
+                                    <Ionicons
+                                        name="trash-outline"
+                                        size={18}
+                                        color={theme.colors.error.main}
                                     />
                                     <Text style={[styles.actionText, styles.removeText]}>
                                         {t('wishlist.remove', 'Remove')}

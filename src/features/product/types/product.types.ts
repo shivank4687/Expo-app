@@ -26,6 +26,10 @@ export interface Product {
     new?: boolean | number; // Product is marked as "new"
     on_sale?: boolean; // Product is on sale (has special price)
     is_new?: boolean; // Alternative field name for "new" status
+    immediate_shipping?: boolean; // Product is in stock and ships immediately
+    made_to_order?: boolean; // Product is made to order
+    made_to_order_days?: number | null; // Production time in days
+    made_to_order_qty?: number | null; // Minimum order quantity for made-to-order
     categories?: Category[];
 
     // For configurable products

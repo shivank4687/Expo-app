@@ -184,7 +184,12 @@
     "requestForQuote": "Solicitar Cotización",
     "loginForRFQ": "Iniciar sesión para RFQ",
     "adding": "Agregando...",
-    "inStock": "En Stock"
+    "inStock": "En Stock",
+    "immediateShipping": "En Stock — Listo para enviar",
+    "immediateShippingDesc": "Este artículo se envía inmediatamente después del pedido.",
+    "madeToOrder": "Fabricado a pedido",
+    "productionTime": "Tiempo de producción: {{days}} días",
+    "madeToOrderQty": "Cantidad mínima de pedido: {{qty}} unidades"
   },
   "cart": {
     "cart": "Carrito",

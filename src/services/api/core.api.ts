@@ -122,7 +122,11 @@ export const coreApi = {
      */
     async getStates(): Promise<State[]> {
         const response = await restApiClient.get<PaginatedResponse<State>>('/countries-states', {
-            params: { pagination: 0 },
+            params: { 
+                pagination: 0,
+                sort: 'default_name',
+                order: 'asc',
+            },
         });
         return response.data || [];
     },
@@ -135,6 +139,8 @@ export const coreApi = {
             params: {
                 pagination: 0,
                 country_code: countryCode,
+                sort: 'default_name',
+                order: 'asc',
             },
         });
         return response.data || [];

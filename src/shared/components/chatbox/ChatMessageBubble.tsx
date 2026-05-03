@@ -1,3 +1,4 @@
+import { theme } from '@/theme';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -11,8 +12,24 @@ export interface ChatMessageBubbleProps {
     currentUserType?: ChatSenderType; // Added to distinguish who is viewing the chat
 }
 
-export default function ChatMessageBubble({ message, senderType, currentUserType = 'supplier' }: ChatMessageBubbleProps) {
+export default function ChatMessageBubble({ message, senderType, timestamp, currentUserType = 'supplier' }: ChatMessageBubbleProps) {
     const isCurrentUser = senderType === currentUserType;
+
+    const formatTime = (ts?: string) => {
+        if (!ts) return '';
+        try {
+            const date = new Date(ts);
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+            });
+        } catch (e) {
+            return '';
+        }
+    };
+
+    const timeStr = formatTime(timestamp);
 
     return (
         <View
@@ -35,6 +52,16 @@ export default function ChatMessageBubble({ message, senderType, currentUserType
                 >
                     {message}
                 </Text>
+                {timeStr ? (
+                    <Text
+                        style={[
+                            styles.timestamp,
+                            isCurrentUser ? styles.currentUserTimestamp : styles.otherUserTimestamp,
+                        ]}
+                    >
+                        {timeStr}
+                    </Text>
+                ) : null}
             </View>
         </View>
     );
@@ -57,8 +84,8 @@ const styles = StyleSheet.create({
 
     bubble: {
         maxWidth: '75%',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
         borderRadius: 12,
     },
 
@@ -84,5 +111,21 @@ const styles = StyleSheet.create({
 
     currentUserText: {
         color: '#FFFFFF',
+    },
+
+    timestamp: {
+        fontFamily: 'Inter',
+        fontSize: 10,
+        marginTop: 2,
+        marginLeft: 10,
+        alignSelf: 'flex-end',
+    },
+
+    otherUserTimestamp: {
+        color: '#9CA3AF',
+    },
+
+    currentUserTimestamp: {
+        color: 'rgba(255, 255, 255, 0.7)',
     },
 });

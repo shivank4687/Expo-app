@@ -20,8 +20,8 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const childCategory = product.categories && product.categories.length > 0 
-        ? product.categories[product.categories.length - 1] 
+    const childCategory = product.categories && product.categories.length > 0
+        ? product.categories[product.categories.length - 1]
         : null;
     const categoryId = childCategory?.id || (product as any).category_id;
     const categoryName = childCategory?.name || 'Products';
@@ -30,24 +30,24 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
     useEffect(() => {
         const fetchRelated = async () => {
             try {
-                const options: any = { 
-                    per_page: 4, 
-                    page: 1, 
+                const options: any = {
+                    per_page: 4,
+                    page: 1,
                     locale: selectedLocale?.code,
                 };
 
                 if (product.id) {
                     options.exclude_product_id = product.id;
                 }
-                
+
                 if (currentSupplierId) {
                     options.exclude_supplier_id = currentSupplierId;
                 }
 
-                const response = categoryId 
+                const response = categoryId
                     ? await productsApi.getProductsByCategory(categoryId, options)
                     : await productsApi.getProducts(options);
-                
+
                 setRelatedProducts(response.data);
             } catch (error) {
                 console.error('Failed to load related supplier products:', error);
@@ -77,14 +77,14 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
 
     return (
         <View style={styles.container}>
-            <DetailCard 
-                title={`More from ${categoryName}`} 
-                badgeText="View All" 
+            <DetailCard
+                title={`More from ${categoryName}`}
+                badgeText="View All"
                 onBadgePress={() => {
                     if (categoryId) {
                         router.push({
                             pathname: '/products' as any,
-                            params: { 
+                            params: {
                                 id: categoryId.toString(),
                                 title: categoryName
                             }
@@ -97,9 +97,9 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
                 <View style={styles.gridContainer}>
                     {relatedProducts.map(item => (
                         <View key={item.id} style={styles.cardWrapper}>
-                            <ProductCard 
-                                product={item} 
-                                onPress={() => router.push(`/product/${item.id}`)} 
+                            <ProductCard
+                                product={item}
+                                onPress={() => router.push(`/product/${item.id}`)}
                             />
                         </View>
                     ))}
@@ -111,7 +111,7 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: theme.spacing.lg,
+        marginTop: theme.spacing.xs,
     },
     loadingContainer: {
         padding: theme.spacing.xl,
@@ -122,10 +122,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginTop: theme.spacing.md,
+
+        // marginTop: theme.spacing.md,
     },
     cardWrapper: {
-        width: '48%',
-        marginBottom: theme.spacing.md,
+        width: '49%',
+        marginBottom: theme.spacing.xs,
     }
 });

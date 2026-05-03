@@ -164,7 +164,7 @@ export const OrderChatView = ({ orderId }: OrderChatViewProps) => {
         <KeyboardAvoidingView
             style={styles.container}
             behavior="padding"
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 100}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 120}
         >
             {/* Supplier Selector Tabs - Only show if more than 1 supplier */}
             {suppliers.length > 1 && (
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         paddingTop: 8,
-        paddingBottom: 24,
+        paddingBottom: Platform.OS === 'android' ? 36 : 24,
     },
     disabledText: {
         fontFamily: 'Inter',

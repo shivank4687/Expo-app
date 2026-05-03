@@ -14,6 +14,7 @@ export default function ShopScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profileData, setProfileData] = useState<Partial<SupplierProfile>>({});
+    const [originalData, setOriginalData] = useState<Partial<SupplierProfile>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const fetchProfile = useCallback(async () => {
@@ -21,6 +22,8 @@ export default function ShopScreen() {
             setLoading(true);
             const response = await getSupplierProfile();
             setProfileData(response);
+            setOriginalData(response);
+            setErrors({});
         } catch (error) {
             console.error('Error fetching profile:', error);
             showToast({
@@ -30,26 +33,25 @@ export default function ShopScreen() {
         } finally {
             setLoading(false);
         }
-    }, []);
-
-    const isFirstFocus = useRef(true);
+    }, [showToast]);
 
     useFocusEffect(
         useCallback(() => {
-            if (isFirstFocus.current) {
-                isFirstFocus.current = false;
-                return;
+            // If we have no data yet, fetch it
+            if (Object.keys(originalData).length === 0) {
+                fetchProfile();
+            } else {
+                // If we already have data, discard unsaved changes by resetting to the last fetched response
+                setProfileData(originalData);
+                setErrors({});
             }
 
+            // Check if there's a background update (like profile photo changed elsewhere)
             if (consumeContactUpdate()) {
                 fetchProfile();
             }
-        }, [fetchProfile])
+        }, [fetchProfile, originalData])
     );
-
-    useEffect(() => {
-        fetchProfile();
-    }, [fetchProfile]);
 
     const handleInputChange = (field: string, value: any) => {
         setProfileData(prev => ({
@@ -149,6 +151,7 @@ export default function ShopScreen() {
             delete (updateData as any).id;
 
             await updateSupplierProfile(updateData);
+            setOriginalData({ ...profileData }); // Update the "pristine" copy after successful save
             showToast({
                 type: 'success',
                 message: 'Profile updated successfully.'

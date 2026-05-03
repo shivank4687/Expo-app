@@ -15,9 +15,10 @@ interface DropdownProps {
     onSelect: (value: any) => void;
     style?: any;
     multiple?: boolean;
+    disabled?: boolean;
 }
 
-export default function Dropdown({ placeholder = 'Select...', options, value, onSelect, style, multiple = false }: DropdownProps) {
+export default function Dropdown({ placeholder = 'Select...', options, value, onSelect, style, multiple = false, disabled = false }: DropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const getSelectedLabel = () => {
@@ -67,20 +68,21 @@ export default function Dropdown({ placeholder = 'Select...', options, value, on
         <View style={[styles.container, style]}>
             {/* Dropdown Trigger */}
             <TouchableOpacity
-                style={styles.trigger}
-                onPress={() => setIsOpen(true)}
-                activeOpacity={0.7}
+                style={[styles.trigger, disabled && styles.triggerDisabled]}
+                onPress={() => !disabled && setIsOpen(true)}
+                activeOpacity={disabled ? 1 : 0.7}
             >
                 <Text
                     style={[
                         styles.triggerText,
-                        ((multiple && (!value || (Array.isArray(value) && value.length === 0))) || (!multiple && !value)) && styles.placeholderText
+                        ((multiple && (!value || (Array.isArray(value) && value.length === 0))) || (!multiple && !value)) && styles.placeholderText,
+                        disabled && styles.disabledText
                     ]}
                     numberOfLines={1}
                 >
                     {getSelectedLabel()}
                 </Text>
-                <Ionicons name="chevron-down" size={16} color="#666666" />
+                <Ionicons name="chevron-down" size={16} color={disabled ? '#999999' : '#666666'} />
             </TouchableOpacity>
 
             {/* Dropdown Modal */}
@@ -236,5 +238,12 @@ const styles = StyleSheet.create({
     optionTextSelected: {
         fontWeight: '600',
         color: COLORS.primary,
+    },
+    triggerDisabled: {
+        backgroundColor: '#F5F5F5',
+        borderColor: '#E0E0E0',
+    },
+    disabledText: {
+        color: '#999999',
     },
 });

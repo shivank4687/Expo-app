@@ -476,12 +476,17 @@ export const SignupScreen: React.FC = () => {
                 duration: 3000,
             });
 
-            // Navigate to home after successful signup
+            // Navigate to home or add-phone after successful signup
             setTimeout(() => {
                 if (router.canGoBack()) {
                     router.dismissAll();
                 }
-                router.replace('/(drawer)/(tabs)');
+
+                if (result.user && !result.user.phone) {
+                    router.replace('/add-phone');
+                } else {
+                    router.replace('/(drawer)/(tabs)');
+                }
             }, 500);
         } catch (err: any) {
             showToast({
@@ -512,7 +517,7 @@ export const SignupScreen: React.FC = () => {
             const idToken = response.data?.idToken;
 
             if (idToken) {
-                await dispatch(socialLoginThunk({
+                const result = await dispatch(socialLoginThunk({
                     token: idToken,
                     provider: 'google',
                     user_type: selectedUserType,
@@ -529,6 +534,12 @@ export const SignupScreen: React.FC = () => {
                     if (router.canGoBack()) {
                         router.dismissAll();
                     }
+
+                    if (result.user && !result.user.phone) {
+                        router.replace('/add-phone');
+                        return;
+                    }
+
                     if (selectedUserType === 'supplier') {
                         router.replace('/(supplier-drawer)/(supplier-tabs)');
                     } else {

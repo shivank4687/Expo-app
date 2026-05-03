@@ -64,6 +64,35 @@ export const supplierAuthApi = {
     async logout(): Promise<void> {
         return restApiClient.post(API_ENDPOINTS.SUPPLIER_LOGOUT);
     },
+
+    /**
+     * Send OTP to add/verify phone for authenticated supplier
+     */
+    async sendPhoneOtp(data: {
+        phone: string;
+        phone_country_id: number;
+        dial_code: string;
+    }): Promise<{
+        requires_otp_verification: boolean;
+        message: string;
+        verification_token: string;
+        type: string;
+        phone: string;
+        otp_expiry: string;
+        resend_available_at: string;
+    }> {
+        return restApiClient.post('/supplier-app/send-phone-otp', data);
+    },
+
+    /**
+     * Verify OTP and update supplier phone
+     */
+    async verifyPhoneOtp(data: {
+        verification_token: string;
+        otp: string;
+    }): Promise<{ data: Supplier; message: string }> {
+        return restApiClient.post('/supplier-app/verify-phone-otp', data);
+    },
 };
 
 export default supplierAuthApi;

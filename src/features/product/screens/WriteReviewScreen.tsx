@@ -227,6 +227,7 @@ export const WriteReviewScreen: React.FC = () => {
                         <TextInput
                             style={styles.input}
                             placeholder="Summarize your review"
+                            placeholderTextColor={theme.colors.text.secondary}
                             value={title}
                             onChangeText={setTitle}
                             maxLength={100}
@@ -241,6 +242,7 @@ export const WriteReviewScreen: React.FC = () => {
                         <TextInput
                             style={[styles.input, styles.textArea]}
                             placeholder="Share your experience with this product"
+                            placeholderTextColor={theme.colors.text.secondary}
                             value={comment}
                             onChangeText={setComment}
                             multiline

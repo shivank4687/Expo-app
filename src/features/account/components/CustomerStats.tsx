@@ -5,11 +5,15 @@ import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCustomerStatsThunk } from '@/store/slices/customerStatsSlice';
 import { useFocusEffect } from '@react-navigation/native';
+import { formatters } from '@/shared/utils/formatters';
 
 export const CustomerStats = () => {
     const { user } = useRequireAuth();
     const dispatch = useAppDispatch();
     const { data: stats, isLoading } = useAppSelector((state) => state.customerStats);
+    const { selectedCurrency } = useAppSelector((state) => state.core);
+    const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
+    const formattedSpend = stats?.formatted_total_spend || formatters.formatPrice(stats?.total_spend, currencySymbol);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -69,7 +73,7 @@ export const CustomerStats = () => {
                 </View>
                 <View style={styles.statBlock}>
                     <Text style={styles.statNumber}>
-                        {isLoading ? '...' : (stats?.formatted_total_spend ?? '€0')}
+                        {isLoading ? '...' : formattedSpend}
                     </Text>
                     <Text style={styles.statLabel}>Spend</Text>
                 </View>

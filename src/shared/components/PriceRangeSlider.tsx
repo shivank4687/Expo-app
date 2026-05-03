@@ -19,12 +19,12 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
     defaultMax,
     onRangeChange,
 }) => {
-    const [minValue, setMinValue] = useState(defaultMin || minPrice);
-    const [maxValue, setMaxValue] = useState(defaultMax || maxPrice);
+    const [minValue, setMinValue] = useState(Number(defaultMin ?? minPrice));
+    const [maxValue, setMaxValue] = useState(Number(defaultMax ?? maxPrice));
 
     useEffect(() => {
-        if (defaultMin !== undefined) setMinValue(defaultMin);
-        if (defaultMax !== undefined) setMaxValue(defaultMax);
+        if (defaultMin !== undefined) setMinValue(Number(defaultMin));
+        if (defaultMax !== undefined) setMaxValue(Number(defaultMax));
     }, [defaultMin, defaultMax]);
 
     const handleMinChange = (value: number) => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { QtyUpdate } from './QtyUpdate';
+import { theme } from '@/theme';
 
 interface ProductTotalsProps {
   price?: string;
@@ -41,13 +42,13 @@ export const ProductTotals: React.FC<ProductTotalsProps> = ({
           <Text style={styles.price}>{price}</Text>
           <Text style={styles.deliveryText}>{deliveryText}</Text>
         </View>
-        
+
         {/* Aligning QtyUpdate inside the layout structure */}
         <View style={styles.qtyContainer}>
-          <QtyUpdate 
-            quantity={quantity} 
-            onIncrease={onIncreaseQty} 
-            onDecrease={onDecreaseQty} 
+          <QtyUpdate
+            quantity={quantity}
+            onIncrease={onIncreaseQty}
+            onDecrease={onDecreaseQty}
           />
         </View>
       </View>
@@ -56,8 +57,8 @@ export const ProductTotals: React.FC<ProductTotalsProps> = ({
       {(showAddToCart || showRfq) ? (
         <View style={styles.buttonRow}>
           {showRfq && (
-            <TouchableOpacity 
-              style={styles.secondaryButton} 
+            <TouchableOpacity
+              style={styles.secondaryButton}
               onPress={onRfqPress}
               activeOpacity={0.7}
             >
@@ -66,8 +67,8 @@ export const ProductTotals: React.FC<ProductTotalsProps> = ({
           )}
 
           {showAddToCart && (
-            <TouchableOpacity 
-              style={styles.primaryButton} 
+            <TouchableOpacity
+              style={styles.primaryButton}
               onPress={onAddToCart}
               activeOpacity={0.7}
               disabled={isAddingToCart}
@@ -84,7 +85,7 @@ export const ProductTotals: React.FC<ProductTotalsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
-    padding: 8,
+    padding: theme.spacing.sm,
     gap: 4,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,

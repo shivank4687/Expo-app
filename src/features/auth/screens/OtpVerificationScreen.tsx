@@ -140,7 +140,12 @@ export const OtpVerificationScreen: React.FC = () => {
                     if (router.canGoBack()) {
                         router.dismissAll();
                     }
-                    router.replace('/(drawer)/(tabs)');
+                    
+                    if (params.userType === 'supplier') {
+                        router.replace('/(supplier-drawer)/(supplier-tabs)');
+                    } else {
+                        router.replace('/(drawer)/(tabs)');
+                    }
                 }
             }, 500);
         } catch (err: any) {

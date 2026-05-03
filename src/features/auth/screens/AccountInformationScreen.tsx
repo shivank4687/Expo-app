@@ -25,8 +25,9 @@ const EditableField: React.FC<{
     error?: string;
     required?: boolean;
     secureTextEntry?: boolean;
-    textContentType?: 'none' | 'password' | 'newPassword' | 'emailAddress' | 'name';
-    autoComplete?: 'off' | 'password' | 'password-new' | 'email' | 'name';
+    textContentType?: 'none' | 'password' | 'newPassword' | 'emailAddress' | 'name' | 'oneTimeCode';
+    autoComplete?: 'off' | 'password' | 'password-new' | 'email' | 'name' | 'username' | 'current-password' | 'new-password';
+    importantForAutofill?: 'auto' | 'yes' | 'no' | 'noExcludeDescendants';
 }> = ({
     label,
     value,
@@ -37,7 +38,8 @@ const EditableField: React.FC<{
     required = false,
     secureTextEntry = false,
     textContentType,
-    autoComplete
+    autoComplete,
+    importantForAutofill = 'auto'
 }) => (
         <View style={styles.fieldContainer}>
             <Text style={styles.fieldLabel}>
@@ -54,6 +56,9 @@ const EditableField: React.FC<{
                 autoCapitalize="none"
                 textContentType={textContentType}
                 autoComplete={autoComplete}
+                importantForAutofill={importantForAutofill}
+                autoCorrect={false}
+                spellCheck={false}
             />
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
@@ -244,6 +249,9 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                 isValid = false;
             } else if (newPassword.length < 6) {
                 newErrors.newPassword = t('account.passwordMinLength', 'Password must be at least 6 characters');
+                isValid = false;
+            } else if (newPassword === currentPassword) {
+                newErrors.newPassword = t('account.newPasswordSameAsCurrent', 'New password must be different from current password');
                 isValid = false;
             }
 
@@ -545,8 +553,9 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                                     error={errors.currentPassword}
                                     required
                                     secureTextEntry
-                                    textContentType="password"
-                                    autoComplete="password"
+                                    textContentType="oneTimeCode"
+                                    autoComplete="off"
+                                    importantForAutofill="no"
                                 />
 
                                 <EditableField
@@ -557,8 +566,9 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                                     error={errors.newPassword}
                                     required
                                     secureTextEntry
-                                    textContentType="none"
+                                    textContentType="oneTimeCode"
                                     autoComplete="off"
+                                    importantForAutofill="no"
                                 />
 
                                 <EditableField
@@ -569,8 +579,9 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                                     error={errors.confirmPassword}
                                     required
                                     secureTextEntry
-                                    textContentType="none"
+                                    textContentType="oneTimeCode"
                                     autoComplete="off"
+                                    importantForAutofill="no"
                                 />
 
                                 <Text style={styles.passwordHint}>

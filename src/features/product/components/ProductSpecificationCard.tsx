@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, DimensionVal
 import { HTMLContent } from '@/shared/components/HTMLContent';
 import { SupplierInfo } from '../types/product.types';
 import { useAppSelector } from '@/store/hooks';
+import { theme } from '@/theme';
 
 interface ProductSpecificationCardProps {
     shortDescription?: string | null;
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E9E3D3',
         borderRadius: 8,
-        padding: 8,
+        padding: theme.spacing.sm,
         gap: 12,
         alignSelf: 'stretch',
     },

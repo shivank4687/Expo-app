@@ -19,8 +19,8 @@ const CategoryImageComponent: React.FC<{ imageUrl?: string }> = ({ imageUrl }) =
 
     if (imageUrl && !imageError) {
         return (
-            <Image 
-                source={{ uri: imageUrl }} 
+            <Image
+                source={{ uri: imageUrl }}
                 style={styles.categoryImage}
                 resizeMode="cover"
                 onError={() => setImageError(true)}
@@ -29,10 +29,10 @@ const CategoryImageComponent: React.FC<{ imageUrl?: string }> = ({ imageUrl }) =
     }
 
     return (
-        <Ionicons 
-            name="grid-outline" 
-            size={CATEGORY_ICON_SIZE} 
-            color={theme.colors.primary[500]} 
+        <Ionicons
+            name="grid-outline"
+            size={CATEGORY_ICON_SIZE}
+            color={theme.colors.primary[500]}
         />
     );
 };
@@ -65,7 +65,7 @@ export const MoreCategories: React.FC<MoreCategoriesProps> = ({ product }) => {
 
     // Hide component cleanly if it possesses no nested child-category carousels
     if (childCategories.length === 0) {
-        return null; 
+        return null;
     }
 
     const handleCategoryPress = (id: number, name: string) => {
@@ -74,9 +74,9 @@ export const MoreCategories: React.FC<MoreCategoriesProps> = ({ product }) => {
 
     return (
         <View style={styles.container}>
-            <DetailCard 
-                title={`More Category of ${categoryName}`} 
-                badgeText="View All" 
+            <DetailCard
+                title={`More Category of ${categoryName}`}
+                badgeText="View All"
                 onBadgePress={() => {
                     if (categoryId) {
                         handleCategoryPress(categoryId, categoryName);
@@ -112,18 +112,18 @@ export const MoreCategories: React.FC<MoreCategoriesProps> = ({ product }) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: theme.spacing.lg,
+        marginTop: theme.spacing.xs,
     },
     carousel: {
         marginHorizontal: -12,
     },
     listContent: {
-        paddingHorizontal: 12,
-        paddingTop: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.xxs,
+        paddingTop: theme.spacing.xxs,
     },
     categoryItem: {
         alignItems: 'center',
-        marginRight: theme.spacing.lg,
+        marginRight: theme.spacing.sm,
         width: 70,
     },
     iconContainer: {

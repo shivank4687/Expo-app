@@ -129,32 +129,16 @@ export const LoginScreen: React.FC = () => {
 
             if (selectedUserType === 'supplier') {
                 // Supplier login
-                await dispatch(supplierLoginThunk(loginPayload)).unwrap();
-
-                showToast({
-                    message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
-                    type: 'success',
-                    duration: 3000,
-                });
-
-                // Navigate to supplier dashboard
-                setTimeout(() => {
-                    if (router.canGoBack()) {
-                        router.dismissAll();
-                    }
-                    router.replace('/(supplier-drawer)/(supplier-tabs)');
-                }, 500);
-            } else {
-                // Customer login
-                const result = await dispatch(loginThunk(loginPayload)).unwrap();
+                const result = await dispatch(supplierLoginThunk(loginPayload)).unwrap();
 
                 if (result.requiresOtp) {
-                    router.push({
+                    router.replace({
                         pathname: '/otp-verification',
                         params: {
                             verificationToken: result.verificationToken,
                             phone: result.phone,
                             type: result.type,
+                            userType: 'supplier',
                         }
                     });
                     return;
@@ -166,12 +150,52 @@ export const LoginScreen: React.FC = () => {
                     duration: 3000,
                 });
 
-                // Navigate to customer home/drawer
+                // Navigate to supplier dashboard or add-phone
                 setTimeout(() => {
                     if (router.canGoBack()) {
                         router.dismissAll();
                     }
-                    router.replace('/(drawer)/(tabs)');
+                    
+                    if (!result.supplier?.phone) {
+                        router.replace('/add-phone');
+                    } else {
+                        router.replace('/(supplier-drawer)/(supplier-tabs)');
+                    }
+                }, 500);
+            } else {
+                // Customer login
+                const result = await dispatch(loginThunk(loginPayload)).unwrap();
+
+                if (result.requiresOtp) {
+                    router.replace({
+                        pathname: '/otp-verification',
+                        params: {
+                            verificationToken: result.verificationToken,
+                            phone: result.phone,
+                            type: result.type,
+                            userType: 'customer',
+                        }
+                    });
+                    return;
+                }
+
+                showToast({
+                    message: t('auth.loginSuccess', 'Login successful! Welcome back.'),
+                    type: 'success',
+                    duration: 3000,
+                });
+
+                // Navigate to customer home or add-phone
+                setTimeout(() => {
+                    if (router.canGoBack()) {
+                        router.dismissAll();
+                    }
+
+                    if (!result.user?.phone) {
+                        router.replace('/add-phone');
+                    } else {
+                        router.replace('/(drawer)/(tabs)');
+                    }
                 }, 500);
             }
         } catch (err: any) {
@@ -206,7 +230,7 @@ export const LoginScreen: React.FC = () => {
             const idToken = response.data?.idToken;
 
             if (idToken) {
-                await dispatch(socialLoginThunk({
+                const result = await dispatch(socialLoginThunk({
                     token: idToken,
                     provider: 'google',
                     user_type: selectedUserType,
@@ -223,6 +247,12 @@ export const LoginScreen: React.FC = () => {
                     if (router.canGoBack()) {
                         router.dismissAll();
                     }
+
+                    if (!result.user?.phone) {
+                        router.replace('/add-phone');
+                        return;
+                    }
+
                     if (selectedUserType === 'supplier') {
                         router.replace('/(supplier-drawer)/(supplier-tabs)');
                     } else {

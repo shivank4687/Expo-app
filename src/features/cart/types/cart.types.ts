@@ -41,6 +41,10 @@ export interface CartItem {
         regular_price?: number;
         special_price?: number;
         in_stock: boolean;
+        immediate_shipping?: boolean;
+        made_to_order?: boolean;
+        made_to_order_days?: number | null;
+        made_to_order_qty?: number | null;
         supplier?: {
             id: number;
             company_name: string;

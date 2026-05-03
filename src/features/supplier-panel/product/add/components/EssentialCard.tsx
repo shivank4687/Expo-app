@@ -858,6 +858,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     options={categories.map(c => ({ label: c.name, value: c.id.toString() }))}
                     value={categoryId}
                     onSelect={handleCategorySelect}
+                    disabled={categories.length === 0}
                 />
             </View>
 
@@ -869,6 +870,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     options={subcategories.map(c => ({ label: c.name, value: c.id.toString() }))}
                     value={subcategoryId}
                     onSelect={handleSubcategorySelect}
+                    disabled={subcategories.length === 0}
                 />
             </View>
 
@@ -880,6 +882,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     options={subSubcategories.map(c => ({ label: c.name, value: c.id.toString() }))}
                     value={subSubcategoryId}
                     onSelect={setSubSubcategoryId}
+                    disabled={subSubcategories.length === 0}
                 />
             </View>
 
@@ -1031,9 +1034,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
         gap: 8,
-        height: 40,
+        minHeight: 40,
         borderWidth: 1,
         borderColor: COLORS.primary,
         borderRadius: 8,
@@ -1043,7 +1047,6 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 16,
-        lineHeight: 16,
         color: '#000000',
     },
     gridInputs: {
@@ -1110,7 +1113,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 0,
+        paddingVertical: 10,
         paddingHorizontal: 12,
         gap: 8,
         width: '100%',
@@ -1148,9 +1151,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
         gap: 8,
-        height: 40,
+        minHeight: 40,
         backgroundColor: COLORS.primaryLight,
         borderWidth: 1,
         borderColor: COLORS.primary,
@@ -1161,7 +1165,6 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 14,
-        lineHeight: 16,
         color: '#000000',
     },
     uploadButtonDisabled: {

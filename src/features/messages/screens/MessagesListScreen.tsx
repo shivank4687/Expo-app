@@ -55,9 +55,8 @@ export const MessagesListScreen: React.FC = () => {
 
     const handleThreadPress = (thread: MessageThread) => {
         router.push({
-            pathname: '/chat/[threadId]',
+            pathname: `/customer-chat/${thread.id}`,
             params: {
-                threadId: thread.id.toString(),
                 supplierName: thread.supplier_name || thread.supplier_company_name,
             },
         } as any);

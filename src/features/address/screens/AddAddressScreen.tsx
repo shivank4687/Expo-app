@@ -183,7 +183,37 @@ export const AddAddressScreen: React.FC = () => {
             router.back();
         } catch (error: any) {
             console.error('[AddAddressScreen] Error saving address:', error);
-            showToast({ message: error.message || 'Failed to save address', type: 'error' });
+
+            // Handle specific validation errors from API (422)
+            if (error.response?.status === 422 && error.response?.data?.errors) {
+                const apiErrors = error.response.data.errors;
+                const newErrors: Record<string, string> = {};
+                let firstMessage = '';
+
+                Object.keys(apiErrors).forEach((key) => {
+                    const message = Array.isArray(apiErrors[key]) ? apiErrors[key][0] : apiErrors[key];
+
+                    // Map API field names to form field names if they differ
+                    // API uses 'address' for the first street line, but we use 'address1' (which is an array [line1])
+                    const fieldKey = key === 'address' ? 'address1' : key;
+                    newErrors[fieldKey] = message;
+
+                    if (!firstMessage) firstMessage = message;
+                });
+
+                setErrors(newErrors);
+                showToast({
+                    message: firstMessage || 'Validation failed. Please check the form.',
+                    type: 'error',
+                    duration: 4000
+                });
+            } else {
+                // Fallback for other errors
+                showToast({
+                    message: error.response?.data?.message || error.message || 'Failed to save address',
+                    type: 'error'
+                });
+            }
         } finally {
             setIsSaving(false);
         }

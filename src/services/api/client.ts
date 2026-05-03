@@ -140,6 +140,7 @@ class ApiClient {
                         case 401:
                             // Unauthorized - Clear auth and redirect to login
                             // Only handle if not already logging out to prevent infinite loop
+                            console.error('🚨 401 Unauthorized received for URL:', error.config?.url);
                             if (!this.isLoggingOut) {
                                 await this.handleUnauthorized();
                             }

@@ -399,6 +399,36 @@ export const updateSecurityThunk = createAsyncThunk(
     }
 );
 
+export const sendPhoneOtpThunk = createAsyncThunk(
+    'auth/sendPhoneOtp',
+    async (data: { phone: string; phone_country_id: number; dial_code: string }, { rejectWithValue }) => {
+        try {
+            const response = await authApi.sendPhoneOtp(data);
+            return response;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to send OTP');
+        }
+    }
+);
+
+export const verifyPhoneOtpThunk = createAsyncThunk(
+    'auth/verifyPhoneOtp',
+    async (data: { verification_token: string; otp: string }, { rejectWithValue }) => {
+        try {
+            const response = await authApi.verifyPhoneOtp(data);
+            
+            // Store updated user data
+            if (response.data) {
+                await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.data));
+            }
+            
+            return response;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
+        }
+    }
+);
+
 // Slice
 const authSlice = createSlice({
     name: 'auth',
@@ -435,6 +465,9 @@ const authSlice = createSlice({
                 setGlobalToken(action.payload.token);
             })
             .addCase(checkAuthThunk.rejected, (state) => {
+                state.user = null;
+                state.token = null;
+                state.isAuthenticated = false;
                 state.isLoading = false;
             });
 
@@ -596,6 +629,24 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateSecurityThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
+        // Verify Phone OTP (Update profile upon success)
+        builder
+            .addCase(verifyPhoneOtpThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(verifyPhoneOtpThunk.fulfilled, (state, action) => {
+                if (action.payload.data) {
+                    state.user = action.payload.data;
+                }
+                state.isLoading = false;
+                state.error = null;
+            })
+            .addCase(verifyPhoneOtpThunk.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             });

@@ -11,7 +11,7 @@ import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
 import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
 import { persistor, store } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, usePathname } from "expo-router";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -28,8 +28,9 @@ function AppContent() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const segments = useSegments();
-  const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading } = useAppSelector((state) => state.auth);
-  const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
+  const pathname = usePathname();
+  const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading, supplier } = useAppSelector((state) => state.supplierAuth);
   const { selectedLocale } = useAppSelector((state) => state.core);
   const hasRefreshedCategories = useRef(false);
 
@@ -71,27 +72,56 @@ function AppContent() {
     const isLoading = isCustomerLoading || isSupplierLoading;
     if (isLoading) return;
 
-    const isAuthScreen = (segments[0] as any) === 'login' || (segments[0] as any) === 'signup' || (segments[0] as any) === 'otp-verification' || (segments[0] as any) === 'index';
+    const isAuthScreen = ['login', 'signup', 'otp-verification', 'forgot-password', 'reset-password', 'index'].includes(segments[0] as string);
     const isOnSupplierDashboard = segments[0] === '(supplier-drawer)';
     const isOnCustomerDashboard = segments[0] === '(drawer)';
+    const isOnAddPhoneScreen = pathname === '/add-phone';
+
+    // Check if phone number is missing for authenticated users
+    const isPhoneMissing = (isCustomerAuthenticated && user && !user.phone) ||
+      (isSupplierAuthenticated && supplier && !supplier.phone);
+
+    console.log('🛡️ Auth Guard Check:', {
+      pathname,
+      segments,
+      isCustomerAuthenticated,
+      isSupplierAuthenticated,
+      isAuthScreen,
+      isOnSupplierDashboard,
+      isOnCustomerDashboard,
+      isPhoneMissing,
+    });
+
+    if (isPhoneMissing && !isOnAddPhoneScreen && !isAuthScreen) {
+      console.log('➡️ Redirecting: Phone missing -> /add-phone');
+      router.replace('/add-phone');
+      return;
+    }
+
+    // Skip dashboard redirects if on auth screen and not authenticated
+    if (isAuthScreen && !isCustomerAuthenticated && !isSupplierAuthenticated) {
+      console.log('✅ Auth Guard: On auth screen and not authenticated, staying put');
+      return;
+    }
 
     // If supplier is authenticated but on customer dashboard, redirect
     if (isSupplierAuthenticated && isOnCustomerDashboard) {
-      console.log('✅ Supplier authenticated, redirecting from customer to supplier dashboard...');
+      console.log('➡️ Redirecting: Supplier authenticated -> Supplier Dashboard');
       router.replace('/(supplier-drawer)/(supplier-tabs)');
     }
     // If customer is authenticated but on supplier dashboard, redirect
     else if (isCustomerAuthenticated && !isSupplierAuthenticated && isOnSupplierDashboard) {
-      console.log('✅ Customer authenticated, redirecting from supplier to customer dashboard...');
+      console.log('➡️ Redirecting: Customer authenticated -> Customer Dashboard');
       router.replace('/(drawer)/(tabs)');
     }
     // If neither is authenticated and on supplier dashboard, redirect to shop home
     else if (!isCustomerAuthenticated && !isSupplierAuthenticated && isOnSupplierDashboard) {
-      console.log('❌ Not authenticated, redirecting to shop home...');
+      console.log('➡️ Redirecting: Not authenticated -> Shop Home');
       router.replace('/(drawer)/(tabs)');
     }
-    // Customer dashboard (shop) is accessible without authentication, so no redirect needed
-  }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, segments, router]);
+    
+    console.log('✅ Auth Guard: No redirect needed');
+  }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, user, supplier, segments, pathname, router]);
 
   useEffect(() => {
     if (!selectedLocale?.code) return;
@@ -168,6 +198,13 @@ function AppContent() {
           options={{
             ...commonHeaderOptions,
             title: t('auth.verifyOtp', 'Verify OTP'),
+          }}
+        />
+        <Stack.Screen
+          name="add-phone"
+          options={{
+            ...commonHeaderOptions,
+            title: t('auth.addPhone', 'Add Phone'),
           }}
         />
         <Stack.Screen

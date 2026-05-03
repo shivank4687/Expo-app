@@ -719,7 +719,6 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     missingText: {
-        width: 112,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',
@@ -728,7 +727,6 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     doneText: {
-        width: 31,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',

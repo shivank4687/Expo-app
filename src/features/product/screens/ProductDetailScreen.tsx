@@ -29,6 +29,7 @@ import { ProductTotals } from '../components/ProductTotals';
 import { PricingGroup } from '../components/PricingGroup';
 import { ProductSpecificationCard } from '../components/ProductSpecificationCard';
 import { ProductReviewCard } from '../components/ProductReviewCard';
+import { AvailabilityCard } from '../components/AvailabilityCard';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -271,6 +272,14 @@ export const ProductDetailScreen: React.FC = () => {
                             )}
                         </TouchableOpacity>
                     </View>
+
+                    {/* Availability Card */}
+                    <AvailabilityCard
+                        immediateShipping={product.immediate_shipping}
+                        madeToOrder={product.made_to_order}
+                        madeToOrderDays={product.made_to_order_days}
+                        madeToOrderQty={product.made_to_order_qty}
+                    />
 
                     {/* Rating */}
                     {/* {product.rating && product.rating > 0 ? (
@@ -574,7 +583,7 @@ export const ProductDetailScreen: React.FC = () => {
 
             {/* Product Totals Card */}
             {canAddToCart ? (
-                <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.lg, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
+                <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
                     <ProductTotals
                         price={formatters.formatPrice(displayPrice * quantity, currencySymbol)}
                         deliveryText="Delivery 22 Dec - 24 Dec"
@@ -614,13 +623,13 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.lg,
+        paddingVertical: theme.spacing.xs,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.xs,
     },
     titleContainer: {
         flex: 1,
@@ -718,7 +727,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.sm,
     },
     section: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xs,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,
@@ -727,7 +736,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.sm,
     },
     accordion: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xs,
     },
     label: {
         fontSize: theme.typography.fontSize.sm,

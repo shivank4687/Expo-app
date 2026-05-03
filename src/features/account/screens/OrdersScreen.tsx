@@ -6,27 +6,27 @@
 import { Order, ordersApi } from '@/services/api/orders.api';
 import { useToast } from '@/shared/components/Toast';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
+import { TopHeader } from '@/shared/components/TopHeader';
 import { theme } from '@/theme';
-import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { OrderCard } from '../components/OrderCard';
-import { TopHeader } from '@/shared/components/TopHeader';
 
 const ORDERS_PER_PAGE = 10;
 
-export const OrdersScreen: React.FC = () => {
+interface OrdersScreenProps {
+    standalone?: boolean;
+}
+
+export const OrdersScreen: React.FC<OrdersScreenProps> = ({ standalone = true }) => {
     const { t } = useTranslation();
     const { isLoading: isAuthLoading } = useRequireAuth();
     const { showToast } = useToast();
     const { status } = useLocalSearchParams<{ status?: string }>();
     const router = useRouter();
-    const segments = useSegments();
-
-    // Check if the screen is being shown inside the (tabs) group
-    const isStandalone = !segments.includes('(tabs)');
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +35,11 @@ export const OrdersScreen: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [totalPages, setTotalPages] = useState(1);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+    const title = status
+        ? t(`orders.status.${status}`, status.charAt(0).toUpperCase() + status.slice(1))
+        : t('orders.title', 'My Orders');
 
     // Use refs to track loading state without causing re-renders
     const isLoadingRef = useRef(false);
@@ -111,7 +114,6 @@ export const OrdersScreen: React.FC = () => {
                 // });
 
                 setCurrentPage(newCurrentPage);
-                setTotalPages(newTotalPages);
                 setHasMore(newHasMore);
             } else {
                 // Fallback: if no meta, check if we got less than requested
@@ -155,7 +157,7 @@ export const OrdersScreen: React.FC = () => {
             isLoadingRef.current = false;
             isLoadingMoreRef.current = false;
         }
-    }, [t, showToast]);
+    }, [status, t, showToast]);
 
     /**
      * Load orders on focus
@@ -207,7 +209,7 @@ export const OrdersScreen: React.FC = () => {
         const nextPage = currentPage + 1;
         // console.log('[OrdersScreen] Loading page:', nextPage);
         loadOrders(nextPage, true, false);
-    }, [isLoadingMore, hasMore, isLoading, currentPage, orders.length, loadOrders]);
+    }, [isLoadingMore, hasMore, isLoading, currentPage, loadOrders]);
 
     /**
      * Render footer with loading indicator
@@ -246,17 +248,16 @@ export const OrdersScreen: React.FC = () => {
     if (isAuthLoading || (isInitialLoad && isLoading)) {
         return (
             <>
-                {isStandalone && (
-                    <>
-                        <Stack.Screen options={{ headerShown: false }} />
-                        <TopHeader 
-                            title={status ? t(`orders.status.${status}`, status.charAt(0).toUpperCase() + status.slice(1)) : t('orders.title', 'My Orders')}
-                            onBack={() => router.back()}
-                        />
-                    </>
-                )}
-                {!isStandalone && (
-                    <Stack.Screen options={{ title: t('orders.title', 'My Orders'), headerBackTitle: t('common.back', 'Back') }} />
+                <Stack.Screen
+                    options={standalone
+                        ? { headerShown: false }
+                        : { title, headerBackTitle: t('common.back', 'Back') }}
+                />
+                {standalone && (
+                    <TopHeader
+                        title={title}
+                        onBack={() => router.back()}
+                    />
                 )}
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
@@ -267,21 +268,15 @@ export const OrdersScreen: React.FC = () => {
 
     return (
         <>
-            {isStandalone && (
-                <>
-                    <Stack.Screen options={{ headerShown: false }} />
-                    <TopHeader 
-                        title={status ? t(`orders.status.${status}`, status.charAt(0).toUpperCase() + status.slice(1)) : t('orders.title', 'My Orders')}
-                        onBack={() => router.back()}
-                    />
-                </>
-            )}
-            {!isStandalone && (
-                <Stack.Screen
-                    options={{
-                        title: t('orders.title', 'My Orders'),
-                        headerBackTitle: t('common.back', 'Back')
-                    }}
+            <Stack.Screen
+                options={standalone
+                    ? { headerShown: false }
+                    : { title, headerBackTitle: t('common.back', 'Back') }}
+            />
+            {standalone && (
+                <TopHeader
+                    title={title}
+                    onBack={() => router.back()}
                 />
             )}
             <View style={styles.container}>

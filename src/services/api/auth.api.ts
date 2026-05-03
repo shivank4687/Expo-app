@@ -1,4 +1,5 @@
 import { restApiClient } from './client';
+import { multipartFetch, formatFileUri } from './fetchClient';
 import { API_ENDPOINTS } from '@/config/constants';
 import {
     LoginRequest,
@@ -121,7 +122,7 @@ export const authApi = {
 
             // Add image file
             const imageFile = {
-                uri: data.image.uri,
+                uri: formatFileUri(data.image.uri),
                 name: data.image.name,
                 type: data.image.type,
             } as any;
@@ -131,11 +132,7 @@ export const authApi = {
             // For PUT request via FormData, we need to use POST with _method override
             formData.append('_method', 'PUT');
 
-            return restApiClient.post(API_ENDPOINTS.UPDATE_PROFILE, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            return multipartFetch(API_ENDPOINTS.UPDATE_PROFILE, formData);
         }
 
         // Regular JSON request if no image
@@ -201,6 +198,35 @@ export const authApi = {
     }, userType: 'customer' | 'supplier' = 'customer'): Promise<{ message: string }> {
         const endpoint = userType === 'supplier' ? API_ENDPOINTS.SUPPLIER_RESET_PASSWORD : API_ENDPOINTS.RESET_PASSWORD;
         return restApiClient.post(endpoint, data);
+    },
+
+    /**
+     * Send OTP to add/verify phone for authenticated customer
+     */
+    async sendPhoneOtp(data: {
+        phone: string;
+        phone_country_id: number;
+        dial_code: string;
+    }): Promise<{
+        requires_otp_verification: boolean;
+        message: string;
+        verification_token: string;
+        type: string;
+        phone: string;
+        otp_expiry: string;
+        resend_available_at: string;
+    }> {
+        return restApiClient.post('/customer/send-phone-otp', data);
+    },
+
+    /**
+     * Verify OTP and update customer phone
+     */
+    async verifyPhoneOtp(data: {
+        verification_token: string;
+        otp: string;
+    }): Promise<{ data: User; message: string }> {
+        return restApiClient.post('/customer/verify-phone-otp', data);
     },
 };
 

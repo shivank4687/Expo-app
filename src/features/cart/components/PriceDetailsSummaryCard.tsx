@@ -28,31 +28,36 @@ export const PriceDetailsSummaryCard: React.FC<PriceDetailsSummaryCardProps> = (
     shipping,
     grandTotal,
 }) => {
+    const { t } = useTranslation();
+
     const rows = [
-        { label: 'Subtotal', value: subtotal },
-        ...(discount
+        { label: t('cart.subtotal', 'Subtotal'), value: subtotal },
+        ...(discount && parseFloat(discount.replace(/[^0-9.-]+/g, "")) !== 0
             ? [
                   {
-                      label: `Discount${couponCode ? ` (${couponCode})` : ''}`,
-                      value: `-${discount}`
+                      label: t('cart.discount', 'Discount') + (couponCode ? ` (${couponCode})` : ''),
+                      value: discount.startsWith('-') ? discount : `-${discount}`,
+                      isDiscount: true,
                   }
               ]
             : []),
-        ...(shipping ? [{ label: 'Shipping', value: shipping }] : []),
-        { label: 'Tax', value: tax }
+        ...(shipping ? [{ label: t('cart.shipping', 'Shipping'), value: shipping }] : []),
+        { label: t('cart.tax', 'Tax'), value: tax }
     ];
 
     const isButtonDisabled = disabled || loading;
-
-    const { t } = useTranslation();
 
     return (
         <View style={styles.card}>
             <View style={styles.content}>
                 {rows.map((row) => (
                     <View key={row.label} style={styles.row}>
-                        <Text style={styles.label}>{row.label}</Text>
-                        <Text style={styles.value}>{row.value}</Text>
+                        <Text style={[styles.label, row.isDiscount && styles.discountText]}>
+                            {row.label}
+                        </Text>
+                        <Text style={[styles.value, row.isDiscount && styles.discountText]}>
+                            {row.value}
+                        </Text>
                     </View>
                 ))}
             </View>
@@ -117,6 +122,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: theme.colors.primary[500]
+    },
+    discountText: {
+        color: theme.colors.success.main,
     },
     divider: {
         height: 1,

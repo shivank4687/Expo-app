@@ -89,6 +89,7 @@ export const suppliersApi = {
      * Requires authentication
      */
     async getThreadMessages(threadId: number): Promise<{ data: ThreadDetails }> {
+        console.log(`[suppliersApi] Requesting URL: /supplier/messages/${threadId}`);
         const response = await restApiClient.get<{ data: ThreadDetails }>(
             `/supplier/messages/${threadId}`
         );

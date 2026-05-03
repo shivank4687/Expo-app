@@ -577,10 +577,10 @@ export const CheckoutScreen: React.FC = () => {
     const taxValue =
         cart?.formatted_tax_total ||
         formatters.formatPrice(cart?.tax_total || cart?.base_tax_total || 0);
-    const hasDiscount = Boolean(cart?.discount_amount || cart?.base_discount_amount);
+    const hasDiscount = Number(cart?.discount || 0) !== 0;
     const discountValue = hasDiscount
-        ? cart?.formatted_discount_amount ||
-          formatters.formatPrice(cart?.discount_amount || cart?.base_discount_amount || 0)
+        ? cart?.formatted_discount ||
+          formatters.formatPrice(cart?.discount || cart?.base_discount || 0)
         : undefined;
     const shippingValue =
         shippingMethodDetails?.formatted_price ||

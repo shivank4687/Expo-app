@@ -20,6 +20,10 @@ interface CartState {
     error: string | null;
     isAddingToCart: boolean;
     lastAddedProductId: number | null;
+    isRemovingFromCart: boolean;
+    removingCartItemId: number | null;
+    isMovingToWishlist: boolean;
+    movingToWishlistItemId: number | null;
 }
 
 const initialState: CartState = {
@@ -28,6 +32,10 @@ const initialState: CartState = {
     error: null,
     isAddingToCart: false,
     lastAddedProductId: null,
+    isRemovingFromCart: false,
+    removingCartItemId: null,
+    isMovingToWishlist: false,
+    movingToWishlistItemId: null,
 };
 
 /**
@@ -260,13 +268,19 @@ const cartSlice = createSlice({
 
         // Remove from cart
         builder
-            .addCase(removeFromCartThunk.pending, (state) => {
+            .addCase(removeFromCartThunk.pending, (state, action) => {
+                state.isRemovingFromCart = true;
+                state.removingCartItemId = action.meta.arg;
                 state.error = null;
             })
             .addCase(removeFromCartThunk.fulfilled, (state, action) => {
+                state.isRemovingFromCart = false;
+                state.removingCartItemId = null;
                 state.cart = action.payload;
             })
             .addCase(removeFromCartThunk.rejected, (state, action) => {
+                state.isRemovingFromCart = false;
+                state.removingCartItemId = null;
                 state.error = action.payload as string;
             });
 
@@ -296,15 +310,21 @@ const cartSlice = createSlice({
 
         // Move to wishlist
         builder
-            .addCase(moveToWishlistThunk.pending, (state) => {
+            .addCase(moveToWishlistThunk.pending, (state, action) => {
+                state.isMovingToWishlist = true;
+                state.movingToWishlistItemId = action.meta.arg;
                 state.error = null;
             })
             .addCase(moveToWishlistThunk.fulfilled, (state, action) => {
+                state.isMovingToWishlist = false;
+                state.movingToWishlistItemId = null;
                 // Update cart with the payload (can be null if cart is now empty)
                 // Null indicates empty cart after moving last item to wishlist
                 state.cart = action.payload;
             })
             .addCase(moveToWishlistThunk.rejected, (state, action) => {
+                state.isMovingToWishlist = false;
+                state.movingToWishlistItemId = null;
                 state.error = action.payload as string;
             });
 

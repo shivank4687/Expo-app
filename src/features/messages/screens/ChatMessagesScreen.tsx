@@ -54,11 +54,17 @@ export const ChatMessagesScreen: React.FC = () => {
         if (!threadId) return;
 
         try {
+            console.log(`[ChatMessagesScreen] Fetching thread messages for threadId: ${threadId}`);
             setError(null);
             const response = await suppliersApi.getThreadMessages(Number(threadId));
+            console.log(`[ChatMessagesScreen] Fetch successful. Messages length: ${response.data.messages?.length}`);
             setThreadDetails(response.data);
             setMessages(response.data.messages || []);
         } catch (err: any) {
+            console.error(`[ChatMessagesScreen] Fetch failed. Error:`, err.message);
+            if (err.response) {
+                console.error(`[ChatMessagesScreen] API Error Status:`, err.response.status);
+            }
             setError(err.message || 'Failed to load messages');
             showToast({
                 message: err.message || 'Failed to load messages',

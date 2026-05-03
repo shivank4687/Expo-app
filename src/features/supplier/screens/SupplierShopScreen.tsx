@@ -1543,11 +1543,12 @@ const styles = StyleSheet.create({
         minHeight: 400,
     },
     productsContainer: {
-        padding: theme.spacing.md,
+        // padding: theme.spacing.md,
         paddingBottom: 80, // Add padding for fixed filter bar
     },
     productRow: {
         justifyContent: 'space-between',
+        padding: theme.spacing.sm,
     },
     productItem: {
         flex: 1,

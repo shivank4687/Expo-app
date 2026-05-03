@@ -147,7 +147,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                 ? t('product.removedFromWishlist', { name: product.name })
                 : t('product.addedToWishlist', { name: product.name });
 
-            showToast({ message, type: 'success' });
+            // showToast({ message, type: 'success' });
         } catch (error: any) {
             showToast({
                 message: error || t('product.failedToUpdateWishlist'),
@@ -197,7 +197,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             contentFit="cover"
                         />
 
-                        {/* Wishlist Heart Icon */}
+                        {/* Availability Badge - top right (made_to_order wins over immediate_shipping) */}
+                        {product.made_to_order ? (
+                            <View style={styles.availabilityBadgeOrange}>
+                                <Ionicons name="time-outline" size={16} color="#c2410c" />
+                            </View>
+                        ) : product.immediate_shipping ? (
+                            <View style={styles.availabilityBadgeGreen}>
+                                <Ionicons name="checkmark" size={18} color="#15803d" />
+                            </View>
+                        ) : null}
+
+                        {/* Sale Badge - Shows when product is on sale */}
+                        {productData.isOnSale && product.in_stock ? (
+                            <View style={styles.saleBadge}>
+                                <Text style={styles.saleText}>{t('product.sale')}</Text>
+                            </View>
+                        ) : null}
+
+                        {/* New Badge - Shows when product is new and not on sale */}
+                        {!productData.isOnSale && productData.isNew && product.in_stock ? (
+                            <View style={styles.newBadge}>
+                                <Text style={styles.newText}>{t('product.new')}</Text>
+                            </View>
+                        ) : null}
+
+                        {/* Out of Stock Badge */}
+                        {/* {!product.in_stock ? (
+                            <View style={styles.outOfStockBadge}>
+                                <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
+                            </View>
+                        ) : null} */}
+
+                        {/* Wishlist Heart Icon - bottom right */}
                         <TouchableOpacity
                             style={styles.wishlistButton}
                             onPress={handleToggleWishlist}
@@ -215,42 +247,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                 />
                             )}
                         </TouchableOpacity>
-
-                        {/* Sale Badge - Shows when product is on sale */}
-                        {productData.isOnSale && product.in_stock ? (
-                            <View style={styles.saleBadge}>
-                                <Text style={styles.saleText}>{t('product.sale')}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* New Badge - Shows when product is new and not on sale */}
-                        {!productData.isOnSale && productData.isNew && product.in_stock ? (
-                            <View style={styles.newBadge}>
-                                <Text style={styles.newText}>{t('product.new')}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* Out of Stock Badge */}
-                        {!product.in_stock ? (
-                            <View style={styles.outOfStockBadge}>
-                                <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* RFQ Button - Shows if product has supplier and user is authenticated */}
-                        {product.supplier?.id && isAuthenticated ? (
-                            <TouchableOpacity
-                                style={styles.rfqButton}
-                                onPress={handleRFQPress}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons
-                                    name="document-text-outline"
-                                    size={16}
-                                    color={theme.colors.primary[500]}
-                                />
-                            </TouchableOpacity>
-                        ) : null}
 
                         {/* Rating Badge */}
                         {productData.rating > 0 ? (
@@ -311,20 +307,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                     </View>
                 </View>
 
-                {/* Add to Cart Button */}
-                <TouchableOpacity
-                    style={[
-                        styles.addToCartButton,
-                        !product.in_stock && styles.addToCartButtonDisabled
-                    ]}
-                    onPress={handleAddToCart}
-                    disabled={!product.in_stock || isAddingThisProduct}
-                    activeOpacity={0.7}
-                >
-                    {isAddingThisProduct ? (
-                        <ActivityIndicator size="small" color={theme.colors.white} />
-                    ) : (
-                        <>
+                {/* Actions Footer */}
+                <View style={styles.footerActions}>
+                    <TouchableOpacity
+                        style={[
+                            styles.addToCartButton,
+                            !product.in_stock && styles.addToCartButtonDisabled
+                        ]}
+                        onPress={handleAddToCart}
+                        disabled={!product.in_stock || isAddingThisProduct}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.addToCartContent, isAddingThisProduct && { opacity: 0.3 }]}>
                             <Ionicons
                                 name="cart-outline"
                                 size={18}
@@ -333,9 +327,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             <Text style={styles.addToCartText}>
                                 {product.in_stock ? t('product.addToCart') : t('product.outOfStock')}
                             </Text>
-                        </>
-                    )}
-                </TouchableOpacity>
+                        </View>
+
+                        {isAddingThisProduct && (
+                            <View style={styles.loaderOverlay}>
+                                <ActivityIndicator size="small" color={theme.colors.white} />
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* RFQ Button - Footer position */}
+                    {product.supplier?.id && isAuthenticated ? (
+                        <TouchableOpacity
+                            style={styles.footerRfqButton}
+                            onPress={handleRFQPress}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons
+                                name="document-text-outline"
+                                size={20}
+                                color={theme.colors.white}
+                            />
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
             </Card>
         </TouchableOpacity >
     );
@@ -369,7 +384,7 @@ const styles = StyleSheet.create({
     },
     wishlistButton: {
         position: 'absolute',
-        top: theme.spacing.sm,
+        bottom: theme.spacing.sm,
         right: theme.spacing.sm,
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
         width: 36,
@@ -496,18 +511,72 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     rfqButton: {
+        // This style is now deprecated as we moved RFQ to footer
+        display: 'none',
+    },
+    footerActions: {
+        flexDirection: 'row',
+        backgroundColor: theme.colors.primary[500],
+        borderBottomLeftRadius: theme.borderRadius.md,
+        borderBottomRightRadius: theme.borderRadius.md,
+        overflow: 'hidden',
+    },
+    addToCartButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        position: 'relative',
+    },
+    addToCartContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+    },
+    loaderOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    footerRfqButton: {
+        width: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderLeftWidth: 1,
+        borderLeftColor: 'rgba(255, 255, 255, 0.2)', // White divider on primary background
+    },
+    availabilityBadgeGreen: {
         position: 'absolute',
-        bottom: theme.spacing.sm,
+        top: theme.spacing.sm,
         right: theme.spacing.sm,
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 3,
+        zIndex: 10,
+    },
+    availabilityBadgeOrange: {
+        position: 'absolute',
+        top: theme.spacing.sm,
+        right: theme.spacing.sm,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
         shadowRadius: 2,
         elevation: 3,
         zIndex: 10,
@@ -539,7 +608,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.md,
         gap: theme.spacing.xs,
         borderBottomLeftRadius: theme.borderRadius.md,
-        borderBottomRightRadius: theme.borderRadius.md,
+        // borderBottomRightRadius: theme.borderRadius.md,
     },
     addToCartButtonDisabled: {
         backgroundColor: theme.colors.gray[400],

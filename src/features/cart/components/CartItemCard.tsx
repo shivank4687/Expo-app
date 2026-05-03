@@ -10,13 +10,14 @@ import { useToast } from '@/shared/components/Toast';
 import { QuantitySelector } from '@/shared/components/QuantitySelector';
 import { formatters } from '@/shared/utils/formatters';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import { moveToWishlistThunk, removeFromCartThunk, updateCartItemThunk } from '@/store/slices/cartSlice';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 
 interface CartItemCardProps {
     item: CartItem;
@@ -28,6 +29,12 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
     const { showToast } = useToast();
     const { t } = useTranslation();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const {
+        isRemovingFromCart,
+        removingCartItemId,
+        isMovingToWishlist,
+        movingToWishlistItemId
+    } = useAppSelector((state) => state.cart);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const [isUpdating, setIsUpdating] = useState(false);
 
@@ -79,7 +86,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                     onPress: async () => {
                         try {
                             await dispatch(removeFromCartThunk(item.id)).unwrap();
-                            showToast({ message: t('cart.itemRemoved'), type: 'success' });
+                            //showToast({ message: t('cart.itemRemoved'), type: 'success' });
                         } catch (error: any) {
                             showToast({ message: error || t('cart.failedToRemove'), type: 'error' });
                         }
@@ -88,6 +95,9 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
             ]
         );
     };
+
+    const isRemovingThis = isRemovingFromCart && removingCartItemId === item.id;
+    const isMovingToWishlistThis = isMovingToWishlist && movingToWishlistItemId === item.id;
 
     const handleMoveToWishlist = async () => {
         // Check if user is authenticated
@@ -101,10 +111,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
             const result = await dispatch(moveToWishlistThunk(item.id)).unwrap();
             // console.log('[CartItemCard] Move completed, updated cart:', result);
 
-            // Cart state is already updated by moveToWishlistThunk which fetches the cart
-            // The header will automatically reflect the new count
+            // Refresh wishlist count in header
+            dispatch(fetchWishlistThunk());
 
-            showToast({ message: t('cart.itemMovedToWishlist'), type: 'success' });
+            // showToast({ message: t('cart.itemMovedToWishlist'), type: 'success' });
         } catch (error: any) {
             console.error('[CartItemCard] Move to wishlist failed:', error);
             showToast({ message: error || t('cart.failedToMoveWishlist'), type: 'error' });
@@ -124,6 +134,17 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                                 recyclingKey={item.product_id?.toString()}
                                 priority="normal"
                             />
+
+                            {/* Availability Badge - top right (made_to_order wins over immediate_shipping) */}
+                            {item.product.made_to_order ? (
+                                <View style={styles.availabilityBadgeOrange}>
+                                    <Ionicons name="time-outline" size={14} color="#c2410c" />
+                                </View>
+                            ) : item.product.immediate_shipping ? (
+                                <View style={styles.availabilityBadgeGreen}>
+                                    <Ionicons name="checkmark" size={16} color="#15803d" />
+                                </View>
+                            ) : null}
                         </View>
                     </TouchableOpacity>
 
@@ -171,13 +192,25 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                         e?.stopPropagation?.();
                         handleMoveToWishlist();
                     }}
+                    disabled={isMovingToWishlistThis || isRemovingThis}
                 >
-                    <Ionicons
-                        name="heart-outline"
-                        size={18}
-                        color={theme.colors.text.secondary}
-                    />
-                    <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
+                    <View style={styles.actionButtonContent}>
+                        <View style={[styles.actionButtonInner, isMovingToWishlistThis && { opacity: 0 }]}>
+                            <Ionicons
+                                name="heart-outline"
+                                size={18}
+                                color={theme.colors.text.secondary}
+                            />
+                            <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
+                        </View>
+                        {isMovingToWishlistThis && (
+                            <ActivityIndicator
+                                size="small"
+                                color={theme.colors.text.secondary}
+                                style={styles.loaderOverlay}
+                            />
+                        )}
+                    </View>
                 </TouchableOpacity>
 
                 <View style={styles.actionDivider} />
@@ -188,13 +221,25 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                         e?.stopPropagation?.();
                         handleRemove();
                     }}
+                    disabled={isRemovingThis || isMovingToWishlistThis}
                 >
-                    <Ionicons
-                        name="trash-outline"
-                        size={18}
-                        color={theme.colors.error.main}
-                    />
-                    <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
+                    <View style={styles.actionButtonContent}>
+                        <View style={[styles.actionButtonInner, isRemovingThis && { opacity: 0 }]}>
+                            <Ionicons
+                                name="trash-outline"
+                                size={18}
+                                color={theme.colors.error.main}
+                            />
+                            <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
+                        </View>
+                        {isRemovingThis && (
+                            <ActivityIndicator
+                                size="small"
+                                color={theme.colors.error.main}
+                                style={styles.loaderOverlay}
+                            />
+                        )}
+                    </View>
                 </TouchableOpacity>
             </View>
         </Card>
@@ -226,6 +271,40 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
+    },
+    availabilityBadgeGreen: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+        elevation: 2,
+        zIndex: 10,
+    },
+    availabilityBadgeOrange: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+        elevation: 2,
+        zIndex: 10,
     },
     detailsContainer: {
         flex: 1,
@@ -276,17 +355,27 @@ const styles = StyleSheet.create({
     actionsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-around',
         borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
-        paddingVertical: theme.spacing.sm,
         backgroundColor: theme.colors.background.default,
     },
     actionButton: {
+        flex: 1,
+        paddingVertical: theme.spacing.md,
+    },
+    actionButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    actionButtonInner: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.spacing.xs,
-        paddingHorizontal: theme.spacing.md,
+    },
+    loaderOverlay: {
+        position: 'absolute',
     },
     actionDivider: {
         width: 1,

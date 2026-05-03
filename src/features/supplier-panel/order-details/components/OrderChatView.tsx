@@ -153,7 +153,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
         <KeyboardAvoidingView
             style={styles.container}
             behavior="padding"
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 100}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 120}
         >
             {/* Messages List */}
             <ScrollView
@@ -237,6 +237,6 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         paddingTop: 8,
-        paddingBottom: 24, // Add padding to avoid touching bottom edge
+        paddingBottom: Platform.OS === 'android' ? 36 : 24, // Add padding to avoid touching bottom edge
     },
 });
