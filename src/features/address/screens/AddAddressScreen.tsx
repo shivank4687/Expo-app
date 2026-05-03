@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
+    KeyboardAvoidingView,
     Platform,
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -286,250 +287,261 @@ export const AddAddressScreen: React.FC = () => {
                 backgroundColor={theme.colors.background.default}
             />
 
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.contentContainer}
-                keyboardShouldPersistTaps="handled"
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
             >
-                {/* First Name */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        First Name <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.first_name && styles.inputError]}
-                        value={formData.first_name}
-                        onChangeText={(value) => updateField('first_name', value)}
-                        placeholder="Enter first name"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                    {errors.first_name && (
-                        <Text style={styles.errorText}>{errors.first_name}</Text>
-                    )}
-                </View>
-
-                {/* Last Name */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        Last Name <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.last_name && styles.inputError]}
-                        value={formData.last_name}
-                        onChangeText={(value) => updateField('last_name', value)}
-                        placeholder="Enter last name"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                    {errors.last_name && (
-                        <Text style={styles.errorText}>{errors.last_name}</Text>
-                    )}
-                </View>
-
-                {/* Email */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        Email <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.email && styles.inputError]}
-                        value={formData.email}
-                        onChangeText={(value) => updateField('email', value)}
-                        placeholder="Enter email address"
-                        placeholderTextColor={theme.colors.text.secondary}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
-                    {errors.email && (
-                        <Text style={styles.errorText}>{errors.email}</Text>
-                    )}
-                </View>
-
-                {/* Phone */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        Phone <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.phone && styles.inputError]}
-                        value={formData.phone}
-                        onChangeText={(value) => updateField('phone', value)}
-                        placeholder="Enter phone number"
-                        placeholderTextColor={theme.colors.text.secondary}
-                        keyboardType="phone-pad"
-                    />
-                    {errors.phone && (
-                        <Text style={styles.errorText}>{errors.phone}</Text>
-                    )}
-                </View>
-
-                {/* Company Name */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>Company Name</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.company_name}
-                        onChangeText={(value) => updateField('company_name', value)}
-                        placeholder="Enter company name (optional)"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                </View>
-
-                {/* Street Address */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        Street Address <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.address1 && styles.inputError]}
-                        value={formData.address1[0]}
-                        onChangeText={(value) => updateAddressLine(0, value)}
-                        placeholder="Enter street address"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                    {errors.address1 && (
-                        <Text style={styles.errorText}>{errors.address1}</Text>
-                    )}
-                </View>
-
-                {/* VAT ID */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>VAT ID</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.vat_id}
-                        onChangeText={(value) => updateField('vat_id', value)}
-                        placeholder="Enter VAT ID (optional)"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                </View>
-
-                {/* Country */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        Country <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TouchableOpacity
-                        style={[styles.pickerButton, errors.country && styles.inputError]}
-                        onPress={() => setShowCountryPicker(true)}
-                        disabled={isLoadingCountries}
-                    >
-                        {isLoadingCountries ? (
-                            <ActivityIndicator size="small" color={theme.colors.gray[500]} />
-                        ) : (
-                            <Text style={[styles.pickerButtonText, !formData.country && styles.placeholderText]}>
-                                {getSelectedCountryName() || 'Select Country'}
-                            </Text>
-                        )}
-                        <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
-                    </TouchableOpacity>
-                    {errors.country && (
-                        <Text style={styles.errorText}>{errors.country}</Text>
-                    )}
-                </View>
-
-                {/* State */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        State <Text style={styles.required}>*</Text>
-                    </Text>
-                    {loadingStates ? (
-                        <View style={styles.loadingStatesContainer}>
-                            <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                            <Text style={styles.loadingStatesText}>Loading states...</Text>
-                        </View>
-                    ) : states.length > 0 ? (
-                        <TouchableOpacity
-                            style={[styles.pickerButton, errors.state && styles.inputError]}
-                            onPress={() => setShowStatePicker(true)}
-                            disabled={!formData.country}
-                        >
-                            <Text style={[styles.pickerButtonText, !formData.state && styles.placeholderText]}>
-                                {getSelectedStateName() || 'Select State'}
-                            </Text>
-                            <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
-                        </TouchableOpacity>
-                    ) : (
-                        <TextInput
-                            style={[styles.input, errors.state && styles.inputError]}
-                            value={formData.state}
-                            onChangeText={(value) => updateField('state', value)}
-                            placeholder="Enter state"
-                            placeholderTextColor={theme.colors.text.secondary}
-                            editable={!!formData.country}
-                        />
-                    )}
-                    {errors.state && (
-                        <Text style={styles.errorText}>{errors.state}</Text>
-                    )}
-                </View>
-
-                {/* City */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        City <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.city && styles.inputError]}
-                        value={formData.city}
-                        onChangeText={(value) => updateField('city', value)}
-                        placeholder="Enter city"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                    {errors.city && (
-                        <Text style={styles.errorText}>{errors.city}</Text>
-                    )}
-                </View>
-
-                {/* Postal Code */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>
-                        Zip/Postal Code <Text style={styles.required}>*</Text>
-                    </Text>
-                    <TextInput
-                        style={[styles.input, errors.postcode && styles.inputError]}
-                        value={formData.postcode}
-                        onChangeText={(value) => updateField('postcode', value)}
-                        placeholder="Enter postal code"
-                        placeholderTextColor={theme.colors.text.secondary}
-                    />
-                    {errors.postcode && (
-                        <Text style={styles.errorText}>{errors.postcode}</Text>
-                    )}
-                </View>
-
-                {/* Set as Default Checkbox */}
-                <TouchableOpacity
-                    style={styles.checkboxContainer}
-                    onPress={() => updateField('default_address', !formData.default_address)}
-                    activeOpacity={0.7}
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.contentContainer}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <View style={styles.checkbox}>
-                        {formData.default_address && (
-                            <Ionicons name="checkmark" size={18} color={theme.colors.primary[500]} />
+                    {/* First Name */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            First Name <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.first_name && styles.inputError]}
+                            value={formData.first_name}
+                            onChangeText={(value) => updateField('first_name', value)}
+                            placeholder="Enter first name"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                        {errors.first_name && (
+                            <Text style={styles.errorText}>{errors.first_name}</Text>
                         )}
                     </View>
-                    <Text style={styles.checkboxLabel}>Set as default address</Text>
-                </TouchableOpacity>
 
-                {/* Save Button */}
-                <TouchableOpacity
-                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                    onPress={handleSave}
-                    disabled={isSaving}
-                    activeOpacity={0.8}
-                >
-                    {isSaving ? (
-                        <ActivityIndicator size="small" color={theme.colors.white} />
-                    ) : (
-                        <>
-                            <Ionicons name="save-outline" size={20} color={theme.colors.white} />
-                            <Text style={styles.saveButtonText}>
-                                {isEditMode ? 'Update Address' : 'Save Address'}
-                            </Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </ScrollView>
+                    {/* Last Name */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            Last Name <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.last_name && styles.inputError]}
+                            value={formData.last_name}
+                            onChangeText={(value) => updateField('last_name', value)}
+                            placeholder="Enter last name"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                        {errors.last_name && (
+                            <Text style={styles.errorText}>{errors.last_name}</Text>
+                        )}
+                    </View>
+
+                    {/* Email */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            Email <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.email && styles.inputError]}
+                            value={formData.email}
+                            onChangeText={(value) => updateField('email', value)}
+                            placeholder="Enter email address"
+                            placeholderTextColor={theme.colors.text.secondary}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                        />
+                        {errors.email && (
+                            <Text style={styles.errorText}>{errors.email}</Text>
+                        )}
+                    </View>
+
+                    {/* Phone */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            Phone <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.phone && styles.inputError]}
+                            value={formData.phone}
+                            onChangeText={(value) => updateField('phone', value)}
+                            placeholder="Enter phone number"
+                            placeholderTextColor={theme.colors.text.secondary}
+                            keyboardType="phone-pad"
+                        />
+                        {errors.phone && (
+                            <Text style={styles.errorText}>{errors.phone}</Text>
+                        )}
+                    </View>
+
+                    {/* Company Name */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>Company Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={formData.company_name}
+                            onChangeText={(value) => updateField('company_name', value)}
+                            placeholder="Enter company name (optional)"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                    </View>
+
+                    {/* Street Address */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            Street Address <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.address1 && styles.inputError]}
+                            value={formData.address1[0]}
+                            onChangeText={(value) => updateAddressLine(0, value)}
+                            placeholder="Enter street address"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                        {errors.address1 && (
+                            <Text style={styles.errorText}>{errors.address1}</Text>
+                        )}
+                    </View>
+
+                    {/* VAT ID */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>VAT ID</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={formData.vat_id}
+                            onChangeText={(value) => updateField('vat_id', value)}
+                            placeholder="Enter VAT ID (optional)"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                    </View>
+
+                    {/* Country */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            Country <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.pickerButton, errors.country && styles.inputError]}
+                            onPress={() => setShowCountryPicker(true)}
+                            disabled={isLoadingCountries}
+                        >
+                            {isLoadingCountries ? (
+                                <ActivityIndicator size="small" color={theme.colors.gray[500]} />
+                            ) : (
+                                <Text style={[styles.pickerButtonText, !formData.country && styles.placeholderText]}>
+                                    {getSelectedCountryName() || 'Select Country'}
+                                </Text>
+                            )}
+                            <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
+                        </TouchableOpacity>
+                        {errors.country && (
+                            <Text style={styles.errorText}>{errors.country}</Text>
+                        )}
+                    </View>
+
+                    {/* State */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            State <Text style={styles.required}>*</Text>
+                        </Text>
+                        {loadingStates ? (
+                            <View style={styles.loadingStatesContainer}>
+                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                <Text style={styles.loadingStatesText}>Loading states...</Text>
+                            </View>
+                        ) : states.length > 0 ? (
+                            <TouchableOpacity
+                                style={[styles.pickerButton, errors.state && styles.inputError]}
+                                onPress={() => setShowStatePicker(true)}
+                                disabled={!formData.country}
+                            >
+                                <Text style={[styles.pickerButtonText, !formData.state && styles.placeholderText]}>
+                                    {getSelectedStateName() || 'Select State'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
+                            </TouchableOpacity>
+                        ) : (
+                            <TextInput
+                                style={[styles.input, errors.state && styles.inputError]}
+                                value={formData.state}
+                                onChangeText={(value) => updateField('state', value)}
+                                placeholder="Enter state"
+                                placeholderTextColor={theme.colors.text.secondary}
+                                editable={!!formData.country}
+                            />
+                        )}
+                        {errors.state && (
+                            <Text style={styles.errorText}>{errors.state}</Text>
+                        )}
+                    </View>
+
+                    {/* City */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            City <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.city && styles.inputError]}
+                            value={formData.city}
+                            onChangeText={(value) => updateField('city', value)}
+                            placeholder="Enter city"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                        {errors.city && (
+                            <Text style={styles.errorText}>{errors.city}</Text>
+                        )}
+                    </View>
+
+                    {/* Postal Code */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>
+                            Zip/Postal Code <Text style={styles.required}>*</Text>
+                        </Text>
+                        <TextInput
+                            style={[styles.input, errors.postcode && styles.inputError]}
+                            value={formData.postcode}
+                            onChangeText={(value) => updateField('postcode', value)}
+                            placeholder="Enter postal code"
+                            placeholderTextColor={theme.colors.text.secondary}
+                        />
+                        {errors.postcode && (
+                            <Text style={styles.errorText}>{errors.postcode}</Text>
+                        )}
+                    </View>
+
+                    {/* Set as Default Checkbox */}
+                    <TouchableOpacity
+                        style={styles.checkboxContainer}
+                        onPress={() => updateField('default_address', !formData.default_address)}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.checkbox}>
+                            {formData.default_address && (
+                                <Ionicons name="checkmark" size={18} color={theme.colors.primary[500]} />
+                            )}
+                        </View>
+                        <Text style={styles.checkboxLabel}>Set as default address</Text>
+                    </TouchableOpacity>
+
+                    {/* Bottom spacing */}
+                    <View style={{ height: 20 }} />
+                </ScrollView>
+
+                {/* Save Button - lives inside KAV so it rises above the keyboard */}
+                <View style={styles.fixedButtonContainer}>
+                    <TouchableOpacity
+                        style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                        onPress={handleSave}
+                        disabled={isSaving}
+                        activeOpacity={0.8}
+                    >
+                        {isSaving ? (
+                            <ActivityIndicator size="small" color={theme.colors.white} />
+                        ) : (
+                            <>
+                                <Ionicons name="save-outline" size={20} color={theme.colors.white} />
+                                <Text style={styles.saveButtonText}>
+                                    {isEditMode ? 'Update Address' : 'Save Address'}
+                                </Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
 
             {/* Country Picker Modal */}
             <PickerModal
@@ -576,7 +588,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         padding: theme.spacing.md,
-        paddingBottom: theme.spacing.xl * 2,
+        paddingBottom: theme.spacing.md,
     },
     formGroup: {
         marginBottom: theme.spacing.lg,
@@ -660,6 +672,21 @@ const styles = StyleSheet.create({
     checkboxLabel: {
         fontSize: theme.typography.fontSize.md,
         color: theme.colors.text.primary,
+    },
+    fixedButtonContainer: {
+        backgroundColor: theme.colors.background.default,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 5,
     },
     saveButton: {
         flexDirection: 'row',

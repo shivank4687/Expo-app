@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, ViewStyle, TextStyle, ImageStyle, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, ViewStyle, TextStyle, ImageStyle, Alert, Image } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -395,18 +395,27 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={100}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.header}>
                         <View style={styles.avatarContainer}>
-                            {displayImage ? (
+                            {selectedImage ? (
+                                // Local file URI from picker — use plain Image to bypass URL normalization
+                                <Image
+                                    source={{ uri: selectedImage }}
+                                    style={styles.avatar as any}
+                                    resizeMode="cover"
+                                />
+                            ) : user.avatar ? (
+                                // Server-hosted avatar — use AvatarImage for caching/URL handling
                                 <AvatarImage
-                                    imageUrl={displayImage}
+                                    imageUrl={user.avatar}
                                     style={styles.avatar}
                                     size={100}
                                 />
@@ -591,11 +600,11 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                         )}
                     </View>
 
-                    {/* Add spacing for fixed button */}
-                    <View style={{ height: 100 }} />
+                    {/* Bottom spacing inside scroll */}
+                    <View style={{ height: 20 }} />
                 </ScrollView>
 
-                {/* Fixed Save Button */}
+                {/* Save Button - lives inside KAV so it rises above the keyboard */}
                 <View style={styles.fixedButtonContainer}>
                     <TouchableOpacity
                         style={[styles.saveButton, (isSaving || isUpdating) && styles.saveButtonDisabled]}
@@ -883,10 +892,6 @@ const styles = StyleSheet.create<{
         color: theme.colors.text.primary,
     },
     fixedButtonContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         backgroundColor: theme.colors.background.default,
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.md,

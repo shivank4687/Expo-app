@@ -138,9 +138,13 @@ export const StaticPageScreen: React.FC = () => {
             <WebView
                 source={{ html: htmlContent }}
                 style={styles.webview}
+                containerStyle={styles.webviewContainer}
                 showsVerticalScrollIndicator={true}
                 scalesPageToFit={true}
                 startInLoadingState={true}
+                renderLoading={() => (
+                    <View style={styles.webviewLoadingOverlay} />
+                )}
             />
         </View>
     );
@@ -153,7 +157,15 @@ const styles = StyleSheet.create({
     },
     webview: {
         flex: 1,
-        backgroundColor: theme.colors.white,
+        backgroundColor: theme.colors.background.default,
+    },
+    webviewContainer: {
+        flex: 1,
+        backgroundColor: theme.colors.background.default,
+    },
+    webviewLoadingOverlay: {
+        flex: 1,
+        backgroundColor: theme.colors.background.default,
     },
 });
 
