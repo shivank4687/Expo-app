@@ -8,17 +8,28 @@ interface ProductFilterBarProps {
     onSortPress: () => void;
     onFilterPress: () => void;
     filterCount?: number;
+    bottom?: number;
+    style?: any;
 }
 
 export const ProductFilterBar: React.FC<ProductFilterBarProps> = ({
     onSortPress,
     onFilterPress,
     filterCount = 0,
+    bottom = 0,
+    style,
 }) => {
     const insets = useSafeAreaInsets();
 
     return (
-        <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }]}>
+        <View style={[
+            styles.container, 
+            { 
+                bottom,
+                paddingBottom: Math.max(insets.bottom, theme.spacing.sm) 
+            },
+            style
+        ]}>
             {/* Filter Button */}
             <TouchableOpacity
                 style={styles.button}

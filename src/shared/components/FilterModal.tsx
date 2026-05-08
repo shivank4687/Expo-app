@@ -14,6 +14,7 @@ interface FilterModalProps {
     categoryId?: number;
     currentFilters: FilterState;
     onApply: (filters: FilterState) => void;
+    isHome?: boolean;
 }
 
 export const FilterModal: React.FC<FilterModalProps> = ({
@@ -22,6 +23,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     categoryId,
     currentFilters,
     onApply,
+    isHome = false,
 }) => {
     const [filters, setFilters] = useState<FilterState>(currentFilters);
     const [availableFilters, setAvailableFilters] = useState<FilterAttribute[]>([]);
@@ -107,7 +109,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             onRequestClose={onClose}
             hardwareAccelerated={true}
         >
-            <SafeAreaView style={styles.safeArea}>
+            <SafeAreaView style={[styles.safeArea, isHome && { marginBottom: 0 }]}>
                 <View style={styles.container}>
                     {/* Header */}
                     <View style={styles.header}>

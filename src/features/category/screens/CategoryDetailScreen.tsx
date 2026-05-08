@@ -337,6 +337,7 @@ export const CategoryDetailScreen: React.FC = () => {
                 onChildCategoryPress={handleChildCategoryPress}
                 onLoadMore={handleLoadMore}
                 onRefresh={handleRefresh}
+                paddingBottom={80}
             />
 
             {/* Filter Bar */}

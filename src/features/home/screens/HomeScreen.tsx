@@ -9,19 +9,24 @@ import {
     RefreshControl,
     ScrollView,
     StyleSheet,
+    Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 import { ThemeCustomization } from '../components/ThemeCustomization';
-
 import { NewsletterSubscription } from '../components/NewsletterSubscription';
+import { HomeCategoryContent } from '../components/HomeCategoryContent';
 
 /**
  * HomeScreen Component
  * Displays theme customizations (carousels, static content, etc.)
- * Automatically reloads when locale changes
+ * featuring a dynamic category tab bar at the top.
  */
 export const HomeScreen: React.FC = () => {
     const { selectedLocale } = useAppSelector((state) => state.core);
+    const { categories } = useAppSelector((state) => state.category);
+
+    const [activeTabId, setActiveTabId] = useState<string | number>('home');
     const [customizations, setCustomizations] = useState<ThemeCustomizationType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -31,7 +36,6 @@ export const HomeScreen: React.FC = () => {
         if (!selectedLocale?.code) return;
 
         try {
-            //setIsLoading(true);
             setError(null);
             const customizationsData = await themeApi.getCustomizations();
             setCustomizations(customizationsData);
@@ -53,6 +57,39 @@ export const HomeScreen: React.FC = () => {
         loadData();
     }, [loadData]);
 
+    const renderTabBar = () => {
+        if (categories.length === 0) return null;
+
+        const tabs = [{ id: 'home', name: 'Home' }, ...categories];
+
+        return (
+            <View style={styles.tabBarContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tabBarContent}
+                >
+                    {tabs.map((tab) => {
+                        const isActive = activeTabId === tab.id;
+                        return (
+                            <TouchableOpacity
+                                key={tab.id}
+                                style={[styles.tabItem, isActive && styles.activeTabItem]}
+                                onPress={() => setActiveTabId(tab.id)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.tabText, isActive && styles.activeTabText]}>
+                                    {tab.name}
+                                </Text>
+                                {isActive && <View style={styles.activeIndicator} />}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            </View>
+        );
+    };
+
     if (isLoading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -73,36 +110,43 @@ export const HomeScreen: React.FC = () => {
         c => c.type !== 'services_content' as any
     );
 
-    // Find services content to render at the bottom
     const servicesCustomization = customizations.find(
         c => c.type === 'services_content' as any
     );
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.contentContainer}
-            refreshControl={
-                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-            }
-        >
-            {mainCustomizations.map((customization) => (
-                <ThemeCustomization
-                    key={customization.id}
-                    customization={customization}
-                />
-            ))}
+        <View style={styles.container}>
+            {renderTabBar()}
 
-            <NewsletterSubscription />
+            {activeTabId === 'home' ? (
+                <ScrollView
+                    style={styles.flex1}
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+                    }
+                >
+                    {mainCustomizations.map((customization) => (
+                        <ThemeCustomization
+                            key={customization.id}
+                            customization={customization}
+                        />
+                    ))}
 
-            {/* Render Services Content at the bottom */}
-            {servicesCustomization && (
-                <ThemeCustomization
-                    key={servicesCustomization.id}
-                    customization={servicesCustomization}
-                />
+                    <NewsletterSubscription />
+
+                    {servicesCustomization && (
+                        <ThemeCustomization
+                            key={servicesCustomization.id}
+                            customization={servicesCustomization}
+                        />
+                    )}
+                </ScrollView>
+            ) : (
+                <HomeCategoryContent categoryId={activeTabId as number} />
             )}
-        </ScrollView>
+        </View>
     );
 };
 
@@ -110,6 +154,45 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.default,
+    },
+    flex1: {
+        flex: 1,
+    },
+    tabBarContainer: {
+        backgroundColor: theme.colors.background.default,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.gray[100],
+    },
+    tabBarContent: {
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
+    },
+    tabItem: {
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.sm,
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    activeTabItem: {
+        // No specific background change for a clean look
+    },
+    tabText: {
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.text.secondary,
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    activeTabText: {
+        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.bold,
+    },
+    activeIndicator: {
+        position: 'absolute',
+        bottom: 0,
+        width: '60%',
+        height: 3,
+        backgroundColor: theme.colors.primary[500],
+        borderRadius: 2,
     },
     contentContainer: {
         paddingTop: theme.spacing.xs,

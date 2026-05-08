@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ShopHeaderProps {
     title?: string;
@@ -25,17 +25,61 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     const { cart } = useAppSelector((state) => state.cart);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { totalUnread } = useAppSelector((state) => state.notifications);
+    const { categories } = useAppSelector((state) => state.category);
 
-    // Fetch cart on mount (works for both authenticated and guest users)
-    // useEffect(() => {
-    //     dispatch(fetchCartThunk());
-    // }, [dispatch]);
+    // Animation state for rotating placeholder
+    const [placeholderIndex, setPlaceholderIndex] = React.useState(0);
+    const fadeAnim = React.useRef(new Animated.Value(1)).current;
+    const translateYAnim = React.useRef(new Animated.Value(0)).current;
+
+    const defaultPlaceholders = ['Electronics', 'Fashion', 'Home', 'Beauty', 'Groceries', 'Accessories'];
+    const placeholders = categories && categories.length > 0 
+        ? categories.slice(0, 10).map(c => c.name) 
+        : defaultPlaceholders;
+
+    useEffect(() => {
+        if (!showSearch || placeholders.length <= 1) return;
+
+        const interval = setInterval(() => {
+            // Animate out: slide up and fade out
+            Animated.parallel([
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(translateYAnim, {
+                    toValue: -15,
+                    duration: 400,
+                    useNativeDriver: true,
+                })
+            ]).start(() => {
+                // Change text and reset position (start from below)
+                setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+                translateYAnim.setValue(15);
+                
+                // Animate in: slide to center and fade in
+                Animated.parallel([
+                    Animated.timing(fadeAnim, {
+                        toValue: 1,
+                        duration: 400,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(translateYAnim, {
+                        toValue: 0,
+                        duration: 400,
+                        useNativeDriver: true,
+                    })
+                ]).start();
+            });
+        }, 3500);
+
+        return () => clearInterval(interval);
+    }, [placeholders.length, fadeAnim, translateYAnim, showSearch]);
 
     // Refetch when authentication changes
     useEffect(() => {
-        // if (isAuthenticated) {
         dispatch(fetchCartThunk());
-        // }
 
         // Fetch notification count for authenticated users
         if (isAuthenticated) {
@@ -46,17 +90,14 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     // Listen for real-time notification updates
     useEffect(() => {
         if (isAuthenticated && user?.id) {
-            // Connect to Socket.IO
             const token = `customer_${user.id}`;
             socketService.connect(token, 'customer');
             socketService.subscribeToNotifications();
 
-            // Listen for new notifications
             const handleNotification = (data: any) => {
                 console.log('[ShopHeader] New notification received, refreshing count', data);
                 dispatch(fetchUnreadCountThunk());
 
-                // Show toast notification
                 if (data) {
                     showToast({
                         message: data.message || 'New notification received',
@@ -74,7 +115,6 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         }
     }, [isAuthenticated, user?.id, dispatch]);
 
-    const cartItemsCount = cart?.items_count || 0;
     const wishlistItemsCount = wishlistItems?.length || 0;
 
     const openDrawer = () => {
@@ -83,7 +123,6 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
 
     const handleProfilePress = () => {
         if (isAuthenticated) {
-            // Navigate to profile or open drawer
             navigation.dispatch(DrawerActions.openDrawer());
         } else {
             router.push('/login');
@@ -102,10 +141,6 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         router.push('/search');
     };
 
-    const handleCartPress = () => {
-        router.push('/cart');
-    };
-
     return (
         <View style={styles.container}>
             <View style={styles.topRow}>
@@ -113,22 +148,40 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                     <Ionicons name="menu-outline" size={28} color={theme.colors.text.primary} />
                 </TouchableOpacity>
 
-                <Text style={styles.logo}>{APP_NAME}</Text>
+                {showSearch ? (
+                    <TouchableOpacity 
+                        style={styles.searchBar} 
+                        onPress={handleSearchPress}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="search-outline" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
+                        <View style={styles.placeholderContainer}>
+                            <Text style={styles.searchTextFixed}>Search </Text>
+                            <Animated.View style={[
+                                styles.animatedPlaceholder,
+                                {
+                                    opacity: fadeAnim,
+                                    transform: [{ translateY: translateYAnim }]
+                                }
+                            ]}>
+                                <Text style={styles.placeholderText} numberOfLines={1}>
+                                    {placeholders[placeholderIndex]}
+                                </Text>
+                            </Animated.View>
+                        </View>
+                    </TouchableOpacity>
+                ) : (
+                    <Text style={styles.logo}>{title || APP_NAME}</Text>
+                )}
 
                 <View style={styles.rightActions}>
-                    {showSearch && (
-                        <TouchableOpacity style={styles.iconButton} onPress={handleSearchPress}>
-                            <Ionicons name="search-outline" size={28} color={theme.colors.text.primary} />
-                        </TouchableOpacity>
-                    )}
-
-                    {/* Show Wishlist icon if logged in, otherwise show Profile icon */}
+                    {/* Wishlist/Profile icon */}
                     {isAuthenticated ? (
                         <TouchableOpacity style={styles.iconButton} onPress={handleWishlistPress}>
                             <View>
                                 <Ionicons
                                     name="heart-outline"
-                                    size={28}
+                                    size={26}
                                     color={theme.colors.error.main}
                                 />
                                 {wishlistItemsCount > 0 && (
@@ -150,11 +203,11 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                         </TouchableOpacity>
                     )}
 
-                    {/* Notification Bell (only for authenticated users) */}
+                    {/* Notification Bell */}
                     {isAuthenticated && (
                         <TouchableOpacity style={styles.iconButton} onPress={handleNotificationsPress}>
                             <View>
-                                <Ionicons name="notifications-outline" size={28} color={theme.colors.text.primary} />
+                                <Ionicons name="notifications-outline" size={26} color={theme.colors.text.primary} />
                                 {totalUnread > 0 && (
                                     <View style={styles.badge}>
                                         <Text style={styles.badgeText}>
@@ -165,19 +218,6 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                             </View>
                         </TouchableOpacity>
                     )}
-
-                    {/* <TouchableOpacity style={styles.iconButton} onPress={handleCartPress}>
-                        <View>
-                            <Ionicons name="cart-outline" size={28} color={theme.colors.text.primary} />
-                            {cartItemsCount > 0 && (
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>
-                                        {cartItemsCount > 99 ? '99+' : cartItemsCount}
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </TouchableOpacity> */}
                 </View>
             </View>
         </View>
@@ -188,8 +228,8 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: theme.colors.background.default,
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: theme.spacing.xs,
-        paddingHorizontal: theme.spacing.md,
+        paddingBottom: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.gray[200],
         ...theme.shadows.sm,
@@ -203,6 +243,43 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.xl,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
+        flex: 1,
+        textAlign: 'center',
+    },
+    searchBar: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: theme.colors.white,
+        borderRadius: theme.borderRadius.full,
+        paddingHorizontal: theme.spacing.sm,
+        height: 42,
+        marginHorizontal: theme.spacing.xs,
+        ...theme.shadows.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.gray[100],
+    },
+    searchIcon: {
+        marginRight: theme.spacing.xxs,
+    },
+    placeholderContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        overflow: 'hidden',
+        flex: 1,
+    },
+    searchTextFixed: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.secondary,
+    },
+    animatedPlaceholder: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    placeholderText: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.primary[500],
+        fontWeight: theme.typography.fontWeight.medium,
     },
     rightActions: {
         flexDirection: 'row',
@@ -210,7 +287,6 @@ const styles = StyleSheet.create({
     },
     iconButton: {
         padding: theme.spacing.xs,
-        marginLeft: theme.spacing.xs,
         position: 'relative',
     },
     badge: {
@@ -219,15 +295,15 @@ const styles = StyleSheet.create({
         right: -4,
         backgroundColor: theme.colors.error.main,
         borderRadius: 10,
-        minWidth: 20,
-        height: 20,
+        minWidth: 18,
+        height: 18,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 4,
     },
     badgeText: {
         color: theme.colors.white,
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: theme.typography.fontWeight.bold,
     },
 });

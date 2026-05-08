@@ -18,6 +18,7 @@ interface CategoryProductGridProps {
     onChildCategoryPress: (id: number, name: string) => void;
     onLoadMore: () => void;
     onRefresh: () => void;
+    paddingBottom?: number;
 }
 
 export const CategoryProductGrid: React.FC<CategoryProductGridProps> = ({
@@ -31,6 +32,7 @@ export const CategoryProductGrid: React.FC<CategoryProductGridProps> = ({
     onChildCategoryPress,
     onLoadMore,
     onRefresh,
+    paddingBottom = 60,
 }) => {
     const { t } = useTranslation();
 
@@ -42,7 +44,7 @@ export const CategoryProductGrid: React.FC<CategoryProductGridProps> = ({
             key="grid"
             keyExtractor={(item) => item.id.toString()}
             columnWrapperStyle={styles.row}
-            contentContainerStyle={styles.gridContent}
+            contentContainerStyle={[styles.gridContent, { paddingBottom }]}
             renderItem={({ item }) => (
                 <View style={styles.productItem}>
                     <ProductCard
