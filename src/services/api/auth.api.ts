@@ -62,8 +62,8 @@ export const authApi = {
     /**
      * Verify OTP and complete registration
      */
-    async verifyOtp(data: OtpVerificationRequest): Promise<OtpVerificationResponse> {
-        const endpoint = data.type === 'supplier' ? API_ENDPOINTS.SUPPLIER_VERIFY_OTP : API_ENDPOINTS.VERIFY_OTP;
+    async verifyOtp(data: OtpVerificationRequest, userType?: 'customer' | 'supplier'): Promise<OtpVerificationResponse> {
+        const endpoint = (data.type === 'supplier' || userType === 'supplier') ? API_ENDPOINTS.SUPPLIER_VERIFY_OTP : API_ENDPOINTS.VERIFY_OTP;
         return restApiClient.post<OtpVerificationResponse>(endpoint, {
             ...data,
             type: data.type || 'customer',
@@ -73,8 +73,8 @@ export const authApi = {
     /**
      * Resend OTP
      */
-    async resendOtp(data: ResendOtpRequest): Promise<ResendOtpResponse> {
-        const endpoint = data.type === 'supplier' ? API_ENDPOINTS.SUPPLIER_RESEND_OTP : API_ENDPOINTS.RESEND_OTP;
+    async resendOtp(data: ResendOtpRequest, userType?: 'customer' | 'supplier'): Promise<ResendOtpResponse> {
+        const endpoint = (data.type === 'supplier' || userType === 'supplier') ? API_ENDPOINTS.SUPPLIER_RESEND_OTP : API_ENDPOINTS.RESEND_OTP;
         return restApiClient.post<ResendOtpResponse>(endpoint, {
             ...data,
             type: data.type || 'customer',

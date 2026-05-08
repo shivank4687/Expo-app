@@ -23,6 +23,7 @@ export interface Supplier {
     is_approved: boolean;
     is_verified: boolean;
     identity_verification_status: string;
+    two_factor_enabled?: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -56,6 +57,13 @@ export const supplierAuthApi = {
      */
     async updateEmail(email: string): Promise<{ message: string }> {
         return restApiClient.put<{ message: string }>('/supplier-app/profile/email', { email });
+    },
+
+    /**
+     * Update supplier security settings
+     */
+    async updateSecuritySettings(data: { two_factor_enabled: boolean }): Promise<{ message: string }> {
+        return restApiClient.put<{ message: string }>('/supplier-app/profile/security', data);
     },
 
     /**

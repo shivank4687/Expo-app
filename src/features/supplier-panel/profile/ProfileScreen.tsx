@@ -3,6 +3,7 @@ import LegalInformationCard from '@/features/supplier-panel/profile/components/L
 import StripeConnectCard from '@/features/supplier-panel/profile/components/StripeConnectCard';
 import VatTaxesCard from '@/features/supplier-panel/profile/components/VatTaxesCard';
 import ApplicationDataCard from '@/features/supplier-panel/profile/components/ApplicationDataCard';
+import SecurityCard from '@/features/supplier-panel/profile/components/SecurityCard';
 import { supplierTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -50,6 +51,7 @@ export default function ProfileScreen() {
         contact: true,
         payments: true,
         applicationData: true,
+        security: false,
         closeAccount: false,
     });
     // Key used to force LegalInformationCard to remount and reload when arriving from a notification
@@ -197,6 +199,13 @@ export default function ProfileScreen() {
                 <ApplicationDataCard
                     expanded={expandedCards.applicationData}
                     onToggle={() => toggleCard('applicationData')}
+                    styles={styles as any}
+                />
+
+                {/* Security Card */}
+                <SecurityCard
+                    expanded={expandedCards.security}
+                    onToggle={() => toggleCard('security')}
                     styles={styles as any}
                 />
 

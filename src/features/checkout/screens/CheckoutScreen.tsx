@@ -139,8 +139,29 @@ export const CheckoutScreen: React.FC = () => {
             setShippingAddress(address);
         }
         resetShippingAndBeyond();
-        resetStepsAfter('address');
-        setCurrentStep('address');
+        // If we are in a later step, go back to address step
+        if (STEP_ORDER.indexOf(currentStep) > STEP_ORDER.indexOf('address')) {
+            setCurrentStep('address');
+            resetStepsAfter('address');
+        }
+    };
+
+    const handleShippingMethodSelect = (method: string) => {
+        setSelectedShippingMethod(method);
+        // If we are in a later step, go back to shipping step and reset subsequent steps
+        if (STEP_ORDER.indexOf(currentStep) > STEP_ORDER.indexOf('shipping')) {
+            setCurrentStep('shipping');
+            resetStepsAfter('shipping');
+        }
+    };
+
+    const handlePaymentMethodSelect = (method: string) => {
+        setSelectedPaymentMethod(method);
+        // If we are in a later step (review), go back to payment step
+        if (STEP_ORDER.indexOf(currentStep) > STEP_ORDER.indexOf('payment')) {
+            setCurrentStep('payment');
+            resetStepsAfter('payment');
+        }
     };
 
     useEffect(() => {
@@ -308,6 +329,9 @@ export const CheckoutScreen: React.FC = () => {
 
             console.log('[CheckoutScreen] Shipping save response:', response);
 
+            // Refresh cart to update totals (especially shipping amount)
+            await dispatch(fetchCartThunk()).unwrap();
+
             // REST API returns 'methods' instead of 'payment_methods'
             setPaymentMethods(response.methods || []);
             markStepComplete('shipping');
@@ -350,21 +374,21 @@ export const CheckoutScreen: React.FC = () => {
         if (isProcessing) return;
         setIsProcessing(true);
         try {
-            console.log('[CheckoutScreen] Starting place order...');
+            // console.log('[CheckoutScreen] Starting place order...');
             const response = await checkoutApi.placeOrder();
 
-            console.log('[CheckoutScreen] Place order response received:', JSON.stringify(response, null, 2));
-            console.log('[CheckoutScreen] Response analysis:', {
-                hasRedirectUrl: !!response.redirect_url,
-                redirectUrl: response.redirect_url,
-                hasData: !!response.data,
-                hasOrder: !!(response.data?.order || response.order),
-                orderId: response.data?.order?.id || response.order?.id
-            });
+            // console.log('[CheckoutScreen] Place order response received:', JSON.stringify(response, null, 2));
+            // console.log('[CheckoutScreen] Response analysis:', {
+            //     hasRedirectUrl: !!response.redirect_url,
+            //     redirectUrl: response.redirect_url,
+            //     hasData: !!response.data,
+            //     hasOrder: !!(response.data?.order || response.order),
+            //     orderId: response.data?.order?.id || response.order?.id
+            // });
 
             // Handle redirect URL (for payment methods that require external payment)
             if (response.redirect_url) {
-                console.log('[CheckoutScreen] Redirect URL detected:', response.redirect_url);
+                // console.log('[CheckoutScreen] Redirect URL detected:', response.redirect_url);
 
                 // Check if it's PayPal Smart Button (paypal.com URL)
                 const isPaypalSmartButton = response.redirect_url.includes('paypal.com') &&
@@ -580,7 +604,7 @@ export const CheckoutScreen: React.FC = () => {
     const hasDiscount = Number(cart?.discount || 0) !== 0;
     const discountValue = hasDiscount
         ? cart?.formatted_discount ||
-          formatters.formatPrice(cart?.discount || cart?.base_discount || 0)
+        formatters.formatPrice(cart?.discount || cart?.base_discount || 0)
         : undefined;
     const shippingValue =
         shippingMethodDetails?.formatted_price ||
@@ -643,14 +667,14 @@ export const CheckoutScreen: React.FC = () => {
                         <ShippingStep
                             shippingMethods={shippingMethods}
                             selectedMethod={selectedShippingMethod}
-                            onMethodSelect={setSelectedShippingMethod}
+                            onMethodSelect={handleShippingMethodSelect}
                         />
 
                         {/* Payment Step */}
                         <PaymentStep
                             paymentMethods={paymentMethods}
                             selectedMethod={selectedPaymentMethod}
-                            onMethodSelect={setSelectedPaymentMethod}
+                            onMethodSelect={handlePaymentMethodSelect}
                         />
 
                         {/* Review Step */}
@@ -664,6 +688,7 @@ export const CheckoutScreen: React.FC = () => {
                             selectedPaymentMethod={selectedPaymentMethod}
                             paymentMethods={paymentMethods}
                             isProcessing={isProcessing}
+                            onEditStep={setCurrentStep}
                         />
                     </CheckoutStepper>
                 </ScrollView>

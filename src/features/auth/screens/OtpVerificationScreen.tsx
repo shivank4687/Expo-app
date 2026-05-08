@@ -13,6 +13,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { verifyOtpThunk, resendOtpThunk, clearVerification, clearError } from '@/store/slices/authSlice';
+import { verifySupplierOtpThunk, resendSupplierOtpThunk } from '@/store/slices/supplierAuthSlice';
 import { Button } from '@/shared/components/Button';
 import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
@@ -97,8 +98,9 @@ export const OtpVerificationScreen: React.FC = () => {
                 }
             }
 
-            // For customer/supplier registration, use the Redux thunk
-            const result = await dispatch(verifyOtpThunk({
+            // For customer/supplier registration/login, use the appropriate Redux thunk
+            const action = params.userType === 'supplier' ? verifySupplierOtpThunk : verifyOtpThunk;
+            const result = await dispatch(action({
                 verification_token: token,
                 otp: otpCode,
                 type: verificationType as any,
@@ -265,7 +267,8 @@ export const OtpVerificationScreen: React.FC = () => {
         }
 
         try {
-            await dispatch(resendOtpThunk({
+            const action = params.userType === 'supplier' ? resendSupplierOtpThunk : resendOtpThunk;
+            await dispatch(action({
                 verification_token: token,
                 type: verificationType as any,
             })).unwrap();

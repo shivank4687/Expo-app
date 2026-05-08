@@ -2,7 +2,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { supplierAuthApi, Supplier } from '@/services/api/supplierAuth.api';
 import { secureStorage } from '@/services/storage/secureStorage';
 import { STORAGE_KEYS } from '@/config/constants';
-import { LoginRequest } from '@/features/auth/types/auth.types';
+import { LoginRequest, OtpVerificationRequest, ResendOtpRequest } from '@/features/auth/types/auth.types';
+import { authApi } from '@/services/api/auth.api';
 import { setGlobalToken } from '@/services/api/client';
 import { supplierPushNotificationService } from '@/services/notifications/supplier-push-notification.service';
 import socketService from '@/services/socket.service';
@@ -163,6 +164,89 @@ export const verifySupplierPhoneOtpThunk = createAsyncThunk(
     }
 );
 
+
+export const verifySupplierOtpThunk = createAsyncThunk(
+    'supplierAuth/verifyOtp',
+    async (data: OtpVerificationRequest, { rejectWithValue }) => {
+        try {
+            const response = await authApi.verifyOtp(data, 'supplier');
+            
+            // Handle nested response structure
+            let supplier = response.user;
+            let token = response.token;
+
+            if (!supplier && (response as any).data) {
+                if ((response as any).data.id || (response as any).data.email) {
+                    supplier = (response as any).data;
+                } else if ((response as any).data.user) {
+                    supplier = (response as any).data.user;
+                    token = (response as any).data.token || token;
+                }
+            }
+
+            // Store in secure storage
+            if (token && typeof token === 'string') {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, token);
+            }
+
+            if (supplier) {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(supplier));
+            }
+
+            // Register device token for push notifications
+            try {
+                console.log('🔔 Registering supplier device token for push notifications...');
+                await supplierPushNotificationService.registerToken();
+            } catch (notificationError) {
+                console.error('Failed to register push notification token (non-critical):', notificationError);
+            }
+
+            return {
+                supplier,
+                token,
+                isApproved: (response as any).is_approved
+            };
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
+        }
+    }
+);
+
+export const resendSupplierOtpThunk = createAsyncThunk(
+    'supplierAuth/resendOtp',
+    async (data: ResendOtpRequest, { rejectWithValue }) => {
+        try {
+            const response = await authApi.resendOtp(data, 'supplier');
+            return response;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to resend OTP');
+        }
+    }
+);
+
+export const updateSupplierSecurityThunk = createAsyncThunk(
+    'supplierAuth/updateSecurity',
+    async (data: { two_factor_enabled: boolean }, { rejectWithValue, getState }) => {
+        try {
+            const response = await supplierAuthApi.updateSecuritySettings(data);
+            
+            // Get current state to update storage manually
+            const state = getState() as { supplierAuth: SupplierAuthState };
+            const currentSupplier = state.supplierAuth.supplier;
+            
+            if (currentSupplier) {
+                const updatedSupplier = { ...currentSupplier, two_factor_enabled: data.two_factor_enabled };
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(updatedSupplier));
+            }
+            
+            return { message: response.message, data };
+        } catch (error: any) {
+            console.error('Update security thunk error:', error);
+            return rejectWithValue(error?.response?.data?.message || 'Failed to update security settings');
+        }
+    }
+);
+
 const supplierAuthSlice = createSlice({
     name: 'supplierAuth',
     initialState,
@@ -262,6 +346,57 @@ const supplierAuthSlice = createSlice({
             })
             .addCase(verifySupplierPhoneOtpThunk.rejected, (state, action) => {
                 state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
+        // Update Security
+        builder
+            .addCase(updateSupplierSecurityThunk.fulfilled, (state, action) => {
+                if (state.supplier) {
+                    state.supplier.two_factor_enabled = action.payload.data.two_factor_enabled;
+                }
+            });
+
+        // Verify Supplier OTP (Registration/Login 2FA)
+        builder
+            .addCase(verifySupplierOtpThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(verifySupplierOtpThunk.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.error = null;
+
+                const { isApproved } = action.payload;
+
+                // For login_2fa, isApproved won't be defined (it's already approved)
+                // For registration, it will be defined
+                if (isApproved !== undefined) {
+                    // Registration flow: don't auto-authenticate yet
+                } else {
+                    // Login 2FA flow: auto-authenticate
+                    state.supplier = action.payload.supplier as any;
+                    state.token = action.payload.token || null;
+                    state.isAuthenticated = true;
+                    if (action.payload.token) {
+                        setGlobalToken(action.payload.token);
+                    }
+                }
+            })
+            .addCase(verifySupplierOtpThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
+        // Resend Supplier OTP
+        builder
+            .addCase(resendSupplierOtpThunk.pending, (state) => {
+                // state.isLoading = true;
+            })
+            .addCase(resendSupplierOtpThunk.fulfilled, (state) => {
+                state.error = null;
+            })
+            .addCase(resendSupplierOtpThunk.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
     },

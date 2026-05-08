@@ -6,6 +6,7 @@ import { COLORS } from '@/features/supplier-panel/styles';
 import { productsApi } from '@/services/api/products.api';
 import { useToast } from '@/shared/components/Toast';
 import { useAppSelector } from '@/store/hooks';
+import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
     fixedHeader: {
         backgroundColor: COLORS.background,
         paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingBottom: theme.spacing.xs,
     },
 
     // List Content

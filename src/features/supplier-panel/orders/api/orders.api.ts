@@ -19,6 +19,7 @@ export interface Order {
     can_ship: boolean;
     can_invoice: boolean;
     can_cancel: boolean;
+    can_refund?: boolean;
     shipments_count: number;
     created_at: string;
     updated_at: string;
@@ -42,6 +43,10 @@ export interface Order {
     total_paid: number;
     total_refunded: number;
     total_due: number;
+    base_shipping_invoiced?: number;
+    base_shipping_refunded?: number;
+    base_grand_total_invoiced?: number;
+    base_grand_total_refunded?: number;
 }
 
 export interface OrderAddress {
@@ -70,6 +75,7 @@ export interface OrdersResponse {
 
 export interface OrderItem {
     id: number;
+    order_item_id: number;
     product_id: number;
     product_name: string;
     product_sku: string;
@@ -78,13 +84,18 @@ export interface OrderItem {
     qty_shipped: number;
     qty_invoiced: number;
     qty_canceled: number;
+    qty_refunded?: number;
+    qty_to_refund?: number;
     price: number;
     base_price: number;
     total: number;
     base_total: number;
     tax_amount: number;
+    base_tax_amount?: number;
     tax_percent: number;
     discount_amount: number;
+    base_discount_amount?: number;
+    additional?: any;
 }
 
 export interface OrderShipment {

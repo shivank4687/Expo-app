@@ -9,9 +9,10 @@ const DEFAULT_IMAGE = 'https://via.placeholder.com/100';
 
 interface OrderInfoCardProps {
     order: OrderDetailsResponse['data'];
+    onRefundPress?: () => void;
 }
 
-export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
+export const OrderInfoCard = ({ order, onRefundPress }: OrderInfoCardProps) => {
     const {
         increment_id,
         created_at,
@@ -165,12 +166,14 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
             </View> */}
 
             {/* Action Buttons */}
-            {/* <View style={styles.actionsContainer}>
-                <TouchableOpacity style={styles.modifyButton}>
-                    <Feather name="edit-2" size={14} color="#AC790A" />
-                    <Text style={styles.modifyText}>Modify</Text>
-                </TouchableOpacity>
-            </View> */}
+            {order.can_refund && (
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity style={styles.actionButton} onPress={onRefundPress}>
+                        <Feather name="corner-up-left" size={14} color="#00615E" />
+                        <Text style={styles.actionButtonText}>Create Refund</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 };
@@ -360,22 +363,26 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        marginTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+        paddingTop: 12,
     },
-    modifyButton: {
+    actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 6,
         gap: 4,
-        backgroundColor: '#FFF5EA',
+        backgroundColor: '#E6EFEF', // Light teal background
         borderWidth: 1,
-        borderColor: '#FFE8CF',
-        borderRadius: 80,
+        borderColor: '#B3D0CF', // Slightly darker teal border
+        borderRadius: 6,
     },
-    modifyText: {
+    actionButtonText: {
         fontFamily: 'Inter',
         fontWeight: '500',
         fontSize: 12,
-        color: '#AC790A',
+        color: '#00615E',
     },
 });

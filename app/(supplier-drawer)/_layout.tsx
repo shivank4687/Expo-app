@@ -49,6 +49,13 @@ export default function SupplierDrawerLayout() {
             drawerItemStyle: { display: 'none' },
           }}
         />
+        <Drawer.Screen
+          name="create-refund"
+          options={{
+            drawerLabel: "Create Refund",
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
       </Drawer>
     </>
   );

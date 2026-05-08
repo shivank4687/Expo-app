@@ -200,13 +200,13 @@ export function DashboardScreen() {
                         {/* Avatar */}
                         <View style={styles.avatar}>
                             <Text style={styles.avatarText}>
-                                {supplier.name.charAt(0).toUpperCase()}
+                                {(supplier.name || supplier.first_name || 'S').charAt(0).toUpperCase()}
                             </Text>
                         </View>
 
                         {/* Profile Info */}
                         <View style={styles.profileInfo}>
-                            <Text style={styles.greetingText}>Hey {supplier.name}!</Text>
+                            <Text style={styles.greetingText}>Hey {supplier.name || supplier.first_name || 'Supplier'}!</Text>
                             <Text style={styles.descriptionText}>
                                 Your dashboard. Sales. Orders. Payments
                             </Text>

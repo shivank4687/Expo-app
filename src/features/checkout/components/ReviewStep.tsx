@@ -36,6 +36,7 @@ interface ReviewStepProps {
     selectedPaymentMethod: string | null;
     paymentMethods: PaymentMethod[] | null;
     isProcessing: boolean;
+    onEditStep: (step: CheckoutStep) => void;
 }
 
 export const ReviewStep: React.FC<ReviewStepProps> = ({
@@ -48,7 +49,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     selectedPaymentMethod,
     paymentMethods,
     isProcessing,
+    onEditStep,
 }) => {
+    if (!cart || !cart.items) {
+        return null;
+    }
+
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
@@ -99,20 +105,31 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
         : undefined;
 
     // Debug shipping details
-    console.log('🚚 Shipping method details:', JSON.stringify(shippingMethodDetails, null, 2));
-    console.log('🛒 Cart shipping data:', {
-        selected_shipping_rate: cart.selected_shipping_rate,
-        shipping_amount: cart.shipping_amount,
-        formatted_shipping_amount: cart.formatted_shipping_amount,
-        base_shipping_amount: cart.base_shipping_amount,
-    });
+    // console.log('🚚 Shipping method details:', JSON.stringify(shippingMethodDetails, null, 2));
+    // console.log('🛒 Cart shipping data:', {
+    //     selected_shipping_rate: cart.selected_shipping_rate,
+    //     shipping_amount: cart.shipping_amount,
+    //     formatted_shipping_amount: cart.formatted_shipping_amount,
+    //     base_shipping_amount: cart.base_shipping_amount,
+    // });
 
     const renderAddress = (address: CheckoutAddress | null, title: string) => {
         if (!address) return null;
 
         return (
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{title}</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>{title}</Text>
+                    <TouchableOpacity
+                        style={styles.changeButton}
+                        onPress={() => onEditStep('address')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.changeButtonText}>
+                            {t('checkout.change', 'Change')}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
                 <Card style={styles.infoCard}>
                     <Text style={styles.addressName}>
                         {address.first_name} {address.last_name}
@@ -143,9 +160,20 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             {/* Shipping Method */}
             {shippingMethodDetails && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                        {t('checkout.shippingMethod', 'Shipping Method')}
-                    </Text>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>
+                            {t('checkout.shippingMethod', 'Shipping Method')}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.changeButton}
+                            onPress={() => onEditStep('shipping')}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.changeButtonText}>
+                                {t('checkout.change', 'Change')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                     <Card style={styles.infoCard}>
                         <View style={styles.methodRow}>
                             <View style={styles.methodInfo}>
@@ -169,9 +197,20 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             {/* Payment Method */}
             {paymentMethodDetails && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                        {t('checkout.paymentMethod', 'Payment Method')}
-                    </Text>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>
+                            {t('checkout.paymentMethod', 'Payment Method')}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.changeButton}
+                            onPress={() => onEditStep('payment')}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.changeButtonText}>
+                                {t('checkout.change', 'Change')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                     <Card style={styles.infoCard}>
                         <View style={styles.paymentRow}>
                             {paymentImageSource && (
@@ -424,6 +463,21 @@ const styles = StyleSheet.create({
     },
     infoCard: {
         padding: theme.spacing.md,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    changeButton: {
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    changeButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
     },
     addressName: {
         fontSize: theme.typography.fontSize.md,

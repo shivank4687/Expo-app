@@ -8,6 +8,7 @@ import { getOrderDetails, OrderDetails } from '../../orders/api/orders.api';
 import { createShipment, createSkydropxShipment, updateShipmentStatus } from '../../dashboard/api/shipments.api';
 import { Tab, TabGroup, TopHeader } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
+import { theme } from '@/theme';
 
 type TabType = 'details' | 'messages' | 'tracking';
 
@@ -224,7 +225,14 @@ export default function OrderDetailsScreen() {
             }
         };
 
-        return <OrderDetailsTab order={order ?? undefined} onVoucherRegenerated={handleVoucherRegenerated} />;
+        const handleRefundPress = () => {
+            router.push({
+                pathname: '/(supplier-drawer)/create-refund',
+                params: { orderId: orderId.toString(), supplierOrderId: order?.id?.toString() }
+            });
+        };
+
+        return <OrderDetailsTab order={order ?? undefined} onVoucherRegenerated={handleVoucherRegenerated} onRefundPress={handleRefundPress} />;
     };
 
     return (
@@ -264,7 +272,7 @@ const styles = StyleSheet.create({
     },
     tabsWrapper: {
         paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingBottom: theme.spacing.xs,
         backgroundColor: COLORS.background,
     },
     contentArea: {
@@ -272,7 +280,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     scrollContent: {
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingVertical: theme.spacing.xs,
         gap: 16,
     },
     comingSoonContainer: {
