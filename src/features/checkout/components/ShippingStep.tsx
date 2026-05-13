@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/components/Card';
 
 import { theme } from '@/theme';
+import { formatters } from '@/shared/utils/formatters';
 import { ShippingMethod } from '../types/checkout.types';
 
 interface ShippingStepProps {
@@ -186,7 +187,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                                             </Text>
                                                                             {breakdown.days && (
                                                                                 <Text style={styles.breakdownDays}>
-                                                                                    {t('checkout.estDelivery', 'Est. Delivery')}: {breakdown.days} {t('checkout.days', 'Days')}
+                                                                                    {t('checkout.estDelivery', 'Est. Delivery')}: {formatters.getEstimatedDeliveryDate(breakdown.days)}
                                                                                 </Text>
                                                                             )}
                                                                         </View>

@@ -1,4 +1,6 @@
 import { themeApi } from '@/services/api/theme.api';
+import { productsApi } from '@/services/api/products.api';
+import { Product } from '@/features/product/types/product.types';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useAppSelector } from '@/store/hooks';
@@ -16,18 +18,26 @@ import {
 import { ThemeCustomization } from '../components/ThemeCustomization';
 import { NewsletterSubscription } from '../components/NewsletterSubscription';
 import { HomeCategoryContent } from '../components/HomeCategoryContent';
+import { DiscountSection } from '../components/DiscountSection';
+import { CategoryGridSection } from '../components/CategoryGridSection';
+import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
+import { useRouter } from 'expo-router';
 
 /**
  * HomeScreen Component
  * Displays theme customizations (carousels, static content, etc.)
- * featuring a dynamic category tab bar at the top.
+ * featuring a dynamic category tab bar and premium feature cards.
  */
 export const HomeScreen: React.FC = () => {
+    const router = useRouter();
     const { selectedLocale } = useAppSelector((state) => state.core);
     const { categories } = useAppSelector((state) => state.category);
 
     const [activeTabId, setActiveTabId] = useState<string | number>('home');
     const [customizations, setCustomizations] = useState<ThemeCustomizationType[]>([]);
+    const [discountedProducts, setDiscountedProducts] = useState<Product[]>([]);
+    const [newProducts, setNewProducts] = useState<Product[]>([]);
+    const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -37,10 +47,18 @@ export const HomeScreen: React.FC = () => {
 
         try {
             setError(null);
-            const customizationsData = await themeApi.getCustomizations();
+            const [customizationsData, discounted, newArr, featured] = await Promise.all([
+                themeApi.getCustomizations(),
+                productsApi.getDiscountedProducts(8),
+                productsApi.getNewProducts(8),
+                productsApi.getFeaturedProducts(8),
+            ]);
             setCustomizations(customizationsData);
+            setDiscountedProducts(discounted);
+            setNewProducts(newArr);
+            setFeaturedProducts(featured);
         } catch (err: any) {
-            console.error('[HomeScreen] Error loading customizations:', err);
+            console.error('[HomeScreen] Error loading content:', err);
             setError(err.message || 'Failed to load page content');
         } finally {
             setIsLoading(false);
@@ -60,7 +78,7 @@ export const HomeScreen: React.FC = () => {
     const renderTabBar = () => {
         if (categories.length === 0) return null;
 
-        const tabs = [{ id: 'home', name: 'Home' }, ...categories];
+        const tabs = [{ id: 'home', name: 'Explore' }, ...categories];
 
         return (
             <View style={styles.tabBarContainer}>
@@ -106,8 +124,11 @@ export const HomeScreen: React.FC = () => {
         );
     }
 
-    const mainCustomizations = customizations.filter(
-        c => c.type !== 'services_content' as any
+    const image_carousel_customization = customizations.filter(
+        c => ['image_carousel'].includes(c.type)//c.type !== 'services_content' as any
+    );
+    const carousel_customization = customizations.filter(
+        c => ['category_carousel', 'product_carousel'].includes(c.type)//c.type !== 'services_content' as any
     );
 
     const servicesCustomization = customizations.find(
@@ -127,21 +148,46 @@ export const HomeScreen: React.FC = () => {
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
                     }
                 >
-                    {mainCustomizations.map((customization) => (
+
+
+                    {image_carousel_customization.map((customization) => (
                         <ThemeCustomization
                             key={customization.id}
                             customization={customization}
                         />
                     ))}
+                    <RecentlyViewedSection />
+                    {carousel_customization.map((customization) => (
+                        <ThemeCustomization
+                            key={customization.id}
+                            customization={customization}
+                        />
+                    ))}
+                    {/* Featured Sections */}
+                    <DiscountSection
+                        products={discountedProducts}
+                        onViewAll={() => router.push('/product-list/all?title=Daily Deals&on_sale=1')}
+                    />
 
-                    <NewsletterSubscription />
+                    <CategoryGridSection
+                        title="New Arrivals"
+                        products={newProducts}
+                        onViewAll={() => router.push('/product-list/all?title=New Arrivals&new=1')}
+                    />
 
-                    {servicesCustomization && (
+                    <CategoryGridSection
+                        title="Featured Products"
+                        products={featuredProducts}
+                        onViewAll={() => router.push('/product-list/all?title=Featured Products&featured=1')}
+                    />
+                    {/* <NewsletterSubscription /> */}
+
+                    {/* {servicesCustomization && (
                         <ThemeCustomization
                             key={servicesCustomization.id}
                             customization={servicesCustomization}
                         />
-                    )}
+                    )} */}
                 </ScrollView>
             ) : (
                 <HomeCategoryContent categoryId={activeTabId as number} />
@@ -159,9 +205,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     tabBarContainer: {
-        backgroundColor: theme.colors.background.default,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[100],
+        backgroundColor: theme.colors.primary[500],
+        borderBottomWidth: 0,
     },
     tabBarContent: {
         paddingHorizontal: theme.spacing.sm,
@@ -179,11 +224,11 @@ const styles = StyleSheet.create({
     },
     tabText: {
         fontSize: theme.typography.fontSize.md,
-        color: theme.colors.text.secondary,
+        color: theme.colors.primary[100],
         fontWeight: theme.typography.fontWeight.medium,
     },
     activeTabText: {
-        color: theme.colors.primary[500],
+        color: theme.colors.white,
         fontWeight: theme.typography.fontWeight.bold,
     },
     activeIndicator: {
@@ -191,11 +236,11 @@ const styles = StyleSheet.create({
         bottom: 0,
         width: '60%',
         height: 3,
-        backgroundColor: theme.colors.primary[500],
+        backgroundColor: theme.colors.white,
         borderRadius: 2,
     },
     contentContainer: {
-        paddingTop: theme.spacing.xs,
+        //paddingTop: theme.spacing.xs,
         paddingBottom: theme.spacing.xl * 2,
     },
     errorContainer: {

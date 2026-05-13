@@ -6,6 +6,8 @@ interface DetailCardProps extends ViewProps {
     title?: string;
     badgeText?: string;
     onBadgePress?: () => void;
+    showBadge?: boolean;
+    noPadding?: boolean;
     children?: React.ReactNode;
     contentContainerStyle?: StyleProp<ViewStyle>;
 }
@@ -14,26 +16,30 @@ export const DetailCard: React.FC<DetailCardProps> = ({
     title = 'Product details',
     badgeText = 'Copy',
     onBadgePress,
+    showBadge = true,
+    noPadding = false,
     children,
     style,
     contentContainerStyle,
     ...props
 }) => {
     return (
-        <View style={[styles.container, style]} {...props}>
-            <View style={styles.header}>
+        <View style={[styles.container, noPadding && { padding: 0 }, style]} {...props}>
+            <View style={[styles.header, noPadding && { padding: 12, paddingBottom: 0 }]}>
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>{title}</Text>
                 </View>
                 
-                <TouchableOpacity 
-                    style={styles.badge} 
-                    onPress={onBadgePress} 
-                    activeOpacity={0.7}
-                    disabled={!onBadgePress}
-                >
-                    <Text style={styles.badgeText}>{badgeText}</Text>
-                </TouchableOpacity>
+                {showBadge && (onBadgePress || badgeText) && (
+                    <TouchableOpacity 
+                        style={styles.badge} 
+                        onPress={onBadgePress} 
+                        activeOpacity={0.7}
+                        disabled={!onBadgePress}
+                    >
+                        <Text style={styles.badgeText}>{badgeText}</Text>
+                    </TouchableOpacity>
+                )}
             </View>
             
             <View style={[styles.content, contentContainerStyle]}>
@@ -60,7 +66,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 0,
         gap: 12,
-        height: 23,
         alignSelf: 'stretch',
     },
     titleContainer: {
@@ -74,7 +79,6 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontWeight: '700',
         fontSize: 16,
-        lineHeight: 16,
         color: '#000000',
     },
     badge: {

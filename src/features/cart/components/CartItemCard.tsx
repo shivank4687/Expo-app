@@ -21,9 +21,11 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } fr
 
 interface CartItemCardProps {
     item: CartItem;
+    isSelected: boolean;
+    onToggleSelection: (id: number) => void;
 }
 
-export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
+export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, onToggleSelection }) => {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const { showToast } = useToast();
@@ -100,31 +102,30 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
     const isMovingToWishlistThis = isMovingToWishlist && movingToWishlistItemId === item.id;
 
     const handleMoveToWishlist = async () => {
-        // Check if user is authenticated
-        if (!isAuthenticated) {
-            showToast({ message: t('cart.loginToMoveWishlist'), type: 'warning' });
-            return;
-        }
+        // ... handled by bulk action now, but kept for single item if needed in future
+    };
 
-        try {
-            // console.log('[CartItemCard] Moving item to wishlist:', item.id);
-            const result = await dispatch(moveToWishlistThunk(item.id)).unwrap();
-            // console.log('[CartItemCard] Move completed, updated cart:', result);
-
-            // Refresh wishlist count in header
-            dispatch(fetchWishlistThunk());
-
-            // showToast({ message: t('cart.itemMovedToWishlist'), type: 'success' });
-        } catch (error: any) {
-            console.error('[CartItemCard] Move to wishlist failed:', error);
-            showToast({ message: error || t('cart.failedToMoveWishlist'), type: 'error' });
-        }
+    const toggleSelection = () => {
+        onToggleSelection(item.id);
     };
 
     return (
         <Card style={styles.card}>
             <View style={styles.mainContent}>
                 <View style={styles.topSection}>
+                    {/* Selection Checkbox */}
+                    <TouchableOpacity
+                        style={styles.checkboxContainer}
+                        onPress={toggleSelection}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons
+                            name={isSelected ? 'checkbox' : 'square-outline'}
+                            size={24}
+                            color={isSelected ? theme.colors.primary[500] : theme.colors.gray[400]}
+                        />
+                    </TouchableOpacity>
+
                     {/* Product Image */}
                     <TouchableOpacity onPress={handleProductPress} activeOpacity={0.7}>
                         <View style={styles.imageContainer}>
@@ -183,65 +184,6 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                     </View>
                 </View>
             </View>
-
-            {/* Actions - Full Width at Bottom */}
-            <View style={styles.actionsContainer}>
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={(e) => {
-                        e?.stopPropagation?.();
-                        handleMoveToWishlist();
-                    }}
-                    disabled={isMovingToWishlistThis || isRemovingThis}
-                >
-                    <View style={styles.actionButtonContent}>
-                        <View style={[styles.actionButtonInner, isMovingToWishlistThis && { opacity: 0 }]}>
-                            <Ionicons
-                                name="heart-outline"
-                                size={18}
-                                color={theme.colors.text.secondary}
-                            />
-                            <Text style={styles.actionText}>{t('cart.moveToWishlist')}</Text>
-                        </View>
-                        {isMovingToWishlistThis && (
-                            <ActivityIndicator
-                                size="small"
-                                color={theme.colors.text.secondary}
-                                style={styles.loaderOverlay}
-                            />
-                        )}
-                    </View>
-                </TouchableOpacity>
-
-                <View style={styles.actionDivider} />
-
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={(e) => {
-                        e?.stopPropagation?.();
-                        handleRemove();
-                    }}
-                    disabled={isRemovingThis || isMovingToWishlistThis}
-                >
-                    <View style={styles.actionButtonContent}>
-                        <View style={[styles.actionButtonInner, isRemovingThis && { opacity: 0 }]}>
-                            <Ionicons
-                                name="trash-outline"
-                                size={18}
-                                color={theme.colors.error.main}
-                            />
-                            <Text style={[styles.actionText, styles.removeText]}>{t('cart.remove')}</Text>
-                        </View>
-                        {isRemovingThis && (
-                            <ActivityIndicator
-                                size="small"
-                                color={theme.colors.error.main}
-                                style={styles.loaderOverlay}
-                            />
-                        )}
-                    </View>
-                </TouchableOpacity>
-            </View>
         </Card>
     );
 };
@@ -256,14 +198,16 @@ const styles = StyleSheet.create({
         borderColor: theme.colors.border.card_light,
     },
     mainContent: {
-        padding: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        paddingRight: theme.spacing.sm,
+        paddingLeft: theme.spacing.xs,
     },
     topSection: {
         flexDirection: 'row',
     },
     imageContainer: {
-        width: 100,
-        height: 90,
+        width: 80,
+        height: 80,
         borderRadius: theme.borderRadius.md,
         overflow: 'hidden',
         backgroundColor: theme.colors.gray[100],
@@ -272,13 +216,17 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
+    checkboxContainer: {
+        justifyContent: 'center',
+        paddingRight: theme.spacing.xs,
+    },
     availabilityBadgeGreen: {
         position: 'absolute',
-        top: 4,
-        right: 4,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        top: 2,
+        right: 2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
         backgroundColor: 'rgba(255, 255, 255, 0.92)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -291,11 +239,11 @@ const styles = StyleSheet.create({
     },
     availabilityBadgeOrange: {
         position: 'absolute',
-        top: 4,
-        right: 4,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        top: 2,
+        right: 2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
         backgroundColor: 'rgba(255, 255, 255, 0.92)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -308,7 +256,7 @@ const styles = StyleSheet.create({
     },
     detailsContainer: {
         flex: 1,
-        marginLeft: theme.spacing.md,
+        marginLeft: theme.spacing.xs,
         justifyContent: 'space-between',
     },
     productInfoSection: {

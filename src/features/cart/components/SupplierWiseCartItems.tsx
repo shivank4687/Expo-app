@@ -11,9 +11,16 @@ interface SupplierWiseCartItemsProps {
     items: CartItem[];
     /** Called whenever the minimum-order status changes. `true` = all suppliers met. */
     onMinimumOrderStatus?: (allMet: boolean) => void;
+    selectedItemIds: number[];
+    onToggleSelection: (id: number) => void;
 }
 
-export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ items, onMinimumOrderStatus }) => {
+export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
+    items,
+    onMinimumOrderStatus,
+    selectedItemIds,
+    onToggleSelection
+}) => {
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
@@ -71,7 +78,12 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
                             </Text>
                         </View>
                         {storeItems.map((item) => (
-                            <CartItemCard key={item.id} item={item} />
+                            <CartItemCard
+                                key={item.id}
+                                item={item}
+                                isSelected={selectedItemIds.includes(item.id)}
+                                onToggleSelection={onToggleSelection}
+                            />
                         ))}
 
                         {((!!minimumAmount && minimumAmount > 0) || (!!freeShippingEnable && (freeShippingThreshold || 0) > 0)) && (
@@ -92,10 +104,10 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({ it
 
 const styles = StyleSheet.create({
     storeGroup: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xs,
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.lg,
-        paddingHorizontal: theme.spacing.md,
+        paddingHorizontal: theme.spacing.xs,
         paddingVertical: theme.spacing.sm,
         // Shadow for iOS
         shadowColor: '#000',
@@ -115,7 +127,7 @@ const styles = StyleSheet.create({
         paddingBottom: theme.spacing.xxs,
         // borderBottomWidth: 1,
         // borderBottomColor: theme.colors.gray[200],
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
         gap: 10,
     },
     storeTitle: {

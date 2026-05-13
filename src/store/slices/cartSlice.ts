@@ -199,6 +199,32 @@ export const moveToWishlistThunk = createAsyncThunk(
     }
 );
 
+// Remove selected items from cart
+export const removeSelectedFromCartThunk = createAsyncThunk(
+    'cart/removeSelected',
+    async (cartItemIds: number[], { rejectWithValue }) => {
+        try {
+            const cart = await cartApi.removeSelected(cartItemIds);
+            return cart;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to remove selected items');
+        }
+    }
+);
+
+// Move selected items to wishlist
+export const moveSelectedToWishlistThunk = createAsyncThunk(
+    'cart/moveSelectedToWishlist',
+    async (cartItemIds: number[], { rejectWithValue }) => {
+        try {
+            const cart = await cartApi.moveToWishlistBulk(cartItemIds);
+            return cart;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to move selected items to wishlist');
+        }
+    }
+);
+
 /**
  * Cart Slice
  */
@@ -325,6 +351,36 @@ const cartSlice = createSlice({
             .addCase(moveToWishlistThunk.rejected, (state, action) => {
                 state.isMovingToWishlist = false;
                 state.movingToWishlistItemId = null;
+                state.error = action.payload as string;
+            });
+
+        // Remove selected items
+        builder
+            .addCase(removeSelectedFromCartThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(removeSelectedFromCartThunk.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.cart = action.payload;
+            })
+            .addCase(removeSelectedFromCartThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
+        // Move selected to wishlist
+        builder
+            .addCase(moveSelectedToWishlistThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(moveSelectedToWishlistThunk.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.cart = action.payload;
+            })
+            .addCase(moveSelectedToWishlistThunk.rejected, (state, action) => {
+                state.isLoading = false;
                 state.error = action.payload as string;
             });
 

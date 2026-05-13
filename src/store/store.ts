@@ -11,6 +11,7 @@ import cartReducer from './slices/cartSlice';
 import wishlistReducer from './slices/wishlistSlice';
 import notificationReducer from './slices/notificationSlice';
 import customerStatsReducer from './slices/customerStatsSlice';
+import recentlyViewedReducer from './slices/recentlyViewedSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -43,7 +44,7 @@ const storage = Platform.OS === 'web'
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms'], // Persist auth, supplierAuth, core, category, and cms (cart is fetched from server)
+    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms', 'recentlyViewed'], // Persist auth, supplierAuth, core, category, cms, and recentlyViewed
 };
 
 // Root reducer
@@ -57,6 +58,7 @@ const rootReducer = combineReducers({
     wishlist: wishlistReducer,
     notifications: notificationReducer,
     customerStats: customerStatsReducer,
+    recentlyViewed: recentlyViewedReducer,
 });
 
 // Persisted reducer

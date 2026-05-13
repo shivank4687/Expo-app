@@ -152,6 +152,7 @@
     "featured": "Featured",
     "onSale": "On Sale",
     "quantity": "Quantity",
+    "qty": "Qty",
     "sku": "SKU",
     "category": "Category",
     "rating": "Rating",
@@ -159,6 +160,7 @@
     "startingAt": "Starting at",
     "productOutOfStock": "Product is out of stock",
     "selectProductOptions": "Please select product options",
+    "invalidQuantity": "Please enter a valid quantity",
     "addedToCart": "{{name}} added to cart!",
     "failedToAddToCart": "Failed to add to cart",
     "loginToAddWishlist": "Please login first to add items to wishlist",
@@ -243,7 +245,13 @@
     "checkoutComingSoon": "Checkout feature coming soon!",
     "loginToContinue": "Login to Continue",
     "loginPrompt": "Please login or create an account to proceed with checkout",
-    "shipping": "Shipping"
+    "shipping": "Shipping",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "removeSelected": "Remove Selected",
+    "removeSelectedConfirm": "Are you sure you want to remove {{count}} items from your cart?",
+    "itemsRemoved": "Items removed from cart",
+    "itemsMovedToWishlist": "Items moved to wishlist"
   },
   "address": {
     "addresses": "Addresses",

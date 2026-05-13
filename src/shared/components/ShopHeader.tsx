@@ -145,7 +145,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         <View style={styles.container}>
             <View style={styles.topRow}>
                 <TouchableOpacity onPress={openDrawer} style={styles.iconButton}>
-                    <Ionicons name="menu-outline" size={28} color={theme.colors.text.primary} />
+                    <Ionicons name="menu-outline" size={28} color={theme.colors.white} />
                 </TouchableOpacity>
 
                 {showSearch ? (
@@ -154,7 +154,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                         onPress={handleSearchPress}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="search-outline" size={20} color={theme.colors.text.secondary} style={styles.searchIcon} />
+                        <Ionicons name="search-outline" size={20} color={theme.colors.primary[500]} style={styles.searchIcon} />
                         <View style={styles.placeholderContainer}>
                             <Text style={styles.searchTextFixed}>Search </Text>
                             <Animated.View style={[
@@ -182,7 +182,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                                 <Ionicons
                                     name="heart-outline"
                                     size={26}
-                                    color={theme.colors.error.main}
+                                    color={theme.colors.white}
                                 />
                                 {wishlistItemsCount > 0 && (
                                     <View style={styles.badge}>
@@ -198,7 +198,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                             <Ionicons
                                 name="person-circle-outline"
                                 size={28}
-                                color={theme.colors.text.primary}
+                                color={theme.colors.white}
                             />
                         </TouchableOpacity>
                     )}
@@ -207,7 +207,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                     {isAuthenticated && (
                         <TouchableOpacity style={styles.iconButton} onPress={handleNotificationsPress}>
                             <View>
-                                <Ionicons name="notifications-outline" size={26} color={theme.colors.text.primary} />
+                                <Ionicons name="notifications-outline" size={26} color={theme.colors.white} />
                                 {totalUnread > 0 && (
                                     <View style={styles.badge}>
                                         <Text style={styles.badgeText}>
@@ -226,12 +226,11 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: theme.colors.background.default,
+        backgroundColor: theme.colors.primary[500],
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingBottom: theme.spacing.sm,
         paddingHorizontal: theme.spacing.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.gray[200],
+        borderBottomWidth: 0,
         ...theme.shadows.sm,
     },
     topRow: {
@@ -242,7 +241,7 @@ const styles = StyleSheet.create({
     logo: {
         fontSize: theme.typography.fontSize.xl,
         fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.primary[500],
+        color: theme.colors.white,
         flex: 1,
         textAlign: 'center',
     },

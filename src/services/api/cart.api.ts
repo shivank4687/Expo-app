@@ -199,5 +199,37 @@ export const cartApi = {
             throw new Error(error.response?.data?.message || error.message || 'Failed to clear cart');
         }
     },
+
+    /**
+     * Remove selected items from cart
+     */
+    removeSelected: async (cartItemIds: number[]): Promise<Cart | null> => {
+        try {
+            const response = await restApiClient.post<CartResponse>(
+                '/customer/cart/remove-selected',
+                { cart_item_ids: cartItemIds }
+            );
+            return response?.data || null;
+        } catch (error: any) {
+            console.error('Remove selected error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to remove selected items');
+        }
+    },
+
+    /**
+     * Move selected items to wishlist
+     */
+    moveToWishlistBulk: async (cartItemIds: number[]): Promise<Cart | null> => {
+        try {
+            const response = await restApiClient.post<CartResponse>(
+                '/customer/cart/move-to-wishlist-selected',
+                { cart_item_ids: cartItemIds }
+            );
+            return response?.data || null;
+        } catch (error: any) {
+            console.error('Move selected to wishlist error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to move selected items to wishlist');
+        }
+    },
 };
 

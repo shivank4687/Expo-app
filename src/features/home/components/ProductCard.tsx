@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/features/product/types/product.types';
 import { Card } from '@/shared/components/Card';
@@ -35,6 +35,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+    const [quantity, setQuantity] = useState('1');
 
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
@@ -111,9 +112,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
         }
 
         try {
+            const qty = parseInt(quantity);
+            if (!qty || qty <= 0) {
+                showToast({ message: t('product.invalidQuantity'), type: 'error' });
+                return;
+            }
             await dispatch(addToCartThunk({
                 product_id: product.id,
-                quantity: 1,
+                quantity: qty,
                 product: product, // Pass product data for guest cart
             })).unwrap();
 
@@ -248,6 +254,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             )}
                         </TouchableOpacity>
 
+                        {/* RFQ Button Overlay - above wishlist icon */}
+                        {product.supplier?.id && isAuthenticated ? (
+                            <TouchableOpacity
+                                style={styles.rfqButtonOverlay}
+                                onPress={handleRFQPress}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons
+                                    name="document-text-outline"
+                                    size={20}
+                                    color={theme.colors.primary[500]}
+                                />
+                            </TouchableOpacity>
+                        ) : null}
+
                         {/* Rating Badge */}
                         {productData.rating > 0 ? (
                             <View style={styles.ratingContainer}>
@@ -309,47 +330,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
                 {/* Actions Footer */}
                 <View style={styles.footerActions}>
+                    {/* Quantity Input */}
+                    <View style={styles.quantityContainer}>
+                        <Text style={styles.qtyLabel}>{t('product.qty') || 'Qty'}:</Text>
+                        <TextInput
+                            style={styles.quantityInput}
+                            value={quantity}
+                            onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ''))}
+                            keyboardType="numeric"
+                            maxLength={4}
+                            selectTextOnFocus
+                        />
+                    </View>
+
+                    {/* Add to Cart Icon Button */}
                     <TouchableOpacity
                         style={[
-                            styles.addToCartButton,
+                            styles.addToCartIconButton,
                             !product.in_stock && styles.addToCartButtonDisabled
                         ]}
                         onPress={handleAddToCart}
                         disabled={!product.in_stock || isAddingThisProduct}
                         activeOpacity={0.7}
                     >
-                        <View style={[styles.addToCartContent, isAddingThisProduct && { opacity: 0.3 }]}>
+                        {!isAddingThisProduct ? (
                             <Ionicons
                                 name="cart-outline"
-                                size={18}
-                                color={theme.colors.white}
-                            />
-                            <Text style={styles.addToCartText}>
-                                {product.in_stock ? t('product.addToCart') : t('product.outOfStock')}
-                            </Text>
-                        </View>
-
-                        {isAddingThisProduct && (
-                            <View style={styles.loaderOverlay}>
-                                <ActivityIndicator size="small" color={theme.colors.white} />
-                            </View>
-                        )}
-                    </TouchableOpacity>
-
-                    {/* RFQ Button - Footer position */}
-                    {product.supplier?.id && isAuthenticated ? (
-                        <TouchableOpacity
-                            style={styles.footerRfqButton}
-                            onPress={handleRFQPress}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons
-                                name="document-text-outline"
                                 size={20}
                                 color={theme.colors.white}
                             />
-                        </TouchableOpacity>
-                    ) : null}
+                        ) : (
+                            <ActivityIndicator size="small" color={theme.colors.white} />
+                        )}
+                    </TouchableOpacity>
                 </View>
             </Card>
         </TouchableOpacity >
@@ -363,7 +376,8 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.background.default,
     },
     cardBody: {
-        borderWidth: 1,
+        borderWidth: 0.5,
+        borderBottomWidth: 0,
         borderColor: theme.colors.border.card_light,
         borderTopLeftRadius: theme.borderRadius.lg,
         borderTopRightRadius: theme.borderRadius.lg,
@@ -510,42 +524,63 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
     },
-    rfqButton: {
-        // This style is now deprecated as we moved RFQ to footer
-        display: 'none',
+    rfqButtonOverlay: {
+        position: 'absolute',
+        bottom: theme.spacing.sm + 44, // Positioned above the wishlist button (36 height + 8 gap)
+        right: theme.spacing.sm,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 3,
     },
     footerActions: {
         flexDirection: 'row',
-        backgroundColor: theme.colors.primary[500],
+        backgroundColor: theme.colors.background.default,
         borderBottomLeftRadius: theme.borderRadius.md,
         borderBottomRightRadius: theme.borderRadius.md,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border.card_light,
         overflow: 'hidden',
+        height: 40,
     },
-    addToCartButton: {
+    quantityContainer: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.md,
-        position: 'relative',
-    },
-    addToCartContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        paddingHorizontal: theme.spacing.sm,
         gap: theme.spacing.xs,
     },
-    loaderOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'center',
-        alignItems: 'center',
+    qtyLabel: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.text.secondary,
+        fontWeight: theme.typography.fontWeight.medium,
     },
-    footerRfqButton: {
-        width: 44,
+    quantityInput: {
+        flex: 1,
+        height: 28,
+        paddingHorizontal: theme.spacing.xs,
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.text.primary,
+        backgroundColor: theme.colors.gray[50],
+        borderRadius: 4,
+        textAlign: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border.card_light,
+    },
+    addToCartIconButton: {
+        width: 48,
+        height: '100%',
+        backgroundColor: theme.colors.primary[500],
         alignItems: 'center',
         justifyContent: 'center',
-        borderLeftWidth: 1,
-        borderLeftColor: 'rgba(255, 255, 255, 0.2)', // White divider on primary background
     },
     availabilityBadgeGreen: {
         position: 'absolute',
@@ -599,24 +634,8 @@ const styles = StyleSheet.create({
         textDecorationColor: '#9CA3AF',
         fontWeight: theme.typography.fontWeight.medium,
     },
-    addToCartButton: {
-        backgroundColor: theme.colors.primary[500],
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.md,
-        gap: theme.spacing.xs,
-        borderBottomLeftRadius: theme.borderRadius.md,
-        // borderBottomRightRadius: theme.borderRadius.md,
-    },
     addToCartButtonDisabled: {
         backgroundColor: theme.colors.gray[400],
-    },
-    addToCartText: {
-        color: theme.colors.white,
-        fontSize: theme.typography.fontSize.sm,
-        fontWeight: theme.typography.fontWeight.semiBold,
     },
 });
 

@@ -23,6 +23,7 @@ export const ProductListScreen: React.FC = () => {
         title?: string;
         featured?: string;
         new?: string;
+        on_sale?: string;
     }>();
     const router = useRouter();
     const { selectedLocale } = useAppSelector((state) => state.core);
@@ -113,6 +114,13 @@ export const ProductListScreen: React.FC = () => {
                 if (params.new === '1') {
                     productFilters.new = 1;
                 }
+                if (params.on_sale === '1') {
+                    productFilters.on_sale = 1;
+                }
+
+                // Ensure visibility and status filters are applied
+                productFilters.status = 1;
+                productFilters.visible_individually = 1;
 
                 response = await productsApi.getProducts(productFilters);
             }

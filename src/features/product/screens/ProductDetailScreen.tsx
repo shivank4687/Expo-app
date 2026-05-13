@@ -38,6 +38,7 @@ import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlist
 import { useToast } from '@/shared/components/Toast';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { addProduct } from '@/store/slices/recentlyViewedSlice';
 
 export const ProductDetailScreen: React.FC = () => {
     const router = useRouter();
@@ -83,6 +84,7 @@ export const ProductDetailScreen: React.FC = () => {
             setError(null);
             const data = await productsApi.getProductById(Number(id));
             setProduct(data);
+            dispatch(addProduct(data));
 
             // If configurable product, fetch configuration data
             if (data.type === 'configurable') {

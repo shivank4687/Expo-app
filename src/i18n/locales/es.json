@@ -152,6 +152,7 @@
     "featured": "Destacado",
     "onSale": "En oferta",
     "quantity": "Cantidad",
+    "qty": "Cant.",
     "sku": "SKU",
     "category": "Categoría",
     "rating": "Calificación",
@@ -159,6 +160,7 @@
     "startingAt": "Comenzando en",
     "productOutOfStock": "El producto está agotado",
     "selectProductOptions": "Por favor seleccione las opciones del producto",
+    "invalidQuantity": "Por favor, ingrese una cantidad válida",
     "addedToCart": "¡{{name}} agregado al carrito!",
     "failedToAddToCart": "Error al agregar al carrito",
     "loginToAddWishlist": "Por favor inicie sesión primero para agregar artículos a favoritos",
@@ -243,7 +245,13 @@
     "checkoutComingSoon": "¡Función de pago próximamente!",
     "loginToContinue": "Inicia Sesión para Continuar",
     "loginPrompt": "Por favor inicia sesión o crea una cuenta para proceder con el pago",
-    "shipping": "Envío"
+    "shipping": "Envío",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "removeSelected": "Eliminar seleccionados",
+    "removeSelectedConfirm": "¿Estás seguro de que deseas eliminar {{count}} artículos de tu carrito?",
+    "itemsRemoved": "Artículos eliminados del carrito",
+    "itemsMovedToWishlist": "Artículos movidos a la lista de deseos"
   },
   "address": {
     "addresses": "Direcciones",

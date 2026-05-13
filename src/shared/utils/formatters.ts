@@ -86,6 +86,26 @@ export const formatters = {
     capitalize(text: string): string {
         return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
     },
+
+    /**
+     * Calculate and format estimated delivery date
+     * @param days Number of days from today
+     */
+    getEstimatedDeliveryDate(days: number | string | undefined | null): string {
+        if (days === undefined || days === null) return '';
+        
+        const numDays = typeof days === 'string' ? parseInt(days, 10) : days;
+        if (isNaN(numDays)) return '';
+        
+        const date = new Date();
+        date.setDate(date.getDate() + numDays);
+        
+        return date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+        });
+    },
 };
 
 export default formatters;

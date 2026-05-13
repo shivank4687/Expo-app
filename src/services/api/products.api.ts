@@ -135,8 +135,40 @@ export const productsApi = {
     /**
      * Get featured products
      */
-    async getFeaturedProducts(): Promise<Product[]> {
-        const response = await this.getProducts({ featured: 1 });
+    async getFeaturedProducts(limit: number = 10): Promise<Product[]> {
+        const response = await this.getProducts({ 
+            featured: 1, 
+            status: 1, 
+            visible_individually: 1,
+            per_page: limit 
+        });
+        return response.data;
+    },
+
+    /**
+     * Get products on sale
+     */
+    async getDiscountedProducts(limit: number = 10): Promise<Product[]> {
+        const response = await this.getProducts({ 
+            on_sale: 1, 
+            status: 1, 
+            visible_individually: 1,
+            per_page: limit 
+        });
+        return response.data;
+    },
+
+    /**
+     * Get new products
+     */
+    async getNewProducts(limit: number = 10): Promise<Product[]> {
+        const response = await this.getProducts({ 
+            new: 1, 
+            status: 1, 
+            visible_individually: 1,
+            sort: 'created_at-desc',
+            per_page: limit 
+        });
         return response.data;
     },
 

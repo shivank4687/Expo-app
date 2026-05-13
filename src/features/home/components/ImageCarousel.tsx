@@ -54,7 +54,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ options }) => {
 
     const handleImagePress = useCallback((link?: string) => {
         if (!link) return;
-        
+
         Linking.openURL(link).catch((err) =>
             console.error('[ImageCarousel] Failed to open link:', err)
         );
@@ -108,7 +108,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ options }) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.sm,
     },
     imageContainer: {
         aspectRatio: 2.743,

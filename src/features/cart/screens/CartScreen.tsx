@@ -7,10 +7,13 @@ import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useToast } from '@/shared/components/Toast';
 import { formatters } from '@/shared/utils/formatters';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import {
     applyCouponThunk,
     fetchCartThunk,
-    removeCouponThunk
+    removeCouponThunk,
+    removeSelectedFromCartThunk,
+    moveSelectedToWishlistThunk
 } from '@/store/slices/cartSlice';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +52,7 @@ export const CartScreen: React.FC = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [allMinimumsMet, setAllMinimumsMet] = useState(true);
     const [summaryHeight, setSummaryHeight] = useState(0);
+    const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
@@ -106,6 +110,67 @@ export const CartScreen: React.FC = () => {
         } else {
             // Navigate to checkout screen
             router.push('/checkout');
+        }
+    };
+
+    const handleToggleSelection = (id: number) => {
+        setSelectedItemIds(prev =>
+            prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+        );
+    };
+
+    const handleSelectAll = () => {
+        if (!cart || !cart.items) return;
+        if (selectedItemIds.length === cart.items.length) {
+            setSelectedItemIds([]);
+        } else {
+            setSelectedItemIds(cart.items.map(item => item.id));
+        }
+    };
+
+    const handleBulkRemove = () => {
+        if (selectedItemIds.length === 0) return;
+
+        Alert.alert(
+            t('cart.removeSelected'),
+            t('cart.removeSelectedConfirm', { count: selectedItemIds.length }),
+            [
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                    text: t('cart.remove'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await dispatch(removeSelectedFromCartThunk(selectedItemIds)).unwrap();
+                            setSelectedItemIds([]);
+                            showToast({ message: t('cart.itemsRemoved'), type: 'success' });
+                        } catch (error: any) {
+                            showToast({ message: error || t('cart.failedToRemove'), type: 'error' });
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleBulkMoveToWishlist = async () => {
+        if (selectedItemIds.length === 0) return;
+
+        if (!isAuthenticated) {
+            showToast({ message: t('cart.loginToMoveWishlist'), type: 'warning' });
+            return;
+        }
+
+        try {
+            await dispatch(moveSelectedToWishlistThunk(selectedItemIds)).unwrap();
+            setSelectedItemIds([]);
+
+            // Refresh wishlist count
+            dispatch(fetchWishlistThunk());
+
+            showToast({ message: t('cart.itemsMovedToWishlist'), type: 'success' });
+        } catch (error: any) {
+            showToast({ message: error || t('cart.failedToMoveWishlist'), type: 'error' });
         }
     };
 
@@ -182,19 +247,56 @@ export const CartScreen: React.FC = () => {
             >
                 {/* Cart Items */}
                 <View style={styles.itemsSection}>
-                    <Text style={styles.sectionTitle}>
-                        {t('cart.itemsInCart', { count: cart.items_count })}
-                    </Text>
+                    <View style={styles.itemsHeaderContainer}>
+                        <View style={styles.titleWithCheckbox}>
+                            <TouchableOpacity
+                                onPress={handleSelectAll}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons
+                                    name={selectedItemIds.length === (cart?.items?.length || 0) ? 'checkbox' : 'square-outline'}
+                                    size={24}
+                                    color={selectedItemIds.length === (cart?.items?.length || 0) ? theme.colors.primary[500] : theme.colors.gray[400]}
+                                />
+                            </TouchableOpacity>
+                            <Text style={styles.sectionTitle}>
+                                {t('cart.itemsInCart', { count: cart.items_count })}
+                            </Text>
+                        </View>
+
+                        {selectedItemIds.length > 0 && (
+                            <View style={styles.bulkActions}>
+                                <TouchableOpacity
+                                    style={styles.bulkActionButton}
+                                    onPress={handleBulkMoveToWishlist}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="heart-outline" size={24} color={theme.colors.primary[500]} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.bulkActionButton}
+                                    onPress={handleBulkRemove}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="trash-outline" size={24} color={theme.colors.error.main} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+
                     <SupplierWiseCartItems
                         items={cart.items}
                         onMinimumOrderStatus={setAllMinimumsMet}
+                        selectedItemIds={selectedItemIds}
+                        onToggleSelection={handleToggleSelection}
                     />
                 </View>
 
                 {/* Apply Coupon Section - Only for authenticated users */}
                 {isAuthenticated && (
                     <View style={styles.section}>
-                        <View style={{ padding: theme.spacing.md }}>
+                        <View style={{ padding: theme.spacing.xs }}>
                             <View style={[styles.expansionTitleContainer, { marginBottom: theme.spacing.sm }]}>
                                 <Ionicons
                                     name="pricetag-outline"
@@ -362,14 +464,34 @@ const styles = StyleSheet.create({
         paddingBottom: theme.spacing.md,
     },
     itemsSection: {
-        paddingHorizontal: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.xs,
         paddingVertical: theme.spacing.sm,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.text.primary,
-        marginBottom: theme.spacing.md,
+    },
+    itemsHeaderContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
+        marginBottom: theme.spacing.xs,
+    },
+    titleWithCheckbox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+    },
+    bulkActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.md,
+    },
+    bulkActionButton: {
+        padding: 0,
     },
     section: {
         backgroundColor: theme.colors.background.default,
