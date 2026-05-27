@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { useAppSelector } from '@/store/hooks';
+import { useIsFocused } from '@react-navigation/native';
 
 /**
  * useRequireAuth Hook
@@ -11,13 +12,14 @@ import { useAppSelector } from '@/store/hooks';
  */
 export const useRequireAuth = () => {
     const router = useRouter();
+    const isFocused = useIsFocused();
     const { isAuthenticated, isLoading, user } = useAppSelector((state) => state.auth);
     const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading } = useAppSelector((state) => state.supplierAuth);
     const segments = useSegments();
 
     useEffect(() => {
-        // Wait for auth check to complete
-        if (isLoading || isSupplierLoading) return;
+        // Wait for auth check to complete, or if the screen is not active/focused
+        if (isLoading || isSupplierLoading || !isFocused) return;
 
         // Check if we are on an auth screen
         const isAuthScreen = ['login', 'signup', 'otp-verification', 'forgot-password', 'reset-password', 'index'].includes(segments[0] as string);
@@ -30,7 +32,7 @@ export const useRequireAuth = () => {
                 router.replace('/');
             }, 0);
         }
-    }, [isAuthenticated, isSupplierAuthenticated, isLoading, isSupplierLoading, router, segments]);
+    }, [isAuthenticated, isSupplierAuthenticated, isLoading, isSupplierLoading, router, segments, isFocused]);
 
     return {
         isAuthenticated,

@@ -191,7 +191,9 @@
     "immediateShippingDesc": "This item is shipped immediately after order.",
     "madeToOrder": "Made to Order",
     "productionTime": "Production time: {{days}} days",
-    "madeToOrderQty": "Minimum order quantity: {{qty}} units"
+    "madeToOrderQty": "Minimum order quantity: {{qty}} units",
+    "selectOptions": "Select Options",
+    "hideOptions": "Hide Options"
   },
   "cart": {
     "cart": "Cart",

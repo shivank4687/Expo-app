@@ -280,73 +280,68 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
                             </Text>
                         ) : (
                             <>
-                                {/* Color Swatches */}
-                                {attribute.swatch_type === 'color' ? (
-                                    <View style={styles.swatchContainer}>
-                                        {availableOptions.map((option: any) => (
-                                            <TouchableOpacity
-                                                key={option.id}
-                                                style={[
-                                                    styles.colorSwatchWrapper,
-                                                    attribute.selectedValue === option.label && styles.colorSwatchWrapperActive,
-                                                ]}
-                                                onPress={() => handleOptionSelect(attribute.id, option.label)}
-                                                activeOpacity={0.7}
-                                            >
-                                                <View
-                                                    style={[
-                                                        styles.colorSwatch,
-                                                        { backgroundColor: option.swatch_value || '#ccc' },
-                                                    ]}
-                                                />
-                                                {attribute.selectedValue === option.label && (
-                                                    <View style={styles.colorCheckmark}>
-                                                        <Ionicons
-                                                            name="checkmark"
-                                                            size={10}
-                                                            color={theme.colors.white}
-                                                        />
-                                                    </View>
-                                                )}
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                ) : null}
+                                <View style={styles.swatchContainer}>
+                                    {availableOptions.map((option: any) => {
+                                        const isColorAttr =
+                                            attribute.swatch_type === 'color' ||
+                                            attribute.code?.toLowerCase().includes('color') ||
+                                            attribute.label?.toLowerCase().includes('color');
 
-                                {/* Image Swatches */}
-                                {attribute.swatch_type === 'image' ? (
-                                    <View style={styles.swatchContainer}>
-                                        {availableOptions.map((option: any) => (
-                                            <TouchableOpacity
-                                                key={option.id}
-                                                style={[
-                                                    styles.imageSwatchWrapper,
-                                                    attribute.selectedValue === option.label && styles.imageSwatchWrapperActive,
-                                                ]}
-                                                onPress={() => handleOptionSelect(attribute.id, option.label)}
-                                                activeOpacity={0.7}
-                                            >
-                                                {option.swatch_value ? (
+                                        const swatchValue = option.swatch_value || (isColorAttr ? option.label.trim() : null);
+
+                                        // Simple check to ensure we only treat single-word labels or hex as colors
+                                        const isValidColorValue = swatchValue && (
+                                            swatchValue.startsWith('#') || 
+                                            /^[a-zA-Z]+$/.test(swatchValue)
+                                        );
+
+                                        // 1. Color Swatch
+                                        if (isColorAttr && isValidColorValue) {
+                                            return (
+                                                <TouchableOpacity
+                                                    key={option.id}
+                                                    style={[
+                                                        styles.colorSwatchWrapper,
+                                                        attribute.selectedValue === option.label && styles.colorSwatchWrapperActive,
+                                                    ]}
+                                                    onPress={() => handleOptionSelect(attribute.id, option.label)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <View
+                                                        style={[
+                                                            styles.colorSwatch,
+                                                            { backgroundColor: swatchValue.toLowerCase() },
+                                                        ]}
+                                                    />
+
+                                                </TouchableOpacity>
+                                            );
+                                        }
+
+                                        // 2. Image Swatch
+                                        if (attribute.swatch_type === 'image' && option.swatch_value) {
+                                            return (
+                                                <TouchableOpacity
+                                                    key={option.id}
+                                                    style={[
+                                                        styles.imageSwatchWrapper,
+                                                        attribute.selectedValue === option.label && styles.imageSwatchWrapperActive,
+                                                    ]}
+                                                    onPress={() => handleOptionSelect(attribute.id, option.label)}
+                                                    activeOpacity={0.7}
+                                                >
                                                     <ProductImage
                                                         imageUrl={option.swatch_value}
                                                         style={styles.imageSwatch}
                                                         recyclingKey={`swatch-${option.id}`}
                                                         priority="normal"
                                                     />
-                                                ) : (
-                                                    <View style={styles.imageSwatch}>
-                                                        <Text style={styles.imageSwatchText}>{option.label}</Text>
-                                                    </View>
-                                                )}
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                ) : null}
+                                                </TouchableOpacity>
+                                            );
+                                        }
 
-                                {/* Text Swatches (Size, etc.) */}
-                                {attribute.swatch_type === 'text' || !attribute.swatch_type ? (
-                                    <View style={styles.textSwatchGrid}>
-                                        {availableOptions.map((option: any) => (
+                                        // 3. Text Swatch (Fallback)
+                                        return (
                                             <TouchableOpacity
                                                 key={option.id}
                                                 style={[
@@ -365,9 +360,9 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
                                                     {option.label}
                                                 </Text>
                                             </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                ) : null}
+                                        );
+                                    })}
+                                </View>
                             </>
                         )}
                     </View>
@@ -455,7 +450,7 @@ const styles = StyleSheet.create({
     colorSwatchWrapper: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: theme.borderRadius.md,
         padding: 3,
         borderWidth: 2,
         borderColor: theme.colors.border.main,
@@ -463,13 +458,14 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.sm,
     },
     colorSwatchWrapperActive: {
-        borderColor: theme.colors.text.primary,
+        borderColor: theme.colors.primary[500],
         borderWidth: 2.5,
+        backgroundColor: theme.colors.primary[50],
     },
     colorSwatch: {
         width: '100%',
         height: '100%',
-        borderRadius: 15,
+        borderRadius: 4,
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0, 0.1)',
     },
@@ -532,8 +528,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     textSwatchActive: {
-        backgroundColor: '#1E3A8A', // Navy blue matching web app
-        borderColor: '#1E3A8A',
+        backgroundColor: theme.colors.primary[50],
+        borderColor: theme.colors.primary[500],
+        borderWidth: 2,
     },
     textSwatchLabel: {
         fontSize: theme.typography.fontSize.sm,
@@ -542,7 +539,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     textSwatchLabelActive: {
-        color: theme.colors.white,
+        color: theme.colors.primary[500],
     },
 
     // Summary Card

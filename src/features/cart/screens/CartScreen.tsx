@@ -22,6 +22,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
+    Alert,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -53,6 +54,8 @@ export const CartScreen: React.FC = () => {
     const [allMinimumsMet, setAllMinimumsMet] = useState(true);
     const [summaryHeight, setSummaryHeight] = useState(0);
     const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+    const [isMovingToWishlist, setIsMovingToWishlist] = useState(false);
+    const [isRemoving, setIsRemoving] = useState(false);
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
@@ -140,12 +143,15 @@ export const CartScreen: React.FC = () => {
                     text: t('cart.remove'),
                     style: 'destructive',
                     onPress: async () => {
+                        setIsRemoving(true);
                         try {
                             await dispatch(removeSelectedFromCartThunk(selectedItemIds)).unwrap();
                             setSelectedItemIds([]);
                             showToast({ message: t('cart.itemsRemoved'), type: 'success' });
                         } catch (error: any) {
                             showToast({ message: error || t('cart.failedToRemove'), type: 'error' });
+                        } finally {
+                            setIsRemoving(false);
                         }
                     },
                 },
@@ -161,6 +167,7 @@ export const CartScreen: React.FC = () => {
             return;
         }
 
+        setIsMovingToWishlist(true);
         try {
             await dispatch(moveSelectedToWishlistThunk(selectedItemIds)).unwrap();
             setSelectedItemIds([]);
@@ -171,6 +178,8 @@ export const CartScreen: React.FC = () => {
             showToast({ message: t('cart.itemsMovedToWishlist'), type: 'success' });
         } catch (error: any) {
             showToast({ message: error || t('cart.failedToMoveWishlist'), type: 'error' });
+        } finally {
+            setIsMovingToWishlist(false);
         }
     };
 
@@ -271,15 +280,25 @@ export const CartScreen: React.FC = () => {
                                     style={styles.bulkActionButton}
                                     onPress={handleBulkMoveToWishlist}
                                     activeOpacity={0.7}
+                                    disabled={isMovingToWishlist || isRemoving}
                                 >
-                                    <Ionicons name="heart-outline" size={24} color={theme.colors.primary[500]} />
+                                    {isMovingToWishlist ? (
+                                        <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                    ) : (
+                                        <Ionicons name="heart-outline" size={24} color={theme.colors.primary[500]} />
+                                    )}
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.bulkActionButton}
                                     onPress={handleBulkRemove}
                                     activeOpacity={0.7}
+                                    disabled={isRemoving || isMovingToWishlist}
                                 >
-                                    <Ionicons name="trash-outline" size={24} color={theme.colors.error.main} />
+                                    {isRemoving ? (
+                                        <ActivityIndicator size="small" color={theme.colors.error.main} />
+                                    ) : (
+                                        <Ionicons name="trash-outline" size={24} color={theme.colors.error.main} />
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         )}

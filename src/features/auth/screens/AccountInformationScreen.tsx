@@ -14,6 +14,7 @@ import { AvatarImage } from '@/shared/components/LazyImage';
 import { parseValidDate } from '@/shared/utils/dateUtils';
 import { TopHeader } from '@/shared/components/TopHeader';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Component for editable fields - defined outside to prevent re-creation on each render
 const EditableField: React.FC<{
@@ -75,6 +76,7 @@ const InfoItem: React.FC<{ label: string; value: string | undefined }> = ({ labe
 export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ showHeader = true }) => {
     const { t } = useTranslation();
     const { user, isLoading } = useRequireAuth();
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { isLoading: isUpdating } = useAppSelector(state => state.auth);
@@ -605,7 +607,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                 </ScrollView>
 
                 {/* Save Button - lives inside KAV so it rises above the keyboard */}
-                <View style={styles.fixedButtonContainer}>
+                <View style={[styles.fixedButtonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                     <TouchableOpacity
                         style={[styles.saveButton, (isSaving || isUpdating) && styles.saveButtonDisabled]}
                         onPress={handleSave}

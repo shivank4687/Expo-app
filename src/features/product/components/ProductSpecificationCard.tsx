@@ -88,7 +88,7 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
                             ))}
 
                             {/* Image with "More Detail" button */}
-                            <ImageBackground
+                            {/* <ImageBackground
                                 source={{ uri: 'https://via.placeholder.com/328x219' }}
                                 style={styles.imageBackground}
                                 imageStyle={styles.imageStyle}
@@ -97,7 +97,7 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
                                 <TouchableOpacity style={styles.moreDetailButton}>
                                     <Text style={styles.moreDetailText}>More Detail</Text>
                                 </TouchableOpacity>
-                            </ImageBackground>
+                            </ImageBackground> */}
                         </View>
                     </>
                 )}

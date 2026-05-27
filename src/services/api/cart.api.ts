@@ -5,10 +5,10 @@
  */
 
 import { restApiClient } from './client';
-import { 
-    Cart, 
-    AddToCartPayload, 
-    UpdateCartItemPayload, 
+import {
+    Cart,
+    AddToCartPayload,
+    UpdateCartItemPayload,
     RemoveCartItemPayload,
     ApplyCouponPayload,
     MoveToWishlistPayload
@@ -144,22 +144,22 @@ export const cartApi = {
     moveToWishlist: async (cartItemId: number): Promise<Cart | null> => {
         try {
             console.log('[cart.api] Moving cart item to wishlist:', cartItemId);
-            
+
             // REST API expects: POST /customer/cart/move-to-wishlist/{cartItemId}
             // Note: Backend only returns message, not cart, so we need to fetch cart separately
             const moveResponse = await restApiClient.post(
                 `/customer/cart/move-to-wishlist/${cartItemId}`
             );
-            
+
             console.log('[cart.api] Move response:', moveResponse);
-            
+
             // Fetch the updated cart after moving item
             console.log('[cart.api] Fetching updated cart...');
-            
+
             try {
                 const cartResponse = await restApiClient.get<CartResponse>('/customer/cart');
                 console.log('[cart.api] Updated cart fetched:', cartResponse);
-                
+
                 // If cart response is valid and has data, return it
                 if (cartResponse && cartResponse.data) {
                     // Check if cart has items
@@ -171,7 +171,7 @@ export const cartApi = {
                         return null;
                     }
                 }
-                
+
                 // Backend returned no data - cart is empty
                 console.log('[cart.api] Cart response has no data - cart is empty');
                 return null;

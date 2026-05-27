@@ -11,10 +11,12 @@ interface Review {
     tag: string;
     reply?: string;
     replyBy?: string;
+    productName?: string;
 }
 
 interface ReviewCardProps {
     review: Review;
+    onReply?: (reviewId: string, currentReply?: string) => void;
 }
 
 function StarRow({ rating }: { rating: number }) {
@@ -47,25 +49,46 @@ function ReplyRow() {
     );
 }
 
-export function ReviewCard({ review }: ReviewCardProps) {
+export function ReviewCard({ review, onReply }: ReviewCardProps) {
     return (
         <View style={styles.card}>
             <TouchableOpacity style={styles.eyeButton}>
                 <EyeViewIcon width={16} height={16} color="#00615E" />
             </TouchableOpacity>
             <View style={styles.cardContent}>
+                {review.productName ? (
+                    <Text style={styles.productNameText}>{review.productName}</Text>
+                ) : null}
                 <StarRow rating={review.rating} />
                 <Text style={styles.reviewText}>{review.text}</Text>
                 <Text style={styles.authorText}>
                     - {review.author} ({review.tag})
                 </Text>
-                <ReplyRow />
                 {review.reply ? (
-                    <View style={styles.replyBubble}>
-                        <View style={styles.replyPointer} />
-                        <Text style={styles.replyText}>{review.reply}</Text>
-                        <Text style={styles.replyBy}>{review.replyBy}</Text>
+                    <View style={styles.replyContainer}>
+                        <View style={styles.replyHeaderRow}>
+                            <Ionicons name="chatbubble-ellipses" size={16} color="#00615E" />
+                            <Text style={styles.replyHeaderLabel}>
+                                {review.replyBy ? `Reply by ${review.replyBy}` : 'Your Reply'}
+                            </Text>
+                        </View>
+                        <Text style={styles.replyContentText}>{review.reply}</Text>
                     </View>
+                ) : null}
+                {review.productName ? (
+                    <TouchableOpacity
+                        style={styles.replyButton}
+                        onPress={() => onReply?.(review.id, review.reply)}
+                    >
+                        <Ionicons
+                            name={review.reply ? "create-outline" : "chatbubble-outline"}
+                            size={16}
+                            color="#00615E"
+                        />
+                        <Text style={styles.replyButtonText}>
+                            {review.reply ? "Edit Reply" : "Reply"}
+                        </Text>
+                    </TouchableOpacity>
                 ) : null}
             </View>
         </View>
@@ -146,39 +169,56 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         zIndex: 1,
     },
-    replyBubble: {
-        marginLeft: 20,
-        paddingVertical: 4,
-        paddingLeft: 12,
-        gap: 4,
-        borderLeftWidth: 2,
-        borderLeftColor: '#E0D7C2',
-    },
-    replyPointer: {
-        position: 'absolute',
-        left: -10,
-        top: 2,
-        width: 20,
-        height: 27,
+    replyContainer: {
+        marginTop: 10,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#E0D7C2',
-        borderRadius: 8,
-        backgroundColor: 'transparent',
+        borderColor: '#EFEFEF',
+        borderRadius: 12,
+        padding: 12,
+        gap: 6,
     },
-    replyText: {
+    replyHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    replyHeaderLabel: {
         fontFamily: 'Inter',
         fontStyle: 'normal',
-        fontWeight: '500',
-        fontSize: 16,
-        lineHeight: 19,
-        color: '#000000',
-    },
-    replyBy: {
-        fontFamily: 'Inter',
-        fontStyle: 'normal',
-        fontWeight: '500',
+        fontWeight: '600',
         fontSize: 13,
+        color: '#00615E',
+    },
+    replyContentText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 14,
         lineHeight: 18,
-        color: '#0A292D',
+        color: '#333333',
+    },
+    replyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 8,
+        alignSelf: 'flex-start',
+    },
+    replyButtonText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#00615E',
+    },
+    productNameText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 14,
+        lineHeight: 18,
+        color: '#00615E',
+        marginBottom: 2,
     },
 });

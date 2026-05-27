@@ -9,6 +9,7 @@ interface ProductTotalsProps {
   quantity?: number;
   onIncreaseQty?: () => void;
   onDecreaseQty?: () => void;
+  onQuantityChange?: (qty: number) => void;
   showRfq?: boolean;
   onRfqPress?: () => void;
   rfqText?: string;
@@ -25,6 +26,7 @@ export const ProductTotals: React.FC<ProductTotalsProps> = ({
   quantity = 1,
   onIncreaseQty,
   onDecreaseQty,
+  onQuantityChange,
   showRfq = false,
   onRfqPress,
   rfqText = 'Request Quote',
@@ -49,6 +51,7 @@ export const ProductTotals: React.FC<ProductTotalsProps> = ({
             quantity={quantity}
             onIncrease={onIncreaseQty}
             onDecrease={onDecreaseQty}
+            onQuantityChange={onQuantityChange}
           />
         </View>
       </View>

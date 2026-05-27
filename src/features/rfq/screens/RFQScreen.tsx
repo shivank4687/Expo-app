@@ -23,6 +23,7 @@ import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 import { suppliersApi, RFQProduct } from '@/services/api/suppliers.api';
+import { addressApi } from '@/services/api/address.api';
 import { Input } from '@/shared/components/Input';
 import { Button } from '@/shared/components/Button';
 import { ProductCard } from '@/features/home/components/ProductCard';
@@ -77,24 +78,51 @@ export const RFQScreen: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    // Load user info if authenticated
+    // Load user info if authenticated and fetch default address
     useEffect(() => {
         if (user) {
-            setName(user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.name || '');
-            setCompanyName(user.company_name || '');
-            if (user.default_address) {
-                setAddress(
-                    [
-                        user.default_address.address1,
-                        user.default_address.address2,
-                        user.default_address.city,
-                        user.default_address.state,
-                    ]
-                        .filter(Boolean)
-                        .join(', ')
-                );
-                setContactNumber(user.default_address.phone || '');
-            }
+            // Set base user info first
+            if (!name) setName(user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.name || '');
+            if (!contactNumber) setContactNumber(user.phone || '');
+
+            // Fetch addresses to get default address and company info
+            const fetchAddresses = async () => {
+                try {
+                    const addresses = await addressApi.getAddresses();
+                    const defaultAddress = addresses.find((addr: any) => addr.is_default || addr.default_address);
+
+                    if (defaultAddress) {
+                        if (!companyName && defaultAddress.company_name) {
+                            setCompanyName(defaultAddress.company_name);
+                        }
+                        
+                        if (!address) {
+                            const addressParts = [];
+                            if (defaultAddress.address1) {
+                                addressParts.push(Array.isArray(defaultAddress.address1) ? defaultAddress.address1.join(', ') : defaultAddress.address1);
+                            } else if (defaultAddress.address) {
+                                addressParts.push(Array.isArray(defaultAddress.address) ? defaultAddress.address.join(', ') : defaultAddress.address);
+                            }
+                            if (defaultAddress.address2) addressParts.push(defaultAddress.address2);
+                            if (defaultAddress.city) addressParts.push(defaultAddress.city);
+                            if (defaultAddress.state) addressParts.push(defaultAddress.state);
+                            if (defaultAddress.country) addressParts.push(defaultAddress.country);
+                            if (defaultAddress.postcode) addressParts.push(defaultAddress.postcode);
+
+                            setAddress(addressParts.filter(Boolean).join(', '));
+                        }
+                        
+                        // If phone wasn't set from user object, set it from address
+                        if (!contactNumber && defaultAddress.phone) {
+                            setContactNumber(defaultAddress.phone);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch addresses for prefill:', error);
+                }
+            };
+
+            fetchAddresses();
         }
     }, [user]);
 
@@ -913,13 +941,13 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: theme.spacing.xs,
-        paddingBottom: 120, // Space for footer button + extra buffer
+        paddingBottom: 100, // Space for footer button + extra buffer
     },
     section: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.xs,
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.md,
     },
     sectionHeader: {
         flexDirection: 'row',

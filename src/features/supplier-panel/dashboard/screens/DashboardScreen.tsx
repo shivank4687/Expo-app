@@ -172,7 +172,7 @@ export function DashboardScreen() {
     };
 
     const handleSeeAllReviews = () => {
-        router.push('/(supplier-drawer)/(supplier-tabs)/reviews');
+        router.push('/(supplier-drawer)/(supplier-tabs)/reviews?tab=company');
     };
 
     if (!isAuthenticated || !supplier) {

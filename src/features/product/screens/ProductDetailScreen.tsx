@@ -6,6 +6,8 @@ import {
     ScrollView,
     TouchableOpacity,
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -186,6 +188,11 @@ export const ProductDetailScreen: React.FC = () => {
         }
     };
 
+    const handleQuantityDirectInput = (qty: number) => {
+        const clamped = Math.min(99, Math.max(1, qty));
+        setQuantity(clamped);
+    };
+
     if (isLoading) {
         return (
             <View style={styles.container}>
@@ -231,7 +238,11 @@ export const ProductDetailScreen: React.FC = () => {
         <View style={styles.container}>
             <TopHeader title={product.name} onBack={() => router.back()} />
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+                <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {/* Image Gallery */}
                 <ProductGallery
                     images={displayImages}
@@ -592,6 +603,7 @@ export const ProductDetailScreen: React.FC = () => {
                         quantity={quantity}
                         onIncreaseQty={() => handleQuantityChange(1)}
                         onDecreaseQty={() => handleQuantityChange(-1)}
+                        onQuantityChange={handleQuantityDirectInput}
                         showRfq={!!product?.supplier?.id}
                         rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
                         onRfqPress={() => {
@@ -614,6 +626,7 @@ export const ProductDetailScreen: React.FC = () => {
                     />
                 </View>
             ) : null}
+            </KeyboardAvoidingView>
         </View>
     );
 };

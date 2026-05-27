@@ -15,6 +15,8 @@ export interface ProductReview {
     updated_at: string;
     images?: ReviewAttachment[];
     profile?: string; // Customer profile image
+    reply_text?: string | null;
+    reply_name?: string | null;
 }
 
 export interface ReviewAttachment {

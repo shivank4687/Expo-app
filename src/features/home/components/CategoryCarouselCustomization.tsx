@@ -42,7 +42,7 @@ export const CategoryCarouselCustomization: React.FC<CategoryCarouselCustomizati
             {options.title ? (
                 <Text style={styles.title}>{options.title}</Text>
             ) : null}
-            
+
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -56,7 +56,7 @@ export const CategoryCarouselCustomization: React.FC<CategoryCarouselCustomizati
                         activeOpacity={0.7}
                     >
                         <View style={styles.categoryImageContainer}>
-                            <CategoryImage 
+                            <CategoryImage
                                 imageUrl={category.logo_path || category.image}
                                 style={styles.categoryImage}
                             />
@@ -73,6 +73,7 @@ export const CategoryCarouselCustomization: React.FC<CategoryCarouselCustomizati
 
 const styles = StyleSheet.create({
     container: {
+        marginTop: theme.spacing.sm,
         marginBottom: theme.spacing.lg,
     },
     title: {

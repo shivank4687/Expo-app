@@ -12,6 +12,8 @@ import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlist
 import { useToast } from '@/shared/components/Toast';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useProductVariants } from '@/features/product/hooks/useProductVariants';
+import { CardVariantSelector } from '@/features/product/components/CardVariantSelector';
 
 interface ProductCardProps {
     product: Product;
@@ -22,8 +24,10 @@ const RATING_ICON_SIZE = 14;
 
 /**
  * ProductCard Component
- * Displays product information with image, name, price, and ratings
- * Shows placeholder icon if image fails to load
+ * Displays product information with image, name, price, and ratings.
+ * For configurable products: shows an inline variant selector that lets the
+ * user pick options, see the updated image/price, and add to cart — all
+ * without navigating to the ProductDetailScreen.
  */
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
     const dispatch = useAppDispatch();
@@ -34,62 +38,112 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { selectedCurrency } = useAppSelector((state) => state.core);
+
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
     const [quantity, setQuantity] = useState('1');
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
-
+    const isConfigurable = product.type === 'configurable';
     const isAddingThisProduct = isAddingToCart && lastAddedProductId === product.id;
 
-    // Check if product is in wishlist
+    // ─── Variant hook (only meaningful for configurable products) ────────────
+    const variantState = useProductVariants(product.id, product.variants);
+    const {
+        selectedVariantId,
+        displayPrice: variantPrice,
+        displayRegularPrice: variantRegularPrice,
+        displayImageUrl: variantImageUrl,
+        isFullySelected,
+        fetchConfig,
+    } = variantState;
+
+    // ─── Wishlist ────────────────────────────────────────────────────────────
     const isInWishlist = useMemo(() => {
         return wishlistItems.some((item) => item.product.id === product.id);
     }, [wishlistItems, product.id]);
 
+    // ─── Derived display values ───────────────────────────────────────────────
     const productData = useMemo(() => {
-        const rawImageUrl = product.thumbnail || (product.images && product.images[0]?.url);
+        // When a variant is selected use its image, otherwise use the product thumbnail
+        const rawImageUrl =
+            (isConfigurable && isFullySelected && variantImageUrl)
+                ? variantImageUrl
+                : product.thumbnail || (product.images && product.images[0]?.url);
 
-        // Check if product has discount based on API fields
-        // When on sale, API returns: price=special_price, regular_price=original
-        const hasDiscount = product.on_sale || (product.regular_price && product.regular_price > product.price);
+        const hasDiscount =
+            product.on_sale || (product.regular_price && product.regular_price > product.price);
 
-        // Check if product is on sale
         const isOnSale = product.on_sale || hasDiscount;
-
-        // Check if product is new (using either 'new' or 'is_new' field)
         const isNew = product.is_new || (product.new === true || product.new === 1);
 
-        // Calculate discount percentage
-        const originalPrice = product.regular_price || product.price;
-        const currentPrice = hasDiscount ? product.price : product.price;
-        const discountPercent = hasDiscount && originalPrice > currentPrice
-            ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-            : 0;
+        // Effective price: use variant price once selected, else product base price
+        const effectivePrice =
+            isConfigurable && isFullySelected && variantPrice !== null
+                ? variantPrice
+                : product.price;
 
-        // Get price label based on product type (matching web application)
-        let priceLabel = '';
-        if (product.type === 'configurable') {
-            priceLabel = t('product.asLowAs');
-        } else if (product.type === 'grouped') {
-            priceLabel = t('product.startingAt');
-        }
-        // bundle, simple, and other types don't show a label
+        const effectiveRegularPrice =
+            isConfigurable && isFullySelected && variantRegularPrice !== null
+                ? variantRegularPrice
+                : product.regular_price || product.price;
+
+        const effectiveHasDiscount =
+            isConfigurable && isFullySelected
+                ? variantRegularPrice !== null && variantRegularPrice > (variantPrice ?? 0)
+                : hasDiscount;
+
+        const discountPercent =
+            effectiveHasDiscount && effectiveRegularPrice > effectivePrice
+                ? Math.round(((effectiveRegularPrice - effectivePrice) / effectiveRegularPrice) * 100)
+                : 0;
 
         return {
             imageUrl: rawImageUrl,
-            hasDiscount,
+            hasDiscount: effectiveHasDiscount,
             isOnSale,
             isNew,
             name: product.name || 'Product',
             rating: Number(product.rating) || 0,
             reviewCount: Number(product.reviews_count) || 0,
             discountPercent,
-            currentPrice,
-            originalPrice,
-            priceLabel,
+            currentPrice: effectivePrice,
+            originalPrice: effectiveRegularPrice,
         };
-    }, [product]);
+    }, [
+        product,
+        isConfigurable,
+        isFullySelected,
+        variantPrice,
+        variantRegularPrice,
+        variantImageUrl,
+    ]);
 
+    // ─── Price label ─────────────────────────────────────────────────────────
+    // Only show "as low as" when no variant is selected yet.
+    // Once a variant is chosen it becomes a real price — no label needed.
+    const priceLabel = useMemo(() => {
+        if (isConfigurable && !isFullySelected) {
+            return t('product.asLowAs');
+        }
+        if (product.type === 'grouped') {
+            return t('product.startingAt');
+        }
+        return '';
+    }, [isConfigurable, isFullySelected, product.type, t]);
+
+    // ─── Toggle selector ─────────────────────────────────────────────────────
+    const handleToggleSelector = (e: any) => {
+        e.stopPropagation();
+        const nextOpen = !isSelectorOpen;
+        setIsSelectorOpen(nextOpen);
+        if (nextOpen) {
+            // Lazy-load config on first open
+            fetchConfig();
+        }
+    };
+
+    // ─── Add to cart ─────────────────────────────────────────────────────────
     const handleAddToCart = async (e: any) => {
         e.stopPropagation();
 
@@ -98,16 +152,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
             return;
         }
 
-        // Check if product is configurable - requires option selection
-        if (product.type === 'configurable') {
-            showToast({
-                message: t('product.selectProductOptions'),
-                type: 'warning'
-            });
-            // Redirect to product detail page to select options
-            setTimeout(() => {
-                router.push(`/product/${product.id}` as any);
-            }, 500);
+        if (isConfigurable && !isFullySelected) {
+            // If selector is closed, open it; if already open, prompt user
+            if (!isSelectorOpen) {
+                setIsSelectorOpen(true);
+                fetchConfig();
+            } else {
+                showToast({ message: t('product.selectProductOptions'), type: 'warning' });
+            }
             return;
         }
 
@@ -117,82 +169,88 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                 showToast({ message: t('product.invalidQuantity'), type: 'error' });
                 return;
             }
-            await dispatch(addToCartThunk({
+
+            const cartData: any = {
                 product_id: product.id,
                 quantity: qty,
-                product: product, // Pass product data for guest cart
-            })).unwrap();
+                product: product,
+            };
 
+            if (isConfigurable && selectedVariantId) {
+                cartData.selected_configurable_option = selectedVariantId;
+            }
+
+            await dispatch(addToCartThunk(cartData)).unwrap();
             showToast({ message: t('product.addedToCart', { name: product.name }), type: 'success' });
+
+            // Close selector and reset variant selections after successful add
+            // so the card returns to "Select Options" state
+            if (isConfigurable) {
+                setIsSelectorOpen(false);
+                variantState.reset();
+            }
         } catch (error: any) {
             showToast({ message: error || t('product.failedToAddToCart'), type: 'error' });
         }
     };
 
+    // ─── Wishlist ────────────────────────────────────────────────────────────
     const handleToggleWishlist = async (e: any) => {
         e.stopPropagation();
 
-        // Check if user is authenticated
         if (!isAuthenticated) {
-            showToast({
-                message: t('product.loginToAddWishlist'),
-                type: 'warning'
-            });
+            showToast({ message: t('product.loginToAddWishlist'), type: 'warning' });
             return;
         }
 
         setIsTogglingWishlist(true);
-
         try {
             await dispatch(toggleWishlistThunk(product.id)).unwrap();
-
-            // Fetch updated wishlist
             await dispatch(fetchWishlistThunk()).unwrap();
-
-            const message = isInWishlist
-                ? t('product.removedFromWishlist', { name: product.name })
-                : t('product.addedToWishlist', { name: product.name });
-
-            // showToast({ message, type: 'success' });
         } catch (error: any) {
-            showToast({
-                message: error || t('product.failedToUpdateWishlist'),
-                type: 'error'
-            });
+            showToast({ message: error || t('product.failedToUpdateWishlist'), type: 'error' });
         } finally {
             setIsTogglingWishlist(false);
         }
     };
 
+    // ─── RFQ ─────────────────────────────────────────────────────────────────
     const handleRFQPress = (e: any) => {
         e.stopPropagation();
 
-        // Check if user is authenticated
         if (!isAuthenticated) {
-            showToast({
-                message: t('product.loginToRequestQuote'),
-                type: 'warning'
-            });
+            showToast({ message: t('product.loginToRequestQuote'), type: 'warning' });
             router.push('/login');
             return;
         }
 
-        // Navigate to RFQ screen with product info
         if (product.supplier?.id) {
             router.push({
                 pathname: `/rfq/${product.supplier.id}` as any,
                 params: {
                     productId: product.id.toString(),
                     productName: product.name,
-                }
+                },
             });
         }
     };
 
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.8}
+            // Disable outer press-through when selector is open to prevent
+            // accidental navigation while the user is picking options.
+            disabled={isSelectorOpen}
+        >
             <Card variant="elevated" style={styles.card}>
-                <View style={styles.cardBody}>
+                {/* ── Image + Info ──────────────────────────────────────── */}
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={isSelectorOpen ? undefined : onPress}
+                    style={styles.cardBody}
+                >
                     {/* Product Image */}
                     <View style={styles.imageContainer}>
                         <ProductImage
@@ -203,7 +261,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             contentFit="cover"
                         />
 
-                        {/* Availability Badge - top right (made_to_order wins over immediate_shipping) */}
+                        {/* Availability Badge */}
                         {product.made_to_order ? (
                             <View style={styles.availabilityBadgeOrange}>
                                 <Ionicons name="time-outline" size={16} color="#c2410c" />
@@ -214,28 +272,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             </View>
                         ) : null}
 
-                        {/* Sale Badge - Shows when product is on sale */}
+                        {/* Sale Badge */}
                         {productData.isOnSale && product.in_stock ? (
                             <View style={styles.saleBadge}>
                                 <Text style={styles.saleText}>{t('product.sale')}</Text>
                             </View>
                         ) : null}
 
-                        {/* New Badge - Shows when product is new and not on sale */}
+                        {/* New Badge */}
                         {!productData.isOnSale && productData.isNew && product.in_stock ? (
                             <View style={styles.newBadge}>
                                 <Text style={styles.newText}>{t('product.new')}</Text>
                             </View>
                         ) : null}
 
-                        {/* Out of Stock Badge */}
-                        {/* {!product.in_stock ? (
-                            <View style={styles.outOfStockBadge}>
-                                <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
-                            </View>
-                        ) : null} */}
-
-                        {/* Wishlist Heart Icon - bottom right */}
+                        {/* Wishlist button */}
                         <TouchableOpacity
                             style={styles.wishlistButton}
                             onPress={handleToggleWishlist}
@@ -254,7 +305,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             )}
                         </TouchableOpacity>
 
-                        {/* RFQ Button Overlay - above wishlist icon */}
+                        {/* RFQ button */}
                         {product.supplier?.id && isAuthenticated ? (
                             <TouchableOpacity
                                 style={styles.rfqButtonOverlay}
@@ -269,7 +320,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                             </TouchableOpacity>
                         ) : null}
 
-                        {/* Rating Badge */}
+                        {/* Rating badge */}
                         {productData.rating > 0 ? (
                             <View style={styles.ratingContainer}>
                                 <Ionicons
@@ -277,13 +328,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                     size={RATING_ICON_SIZE}
                                     color={theme.colors.warning.main}
                                 />
-                                <Text style={styles.rating}>
-                                    {productData.rating.toFixed(1)}
-                                </Text>
+                                <Text style={styles.rating}>{productData.rating.toFixed(1)}</Text>
                                 {productData.reviewCount > 0 ? (
-                                    <Text style={styles.reviewCount}>
-                                        ({productData.reviewCount})
-                                    </Text>
+                                    <Text style={styles.reviewCount}>({productData.reviewCount})</Text>
                                 ) : null}
                             </View>
                         ) : null}
@@ -296,13 +343,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         </Text>
 
                         <View style={styles.priceWrapper}>
-                            {/* Price Label for Configurable/Grouped Products */}
-                            {/* Always reserve space for price label to maintain consistent card height */}
+                            {/* Price label — "as low as" only when no variant chosen yet */}
                             <View style={styles.priceLabelContainer}>
-                                {productData.priceLabel ? (
-                                    <Text style={styles.priceLabel}>
-                                        {productData.priceLabel}
-                                    </Text>
+                                {priceLabel ? (
+                                    <Text style={styles.priceLabel}>{priceLabel}</Text>
                                 ) : null}
                             </View>
 
@@ -311,61 +355,95 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                                     {productData.hasDiscount ? (
                                         <>
                                             <Text style={styles.specialPrice}>
-                                                {formatters.formatPrice(productData.currentPrice, currencySymbol)}
+                                                {formatters.formatPrice(
+                                                    productData.currentPrice,
+                                                    currencySymbol,
+                                                )}
                                             </Text>
                                             <Text style={styles.originalPrice}>
-                                                {formatters.formatPriceWithoutCurrency(productData.originalPrice)}
+                                                {formatters.formatPriceWithoutCurrency(
+                                                    productData.originalPrice,
+                                                )}
                                             </Text>
                                         </>
                                     ) : (
                                         <Text style={styles.price}>
-                                            {formatters.formatPrice(product.price, currencySymbol)}
+                                            {formatters.formatPrice(
+                                                productData.currentPrice,
+                                                currencySymbol,
+                                            )}
                                         </Text>
                                     )}
                                 </View>
                             </View>
                         </View>
                     </View>
-                </View>
+                </TouchableOpacity>
 
-                {/* Actions Footer */}
+                {/* ── Inline Variant Selector (configurable only) ─────────── */}
+                {isConfigurable && isSelectorOpen && (
+                    <CardVariantSelector variantState={variantState} />
+                )}
+
+                {/* ── Footer Actions ────────────────────────────────────── */}
                 <View style={styles.footerActions}>
-                    {/* Quantity Input */}
-                    <View style={styles.quantityContainer}>
-                        <Text style={styles.qtyLabel}>{t('product.qty') || 'Qty'}:</Text>
-                        <TextInput
-                            style={styles.quantityInput}
-                            value={quantity}
-                            onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ''))}
-                            keyboardType="numeric"
-                            maxLength={4}
-                            selectTextOnFocus
-                        />
-                    </View>
-
-                    {/* Add to Cart Icon Button */}
-                    <TouchableOpacity
-                        style={[
-                            styles.addToCartIconButton,
-                            !product.in_stock && styles.addToCartButtonDisabled
-                        ]}
-                        onPress={handleAddToCart}
-                        disabled={!product.in_stock || isAddingThisProduct}
-                        activeOpacity={0.7}
-                    >
-                        {!isAddingThisProduct ? (
+                    {isConfigurable && !isFullySelected ? (
+                        /* Configurable — no variant selected yet:
+                           show a "Select Options" toggle that opens/closes the selector */
+                        <TouchableOpacity
+                            style={styles.selectOptionsButton}
+                            onPress={handleToggleSelector}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.selectOptionsText}>
+                                {isSelectorOpen
+                                    ? t('product.hideOptions') || 'Hide Options'
+                                    : t('product.selectOptions') || 'Select Options'}
+                            </Text>
                             <Ionicons
-                                name="cart-outline"
-                                size={20}
-                                color={theme.colors.white}
+                                name={isSelectorOpen ? 'chevron-up' : 'chevron-down'}
+                                size={14}
+                                color={theme.colors.primary[500]}
                             />
-                        ) : (
-                            <ActivityIndicator size="small" color={theme.colors.white} />
-                        )}
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    ) : (
+                        /* Simple product OR configurable with variant fully selected:
+                           show qty input + cart icon button */
+                        <>
+                            <View style={styles.quantityContainer}>
+                                <Text style={styles.qtyLabel}>{t('product.qty') || 'Qty'}:</Text>
+                                <TextInput
+                                    style={styles.quantityInput}
+                                    value={quantity}
+                                    onChangeText={(text) =>
+                                        setQuantity(text.replace(/[^0-9]/g, ''))
+                                    }
+                                    keyboardType="numeric"
+                                    maxLength={4}
+                                    selectTextOnFocus
+                                />
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.addToCartIconButton,
+                                    !product.in_stock && styles.addToCartButtonDisabled,
+                                ]}
+                                onPress={handleAddToCart}
+                                disabled={!product.in_stock || isAddingThisProduct}
+                                activeOpacity={0.7}
+                            >
+                                {isAddingThisProduct ? (
+                                    <ActivityIndicator size="small" color={theme.colors.white} />
+                                ) : (
+                                    <Ionicons name="cart-outline" size={20} color={theme.colors.white} />
+                                )}
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
             </Card>
-        </TouchableOpacity >
+        </TouchableOpacity>
     );
 };
 
@@ -374,13 +452,10 @@ const styles = StyleSheet.create({
         padding: 0,
         overflow: 'hidden',
         backgroundColor: theme.colors.background.default,
+        borderWidth: 0.5,
+        borderColor: theme.colors.border.card_light,
     },
     cardBody: {
-        borderWidth: 0.5,
-        borderBottomWidth: 0,
-        borderColor: theme.colors.border.card_light,
-        borderTopLeftRadius: theme.borderRadius.lg,
-        borderTopRightRadius: theme.borderRadius.lg,
         overflow: 'hidden',
     },
     imageContainer: {
@@ -419,10 +494,10 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: theme.spacing.sm,
         left: theme.spacing.sm,
-        backgroundColor: '#DC2626', // Red color matching web app (bg-red-600)
+        backgroundColor: '#DC2626',
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
-        borderRadius: 22, // Rounded pill shape (rounded-[44px])
+        borderRadius: 22,
     },
     saleText: {
         color: theme.colors.white,
@@ -434,30 +509,16 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: theme.spacing.sm,
         left: theme.spacing.sm,
-        backgroundColor: '#1E3A8A', // Navy blue matching web app (bg-navyBlue)
+        backgroundColor: '#1E3A8A',
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
-        borderRadius: 22, // Rounded pill shape (rounded-[44px])
+        borderRadius: 22,
     },
     newText: {
         color: theme.colors.white,
         fontSize: theme.typography.fontSize.xs,
         fontWeight: theme.typography.fontWeight.semiBold,
         textTransform: 'uppercase',
-    },
-    outOfStockBadge: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        padding: theme.spacing.xs,
-        alignItems: 'center',
-    },
-    outOfStockText: {
-        color: theme.colors.white,
-        fontSize: theme.typography.fontSize.xs,
-        fontWeight: theme.typography.fontWeight.semiBold,
     },
     info: {
         paddingHorizontal: theme.spacing.sm,
@@ -469,7 +530,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.medium,
         color: theme.colors.text.primary,
         marginBottom: 0,
-        height: 18, // Reduced height for tighter spacing
+        height: 18,
     },
     ratingContainer: {
         position: 'absolute',
@@ -501,12 +562,12 @@ const styles = StyleSheet.create({
     },
     priceWrapper: {
         gap: 0,
-        minHeight: 24, // Reduced height
+        minHeight: 24,
     },
     priceLabelContainer: {
-        height: 14, // Restored height to prevent text clipping
+        height: 14,
         justifyContent: 'flex-start',
-        marginBottom: -10, // Negative margin pulls the price up instead
+        marginBottom: -10,
     },
     priceLabel: {
         fontSize: theme.typography.fontSize.xs,
@@ -517,7 +578,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 24, // Reduced to decrease bottom spacing
+        minHeight: 24,
     },
     priceContainer: {
         flexDirection: 'row',
@@ -526,7 +587,7 @@ const styles = StyleSheet.create({
     },
     rfqButtonOverlay: {
         position: 'absolute',
-        bottom: theme.spacing.sm + 44, // Positioned above the wishlist button (36 height + 8 gap)
+        bottom: theme.spacing.sm + 44,
         right: theme.spacing.sm,
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
         width: 36,
@@ -544,13 +605,28 @@ const styles = StyleSheet.create({
     footerActions: {
         flexDirection: 'row',
         backgroundColor: theme.colors.background.default,
-        borderBottomLeftRadius: theme.borderRadius.md,
-        borderBottomRightRadius: theme.borderRadius.md,
-        borderTopWidth: 1,
+        borderTopWidth: 0.5,
         borderTopColor: theme.colors.border.card_light,
         overflow: 'hidden',
         height: 40,
     },
+
+    /* Configurable — no selection yet */
+    selectOptionsButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        paddingHorizontal: theme.spacing.sm,
+    },
+    selectOptionsText: {
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[500],
+    },
+
+    /* Qty + cart (simple & fully-selected configurable) */
     quantityContainer: {
         flex: 1,
         flexDirection: 'row',
@@ -566,12 +642,15 @@ const styles = StyleSheet.create({
     quantityInput: {
         flex: 1,
         height: 28,
+        paddingVertical: 0,
         paddingHorizontal: theme.spacing.xs,
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.primary,
         backgroundColor: theme.colors.gray[50],
         borderRadius: 4,
         textAlign: 'center',
+        textAlignVertical: 'center',
+        includeFontPadding: false,
         borderWidth: 1,
         borderColor: theme.colors.border.card_light,
     },
@@ -582,6 +661,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    addToCartButtonDisabled: {
+        backgroundColor: theme.colors.gray[400],
+    },
+
+    /* Availability badges */
     availabilityBadgeGreen: {
         position: 'absolute',
         top: theme.spacing.sm,
@@ -616,6 +700,8 @@ const styles = StyleSheet.create({
         elevation: 3,
         zIndex: 10,
     },
+
+    /* Prices */
     price: {
         fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
@@ -629,13 +715,10 @@ const styles = StyleSheet.create({
     },
     originalPrice: {
         fontSize: theme.typography.fontSize.sm,
-        color: '#9CA3AF', // Gray-400 color matching web app (text-zinc-500)
+        color: '#9CA3AF',
         textDecorationLine: 'line-through',
         textDecorationColor: '#9CA3AF',
         fontWeight: theme.typography.fontWeight.medium,
-    },
-    addToCartButtonDisabled: {
-        backgroundColor: theme.colors.gray[400],
     },
 });
 

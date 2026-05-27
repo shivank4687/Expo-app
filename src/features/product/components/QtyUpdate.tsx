@@ -1,26 +1,50 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface QtyUpdateProps {
   quantity?: number;
   onIncrease?: () => void;
   onDecrease?: () => void;
+  onQuantityChange?: (qty: number) => void;
   minQuantity?: number;
   maxQuantity?: number;
   style?: StyleProp<ViewStyle>;
 }
 
 export const QtyUpdate: React.FC<QtyUpdateProps> = ({
-  quantity = 12, // Defaulting to 12 as per the Figma spec you provided
+  quantity = 1,
   onIncrease,
   onDecrease,
+  onQuantityChange,
   minQuantity = 1,
   maxQuantity = 99,
   style,
 }) => {
   const isMin = quantity <= minQuantity;
   const isMax = quantity >= maxQuantity;
+
+  // Local string state so the user can type freely; we commit on blur/submit
+  const [inputValue, setInputValue] = useState(String(quantity));
+
+  // Keep local value in sync when parent changes qty (e.g. via + / - buttons)
+  useEffect(() => {
+    setInputValue(String(quantity));
+  }, [quantity]);
+
+  const commitValue = (raw: string) => {
+    const parsed = parseInt(raw, 10);
+    if (isNaN(parsed) || parsed < minQuantity) {
+      setInputValue(String(minQuantity));
+      onQuantityChange?.(minQuantity);
+    } else if (parsed > maxQuantity) {
+      setInputValue(String(maxQuantity));
+      onQuantityChange?.(maxQuantity);
+    } else {
+      setInputValue(String(parsed));
+      onQuantityChange?.(parsed);
+    }
+  };
 
   return (
     <View style={[styles.container, style]}>
@@ -33,9 +57,21 @@ export const QtyUpdate: React.FC<QtyUpdateProps> = ({
         <Ionicons name="remove" size={16} color={isMin ? '#9CA3AF' : '#000000'} />
       </TouchableOpacity>
 
-      <Text style={styles.quantityText} numberOfLines={1}>
-        {quantity}
-      </Text>
+      <TextInput
+        style={styles.quantityInput}
+        value={inputValue}
+        onChangeText={(text) => {
+          // Allow only numeric characters while typing
+          const numeric = text.replace(/[^0-9]/g, '');
+          setInputValue(numeric);
+        }}
+        onBlur={() => commitValue(inputValue)}
+        onSubmitEditing={() => commitValue(inputValue)}
+        keyboardType="numeric"
+        maxLength={3}
+        selectTextOnFocus
+        textAlign="center"
+      />
 
       <TouchableOpacity
         style={[styles.button, isMax && styles.buttonDisabled]}
@@ -55,8 +91,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
-    gap: 8,
-    width: 100,
+    gap: 6,
+    width: 130,
     height: 40,
     borderWidth: 1,
     borderColor: '#E9E3D3',
@@ -67,22 +103,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     backgroundColor: '#FCF7EA',
-    borderRadius: 8,
+    borderRadius: 6,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
-  quantityText: {
+  quantityInput: {
     fontFamily: 'Inter',
-    fontWeight: '500',
-    fontSize: 11,
-    lineHeight: 15,
+    fontWeight: '600',
+    fontSize: 13,
+    lineHeight: 18,
     color: '#0A292D',
     textAlign: 'center',
-    minWidth: 12,
+    minWidth: 40,
+    flex: 1,
+    paddingVertical: 0,
+    paddingHorizontal: 2,
   },
 });
 

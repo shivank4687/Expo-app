@@ -11,6 +11,8 @@ interface InputModalProps {
     placeholder?: string;
     submitButtonText?: string;
     isLoading?: boolean;
+    initialValue?: string;
+    multiline?: boolean;
 }
 
 export const InputModal: React.FC<InputModalProps> = ({
@@ -21,17 +23,19 @@ export const InputModal: React.FC<InputModalProps> = ({
     placeholder = 'Enter value...',
     submitButtonText = 'Add',
     isLoading = false,
+    initialValue = '',
+    multiline = false,
 }) => {
     const [inputValue, setInputValue] = useState('');
     const [error, setError] = useState('');
 
-    // Reset input when modal opens
+    // Sync input when modal opens
     useEffect(() => {
         if (visible) {
-            setInputValue('');
+            setInputValue(initialValue);
             setError('');
         }
-    }, [visible]);
+    }, [visible, initialValue]);
 
     const handleSubmit = async () => {
         const trimmedValue = inputValue.trim();
@@ -89,7 +93,7 @@ export const InputModal: React.FC<InputModalProps> = ({
                         {/* Content */}
                         <View style={styles.content}>
                             <TextInput
-                                style={[styles.input, error && styles.inputError]}
+                                style={[styles.input, multiline && { height: 100, textAlignVertical: 'top', paddingTop: 8 }, error && styles.inputError]}
                                 placeholder={placeholder}
                                 placeholderTextColor="#666666"
                                 value={inputValue}
@@ -99,6 +103,7 @@ export const InputModal: React.FC<InputModalProps> = ({
                                 }}
                                 autoFocus
                                 editable={!isLoading}
+                                multiline={multiline}
                             />
                             {error ? (
                                 <Text style={styles.errorText}>{error}</Text>

@@ -140,7 +140,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
     },
     loadingContainer: {
         padding: theme.spacing.lg,

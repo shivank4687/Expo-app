@@ -34,14 +34,14 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
                 style={styles.backButton}
                 activeOpacity={0.7}
             >
-                <Ionicons name="arrow-back" size={18} color={theme.colors.text.primary} />
+                <Ionicons name="arrow-back" size={26} color={theme.colors.white} />
             </TouchableOpacity>
 
             <View style={styles.searchInputContainer}>
                 <Ionicons
                     name="search-outline"
                     size={20}
-                    color={theme.colors.text.secondary}
+                    color={theme.colors.primary[500]}
                 />
                 <TextInput
                     ref={searchInputRef}
@@ -74,7 +74,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
                 onPress={handleVoiceSearch}
                 style={styles.micButton}
             >
-                <Ionicons name="mic-outline" size={24} color={theme.colors.text.primary} />
+                <Ionicons name="mic-outline" size={24} color={theme.colors.white} />
             </TouchableOpacity>
         </View>
     );
@@ -85,19 +85,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingHorizontal: theme.spacing.md,
-        backgroundColor: theme.colors.background.default,
+        paddingBottom: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.sm,
+        backgroundColor: theme.colors.primary[500],
         ...theme.shadows.sm,
     },
     backButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: theme.colors.white,
+        padding: theme.spacing.xs,
+        marginRight: theme.spacing.xs,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: theme.spacing.sm,
-        ...theme.shadows.sm,
     },
     searchInputContainer: {
         flex: 1,
@@ -106,7 +103,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.white,
         borderRadius: theme.borderRadius.full,
         paddingHorizontal: theme.spacing.md,
-        height: 44,
+        height: 42,
         ...theme.shadows.sm,
         borderWidth: 1,
         borderColor: theme.colors.gray[100],

@@ -193,6 +193,18 @@ export const ProductReviewsScreen: React.FC = () => {
                 </View>
                 <Text style={styles.reviewComment}>{item.comment}</Text>
 
+                {item.reply_text ? (
+                    <View style={styles.replyContainer}>
+                        <View style={styles.replyHeaderRow}>
+                            <Ionicons name="chatbubble-ellipses" size={12} color="#00615E" />
+                            <Text style={styles.replyHeaderLabel}>
+                                {item.reply_name ? `${item.reply_name} (Supplier)` : 'Supplier Reply'}
+                            </Text>
+                        </View>
+                        <Text style={styles.replyContentText}>{item.reply_text}</Text>
+                    </View>
+                ) : null}
+
                 {hasMedia && (
                     <TouchableOpacity
                         style={styles.mediaButton}
@@ -427,5 +439,34 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: theme.colors.primary[500],
+    },
+    replyContainer: {
+        marginTop: 8,
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 8,
+        padding: 8,
+        gap: 4,
+    },
+    replyHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    replyHeaderLabel: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '600',
+        fontSize: 10,
+        color: '#00615E',
+    },
+    replyContentText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '400',
+        fontSize: 11,
+        lineHeight: 14,
+        color: '#4B5563',
     },
 });

@@ -121,11 +121,12 @@ export default function CategoriesTab() {
                     key={category.id}
                     style={[styles.parentTab, isSelected && styles.parentTabSelected]}
                     onPress={() => handleParentSelect(category.id)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.7}
                   >
                     <Text style={[styles.parentTabText, isSelected && styles.parentTabTextSelected]}>
                       {category.name}
                     </Text>
+                    {isSelected && <View style={styles.activeIndicator} />}
                   </TouchableOpacity>
                 );
               })}
@@ -181,37 +182,41 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.default,
   },
   topNavContainer: {
-    backgroundColor: theme.colors.background.default,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.gray[100],
-    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.primary[500],
+    borderBottomWidth: 0,
   },
   topNavContent: {
     paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
   },
   parentTab: {
     paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs + 2,
-    // marginRight: theme.spacing.xxs,
-    borderRadius: theme.spacing.sm,
-    backgroundColor: theme.colors.background.secondary,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingVertical: theme.spacing.sm,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   parentTabSelected: {
-    backgroundColor: theme.colors.primary[50],
-    borderColor: theme.colors.primary[200],
+    // No specific background change for a clean look
   },
   parentTabText: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.primary[100],
     fontWeight: theme.typography.fontWeight.medium,
   },
   parentTabTextSelected: {
-    color: theme.colors.primary[600],
+    color: theme.colors.white,
     fontWeight: theme.typography.fontWeight.bold,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    width: '60%',
+    height: 3,
+    backgroundColor: theme.colors.white,
+    borderRadius: 2,
   },
   sidebar: {
     width: SIDEBAR_WIDTH,

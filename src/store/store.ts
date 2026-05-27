@@ -69,9 +69,14 @@ export const store = configureStore({
     reducer: persistedReducer,
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-            },
+            //    serializableCheck: {
+            //     ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+            // },
+            // Disable these checks in development to prevent massive UI freezes 
+            // when dispatching actions with large payloads (like Product objects).
+            // As seen in the Metro logs, these were taking 500ms-800ms per dispatch.
+            serializableCheck: false,
+            immutableCheck: false,
         }),
 });
 

@@ -191,7 +191,9 @@
     "immediateShippingDesc": "Este artículo se envía inmediatamente después del pedido.",
     "madeToOrder": "Fabricado a pedido",
     "productionTime": "Tiempo de producción: {{days}} días",
-    "madeToOrderQty": "Cantidad mínima de pedido: {{qty}} unidades"
+    "madeToOrderQty": "Cantidad mínima de pedido: {{qty}} unidades",
+    "selectOptions": "Seleccionar Opciones",
+    "hideOptions": "Ocultar Opciones"
   },
   "cart": {
     "cart": "Carrito",
