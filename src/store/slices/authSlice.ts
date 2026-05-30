@@ -12,7 +12,7 @@ import {
     OtpVerificationRequest,
     ResendOtpRequest,
 } from '@/features/auth/types/auth.types';
-import { resetCart } from './cartSlice';
+import { resetCart, mergeGuestCartThunk } from './cartSlice';
 import { setGlobalToken } from '@/services/api/client';
 import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
 import socketService from '@/services/socket.service';
@@ -69,7 +69,7 @@ export const checkAuthThunk = createAsyncThunk(
 
 export const loginThunk = createAsyncThunk(
     'auth/login',
-    async (credentials: LoginRequest, { rejectWithValue }) => {
+    async (credentials: LoginRequest, { rejectWithValue, dispatch }) => {
         try {
             // Ensure email_or_phone is sent to the API
             const loginPayload: any = {
@@ -140,6 +140,9 @@ export const loginThunk = createAsyncThunk(
                 // Don't fail login if notification registration fails
             }
 
+            // Sync/Merge guest cart
+            await dispatch(mergeGuestCartThunk());
+
             return { requiresOtp: false, user, token };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -149,7 +152,7 @@ export const loginThunk = createAsyncThunk(
 
 export const socialLoginThunk = createAsyncThunk(
     'auth/socialLogin',
-    async (data: { token: string; provider: 'google' | 'facebook' | 'apple'; user_type?: 'customer' | 'supplier' }, { rejectWithValue }) => {
+    async (data: { token: string; provider: 'google' | 'facebook' | 'apple'; user_type?: 'customer' | 'supplier' }, { rejectWithValue, dispatch }) => {
         try {
             const response = await authApi.socialLogin({
                 ...data,
@@ -191,6 +194,11 @@ export const socialLoginThunk = createAsyncThunk(
                 console.error('Failed to register push notification token:', notificationError);
             }
 
+            // Sync/Merge guest cart (only if customer logging in)
+            if (data.user_type !== 'supplier') {
+                await dispatch(mergeGuestCartThunk());
+            }
+
             return { user, token };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Social login failed');
@@ -202,7 +210,7 @@ export const socialLoginThunk = createAsyncThunk(
 
 export const signupThunk = createAsyncThunk(
     'auth/signup',
-    async (data: SignupRequest, { getState, rejectWithValue }) => {
+    async (data: SignupRequest, { getState, rejectWithValue, dispatch }) => {
         try {
             const state = getState() as any;
             const userType = state.auth.selectedUserType || 'customer';
@@ -243,6 +251,9 @@ export const signupThunk = createAsyncThunk(
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
 
+            // Sync/Merge guest cart
+            await dispatch(mergeGuestCartThunk());
+
             return { user, token, requiresOtp: false };
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Signup failed');
@@ -252,7 +263,7 @@ export const signupThunk = createAsyncThunk(
 
 export const verifyOtpThunk = createAsyncThunk(
     'auth/verifyOtp',
-    async (data: OtpVerificationRequest, { rejectWithValue }) => {
+    async (data: OtpVerificationRequest, { rejectWithValue, dispatch }) => {
         try {
             const response = await authApi.verifyOtp(data);
 
@@ -287,6 +298,9 @@ export const verifyOtpThunk = createAsyncThunk(
                 } catch (notificationError) {
                     console.error('Failed to register push notification token (non-critical):', notificationError);
                 }
+
+                // Sync/Merge guest cart
+                await dispatch(mergeGuestCartThunk());
             }
 
             return {

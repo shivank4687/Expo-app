@@ -6,7 +6,7 @@ import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
 import { ThemeCustomization as ThemeCustomizationType } from '@/types/theme.types';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     RefreshControl,
     ScrollView,
@@ -47,20 +47,39 @@ export const HomeScreen: React.FC = () => {
 
         try {
             setError(null);
-            const [customizationsData, discounted, newArr, featured] = await Promise.all([
-                themeApi.getCustomizations(),
-                productsApi.getDiscountedProducts(8),
-                productsApi.getNewProducts(8),
-                productsApi.getFeaturedProducts(8),
-            ]);
+            
+            // 1. Fetch critical layout & theme customization first
+            const customizationsData = await themeApi.getCustomizations();
             setCustomizations(customizationsData);
-            setDiscountedProducts(discounted);
-            setNewProducts(newArr);
-            setFeaturedProducts(featured);
+            
+            // Dismiss global loading spinner as soon as layout/carousel is loaded
+            setIsLoading(false);
+
+            // 2. Fetch product grids concurrently in the background
+            Promise.all([
+                productsApi.getDiscountedProducts(8).catch(err => {
+                    console.error('[HomeScreen] Failed to load discounted products:', err);
+                    return [];
+                }),
+                productsApi.getNewProducts(8).catch(err => {
+                    console.error('[HomeScreen] Failed to load new products:', err);
+                    return [];
+                }),
+                productsApi.getFeaturedProducts(8).catch(err => {
+                    console.error('[HomeScreen] Failed to load featured products:', err);
+                    return [];
+                }),
+            ]).then(([discounted, newArr, featured]) => {
+                setDiscountedProducts(discounted);
+                setNewProducts(newArr);
+                setFeaturedProducts(featured);
+            }).finally(() => {
+                setIsRefreshing(false);
+            });
+
         } catch (err: any) {
-            console.error('[HomeScreen] Error loading content:', err);
+            console.error('[HomeScreen] Error loading critical content:', err);
             setError(err.message || 'Failed to load page content');
-        } finally {
             setIsLoading(false);
             setIsRefreshing(false);
         }
@@ -75,10 +94,10 @@ export const HomeScreen: React.FC = () => {
         loadData();
     }, [loadData]);
 
+    const tabs = useMemo(() => [{ id: 'home', name: 'Explore' }, ...categories], [categories]);
+
     const renderTabBar = () => {
         if (categories.length === 0) return null;
-
-        const tabs = [{ id: 'home', name: 'Explore' }, ...categories];
 
         return (
             <View style={styles.tabBarContainer}>
@@ -124,16 +143,17 @@ export const HomeScreen: React.FC = () => {
         );
     }
 
-    const image_carousel_customization = customizations.filter(
-        c => ['image_carousel'].includes(c.type)//c.type !== 'services_content' as any
-    );
-    const carousel_customization = customizations.filter(
-        c => ['category_carousel', 'product_carousel'].includes(c.type)//c.type !== 'services_content' as any
-    );
+    const image_carousel_customization = useMemo(() => customizations.filter(
+        c => ['image_carousel'].includes(c.type)
+    ), [customizations]);
 
-    const servicesCustomization = customizations.find(
+    const carousel_customization = useMemo(() => customizations.filter(
+        c => ['category_carousel', 'product_carousel'].includes(c.type)
+    ), [customizations]);
+
+    const servicesCustomization = useMemo(() => customizations.find(
         c => c.type === 'services_content' as any
-    );
+    ), [customizations]);
 
     return (
         <View style={styles.container}>

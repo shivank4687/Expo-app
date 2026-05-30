@@ -11,7 +11,6 @@ import {
     UpdateCartItemPayload,
     ApplyCouponPayload 
 } from '@/features/cart/types/cart.types';
-import { logoutThunk } from './authSlice';
 import { guestCartStorage } from '@/services/storage/guestCartStorage';
 
 interface CartState {
@@ -81,6 +80,43 @@ export const fetchCartThunk = createAsyncThunk(
         } catch (error: any) {
             console.error('Failed to fetch any cart:', error);
             return rejectWithValue(error.message || 'Failed to fetch cart');
+        }
+    }
+);
+
+// Merge guest cart
+export const mergeGuestCartThunk = createAsyncThunk(
+    'cart/mergeGuestCart',
+    async (_, { rejectWithValue, dispatch }) => {
+        try {
+            const guestCart = await guestCartStorage.getGuestCart();
+            if (!guestCart || !guestCart.items || guestCart.items.length === 0) {
+                console.log('No guest cart items to merge.');
+                // Just fetch/refresh authenticated cart
+                return await dispatch(fetchCartThunk()).unwrap();
+            }
+
+            console.log(`Merging ${guestCart.items.length} guest cart items to server...`);
+
+            // Map local cart items to payload
+            const payloadItems = guestCart.items.map(item => ({
+                product_id: item.product_id,
+                quantity: item.quantity,
+            }));
+
+            // Send a single batch request to merge cart items
+            await cartApi.mergeCart(payloadItems);
+            console.log('Cart merged successfully on server.');
+
+            // Clear guest cart from local storage
+            await guestCartStorage.clearGuestCart();
+            console.log('Cleared local guest cart storage.');
+
+            // Fetch the updated cart from server to synchronize
+            return await dispatch(fetchCartThunk()).unwrap();
+        } catch (error: any) {
+            console.error('Failed to merge guest cart:', error);
+            return rejectWithValue(error.message || 'Failed to merge guest cart');
         }
     }
 );
@@ -202,10 +238,22 @@ export const moveToWishlistThunk = createAsyncThunk(
 // Remove selected items from cart
 export const removeSelectedFromCartThunk = createAsyncThunk(
     'cart/removeSelected',
-    async (cartItemIds: number[], { rejectWithValue }) => {
+    async (cartItemIds: number[], { rejectWithValue, getState }) => {
         try {
-            const cart = await cartApi.removeSelected(cartItemIds);
-            return cart;
+            const state = getState() as any;
+            const isAuthenticated = state.auth.isAuthenticated;
+
+            if (isAuthenticated) {
+                const cart = await cartApi.removeSelected(cartItemIds);
+                return cart;
+            } else {
+                // Remove selected items from guest cart in local storage
+                let cart = null;
+                for (const itemId of cartItemIds) {
+                    cart = await guestCartStorage.removeItem(itemId);
+                }
+                return cart;
+            }
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to remove selected items');
         }
@@ -384,8 +432,23 @@ const cartSlice = createSlice({
                 state.error = action.payload as string;
             });
 
+        // Merge guest cart
+        builder
+            .addCase(mergeGuestCartThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(mergeGuestCartThunk.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.cart = action.payload;
+            })
+            .addCase(mergeGuestCartThunk.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+
         // Reset cart on logout
-        builder.addCase(logoutThunk.fulfilled, (state) => {
+        builder.addCase('auth/logout/fulfilled', (state) => {
             state.cart = null;
             state.error = null;
             state.lastAddedProductId = null;

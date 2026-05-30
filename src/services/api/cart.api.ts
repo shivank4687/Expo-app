@@ -231,5 +231,21 @@ export const cartApi = {
             throw new Error(error.response?.data?.message || error.message || 'Failed to move selected items to wishlist');
         }
     },
+
+    /**
+     * Merge guest cart items into customer cart
+     */
+    mergeCart: async (items: { product_id: number; quantity: number }[]): Promise<Cart | null> => {
+        try {
+            const response = await restApiClient.post<CartResponse>(
+                '/customer/cart/merge',
+                { items }
+            );
+            return response?.data || null;
+        } catch (error: any) {
+            console.error('Merge cart error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to merge cart');
+        }
+    },
 };
 
