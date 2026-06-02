@@ -13,7 +13,7 @@ import {
     Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
@@ -513,6 +513,7 @@ export const RFQScreen: React.FC = () => {
 
     return (
         <View style={styles.safeArea}>
+            <Stack.Screen options={{ headerShown: false }} />
             <TopHeader
                 title={t('rfq.title', 'Request for Quote')}
                 onBack={() => router.back()}
@@ -941,7 +942,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: theme.spacing.xs,
-        paddingBottom: 100, // Space for footer button + extra buffer
+        paddingBottom: theme.spacing.xl,
     },
     section: {
         marginBottom: theme.spacing.xs,
@@ -1075,16 +1076,19 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.medium,
     },
     footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         backgroundColor: theme.colors.background.default,
         paddingHorizontal: theme.spacing.lg,
         paddingTop: theme.spacing.sm,
-        //  borderTopWidth: 1,
+        borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
-        ...theme.shadows.lg,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 5,
     },
     attachmentSection: {
         marginTop: theme.spacing.md,

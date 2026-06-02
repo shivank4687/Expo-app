@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
 
 interface SearchHeaderProps {
@@ -10,7 +11,6 @@ interface SearchHeaderProps {
     setSearchQuery: (query: string) => void;
     handleSearch: () => void;
     handleClearSearch: () => void;
-    handleVoiceSearch: () => void;
     searchInputRef: React.RefObject<TextInput>;
     autoFocus?: boolean;
 }
@@ -20,12 +20,12 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
     setSearchQuery,
     handleSearch,
     handleClearSearch,
-    handleVoiceSearch,
     searchInputRef,
     autoFocus = false,
 }) => {
     const router = useRouter();
     const { t } = useTranslation();
+    const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
 
     return (
         <View style={styles.header}>
@@ -71,10 +71,20 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
             </View>
 
             <TouchableOpacity
-                onPress={handleVoiceSearch}
-                style={styles.micButton}
+                onPress={() => router.push('/(drawer)/(tabs)/cart')}
+                style={styles.cartButton}
+                activeOpacity={0.7}
             >
-                <Ionicons name="mic-outline" size={24} color={theme.colors.white} />
+                <View style={styles.iconWrapper}>
+                    <Ionicons name="cart-outline" size={26} color={theme.colors.white} />
+                    {cartItemsCount > 0 && (
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>
+                                {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                            </Text>
+                        </View>
+                    )}
+                </View>
             </TouchableOpacity>
         </View>
     );
@@ -118,8 +128,31 @@ const styles = StyleSheet.create({
     clearIcon: {
         padding: theme.spacing.xs,
     },
-    micButton: {
+    cartButton: {
         padding: theme.spacing.xs,
         marginLeft: theme.spacing.sm,
+    },
+    iconWrapper: {
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badge: {
+        position: 'absolute',
+        top: -4,
+        right: -10,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: theme.colors.error.main,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 3,
+    },
+    badgeText: {
+        color: theme.colors.white,
+        fontSize: 9,
+        fontWeight: '700',
+        lineHeight: 12,
     },
 });

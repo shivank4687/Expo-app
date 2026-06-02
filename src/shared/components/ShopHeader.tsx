@@ -33,8 +33,8 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     const translateYAnim = React.useRef(new Animated.Value(0)).current;
 
     const defaultPlaceholders = ['Electronics', 'Fashion', 'Home', 'Beauty', 'Groceries', 'Accessories'];
-    const placeholders = categories && categories.length > 0 
-        ? categories.slice(0, 10).map(c => c.name) 
+    const placeholders = categories && categories.length > 0
+        ? categories.slice(0, 10).map(c => c.name)
         : defaultPlaceholders;
 
     useEffect(() => {
@@ -57,7 +57,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                 // Change text and reset position (start from below)
                 setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
                 translateYAnim.setValue(15);
-                
+
                 // Animate in: slide to center and fade in
                 Animated.parallel([
                     Animated.timing(fadeAnim, {
@@ -149,14 +149,14 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
                 </TouchableOpacity>
 
                 {showSearch ? (
-                    <TouchableOpacity 
-                        style={styles.searchBar} 
+                    <TouchableOpacity
+                        style={styles.searchBar}
                         onPress={handleSearchPress}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="search-outline" size={20} color={theme.colors.primary[500]} style={styles.searchIcon} />
                         <View style={styles.placeholderContainer}>
-                            <Text style={styles.searchTextFixed}>Search </Text>
+                            {/* <Text style={styles.searchTextFixed}>Search </Text> */}
                             <Animated.View style={[
                                 styles.animatedPlaceholder,
                                 {

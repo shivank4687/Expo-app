@@ -1,4 +1,5 @@
 import { restApiClient } from './client';
+import { multipartFetch, formatFileUri } from './fetchClient';
 import { API_ENDPOINTS } from '@/config/constants';
 import { Product } from '@/features/product/types/product.types';
 import { PaginatedResponse } from '@/types/global.types';
@@ -252,7 +253,7 @@ export const suppliersApi = {
                                     : 'image/jpeg';
 
                 formData.append(`images[${index}]`, {
-                    uri: imageUri,
+                    uri: formatFileUri(imageUri),
                     type: mimeType,
                     name: `image_${index}.${extension}`,
                 } as any);
@@ -263,7 +264,7 @@ export const suppliersApi = {
         if (files && files.length > 0) {
             files.forEach((file, index) => {
                 // Handle both string URI and object with uri and name
-                const fileUri = typeof file === 'string' ? file : file.uri;
+                const fileUri = formatFileUri(typeof file === 'string' ? file : file.uri);
                 const fileName = typeof file === 'string'
                     ? file.split('/').pop() || `file_${index}`
                     : file.name || `file_${index}`;
@@ -286,17 +287,7 @@ export const suppliersApi = {
             });
         }
 
-        const response = await restApiClient.post<RFQResponse>(
-            API_ENDPOINTS.RFQ_STORE,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }
-        );
-
-        return response;
+        return multipartFetch<RFQResponse>(API_ENDPOINTS.RFQ_STORE, formData);
     },
 
     /**

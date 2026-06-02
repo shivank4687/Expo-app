@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { productsApi } from '@/services/api/products.api';
 import { Product } from '@/features/product/types/product.types';
@@ -14,6 +14,7 @@ import { theme } from '@/theme';
 import { useAppSelector } from '@/store/hooks';
 import { FilterState } from '@/types/filters.types';
 import { SORT_OPTIONS } from '@/constants/sortOptions';
+import { Ionicons } from '@expo/vector-icons';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -27,6 +28,26 @@ export const ProductListScreen: React.FC = () => {
     }>();
     const router = useRouter();
     const { selectedLocale } = useAppSelector((state) => state.core);
+    const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
+
+    const cartRightContent = (
+        <TouchableOpacity
+            onPress={() => router.push('/(drawer)/(tabs)/cart')}
+            style={styles.cartButton}
+            activeOpacity={0.7}
+        >
+            <View style={styles.cartIconWrapper}>
+                <Ionicons name="cart-outline" size={22} color="#000000" />
+                {cartItemsCount > 0 && (
+                    <View style={styles.cartBadge}>
+                        <Text style={styles.cartBadgeText}>
+                            {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                        </Text>
+                    </View>
+                )}
+            </View>
+        </TouchableOpacity>
+    );
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -209,7 +230,7 @@ export const ProductListScreen: React.FC = () => {
         return (
             <View style={styles.container}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <TopHeader title={screenTitle} onBack={() => router.back()} />
+                <TopHeader title={screenTitle} onBack={() => router.back()} rightContent={cartRightContent} />
                 <LoadingSpinner />
             </View>
         );
@@ -219,7 +240,7 @@ export const ProductListScreen: React.FC = () => {
         return (
             <View style={styles.container}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <TopHeader title={screenTitle} onBack={() => router.back()} />
+                <TopHeader title={screenTitle} onBack={() => router.back()} rightContent={cartRightContent} />
                 <ErrorMessage message={error} onRetry={() => loadProducts(1, true)} />
             </View>
         );
@@ -228,7 +249,7 @@ export const ProductListScreen: React.FC = () => {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            <TopHeader title={screenTitle} onBack={() => router.back()} />
+            <TopHeader title={screenTitle} onBack={() => router.back()} rightContent={cartRightContent} />
             <FlatList
                 data={products}
                 numColumns={2}
@@ -332,6 +353,32 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: theme.typography.fontSize.lg,
         color: theme.colors.text.secondary,
+    },
+    cartButton: {
+        padding: 4,
+    },
+    cartIconWrapper: {
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cartBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -10,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: theme.colors.error.main,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 3,
+    },
+    cartBadgeText: {
+        color: theme.colors.white,
+        fontSize: 9,
+        fontWeight: '700',
+        lineHeight: 12,
     },
 });
 

@@ -5,6 +5,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     Platform,
+    StatusBar,
     StyleProp,
     ViewStyle,
     TextStyle,
@@ -53,6 +54,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 containerStyle,
             ]}
         >
+            <StatusBar
+                barStyle="dark-content"
+                backgroundColor={backgroundColor ?? COLORS.background}
+                translucent={false}
+            />
             <View style={styles.headerContent}>
                 {showBackButton ? (
                     <TouchableOpacity

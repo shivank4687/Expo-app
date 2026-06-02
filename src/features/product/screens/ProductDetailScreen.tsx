@@ -66,6 +66,7 @@ export const ProductDetailScreen: React.FC = () => {
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { selectedCurrency } = useAppSelector((state) => state.core);
+    const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
 
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
@@ -74,6 +75,25 @@ export const ProductDetailScreen: React.FC = () => {
         if (!product) return false;
         return wishlistItems.some((item) => item.product.id === product.id);
     }, [wishlistItems, product]);
+
+    const cartRightContent = (
+        <TouchableOpacity
+            onPress={() => router.push('/(drawer)/(tabs)/cart')}
+            style={styles.cartButton}
+            activeOpacity={0.7}
+        >
+            <View style={styles.cartIconWrapper}>
+                <Ionicons name="cart-outline" size={22} color="#000000" />
+                {cartItemsCount > 0 && (
+                    <View style={styles.cartBadge}>
+                        <Text style={styles.cartBadgeText}>
+                            {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                        </Text>
+                    </View>
+                )}
+            </View>
+        </TouchableOpacity>
+    );
 
     useEffect(() => {
         if (id) {
@@ -196,7 +216,7 @@ export const ProductDetailScreen: React.FC = () => {
     if (isLoading) {
         return (
             <View style={styles.container}>
-                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} />
+                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} rightContent={cartRightContent} />
                 <LoadingSpinner />
             </View>
         );
@@ -205,7 +225,7 @@ export const ProductDetailScreen: React.FC = () => {
     if (error || !product) {
         return (
             <View style={styles.container}>
-                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} />
+                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} rightContent={cartRightContent} />
                 <ErrorMessage message={error || t('product.productNotFound')} onRetry={loadProduct} />
             </View>
         );
@@ -236,7 +256,7 @@ export const ProductDetailScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <TopHeader title={product.name} onBack={() => router.back()} />
+            <TopHeader title={product.name} onBack={() => router.back()} rightContent={cartRightContent} />
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
@@ -881,6 +901,31 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
         fontWeight: theme.typography.fontWeight.semiBold,
         color: theme.colors.primary[500],
+    },
+    cartButton: {
+        padding: 4,
+    },
+    cartIconWrapper: {
+        position: 'relative',
+        padding: 4,
+    },
+    cartBadge: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        backgroundColor: '#EF4444',
+        borderRadius: 8,
+        minWidth: 16,
+        height: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 3,
+    },
+    cartBadgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 

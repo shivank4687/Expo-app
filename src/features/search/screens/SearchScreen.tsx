@@ -194,13 +194,6 @@ export const SearchScreen: React.FC = () => {
         router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}`);
     }, [router]);
 
-    /**
-     * Handle voice search (placeholder for now)
-     */
-    const handleVoiceSearch = useCallback(() => {
-        // TODO: Implement voice search functionality
-        console.log('Voice search pressed');
-    }, []);
 
     /**
      * Clear search and reset state
@@ -434,7 +427,6 @@ export const SearchScreen: React.FC = () => {
                 setSearchQuery={setSearchQuery}
                 handleSearch={handleSearch}
                 handleClearSearch={handleClearSearch}
-                handleVoiceSearch={handleVoiceSearch}
                 searchInputRef={searchInputRef}
                 autoFocus={true}
             />
