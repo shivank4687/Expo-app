@@ -145,6 +145,21 @@ export interface OrderMessagesResponse {
     unread_count: number;
 }
 
+export interface ItemSupportMessage {
+    id: number;
+    message: string;
+    sender_type: 'customer' | 'supplier' | 'ai';
+    sender_name: string;
+    is_read: boolean;
+    created_at: string;
+}
+
+export interface ItemSupportConversationResponse {
+    conversation_id: number;
+    status: 'open' | 'pending' | 'resolved' | 'closed';
+    messages: ItemSupportMessage[];
+}
+
 /**
  * Orders API endpoints
  */
@@ -299,6 +314,52 @@ export const ordersApi = {
         } catch (error: any) {
             console.error('Mark messages read error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to mark messages as read');
+        }
+    },
+
+    /**
+     * Get or create support conversation for an order item
+     */
+    getItemSupportConversation: async (orderId: number, itemId: number): Promise<{ data: ItemSupportConversationResponse }> => {
+        try {
+            const response = await restApiClient.get<{ data: ItemSupportConversationResponse }>(
+                `/customer/account/orders/${orderId}/items/${itemId}/support`
+            );
+            return response;
+        } catch (error: any) {
+            console.error('Get item support conversation error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to fetch support conversation');
+        }
+    },
+
+    /**
+     * Send message to item support chat (triggers rules or AI)
+     */
+    sendItemSupportMessage: async (orderId: number, itemId: number, message: string): Promise<any> => {
+        try {
+            const response = await restApiClient.post(
+                `/customer/account/orders/${orderId}/items/${itemId}/support/messages`,
+                { message }
+            );
+            return response;
+        } catch (error: any) {
+            console.error('Send item support message error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to send support message');
+        }
+    },
+
+    /**
+     * Mark item support messages as read
+     */
+    markItemSupportRead: async (orderId: number, itemId: number, conversationId: number): Promise<any> => {
+        try {
+            const response = await restApiClient.post(
+                `/customer/account/orders/${orderId}/items/${itemId}/support/mark-read/${conversationId}`
+            );
+            return response;
+        } catch (error: any) {
+            console.error('Mark item support read error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to mark support messages as read');
         }
     },
 

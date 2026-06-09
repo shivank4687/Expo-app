@@ -187,6 +187,19 @@ export const OrderDetailScreen: React.FC = () => {
         }
     }, [order, t, showToast, router]);
 
+    const handleItemSupport = useCallback((item: any) => {
+        if (!order) return;
+        router.push({
+            pathname: '/support/item/[itemId]',
+            params: {
+                itemId: item.id.toString(),
+                orderId: order.id.toString(),
+                productName: item.name,
+                orderIncrement: order.increment_id,
+            },
+        });
+    }, [order, router]);
+
     if (isLoading) {
         return (
             <>
@@ -358,7 +371,11 @@ export const OrderDetailScreen: React.FC = () => {
                                 {t('orders.itemsOrdered', 'Items Ordered')} ({order.items.length})
                             </Text>
                             {order.items.map((item) => (
-                                <OrderItemCard key={item.id} item={item} />
+                                <OrderItemCard
+                                    key={item.id}
+                                    item={item}
+                                    onSupportPress={handleItemSupport}
+                                />
                             ))}
                         </View>
                     )}

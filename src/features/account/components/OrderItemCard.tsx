@@ -15,9 +15,10 @@ import { productsApi } from '@/services/api/products.api';
 
 interface OrderItemCardProps {
     item: OrderItem;
+    onSupportPress?: (item: OrderItem) => void;
 }
 
-export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
+export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item, onSupportPress }) => {
     const { t } = useTranslation();
     const router = useRouter();
     const [fetchedImageUrl, setFetchedImageUrl] = useState<string | null>(null);
@@ -65,88 +66,104 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
     };
 
     return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={handleProductPress}
-            activeOpacity={0.7}
-            disabled={!item.product_id}
-        >
-            <View style={styles.content}>
-                {/* Product Image - Always show container */}
-                <View style={styles.imageContainer}>
-                    {imageUrl ? (
-                        <ProductImage
-                            imageUrl={imageUrl}
-                            style={styles.image}
-                            recyclingKey={`order-item-${item.id}`}
-                            priority="low"
-                        />
-                    ) : (
-                        <View style={styles.placeholderContainer}>
-                            <Ionicons name="cube-outline" size={32} color={theme.colors.gray[400]} />
-                        </View>
-                    )}
-                </View>
-
-                {/* Product Details */}
-                <View style={styles.details}>
-                    {/* Product Name */}
-                    <Text style={styles.productName} numberOfLines={2}>
-                        {item.name}
-                    </Text>
-
-                    {/* Product Attributes */}
-                    {item.additional?.attributes && item.additional.attributes.length > 0 && (
-                        <View style={styles.attributes}>
-                            {item.additional.attributes.map((attr, index) => (
-                                <Text key={index} style={styles.attributeText}>
-                                    <Text style={styles.attributeLabel}>{attr.attribute_name}: </Text>
-                                    {attr.option_label}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {/* SKU and Quantity */}
-                    <View style={styles.infoRow}>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>
-                                {t('orders.sku', 'SKU')}:
-                            </Text>
-                            <Text style={styles.infoValue}>{item.sku}</Text>
-                        </View>
-                        {item.qty_ordered > 0 && (
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoLabel}>
-                                    {t('orders.quantity', 'Qty')}:
-                                </Text>
-                                <Text style={styles.infoValue}>{item.qty_ordered}</Text>
+        <View style={styles.card}>
+            <TouchableOpacity
+                onPress={handleProductPress}
+                activeOpacity={0.7}
+                disabled={!item.product_id}
+                style={styles.productTouchable}
+            >
+                <View style={styles.content}>
+                    {/* Product Image - Always show container */}
+                    <View style={styles.imageContainer}>
+                        {imageUrl ? (
+                            <ProductImage
+                                imageUrl={imageUrl}
+                                style={styles.image}
+                                recyclingKey={`order-item-${item.id}`}
+                                priority="low"
+                            />
+                        ) : (
+                            <View style={styles.placeholderContainer}>
+                                <Ionicons name="cube-outline" size={32} color={theme.colors.gray[400]} />
                             </View>
                         )}
                     </View>
 
-                    {/* Price and Total */}
-                    <View style={styles.priceRow}>
-                        <View style={styles.priceInfo}>
-                            <Text style={styles.priceLabel}>
-                                {t('orders.price', 'Price')}:
-                            </Text>
-                            <Text style={styles.priceValue}>
-                                {item.formatted_price_incl_tax || item.formatted_price}
-                            </Text>
+                    {/* Product Details */}
+                    <View style={styles.details}>
+                        {/* Product Name */}
+                        <Text style={styles.productName} numberOfLines={2}>
+                            {item.name}
+                        </Text>
+
+                        {/* Product Attributes */}
+                        {item.additional?.attributes && item.additional.attributes.length > 0 && (
+                            <View style={styles.attributes}>
+                                {item.additional.attributes.map((attr, index) => (
+                                    <Text key={index} style={styles.attributeText}>
+                                        <Text style={styles.attributeLabel}>{attr.attribute_name}: </Text>
+                                        {attr.option_label}
+                                    </Text>
+                                ))}
+                            </View>
+                        )}
+
+                        {/* SKU and Quantity */}
+                        <View style={styles.infoRow}>
+                            <View style={styles.infoItem}>
+                                <Text style={styles.infoLabel}>
+                                    {t('orders.sku', 'SKU')}:
+                                </Text>
+                                <Text style={styles.infoValue}>{item.sku}</Text>
+                            </View>
+                            {item.qty_ordered > 0 && (
+                                <View style={styles.infoItem}>
+                                    <Text style={styles.infoLabel}>
+                                        {t('orders.quantity', 'Qty')}:
+                                    </Text>
+                                    <Text style={styles.infoValue}>{item.qty_ordered}</Text>
+                                </View>
+                            )}
                         </View>
-                        <View style={styles.totalInfo}>
-                            <Text style={styles.totalLabel}>
-                                {t('orders.subtotal', 'Subtotal')}:
-                            </Text>
-                            <Text style={styles.totalValue}>
-                                {item.formatted_total_incl_tax || item.formatted_total}
-                            </Text>
+
+                        {/* Price and Total */}
+                        <View style={styles.priceRow}>
+                            <View style={styles.priceInfo}>
+                                <Text style={styles.priceLabel}>
+                                    {t('orders.price', 'Price')}:
+                                </Text>
+                                <Text style={styles.priceValue}>
+                                    {item.formatted_price_incl_tax || item.formatted_price}
+                                </Text>
+                            </View>
+                            <View style={styles.totalInfo}>
+                                <Text style={styles.totalLabel}>
+                                    {t('orders.subtotal', 'Subtotal')}:
+                                </Text>
+                                <Text style={styles.totalValue}>
+                                    {item.formatted_total_incl_tax || item.formatted_total}
+                                </Text>
+                            </View>
                         </View>
                     </View>
                 </View>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+
+            {onSupportPress && (
+                <TouchableOpacity
+                    style={styles.supportButton}
+                    onPress={() => onSupportPress(item)}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.supportContent}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={theme.colors.primary[500]} />
+                        <Text style={styles.supportButtonText}>Need help with this item?</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.colors.primary[500]} />
+                </TouchableOpacity>
+            )}
+        </View>
     );
 };
 
@@ -268,6 +285,28 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
+    },
+    supportButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: theme.spacing.sm,
+        paddingTop: theme.spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.gray[200],
+    },
+    supportContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+    },
+    supportButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.medium,
+        color: theme.colors.primary[500],
+    },
+    productTouchable: {
+        width: '100%',
     },
 });
 

@@ -70,6 +70,14 @@ class SocketService {
         this.socket?.off('order:new-message');
     }
 
+    onItemSupportNewMessage(callback: (data: any) => void) {
+        this.socket?.on('support:item:new-message', callback);
+    }
+
+    offItemSupportNewMessage() {
+        this.socket?.off('support:item:new-message');
+    }
+
     // ─── RFQ rooms ───────────────────────────────────────────────────────────────
 
     joinRFQRoom(quoteId: number, customerQuoteId: number) {

@@ -5,7 +5,9 @@ import { Platform } from "react-native";
 
 const getBaseUrl = () => {
   // return "https://artemayor.com";
+  //return "http://192.168.1.18:8000"
   return "http://192.168.31.102:8000"
+
   // return "http://192.168.29.231:8000"
   // return "http://192.0.0.2:8000/";
   // return Platform.OS === "android"
