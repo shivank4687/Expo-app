@@ -3,32 +3,35 @@ import { CustomDrawerContent } from "@/shared/components/CustomDrawerContent";
 import { ShopHeader } from "@/shared/components/ShopHeader";
 import { theme } from "@/theme";
 import { StatusBar } from "expo-status-bar";
+import { OfflineGate } from "@/shared/components/OfflineGate";
 
 export default function DrawerLayout() {
   return (
     <>
       <StatusBar style="light" />
-      <Drawer
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
-        header: ({ options }) => <ShopHeader title={options.title} />,
-        headerShown: true,
-        drawerActiveTintColor: theme.colors.primary[500],
-        drawerInactiveTintColor: theme.colors.text.primary,
-        drawerLabelStyle: {
-          marginLeft: -20,
-          fontSize: theme.typography.fontSize.md,
-        },
-      }}
-    >
-      <Drawer.Screen
-        name="(tabs)"
-        options={{
-          drawerLabel: "Home",
-          title: "Shop",
-        }}
-      />
-    </Drawer>
+      <OfflineGate>
+        <Drawer
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+          screenOptions={{
+            header: ({ options }) => <ShopHeader title={options.title} />,
+            headerShown: true,
+            drawerActiveTintColor: theme.colors.primary[500],
+            drawerInactiveTintColor: theme.colors.text.primary,
+            drawerLabelStyle: {
+              marginLeft: -20,
+              fontSize: theme.typography.fontSize.md,
+            },
+          }}
+        >
+          <Drawer.Screen
+            name="(tabs)"
+            options={{
+              drawerLabel: "Home",
+              title: "Shop",
+            }}
+          />
+        </Drawer>
+      </OfflineGate>
     </>
   );
 }

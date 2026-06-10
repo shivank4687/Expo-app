@@ -12,6 +12,7 @@ import wishlistReducer from './slices/wishlistSlice';
 import notificationReducer from './slices/notificationSlice';
 import customerStatsReducer from './slices/customerStatsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
+import networkReducer from './slices/networkSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -59,6 +60,7 @@ const rootReducer = combineReducers({
     notifications: notificationReducer,
     customerStats: customerStatsReducer,
     recentlyViewed: recentlyViewedReducer,
+    network: networkReducer,
 });
 
 // Persisted reducer
