@@ -373,22 +373,28 @@ export const productsApi = {
 
             // Handle images array (main product)
             if (rootKey === 'images' && Array.isArray(data)) {
-                data.forEach((img: any, index: number) => {
+                let newFileIndex = 0;    // counter for images[files][new_N]
+                let existingIndex = 0;  // counter for images[existing_ids][N]
+
+                data.forEach((img: any) => {
                     const uri = typeof img === 'object' ? img.uri || img.url : img;
                     const id = typeof img === 'object' ? img.id : null;
                     const mimeType = (typeof img === 'object' ? (img.mimeType || img.type) : null) || inferMimeType(uri, 'image/jpeg');
-                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `image_${index}.jpg`);
+                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `image_${newFileIndex}.jpg`);
 
                     if (isLocalMediaUri(uri)) {
-                        // New local file - use a unique string key to avoid clashing with existing IDs
-                        formData.append(`images[files][new_${index}]`, {
+                        // New local file — goes in images[files][new_N] (validated as UploadedFile)
+                        formData.append(`images[files][new_${newFileIndex}]`, {
                             uri: formatFileUri(uri),
                             name: fileName,
                             type: mimeType,
                         } as any);
+                        newFileIndex++;
                     } else if (id) {
-                        // Existing file - send its ID as the key
-                        formData.append(`images[files][${id}]`, id);
+                        // Existing server image — goes in images[existing_ids][N].
+                        // Backend ProductMediaRepository reads this key to preserve the image.
+                        formData.append(`images[existing_ids][${existingIndex}]`, String(id));
+                        existingIndex++;
                     }
                 });
                 return;
@@ -402,35 +408,42 @@ export const productsApi = {
                 const fileName = (typeof data === 'object' ? data.fileName : null) || inferFileName(uri, 'video.mp4');
 
                 if (isLocalMediaUri(uri)) {
+                    // New local video — goes in videos[files][new_0]
                     formData.append('videos[files][new_0]', {
                         uri: formatFileUri(uri),
                         name: fileName,
                         type: mimeType,
                     } as any);
                 } else if (id) {
-                    formData.append('videos[files][0]', id);
+                    // Existing server video — goes in videos[existing_ids][0]
+                    formData.append('videos[existing_ids][0]', String(id));
                 }
                 return;
             }
 
             // Handle variant images
             if (rootKey.includes('variants[') && rootKey.endsWith('][images]') && Array.isArray(data)) {
-                data.forEach((img: any, index: number) => {
+                let newFileIndex = 0;
+                let existingIndex = 0;
+
+                data.forEach((img: any) => {
                     const uri = typeof img === 'object' ? img.uri || img.url : img;
                     const id = typeof img === 'object' ? img.id : null;
                     const mimeType = (typeof img === 'object' ? (img.mimeType || img.type) : null) || inferMimeType(uri, 'image/jpeg');
-                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `variant_image_${index}.jpg`);
+                    const fileName = (typeof img === 'object' ? img.fileName : null) || inferFileName(uri, `variant_image_${newFileIndex}.jpg`);
 
                     if (isLocalMediaUri(uri)) {
-                        // New local file for variant
-                        formData.append(`${rootKey}[files][new_${index}]`, {
+                        // New local file for variant — goes in variants[id][images][files][new_N]
+                        formData.append(`${rootKey}[files][new_${newFileIndex}]`, {
                             uri: formatFileUri(uri),
                             name: fileName,
                             type: mimeType,
                         } as any);
+                        newFileIndex++;
                     } else if (id) {
-                        // Existing file for variant
-                        formData.append(`${rootKey}[files][${id}]`, id);
+                        // Existing server image for variant — goes in variants[id][images][existing_ids][N]
+                        formData.append(`${rootKey}[existing_ids][${existingIndex}]`, String(id));
+                        existingIndex++;
                     }
                 });
                 return;
