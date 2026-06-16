@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useAppSelector } from '@/store/hooks';
 import { supplierTheme } from '@/theme';
 
@@ -20,7 +21,12 @@ interface SupplierOfflineScreenProps {
 
 export function SupplierOfflineScreen({ isChecking, onRetry }: SupplierOfflineScreenProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { supplier } = useAppSelector((state) => state.supplierAuth);
+  const offlineProducts = useAppSelector((state) => state.offlineProducts.products);
+  const pendingCount = offlineProducts.filter(
+    (p) => p.syncStatus === 'pending' || p.syncStatus === 'error'
+  ).length;
 
   // Pulse animation for the icon
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -94,17 +100,27 @@ export function SupplierOfflineScreen({ isChecking, onRetry }: SupplierOfflineSc
           will sync automatically.
         </Text>
 
-        {/* Cached info pills — placeholder for Phase 2 offline features */}
+        {/* Offline product count + manage button */}
         <View style={styles.pillsRow}>
           <View style={styles.infoPill}>
             <Ionicons name="cube-outline" size={14} color="#FCF7EA" />
-            <Text style={styles.infoPillText}>Orders saved</Text>
-          </View>
-          <View style={styles.infoPill}>
-            <Ionicons name="bag-outline" size={14} color="#FCF7EA" />
-            <Text style={styles.infoPillText}>Products cached</Text>
+            <Text style={styles.infoPillText}>
+              {pendingCount > 0
+                ? `${pendingCount} product${pendingCount !== 1 ? 's' : ''} pending sync`
+                : 'No pending products'}
+            </Text>
           </View>
         </View>
+
+        {/* Manage Offline Products CTA */}
+        <TouchableOpacity
+          style={styles.manageOfflineButton}
+          onPress={() => router.push('/offline-products' as any)}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="cube-outline" size={18} color="#00615E" />
+          <Text style={styles.manageOfflineText}>Manage Offline Products</Text>
+        </TouchableOpacity>
 
         {/* Retry button */}
         <TouchableOpacity
@@ -286,5 +302,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     color: 'rgba(255,255,255,0.45)',
+  },
+  manageOfflineButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FCF7EA',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 14,
+    minWidth: 220,
+    minHeight: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 12,
+  },
+  manageOfflineText: {
+    fontSize: 15,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#00615E',
+    letterSpacing: 0.1,
   },
 });

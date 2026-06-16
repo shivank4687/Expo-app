@@ -13,6 +13,7 @@ import notificationReducer from './slices/notificationSlice';
 import customerStatsReducer from './slices/customerStatsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
 import networkReducer from './slices/networkSlice';
+import offlineProductsReducer from './slices/offlineProductsSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -45,7 +46,7 @@ const storage = Platform.OS === 'web'
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms', 'recentlyViewed'], // Persist auth, supplierAuth, core, category, cms, and recentlyViewed
+    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms', 'recentlyViewed', 'offlineProducts'],
 };
 
 // Root reducer
@@ -61,6 +62,7 @@ const rootReducer = combineReducers({
     customerStats: customerStatsReducer,
     recentlyViewed: recentlyViewedReducer,
     network: networkReducer,
+    offlineProducts: offlineProductsReducer,
 });
 
 // Persisted reducer

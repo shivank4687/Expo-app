@@ -23,6 +23,10 @@ export function ProductsScreen() {
     const isFirstFocus = useRef(true);
     const insets = useSafeAreaInsets();
     const { showToast } = useToast();
+    const { products: offlineProducts } = useAppSelector((state) => state.offlineProducts);
+    const offlinePendingCount = offlineProducts.filter(
+        (p) => p.syncStatus === 'pending' || p.syncStatus === 'error' || p.syncStatus === 'syncing'
+    ).length;
 
     // Fetch products from API with infinite scroll
     const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading, quickUpdateProduct, refreshKey } = useProductsList();
@@ -202,6 +206,24 @@ export function ProductsScreen() {
                     <Text style={styles.title}>My Products</Text>
 
                     <View style={styles.viewToggle}>
+                        {/* Sync Icon Button */}
+                        <TouchableOpacity
+                            style={styles.syncButton}
+                            onPress={() => router.push('/offline-products' as any)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons
+                                name="cloud-upload-outline"
+                                size={18}
+                                color={COLORS.black}
+                            />
+                            {offlinePendingCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{offlinePendingCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
                         {/* Grid View Button */}
                         <TouchableOpacity
                             style={[
@@ -384,6 +406,34 @@ const styles = StyleSheet.create({
     },
     toggleButtonActive: {
         backgroundColor: COLORS.primaryLight,
+    },
+    syncButton: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 32,
+        height: 32,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderRadius: 8,
+        position: 'relative',
+    },
+    badge: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
+        backgroundColor: '#DC2626',
+        borderRadius: 9,
+        width: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: 'bold',
+        fontFamily: 'Inter',
     },
 
     // Add Product Button

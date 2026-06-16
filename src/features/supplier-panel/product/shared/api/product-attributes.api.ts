@@ -5,6 +5,10 @@
 
 import { restApiClient } from '@/services/api/client';
 import { API_ENDPOINTS } from '@/config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+
 
 /**
  * Product attribute option interface (for select, multiselect, checkbox types)
@@ -63,6 +67,19 @@ export const productAttributesApi = {
         productType: string = 'simple',
         attributeFamilyId?: number
     ): Promise<ProductAttributesResponse> {
+        const cacheKey = `@product_attributes_${productType}_${attributeFamilyId || 'default'}`;
+
+        // Check connection status first
+        const netState = await NetInfo.fetch();
+        if (netState.isConnected === false) {
+            console.log('[Attributes API] Device is offline, loading attributes from cache');
+            const rawCache = await AsyncStorage.getItem(cacheKey);
+            if (rawCache) {
+                return JSON.parse(rawCache) as ProductAttributesResponse;
+            }
+            throw new Error('Device is offline and no attributes cache is available.');
+        }
+
         try {
             const params = new URLSearchParams();
             params.append('product_type', productType);
@@ -75,9 +92,28 @@ export const productAttributesApi = {
                 `${API_ENDPOINTS.SUPPLIER_PRODUCT_ATTRIBUTES}?${params.toString()}`
             );
 
+            // Save response to cache asynchronously
+            try {
+                await AsyncStorage.setItem(cacheKey, JSON.stringify(response.data));
+            } catch (cacheError) {
+                console.warn('Failed to cache product attributes:', cacheError);
+            }
+
             return response.data;
         } catch (error) {
-            console.error('Error fetching product attributes:', error);
+            console.warn('[Attributes API] Failed to fetch latest attributes, checking cache:', (error as any).message || error);
+
+            // Fallback to cache when offline or request fails
+            try {
+                const rawCache = await AsyncStorage.getItem(cacheKey);
+                if (rawCache) {
+                    console.log('Using cached product attributes for productType:', productType);
+                    return JSON.parse(rawCache) as ProductAttributesResponse;
+                }
+            } catch (cacheError) {
+                console.error('Error reading attributes cache:', cacheError);
+            }
+
             throw error;
         }
     },

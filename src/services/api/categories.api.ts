@@ -1,5 +1,9 @@
 import { API_ENDPOINTS } from '@/config/constants';
 import { restApiClient, shopApiClient } from './client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+
 
 export interface Category {
     id: number;
@@ -124,13 +128,46 @@ export const categoriesApi = {
      * Get categories for supplier app
      */
     async getSupplierCategories(): Promise<{ data: Category[] }> {
+        const cacheKey = '@supplier_categories';
+
+        // Check connection status first
+        const netState = await NetInfo.fetch();
+        if (netState.isConnected === false) {
+            console.log('[Categories API] Device is offline, loading categories from cache');
+            const rawCache = await AsyncStorage.getItem(cacheKey);
+            if (rawCache) {
+                return { data: JSON.parse(rawCache) as Category[] };
+            }
+            throw new Error('Device is offline and no categories cache is available.');
+        }
+
         try {
             const response = await restApiClient.get<any>(API_ENDPOINTS.SUPPLIER_PRODUCT_CATEGORIES);
             const categories = Array.isArray(response) ? response : (response.data || []);
             const mappedCategories = categories.map((cat: any) => this.mapCategory(cat));
+
+            // Cache successfully loaded categories
+            try {
+                await AsyncStorage.setItem(cacheKey, JSON.stringify(mappedCategories));
+            } catch (cacheError) {
+                console.warn('Failed to cache supplier categories:', cacheError);
+            }
+
             return { data: mappedCategories };
         } catch (error) {
-            console.error('[Categories API] Error fetching supplier categories:', error);
+            console.warn('[Categories API] Failed to fetch latest categories, checking cache:', (error as any).message || error);
+
+            // Fallback to cache
+            try {
+                const rawCache = await AsyncStorage.getItem(cacheKey);
+                if (rawCache) {
+                    console.log('Using cached supplier categories');
+                    return { data: JSON.parse(rawCache) as Category[] };
+                }
+            } catch (cacheError) {
+                console.error('Error reading supplier categories cache:', cacheError);
+            }
+
             throw error;
         }
     },

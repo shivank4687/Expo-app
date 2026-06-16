@@ -3,6 +3,8 @@ import { Product, ProductFilters } from '@/features/product/types/product.types'
 import { PaginatedResponse } from '@/types/global.types';
 import { restApiClient } from './client';
 import { formatFileUri, multipartFetch } from './fetchClient';
+import NetInfo from '@react-native-community/netinfo';
+
 
 /**
  * Products API Service
@@ -478,6 +480,13 @@ export const productsApi = {
      * @param productId - Optional product ID to exclude (for edit mode)
      */
     async checkSkuExists(sku: string, productId?: number): Promise<boolean> {
+        // Check connection status
+        const netState = await NetInfo.fetch();
+        if (netState.isConnected === false) {
+            console.log('[Products API] Device is offline, skipping SKU check');
+            return false;
+        }
+
         const params: any = { sku };
         if (productId) {
             params.product_id = productId;

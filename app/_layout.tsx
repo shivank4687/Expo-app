@@ -356,7 +356,26 @@ function AppContent() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="offline-products"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="offline-add-product"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="offline-edit-product"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
+
       <ToastContainer />
     </ToastProvider>
   );

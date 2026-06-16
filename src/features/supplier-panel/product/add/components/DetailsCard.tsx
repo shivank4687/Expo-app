@@ -6,6 +6,7 @@ import { forwardRef, useImperativeHandle } from 'react';
 import { InputModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
 import { productAttributesApi } from '../api/product-attributes.api';
+import { useAppSelector } from '@/store/hooks';
 
 const MANUFACTURING_ORIGINS = [
     'Handmade', 'Semi industrial', 'Industrial', 'Locally Produced', 'Imported'
@@ -28,6 +29,7 @@ export interface DetailsCardProps {
 }
 
 const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, onAttributesRefresh }, ref) => {
+    const isConnected = useAppSelector((state) => state.network.isConnected);
     const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
     const [showOriginModal, setShowOriginModal] = useState(false);
@@ -190,9 +192,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                                 </TouchableOpacity>
                             );
                         })}
-                        <TouchableOpacity style={styles.addButton} onPress={() => setShowOriginModal(true)}>
-                            <Ionicons name="add" size={24} color="#FFFFFF" />
-                        </TouchableOpacity>
+                        {isConnected && (
+                            <TouchableOpacity style={styles.addButton} onPress={() => setShowOriginModal(true)}>
+                                <Ionicons name="add" size={24} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        )}
                     </ScrollView>
 
                     <Text style={styles.tipText}>
@@ -222,9 +226,11 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
                             </TouchableOpacity>
                         );
                     })}
-                    <TouchableOpacity style={styles.addButton} onPress={() => setShowFeatureModal(true)}>
-                        <Ionicons name="add" size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
+                    {isConnected && (
+                        <TouchableOpacity style={styles.addButton} onPress={() => setShowFeatureModal(true)}>
+                            <Ionicons name="add" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                    )}
                 </ScrollView>
 
                 {/* Action Buttons */}

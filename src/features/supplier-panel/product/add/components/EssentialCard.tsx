@@ -13,6 +13,8 @@ import { RichTextEditor, InputModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
 import ImageSelectionModal from './ImageSelectionModal';
 import PhotoRoomEditModal from './PhotoRoomEditModal';
+import { useAppSelector } from '@/store/hooks';
+
 
 // Fallback material types if attributes are not yet loaded
 const DEFAULT_MATERIAL_TYPES = [
@@ -67,6 +69,7 @@ export interface EssentialCardRef {
 }
 
 const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attributes, onNameChange, onAttributesRefresh, onAIGenerateClick, activeTab = 'simple' }, ref) => {
+    const isConnected = useAppSelector((state) => state.network.isConnected);
     const [name, setName] = useState('');
     const [images, setImages] = useState<MediaFile[]>([]);
     const [video, setVideo] = useState<MediaFile | null>(null);
@@ -292,11 +295,24 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
                 setSelectedMaterials(materialIds);
             }
-            if (data.categories !== undefined && Array.isArray(data.categories)) {
-                // Store category IDs to be applied once categories are loaded
-                if (data.categories.length > 0) {
-                    const categoryIds = data.categories.map((c: any) => c.toString());
-                    setPendingCategoryIds(categoryIds);
+            if (data.categories !== undefined) {
+                if (Array.isArray(data.categories)) {
+                    if (data.categories.length > 0) {
+                        const categoryIds = data.categories.map((c: any) => {
+                            return (typeof c === 'object' ? c.id || c : c).toString();
+                        });
+                        setPendingCategoryIds(categoryIds);
+                    }
+                } else if (typeof data.categories === 'object' && data.categories !== null) {
+                    // Offline format: { parent_id, subcategory_id, sub_subcategory_id }
+                    const catObj = data.categories;
+                    const categoryIds: string[] = [];
+                    if (catObj.parent_id) categoryIds.push(catObj.parent_id.toString());
+                    if (catObj.subcategory_id) categoryIds.push(catObj.subcategory_id.toString());
+                    if (catObj.sub_subcategory_id) categoryIds.push(catObj.sub_subcategory_id.toString());
+                    if (categoryIds.length > 0) {
+                        setPendingCategoryIds(categoryIds);
+                    }
                 }
             }
             if (data.images !== undefined && Array.isArray(data.images)) {
@@ -802,9 +818,11 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                             <Text style={styles.materialChipText}>{material}</Text>
                         </TouchableOpacity>
                     )))}
-                    <TouchableOpacity style={styles.addMaterialButton} onPress={handleAddMaterial}>
-                        <Ionicons name="add" size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
+                    {isConnected && (
+                        <TouchableOpacity style={styles.addMaterialButton} onPress={handleAddMaterial}>
+                            <Ionicons name="add" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                    )}
                 </ScrollView>
 
                 {/* AI Suggestion Button */}

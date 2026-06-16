@@ -430,7 +430,19 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                         sku: v.sku,
                         name: v.name,
                         price: v.price?.toString() || '',
-                        stock: v.inventories?.[0]?.qty?.toString() || v.stock?.toString() || '0',
+                        stock: (() => {
+                            if (v.inventories !== undefined) {
+                                if (Array.isArray(v.inventories)) {
+                                    return v.inventories[0]?.qty?.toString() || '0';
+                                } else if (typeof v.inventories === 'object' && v.inventories !== null) {
+                                    const keys = Object.keys(v.inventories);
+                                    if (keys.length > 0) {
+                                        return v.inventories[keys[0]]?.toString() || '0';
+                                    }
+                                }
+                            }
+                            return v.stock?.toString() || '0';
+                        })(),
                         weight: v.weight?.toString() || '0',
                         length: v.length?.toString() || '',
                         width: v.width?.toString() || '',

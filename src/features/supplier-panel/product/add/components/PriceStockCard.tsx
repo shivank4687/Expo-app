@@ -315,16 +315,57 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             if (data.made_to_order_days !== undefined) setFormData(prev => ({ ...prev, productionTime: data.made_to_order_days }));
             if (data.immediate_shipping !== undefined) setFormData(prev => ({ ...prev, immediateShipping: !!data.immediate_shipping }));
             if (data.made_to_order !== undefined) setFormData(prev => ({ ...prev, madeToOrderEnabled: !!data.made_to_order }));
-            if (data.inventory_qty !== undefined) setFormData(prev => ({ ...prev, inventoryQty: data.inventory_qty }));
+            if (data.manage_stock !== undefined) {
+                setFormData(prev => ({ ...prev, manageStock: !!data.manage_stock }));
+            }
+            if (data.inventory_qty !== undefined) {
+                setFormData(prev => ({ ...prev, inventoryQty: data.inventory_qty }));
+            } else if (data.inventories !== undefined) {
+                let parsedInventoryQty = '';
+                if (Array.isArray(data.inventories)) {
+                    parsedInventoryQty = data.inventories[0]?.qty?.toString() || '';
+                } else if (typeof data.inventories === 'object' && data.inventories !== null) {
+                    const keys = Object.keys(data.inventories);
+                    if (keys.length > 0) {
+                        parsedInventoryQty = data.inventories[keys[0]]?.toString() || '';
+                    }
+                }
+                if (parsedInventoryQty !== '') {
+                    setFormData(prev => ({ ...prev, inventoryQty: parsedInventoryQty }));
+                }
+            }
+            // Parse tier prices safely supporting both online (price_tiers) and offline (customer_group_prices)
+            let tiersSource: any = null;
             if (data.price_tiers && Array.isArray(data.price_tiers)) {
-                const tiers: PriceTier[] = data.price_tiers.map((tier: any, index: number) => ({
-                    id: (index + 1).toString(), // UI ID for React
-                    dbId: tier.id, // Preserve database ID
-                    customer_group_id: tier.customer_group_id,
-                    qty: tier.qty?.toString() || '',
-                    price: tier.value?.toString() || ''
-                }));
-                if (tiers.length > 0) setPriceTiers(tiers);
+                tiersSource = data.price_tiers;
+            } else if (data.customer_group_prices) {
+                tiersSource = data.customer_group_prices;
+            }
+
+            if (tiersSource) {
+                let mappedTiers: PriceTier[] = [];
+                if (Array.isArray(tiersSource)) {
+                    mappedTiers = tiersSource.map((tier: any, index: number) => ({
+                        id: (index + 1).toString(),
+                        dbId: tier.id,
+                        customer_group_id: tier.customer_group_id,
+                        qty: tier.qty?.toString() || '',
+                        price: (tier.value !== undefined ? tier.value : tier.price)?.toString() || ''
+                    }));
+                } else if (typeof tiersSource === 'object') {
+                    const keys = Object.keys(tiersSource);
+                    mappedTiers = keys.map((key, index) => {
+                        const tier = tiersSource[key];
+                        return {
+                            id: (index + 1).toString(),
+                            dbId: typeof tier.id === 'number' ? tier.id : undefined,
+                            customer_group_id: tier.customer_group_id,
+                            qty: tier.qty?.toString() || '',
+                            price: (tier.value !== undefined ? tier.value : tier.price)?.toString() || ''
+                        };
+                    });
+                }
+                if (mappedTiers.length > 0) setPriceTiers(mappedTiers);
             }
             if (data.discounts !== undefined) setFormData(prev => ({ ...prev, discounts: data.discounts }));
             if (data.discount_type !== undefined) setDiscountType(data.discount_type);
