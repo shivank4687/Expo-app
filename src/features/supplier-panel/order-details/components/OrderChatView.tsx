@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { getOrderMessages, sendOrderMessage, OrderMessage } from '../api/order-messages.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
-import socketService from '@/services/socket/socketService';
+import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 
 interface OrderChatViewProps {
@@ -50,7 +50,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
         }
 
         // Listen for new messages
-        socketService.onNewMessage((data) => {
+        socketService.onOrderNewMessage((data) => {
             console.log('📨 New supplier message received via Socket.IO:', data);
 
             if (data.message) {
@@ -76,7 +76,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
         // Cleanup on unmount
         return () => {
             socketService.leaveOrderRoom(supplierOrderId, resolvedSupplierId);
-            socketService.offNewMessage();
+            socketService.offOrderNewMessage();
             socketService.offConnect(joinRoom);
         };
     }, [supplierOrderId, resolvedSupplierId]);

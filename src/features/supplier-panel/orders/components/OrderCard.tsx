@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { COLORS } from '../../styles/colors';
 import { Order } from '../api/orders.api';
 
@@ -35,7 +36,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onPress }) => {
                     <Image
                         source={{ uri: order.first_product_image }}
                         style={styles.productImage}
-                        resizeMode="cover"
+                        contentFit="cover"
                     />
                 )}
 

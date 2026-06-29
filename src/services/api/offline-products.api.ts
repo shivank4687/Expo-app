@@ -124,6 +124,25 @@ export const offlineProductsApi = {
             newFileIndex++;
         }
 
+        // Variant images (configurable products only)
+        // Key format: variants[variantKey][images][files][new_N]
+        // The backend mapVariantIds() remaps variant_0 → real DB ID before update,
+        // so these keys must use the same variantKey that formPayload.variants uses.
+        if (product.localVariantImagePaths) {
+            for (const [variantKey, paths] of Object.entries(product.localVariantImagePaths)) {
+                for (let i = 0; i < paths.length; i++) {
+                    const path = paths[i];
+                    const mimeType = inferMimeType(path, 'image/jpeg');
+                    const fileName = inferFileName(path, `variant_image_${i}.jpg`);
+                    formData.append(`variants[${variantKey}][images][files][new_${i}]`, {
+                        uri: formatFileUri(path),
+                        name: fileName,
+                        type: mimeType,
+                    } as any);
+                }
+            }
+        }
+
         // Video (if any)
         if (product.localVideoPath) {
             const mimeType = inferMimeType(product.localVideoPath, 'video/mp4');

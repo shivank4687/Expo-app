@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, Text, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { ordersApi, OrderMessage, OrderMessageSupplier } from '@/services/api/orders.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
-import socketService from '@/services/socket/socketService';
+import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 import { COLORS } from '@/features/supplier-panel/styles/colors';
 
@@ -52,7 +52,7 @@ export const OrderChatView = ({ orderId }: OrderChatViewProps) => {
         socketService.joinRoom(`order:${supplierOrderId}:${activeSupplierId}`);
 
         // Listen for new messages
-        socketService.onNewMessage((data) => {
+        socketService.onOrderNewMessage((data) => {
             console.log('📨 New customer message received via Socket.IO:', data);
 
             if (data.message) {
@@ -81,7 +81,7 @@ export const OrderChatView = ({ orderId }: OrderChatViewProps) => {
             if (activeSupplierData) {
                 socketService.leaveRoom(`order:${supplierOrderId}:${activeSupplierId}`);
             }
-            socketService.offNewMessage();
+            socketService.offOrderNewMessage();
         };
     }, [orderId, customerId, activeSupplierId, suppliers]);
 

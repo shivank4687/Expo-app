@@ -614,5 +614,15 @@
     "emailInvalid": "Please enter a valid email address",
     "subscribeSuccess": "Thank you for subscribing!",
     "subscribeFailed": "Failed to subscribe. Please try again."
+  },
+  "supplierPanel": {
+    "newProduct": "New Product",
+    "saveDraft": "Save Draft",
+    "publish": "Publish",
+    "generateAiContent": "Generate AI Content",
+    "aiContentPlaceholder": "Enter product name or brief description...",
+    "generate": "Generate",
+    "essential": "Essential",
+    "name": "Name"
   }
 }

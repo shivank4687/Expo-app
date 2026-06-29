@@ -60,6 +60,7 @@ export interface AuthResponse {
     token?: string;
     user?: User;
     expires_in?: number;
+    refresh_token?: string;
     requires_otp_verification?: boolean;
     verification_token?: string;
     type?: 'customer' | 'supplier' | 'login_2fa';
@@ -105,6 +106,8 @@ export interface SignupResponse {
     data?: User;
     token?: string;
     user?: User;
+    refresh_token?: string;
+    expires_in?: number;
 }
 
 export interface AuthContextType {

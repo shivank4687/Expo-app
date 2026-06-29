@@ -613,5 +613,15 @@
     "emailInvalid": "Por favor ingrese una dirección de correo electrónico válida",
     "subscribeSuccess": "¡Gracias por suscribirte!",
     "subscribeFailed": "No se pudo suscribir. Por favor, inténtelo de nuevo."
+  },
+  "supplierPanel": {
+    "newProduct": "Nuevo Producto",
+    "saveDraft": "Guardar Borrador",
+    "publish": "Publicar",
+    "generateAiContent": "Generar Contenido IA",
+    "aiContentPlaceholder": "Ingrese el nombre del producto o una breve descripción...",
+    "generate": "Generar",
+    "essential": "Esencial",
+    "name": "Nombre"
   }
 }

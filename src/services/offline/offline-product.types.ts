@@ -37,6 +37,12 @@ export interface OfflineProduct {
     /** Unique local identifier, e.g. "off_1718180000_abc123" */
     localId: string;
 
+    /**
+     * Server ID of the supplier who created this draft.
+     * Used to filter products when a different supplier logs in on the same device.
+     */
+    supplierId: number;
+
     syncStatus: SyncStatus;
 
     /** Only 'create' is supported. */
@@ -58,8 +64,15 @@ export interface OfflineProduct {
     /** file:// paths inside documentDirectory/offline_products/ */
     localImagePaths: string[];
 
-    /** file:// path inside documentDirectory/offline_products/, or null */
+    /** file:// paths inside documentDirectory/offline_products/, or null */
     localVideoPath: string | null;
+
+    /**
+     * Variant images copied to documentDirectory, keyed by variant key.
+     * e.g. { "variant_0": ["file:///…/variant_variant_0_123_0.jpg"] }
+     * Only populated for configurable products.
+     */
+    localVariantImagePaths: Record<string, string[]>;
 
     /** Populated when syncStatus === 'error' */
     errorDetails: SyncError | null;

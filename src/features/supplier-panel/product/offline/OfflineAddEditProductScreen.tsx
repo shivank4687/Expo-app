@@ -40,10 +40,11 @@ import {
     getOfflineProduct,
     generateLocalId,
 } from '@/services/offline/offline-storage';
-import { copyMediaToDocuments, copyVideoToDocuments, deleteLocalMedia } from '@/services/offline/offline-media';
+import { copyMediaToDocuments, copyVideoToDocuments, copyVariantImagesToDocuments, deleteLocalMedia } from '@/services/offline/offline-media';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { upsertOfflineProduct } from '@/store/slices/offlineProductsSlice';
 import type { OfflineProduct } from '@/services/offline/offline-product.types';
+import { SyncErrorDetails } from './components/SyncErrorDetails';
 import { StyleSheet } from 'react-native';
 
 export default function OfflineAddEditProductScreen() {
@@ -51,6 +52,8 @@ export default function OfflineAddEditProductScreen() {
     const dispatch = useAppDispatch();
     const params = useLocalSearchParams();
     const isConnected = useAppSelector((state) => state.network.isConnected);
+    // Supplier ID — stamped on every offline draft for cross-account isolation
+    const supplierId = useAppSelector((state) => state.supplierAuth.supplier?.id);
 
     // When editing an existing offline product, localId is passed as a param
     const existingLocalId = Array.isArray(params.localId)
@@ -59,12 +62,28 @@ export default function OfflineAddEditProductScreen() {
 
     const isEditing = !!existingLocalId;
 
+    // Live Redux record for this product — reflects sync state changes in real-time
+    // (e.g. if sync errors while the screen is open, the banner updates immediately)
+    const liveProduct = useAppSelector((state) =>
+        existingLocalId
+            ? (state.offlineProducts.products.find((p) => p.localId === existingLocalId) ?? null)
+            : null
+    );
+
+    // The error to display is computed after state declarations (see below).
+
     const [activeTab, setActiveTab] = useState<ProductType>('simple');
     const [resetKey, setResetKey] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingExisting, setIsLoadingExisting] = useState(isEditing);
     const [productName, setProductName] = useState('');
     const [existingProduct, setExistingProduct] = useState<OfflineProduct | null>(null);
+
+    // The error to display: prefer live Redux state (real-time), fall back to
+    // AsyncStorage-loaded existingProduct state (populated on mount).
+    const displayError =
+        (liveProduct?.syncStatus === 'error' ? liveProduct.errorDetails : null) ??
+        (existingProduct?.syncStatus === 'error' ? existingProduct.errorDetails : null);
 
     const { showToast } = useToast();
 
@@ -147,8 +166,24 @@ export default function OfflineAddEditProductScreen() {
             detailsCardRef.current?.updateFields?.(payload);
             specificationsCardRef.current?.updateFields?.(payload);
             settingsCardRef.current?.updateFields?.(payload);
+
+            // After fields are populated, highlight any server-side sync field errors
+            // so the supplier immediately sees which field caused the sync failure.
+            // setTimeout ensures this runs after React commits the updateFields
+            // state batch (which calls clearError('sku') internally).
+            if (existingProduct.syncStatus === 'error' && existingProduct.errorDetails?.fieldErrors) {
+                const fieldErrors = existingProduct.errorDetails.fieldErrors;
+                setTimeout(() => {
+                    if (existingProduct.productType === 'simple') {
+                        priceStockCardRef.current?.highlightSyncErrors?.(fieldErrors);
+                    } else {
+                        priceStockVariantsCardRef.current?.highlightSyncErrors?.(fieldErrors);
+                    }
+                }, 100);
+            }
         }
     }, [isLoadingExisting, existingProduct]);
+
 
     const handleTabSwitch = (tab: ProductType) => {
         if (tab === activeTab || isSaving) return;
@@ -201,17 +236,36 @@ export default function OfflineAddEditProductScreen() {
             delete mergedPayload.images;
             delete mergedPayload.video;
 
-            // Copy media to permanent storage
+            // Copy master media to permanent storage
             const [localImagePaths, localVideoPath] = await Promise.all([
                 copyMediaToDocuments(imageItems),
                 copyVideoToDocuments(videoItem),
             ]);
 
+            // Configurable: copy variant images to permanent storage and
+            // replace the raw picker-cache URIs in the payload with permanent paths.
+            let localVariantImagePaths: Record<string, string[]> = {};
+            if (activeTab === 'configurable' && mergedPayload.variants) {
+                localVariantImagePaths = await copyVariantImagesToDocuments(mergedPayload.variants);
+                // Patch formPayload so variant images reference permanent paths
+                Object.entries(localVariantImagePaths).forEach(([variantKey, paths]) => {
+                    if (mergedPayload.variants?.[variantKey]) {
+                        mergedPayload.variants[variantKey].images = paths.map((p: string) => ({ uri: p }));
+                    }
+                });
+            }
+
             const now = new Date().toISOString();
             const localId = existingLocalId ?? generateLocalId();
 
+            if (!supplierId) {
+                showToast({ message: 'Unable to save: supplier session not found.', type: 'error' });
+                return;
+            }
+
             const offlineProduct: OfflineProduct = {
                 localId,
+                supplierId,
                 syncStatus: 'pending',
                 operation: 'create',
                 productType: activeTab,
@@ -219,6 +273,7 @@ export default function OfflineAddEditProductScreen() {
                 formPayload: mergedPayload,
                 localImagePaths,
                 localVideoPath,
+                localVariantImagePaths,
                 errorDetails: null,
                 retryCount: 0,
                 attributeFamilyId: attributeFamilyId || 1,
@@ -231,9 +286,11 @@ export default function OfflineAddEditProductScreen() {
                 // Delete old media before updating with new ones to prevent leaks
                 const existing = await getOfflineProduct(existingLocalId!);
                 if (existing) {
+                    const oldVariantPaths = Object.values(existing.localVariantImagePaths ?? {}).flat();
                     await deleteLocalMedia([
                         ...existing.localImagePaths,
                         ...(existing.localVideoPath ? [existing.localVideoPath] : []),
+                        ...oldVariantPaths,
                     ]);
                 }
                 // Preserve original createdAt
@@ -296,15 +353,24 @@ export default function OfflineAddEditProductScreen() {
         }
 
         return (
-            <ProductCardSet
-                refs={cardRefs}
-                attributes={attributes}
-                productName={productName}
-                productType={activeTab}
-                resetKey={resetKey}
-                onNameChange={setProductName}
-                onAttributesRefresh={fetchAttributes}
-            />
+            <>
+                {/* Sync error banner — shown when editing a product that failed to sync */}
+                {isEditing && displayError && (
+                    <View style={localStyles.errorBannerWrapper}>
+                        <SyncErrorDetails error={displayError} />
+                    </View>
+                )}
+
+                <ProductCardSet
+                    refs={cardRefs}
+                    attributes={attributes}
+                    productName={productName}
+                    productType={activeTab}
+                    resetKey={resetKey}
+                    onNameChange={setProductName}
+                    onAttributesRefresh={fetchAttributes}
+                />
+            </>
         );
     };
 
@@ -355,6 +421,11 @@ export default function OfflineAddEditProductScreen() {
 }
 
 const localStyles = StyleSheet.create({
+    errorBannerWrapper: {
+        marginHorizontal: 16,
+        marginTop: 12,
+        marginBottom: 4,
+    },
     footerRow: {
         flexDirection: 'row',
         alignItems: 'center',

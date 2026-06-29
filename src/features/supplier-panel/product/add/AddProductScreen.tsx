@@ -18,8 +18,11 @@ import { useProductAttributes } from '../shared/hooks/useProductAttributes';
 import styles from '../shared/styles/product-form.styles';
 import type { ProductType } from '../shared/types';
 
+import { useTranslation } from 'react-i18next';
+
 export default function AddProductScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<ProductType>('simple');
     const [resetKey, setResetKey] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,7 +150,7 @@ export default function AddProductScreen() {
                 onPress={() => handleSubmit(0)}
                 disabled={isSubmitting}
             >
-                <Text style={styles.draftButtonText}>Save Draft</Text>
+                <Text style={styles.draftButtonText}>{t('supplierPanel.saveDraft')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -158,7 +161,7 @@ export default function AddProductScreen() {
                 {isSubmitting ? (
                     <ActivityIndicator size="small" color="#F5F5F5" />
                 ) : (
-                    <Text style={styles.publishButtonText}>Publish</Text>
+                    <Text style={styles.publishButtonText}>{t('supplierPanel.publish')}</Text>
                 )}
             </TouchableOpacity>
         </View>
@@ -167,7 +170,7 @@ export default function AddProductScreen() {
     return (
         <>
             <ProductFormLayout
-                title="New Product"
+                title={t('supplierPanel.newProduct')}
                 onBack={() => router.back()}
                 isSubmitting={isSubmitting}
                 tabs={
@@ -189,9 +192,9 @@ export default function AddProductScreen() {
                 visible={showAIModal}
                 onClose={() => setShowAIModal(false)}
                 onSubmit={handleAIGeneration}
-                title="Generate AI Content"
-                placeholder="Enter product name or brief description..."
-                submitButtonText="Generate"
+                title={t('supplierPanel.generateAiContent')}
+                placeholder={t('supplierPanel.aiContentPlaceholder')}
+                submitButtonText={t('supplierPanel.generate')}
                 isLoading={isGeneratingAI}
             />
         </>

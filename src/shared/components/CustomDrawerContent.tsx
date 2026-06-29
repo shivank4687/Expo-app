@@ -54,6 +54,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                     text: t('auth.logout', 'Logout'),
                     style: 'destructive',
                     onPress: () => {
+                        props.navigation.closeDrawer();
                         dispatch(logoutThunk());
                     },
                 },

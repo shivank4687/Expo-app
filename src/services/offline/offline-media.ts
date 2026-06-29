@@ -98,6 +98,56 @@ export async function copyVideoToDocuments(videoItem: any): Promise<string | nul
 }
 
 /**
+ * Copy all variant images from the formPayload.variants object to documentDirectory.
+ *
+ * Accepts the `variants` value from PriceStockVariantsCard.getData():
+ *   { "variant_0": { images: [{ uri, id }], sku, price, ... }, ... }
+ *
+ * Returns a map of variantKey → array of permanent local file:// paths.
+ * Variants with no local images produce no entry in the result map.
+ *
+ * Call this during Save Offline, then replace the raw URIs in formPayload
+ * with the returned permanent paths so they survive between app sessions.
+ */
+export async function copyVariantImagesToDocuments(
+    variants: Record<string, any>
+): Promise<Record<string, string[]>> {
+    const result: Record<string, string[]> = {};
+
+    if (!variants || Object.keys(variants).length === 0) return result;
+
+    await ensureDir();
+
+    const timestamp = Date.now();
+
+    for (const [variantKey, variant] of Object.entries(variants)) {
+        const images: any[] = variant?.images ?? [];
+        const paths: string[] = [];
+
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            const uri = typeof img === 'object' ? (img.uri || img.url || '') : (img || '');
+            if (!uri || !isLocalUri(uri)) continue;
+
+            try {
+                const ext = uri.split('?')[0].split('.').pop() || 'jpg';
+                const dest = `${DEST_DIR}variant_${variantKey}_${timestamp}_${i}.${ext}`;
+                await FileSystem.copyAsync({ from: uri, to: dest });
+                paths.push(dest);
+            } catch (err) {
+                console.warn(`[offline-media] Failed to copy variant image ${variantKey}[${i}]:`, err);
+            }
+        }
+
+        if (paths.length > 0) {
+            result[variantKey] = paths;
+        }
+    }
+
+    return result;
+}
+
+/**
  * Delete a set of locally-copied media files.
  * Used to clean up when a synced product is removed from the offline store.
  */

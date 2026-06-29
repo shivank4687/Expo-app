@@ -9,7 +9,7 @@ import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -45,7 +45,7 @@ export function ProductsScreen() {
     );
 
     // Handle product status toggle
-    const handleToggleStatus = async (productId: number, currentStatus: 'active' | 'inactive') => {
+    const handleToggleStatus = useCallback(async (productId: number, currentStatus: 'active' | 'inactive') => {
         const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
         const result = await quickUpdateProduct(productId, { status: newStatus });
 
@@ -62,10 +62,10 @@ export function ProductsScreen() {
                 duration: 3000,
             });
         }
-    };
+    }, [quickUpdateProduct, showToast]);
 
     // Handle product duplication
-    const handleDuplicate = async (productId: number) => {
+    const handleDuplicate = useCallback(async (productId: number) => {
         try {
             setDuplicatingProductId(productId);
             showToast({
@@ -106,10 +106,10 @@ export function ProductsScreen() {
         } finally {
             setDuplicatingProductId(null);
         }
-    };
+    }, [router, showToast]);
 
     // Handle quick updates (price and stock) from ProductCard
-    const handleQuickUpdate = async (id: number, price: string, stock: number) => {
+    const handleQuickUpdate = useCallback(async (id: number, price: string, stock: number) => {
         const result = await quickUpdateProduct(id, {
             price: parseFloat(price),
             stock: stock,
@@ -128,7 +128,7 @@ export function ProductsScreen() {
                 duration: 3000,
             });
         }
-    };
+    }, [quickUpdateProduct, showToast]);
 
     const formatPriceDisplay = (value: number | string) => {
         if (value === null || value === undefined || value === '') {
@@ -147,6 +147,44 @@ export function ProductsScreen() {
 
         return `$${normalized}`;
     };
+
+    const renderProductItem = useCallback(({ item }: { item: Product }) => {
+        if (viewMode === 'grid') {
+            return (
+                <View style={styles.productItem}>
+                    <ProductCard
+                        key={`${item.id}-${refreshKey}`}
+                        id={item.id}
+                        name={item.name}
+                        price={formatPriceDisplay(item.price)}
+                        status={item.status}
+                        stock={item.stock}
+                        imageUrl={item.image_url}
+                        type={item.type}
+                        onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
+                        onToggleStatus={handleToggleStatus}
+                        onSave={handleQuickUpdate}
+                        onDuplicate={handleDuplicate}
+                    />
+                </View>
+            );
+        } else {
+            return (
+                <ProductListCard
+                    id={item.id}
+                    name={item.name}
+                    price={formatPriceDisplay(item.price)}
+                    status={item.status}
+                    stock={item.stock}
+                    imageUrl={item.image_url}
+                    type={item.type}
+                    onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
+                    onToggleStatus={handleToggleStatus}
+                    onDuplicate={handleDuplicate}
+                />
+            );
+        }
+    }, [viewMode, refreshKey, router, handleToggleStatus, handleQuickUpdate, handleDuplicate]);
 
     if (!isAuthenticated || !supplier) {
         return (
@@ -294,43 +332,7 @@ export function ProductsScreen() {
                             tintColor={COLORS.primary}
                         />
                     }
-                    renderItem={({ item }: { item: Product }) => {
-                        if (viewMode === 'grid') {
-                            return (
-                                <View style={styles.productItem}>
-                                    <ProductCard
-                                        key={`${item.id}-${refreshKey}`}
-                                        id={item.id}
-                                        name={item.name}
-                                        price={formatPriceDisplay(item.price)}
-                                        status={item.status}
-                                        stock={item.stock}
-                                        imageUrl={item.image_url}
-                                        type={item.type}
-                                        onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
-                                        onToggleStatus={handleToggleStatus}
-                                        onSave={handleQuickUpdate}
-                                        onDuplicate={handleDuplicate}
-                                    />
-                                </View>
-                            );
-                        } else {
-                            return (
-                                <ProductListCard
-                                    id={item.id}
-                                    name={item.name}
-                                    price={formatPriceDisplay(item.price)}
-                                    status={item.status}
-                                    stock={item.stock}
-                                    imageUrl={item.image_url}
-                                    type={item.type}
-                                    onEdit={() => router.push(`/(supplier-drawer)/edit-product?id=${item.id}`)}
-                                    onToggleStatus={handleToggleStatus}
-                                    onDuplicate={handleDuplicate}
-                                />
-                            );
-                        }
-                    }}
+                    renderItem={renderProductItem}
                 />
             )}
         </View>

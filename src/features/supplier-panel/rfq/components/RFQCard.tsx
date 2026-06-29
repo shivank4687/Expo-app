@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { QuoteItem } from '../api/rfq.api';
 
@@ -51,7 +52,7 @@ export function RFQCard({ item }: RFQCardProps) {
                     <Image
                         source={{ uri: item.image_url }}
                         style={styles.image}
-                        resizeMode="cover"
+                        contentFit="cover"
                     />
                 ) : (
                     <View style={styles.imagePlaceholder}>

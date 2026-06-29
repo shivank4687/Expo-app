@@ -27,6 +27,7 @@ export const SupplierDrawerContent = (props: DrawerContentComponentProps) => {
                     text: t('auth.logout', 'Logout'),
                     style: 'destructive',
                     onPress: async () => {
+                        props.navigation.closeDrawer();
                         await dispatch(supplierLogoutThunk());
                         // Navigate to shop home screen after logout
                         router.replace('/(drawer)/(tabs)');

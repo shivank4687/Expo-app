@@ -12,7 +12,7 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { getAllOfflineProducts } from '@/services/offline/offline-storage';
+import { getOfflineProductsBySupplier } from '@/services/offline/offline-storage';
 import type { OfflineProduct } from '@/services/offline/offline-product.types';
 
 interface OfflineProductsState {
@@ -34,13 +34,13 @@ const initialState: OfflineProductsState = {
 };
 
 /**
- * Load all offline products from AsyncStorage into Redux.
- * Call this once on app start.
+ * Load all offline products from AsyncStorage into Redux,
+ * filtered to the given supplier. Call this after login.
  */
 export const loadOfflineProducts = createAsyncThunk(
     'offlineProducts/load',
-    async () => {
-        return getAllOfflineProducts();
+    async (supplierId: number) => {
+        return getOfflineProductsBySupplier(supplierId);
     }
 );
 
@@ -77,6 +77,33 @@ const offlineProductsSlice = createSlice({
                 state.lastSyncAt = new Date().toISOString();
             }
         },
+
+        /**
+         * Reset stuck sync state after an app crash or kill mid-sync.
+         * - Forces isSyncing back to false
+         * - Flips any per-product 'syncing' → 'pending' so they are retried
+         *
+         * Dispatch this once on app startup (useOfflineSync mount effect).
+         */
+        resetSyncing(state) {
+            state.isSyncing = false;
+            state.products = state.products.map((p) =>
+                p.syncStatus === 'syncing' ? { ...p, syncStatus: 'pending' as const } : p
+            );
+        },
+
+        /**
+         * Clear the in-memory product list without touching AsyncStorage.
+         * Dispatch on logout so a different supplier logging in starts clean.
+         * The original supplier's drafts remain in AsyncStorage and are
+         * re-loaded (filtered) when they log back in.
+         */
+        clearOfflineProducts(state) {
+            state.products = [];
+            state.isLoaded = false;
+            state.isSyncing = false;
+            state.lastSyncAt = null;
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(loadOfflineProducts.fulfilled, (state, action) => {
@@ -90,6 +117,8 @@ export const {
     upsertOfflineProduct,
     removeOfflineProduct,
     setSyncing,
+    resetSyncing,
+    clearOfflineProducts,
 } = offlineProductsSlice.actions;
 
 export default offlineProductsSlice.reducer;

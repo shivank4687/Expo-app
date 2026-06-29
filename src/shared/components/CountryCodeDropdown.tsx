@@ -11,6 +11,7 @@ import {
     Platform,
     KeyboardAvoidingView,
     Dimensions,
+    Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
@@ -35,6 +36,23 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
     const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentCountry, setCurrentCountry] = useState<Country | null>(selectedCountry || lastSelectedCountry || null);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            () => setIsKeyboardVisible(true)
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => setIsKeyboardVisible(false)
+        );
+
+        return () => {
+            keyboardDidShowListener.remove();
+            keyboardDidHideListener.remove();
+        };
+    }, []);
 
     useEffect(() => {
         dispatch(fetchCountriesThunk());
@@ -157,7 +175,13 @@ export const CountryCodeDropdown: React.FC<CountryCodeDropdownProps> = ({
                         activeOpacity={1}
                         onPress={() => setIsVisible(false)}
                     >
-                        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+                        <View 
+                            style={[
+                                styles.modalContent,
+                                isKeyboardVisible && { marginTop: Platform.OS === 'ios' ? 60 : 40 }
+                            ]} 
+                            onStartShouldSetResponder={() => true}
+                        >
                             <View style={styles.modalHeader}>
                                 <Text style={styles.modalTitle}>Select Country</Text>
                                 <TouchableOpacity

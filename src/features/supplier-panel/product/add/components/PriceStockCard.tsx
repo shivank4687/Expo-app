@@ -41,6 +41,12 @@ export interface PriceStockCardRef {
     getData: () => any;
     validate: () => boolean;
     updateFields: (data: any) => void;
+    /**
+     * Highlight server-side sync errors on specific fields.
+     * Call this after updateFields() so the errors are not cleared.
+     * @param fieldErrors - Record<fieldName, string[]> from SyncError.fieldErrors
+     */
+    highlightSyncErrors: (fieldErrors: Record<string, string[]>) => void;
 }
 
 const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ productName, attributes }, ref) => {
@@ -369,7 +375,23 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             }
             if (data.discounts !== undefined) setFormData(prev => ({ ...prev, discounts: data.discounts }));
             if (data.discount_type !== undefined) setDiscountType(data.discount_type);
-        }
+        },
+        /**
+         * Apply server-side sync validation errors directly to form fields.
+         * Re-uses the existing useFormValidation error state so the same
+         * red-border + error-text UI appears as with normal validation.
+         * The errors auto-clear when the supplier edits the field.
+         */
+        highlightSyncErrors: (fieldErrors: Record<string, string[]>) => {
+            if (fieldErrors.sku?.length) {
+                setError('sku', fieldErrors.sku[0]);
+                // Also mark skuExists so validate() blocks submission
+                setSkuExists(true);
+            }
+            if (fieldErrors.price?.length) {
+                setError('price', fieldErrors.price[0]);
+            }
+        },
     }));
 
     return (

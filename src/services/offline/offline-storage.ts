@@ -71,6 +71,17 @@ export async function getAllOfflineProducts(): Promise<OfflineProduct[]> {
 }
 
 /**
+ * Retrieve all offline products for a specific supplier.
+ * Products without a supplierId (legacy records) are excluded.
+ */
+export async function getOfflineProductsBySupplier(
+    supplierId: number
+): Promise<OfflineProduct[]> {
+    const all = await getAllOfflineProducts();
+    return all.filter((p) => p.supplierId === supplierId);
+}
+
+/**
  * Apply a partial update to an existing offline product.
  * Always updates the `updatedAt` timestamp.
  */
@@ -100,14 +111,32 @@ export async function deleteOfflineProduct(localId: string): Promise<void> {
 /**
  * Returns products that should be included in the next sync run:
  *  - status is 'pending' OR 'error' with retryCount < 3
+ *  - If supplierId is provided, only returns that supplier's products.
  */
-export async function getPendingProducts(): Promise<OfflineProduct[]> {
-    const all = await getAllOfflineProducts();
+export async function getPendingProducts(supplierId?: number): Promise<OfflineProduct[]> {
+    const all = supplierId
+        ? await getOfflineProductsBySupplier(supplierId)
+        : await getAllOfflineProducts();
     return all.filter(
         (p) =>
             p.syncStatus === 'pending' ||
             (p.syncStatus === 'error' && p.retryCount < 3)
     );
+}
+
+/**
+ * Recover products left in 'syncing' state by a previous app crash or kill.
+ * Resets them to 'pending' so they are picked up on the next sync run.
+ *
+ * Call this once on app startup, before the first sync attempt.
+ */
+export async function recoverStuckSyncingProducts(): Promise<void> {
+    const all = await getAllOfflineProducts();
+    for (const product of all) {
+        if (product.syncStatus === 'syncing') {
+            await updateOfflineProduct(product.localId, { syncStatus: 'pending' });
+        }
+    }
 }
 
 /**

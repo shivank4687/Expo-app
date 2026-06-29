@@ -31,13 +31,15 @@ export const checkSupplierAuthThunk = createAsyncThunk(
         try {
             const token = await secureStorage.getItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN);
             const supplierData = await secureStorage.getItem(STORAGE_KEYS.SUPPLIER_DATA);
+            const expiresAtStr = await secureStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
+            const expiresAt = expiresAtStr ? Number(expiresAtStr) : null;
 
             if (token && supplierData && supplierData !== 'undefined' && supplierData !== 'null') {
                 const parsedSupplier = JSON.parse(supplierData);
                 if (parsedSupplier && parsedSupplier.id) {
                     console.log('✅ Restored supplier from storage:', parsedSupplier.name);
                     // Set global token for API client
-                    setGlobalToken(token);
+                    setGlobalToken(token, expiresAt);
                     return { supplier: parsedSupplier, token };
                 }
             }
@@ -79,12 +81,19 @@ export const supplierLoginThunk = createAsyncThunk(
             if (response.token) {
                 await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, response.token);
             }
+            if (response.refresh_token) {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_REFRESH_TOKEN, response.refresh_token);
+            }
+            if (response.expires_in) {
+                const expiresAt = Date.now() + response.expires_in * 1000;
+                await secureStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+                setGlobalToken(response.token, expiresAt);
+            } else if (response.token) {
+                setGlobalToken(response.token, null);
+            }
             if (response.data) {
                 await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(response.data));
             }
-
-            // Set global token for API client
-            setGlobalToken(response.token);
 
             // Register device token for supplier push notifications
             try {
@@ -151,12 +160,12 @@ export const verifySupplierPhoneOtpThunk = createAsyncThunk(
     async (data: { verification_token: string; otp: string }, { rejectWithValue }) => {
         try {
             const response = await supplierAuthApi.verifyPhoneOtp(data);
-            
+
             // Store updated supplier data
             if (response.data) {
                 await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(response.data));
             }
-            
+
             return response;
         } catch (error: any) {
             return rejectWithValue(error?.response?.data?.message || 'OTP verification failed');
@@ -170,7 +179,7 @@ export const verifySupplierOtpThunk = createAsyncThunk(
     async (data: OtpVerificationRequest, { rejectWithValue }) => {
         try {
             const response = await authApi.verifyOtp(data, 'supplier');
-            
+
             // Handle nested response structure
             let supplier = response.user;
             let token = response.token;
@@ -187,6 +196,16 @@ export const verifySupplierOtpThunk = createAsyncThunk(
             // Store in secure storage
             if (token && typeof token === 'string') {
                 await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, token);
+            }
+            if (response.refresh_token) {
+                await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_REFRESH_TOKEN, response.refresh_token);
+            }
+            if (response.expires_in) {
+                const expiresAt = Date.now() + response.expires_in * 1000;
+                await secureStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+                setGlobalToken(token || null, expiresAt);
+            } else if (token) {
+                setGlobalToken(token || null, null);
             }
 
             if (supplier) {
@@ -229,16 +248,16 @@ export const updateSupplierSecurityThunk = createAsyncThunk(
     async (data: { two_factor_enabled: boolean }, { rejectWithValue, getState }) => {
         try {
             const response = await supplierAuthApi.updateSecuritySettings(data);
-            
+
             // Get current state to update storage manually
             const state = getState() as { supplierAuth: SupplierAuthState };
             const currentSupplier = state.supplierAuth.supplier;
-            
+
             if (currentSupplier) {
                 const updatedSupplier = { ...currentSupplier, two_factor_enabled: data.two_factor_enabled };
                 await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(updatedSupplier));
             }
-            
+
             return { message: response.message, data };
         } catch (error: any) {
             console.error('Update security thunk error:', error);
@@ -264,6 +283,9 @@ const supplierAuthSlice = createSlice({
             if (state.supplier) {
                 state.supplier.email = action.payload;
             }
+        },
+        updateSupplierToken: (state, action: PayloadAction<{ token: string }>) => {
+            state.token = action.payload.token;
         },
     },
     extraReducers: (builder) => {
@@ -297,11 +319,11 @@ const supplierAuthSlice = createSlice({
                 state.error = null;
 
                 if (!(action.payload as any).requiresOtp) {
-                    state.supplier = action.payload.supplier;
-                    state.token = action.payload.token;
+                    state.supplier = action.payload.supplier || null;
+                    state.token = action.payload.token || null;
                     state.isAuthenticated = true;
                     // Set global token for API client
-                    setGlobalToken(action.payload.token);
+                    setGlobalToken(action.payload.token || null);
                 }
             })
             .addCase(supplierLoginThunk.rejected, (state, action) => {
@@ -379,7 +401,7 @@ const supplierAuthSlice = createSlice({
                     state.token = action.payload.token || null;
                     state.isAuthenticated = true;
                     if (action.payload.token) {
-                        setGlobalToken(action.payload.token);
+                        setGlobalToken(action.payload.token || null);
                     }
                 }
             })
@@ -402,5 +424,5 @@ const supplierAuthSlice = createSlice({
     },
 });
 
-export const { clearError, resetSupplierAuth, updateSupplierEmail } = supplierAuthSlice.actions;
+export const { clearError, resetSupplierAuth, updateSupplierEmail, updateSupplierToken } = supplierAuthSlice.actions;
 export default supplierAuthSlice.reducer;

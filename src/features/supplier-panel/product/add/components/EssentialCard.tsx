@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
 import { Dropdown } from '@/features/supplier-panel/components';
@@ -11,6 +12,7 @@ import { useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useFormValidation } from '@/shared/hooks/useFormValidation';
 import { RichTextEditor, InputModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
+import { useTranslation } from 'react-i18next';
 import ImageSelectionModal from './ImageSelectionModal';
 import PhotoRoomEditModal from './PhotoRoomEditModal';
 import { useAppSelector } from '@/store/hooks';
@@ -69,6 +71,7 @@ export interface EssentialCardRef {
 }
 
 const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attributes, onNameChange, onAttributesRefresh, onAIGenerateClick, activeTab = 'simple' }, ref) => {
+    const { t } = useTranslation();
     const isConnected = useAppSelector((state) => state.network.isConnected);
     const [name, setName] = useState('');
     const [images, setImages] = useState<MediaFile[]>([]);
@@ -305,7 +308,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     }
                 } else if (typeof data.categories === 'object' && data.categories !== null) {
                     // Offline format: { parent_id, subcategory_id, sub_subcategory_id }
-                    const catObj = data.categories;
+                    const catObj = data.categories as any;
                     const categoryIds: string[] = [];
                     if (catObj.parent_id) categoryIds.push(catObj.parent_id.toString());
                     if (catObj.subcategory_id) categoryIds.push(catObj.subcategory_id.toString());
@@ -586,13 +589,13 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     return (
         <View style={styles.card}>
             {/* Card Title */}
-            <Text style={styles.cardTitle}>1) Essential</Text>
+            <Text style={styles.cardTitle}>1) {t('supplierPanel.essential')}</Text>
 
             {/* Name Section */}
             <View style={styles.section}>
                 <TextInput
                     style={[styles.input, errors.name && styles.inputError]}
-                    placeholder="Name"
+                    placeholder={t('supplierPanel.name')}
                     placeholderTextColor="#666666"
                     value={name}
                     onChangeText={handleNameChange}
@@ -825,10 +828,14 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     )}
                 </ScrollView>
 
-                {/* AI Suggestion Button */}
-                <TouchableOpacity style={styles.aiButton} onPress={onAIGenerateClick}>
-                    <AiIcon width={16} height={16} color="#000000" />
-                    <Text style={styles.buttonText}>Auto-generate information</Text>
+                {/* AI Suggestion Button — disabled offline (requires internet to generate) */}
+                <TouchableOpacity
+                    style={[styles.aiButton, !isConnected && styles.aiButtonDisabled]}
+                    onPress={onAIGenerateClick}
+                    disabled={!isConnected}
+                >
+                    <AiIcon width={16} height={16} color={isConnected ? '#000000' : '#999999'} />
+                    <Text style={[styles.buttonText, !isConnected && styles.buttonTextDisabled]}>Auto-generate information</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.tipText}>
@@ -1140,6 +1147,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.primary,
         borderRadius: 8,
+    },
+    aiButtonDisabled: {
+        backgroundColor: '#F3F3F3',
+        borderColor: '#D1D1D1',
+        opacity: 0.55,
+    },
+    buttonTextDisabled: {
+        color: '#999999',
     },
     textArea: {
         flexDirection: 'row',

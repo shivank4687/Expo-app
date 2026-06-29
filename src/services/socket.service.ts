@@ -30,7 +30,7 @@ class SocketService {
         this.serverUrl = baseUrl;
     }
 
-    connect(token: string, userType: 'customer' | 'supplier'): void {
+    connect(token?: string, userType?: 'customer' | 'supplier' | string): void {
         if (this.socket && this.connected) {
             console.log('Already connected to Socket.IO');
             return;
@@ -39,7 +39,7 @@ class SocketService {
         console.log(`Connecting to Socket.IO: ${this.serverUrl}`);
 
         this.socket = io(this.serverUrl, {
-            auth: { token, userType },
+            ...(token && userType ? { auth: { token, userType } } : {}),
             transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: 5,
@@ -110,6 +110,20 @@ class SocketService {
     offNewMessage(callback?: (data: NewMessageData) => void): void {
         if (!this.socket) return;
 
+        if (callback) {
+            this.socket.off('rfq:new-message', callback);
+        } else {
+            this.socket.off('rfq:new-message');
+        }
+    }
+
+    onRFQNewMessage(callback: (data: any) => void): void {
+        if (!this.socket) return;
+        this.socket.on('rfq:new-message', callback);
+    }
+
+    offRFQNewMessage(callback?: (data: any) => void): void {
+        if (!this.socket) return;
         if (callback) {
             this.socket.off('rfq:new-message', callback);
         } else {
@@ -242,6 +256,62 @@ class SocketService {
         } else {
             this.socket.off('notification:new');
         }
+    }
+
+    // ─── General and Order Room Methods ──────────────────────────────────────────
+
+    joinRoom(room: string): void {
+        if (!this.socket) return;
+        console.log('Joining room:', room);
+        this.socket.emit('join-room', { room });
+    }
+
+    leaveRoom(room: string): void {
+        if (!this.socket) return;
+        console.log('Leaving room:', room);
+        this.socket.emit('leave-room', { room });
+    }
+
+    joinOrderRoom(supplierOrderId: number, supplierId: number): void {
+        const room = `order:${supplierOrderId}:${supplierId}`;
+        console.log('Joining order room:', room);
+        this.joinRoom(room);
+    }
+
+    leaveOrderRoom(supplierOrderId: number, supplierId: number): void {
+        const room = `order:${supplierOrderId}:${supplierId}`;
+        console.log('Leaving order room:', room);
+        this.leaveRoom(room);
+    }
+
+    onOrderNewMessage(callback: (data: any) => void): void {
+        if (!this.socket) return;
+        this.socket.on('order:new-message', callback);
+    }
+
+    offOrderNewMessage(): void {
+        if (!this.socket) return;
+        this.socket.off('order:new-message');
+    }
+
+    onItemSupportNewMessage(callback: (data: any) => void): void {
+        if (!this.socket) return;
+        this.socket.on('support:item:new-message', callback);
+    }
+
+    offItemSupportNewMessage(): void {
+        if (!this.socket) return;
+        this.socket.off('support:item:new-message');
+    }
+
+    onConnect(callback: () => void): void {
+        if (!this.socket) return;
+        this.socket.on('connect', callback);
+    }
+
+    offConnect(callback: () => void): void {
+        if (!this.socket) return;
+        this.socket.off('connect', callback);
     }
 
     disconnect(): void {

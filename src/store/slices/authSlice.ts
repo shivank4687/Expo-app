@@ -47,13 +47,15 @@ export const checkAuthThunk = createAsyncThunk(
             console.log('Checking auth...');
             const token = await secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
             const userData = await secureStorage.getItem(STORAGE_KEYS.USER_DATA);
+            const expiresAtStr = await secureStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
+            const expiresAt = expiresAtStr ? Number(expiresAtStr) : null;
 
             if (token && userData && userData !== 'undefined' && userData !== 'null') {
                 const parsedUser = JSON.parse(userData);
                 if (parsedUser && parsedUser.id) {
                     console.log('✅ Restored user from storage:', parsedUser.name);
                     // Set global token for API client
-                    setGlobalToken(token);
+                    setGlobalToken(token, expiresAt);
                     return { user: parsedUser, token };
                 }
             }
@@ -127,6 +129,18 @@ export const loginThunk = createAsyncThunk(
                 await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
             }
 
+            if (response.refresh_token) {
+                await secureStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
+            }
+
+            if (response.expires_in) {
+                const expiresAt = Date.now() + response.expires_in * 1000;
+                await secureStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+                setGlobalToken(token || null, expiresAt);
+            } else if (token) {
+                setGlobalToken(token || null, null);
+            }
+
             if (user) {
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
@@ -181,6 +195,18 @@ export const socialLoginThunk = createAsyncThunk(
             // Store in secure storage
             if (token && typeof token === 'string') {
                 await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+            }
+
+            if (response.refresh_token) {
+                await secureStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
+            }
+
+            if (response.expires_in) {
+                const expiresAt = Date.now() + response.expires_in * 1000;
+                await secureStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+                setGlobalToken(token || null, expiresAt);
+            } else if (token) {
+                setGlobalToken(token || null, null);
             }
 
             if (user) {
@@ -247,6 +273,18 @@ export const signupThunk = createAsyncThunk(
                 await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
             }
 
+            if (response.refresh_token) {
+                await secureStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
+            }
+
+            if (response.expires_in) {
+                const expiresAt = Date.now() + response.expires_in * 1000;
+                await secureStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+                setGlobalToken(token || null, expiresAt);
+            } else if (token) {
+                setGlobalToken(token || null, null);
+            }
+
             if (user) {
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
@@ -285,6 +323,18 @@ export const verifyOtpThunk = createAsyncThunk(
             if (response.is_approved === undefined) {
                 if (token && typeof token === 'string') {
                     await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+                }
+
+                if (response.refresh_token) {
+                    await secureStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
+                }
+
+                if (response.expires_in) {
+                    const expiresAt = Date.now() + response.expires_in * 1000;
+                    await secureStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+                    setGlobalToken(token || null, expiresAt);
+                } else if (token) {
+                    setGlobalToken(token || null, null);
                 }
 
                 if (user) {
@@ -430,12 +480,12 @@ export const verifyPhoneOtpThunk = createAsyncThunk(
     async (data: { verification_token: string; otp: string }, { rejectWithValue }) => {
         try {
             const response = await authApi.verifyPhoneOtp(data);
-            
+
             // Store updated user data
             if (response.data) {
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.data));
             }
-            
+
             return response;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
@@ -462,6 +512,9 @@ const authSlice = createSlice({
             state.verificationToken = null;
             state.pendingRegistration = null;
             state.error = null;
+        },
+        updateToken: (state, action: PayloadAction<{ token: string }>) => {
+            state.token = action.payload.token;
         },
     },
     extraReducers: (builder) => {
@@ -494,13 +547,13 @@ const authSlice = createSlice({
             .addCase(loginThunk.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.error = null;
-                
+
                 if (!(action.payload as any).requiresOtp) {
-                    state.user = action.payload.user;
-                    state.token = action.payload.token;
+                    state.user = action.payload.user || null;
+                    state.token = action.payload.token || null;
                     state.isAuthenticated = true;
                     // Set global token for API client
-                    setGlobalToken(action.payload.token);
+                    setGlobalToken(action.payload.token || null);
                 }
             })
             .addCase(loginThunk.rejected, (state, action) => {
@@ -515,12 +568,12 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(socialLoginThunk.fulfilled, (state, action) => {
-                state.user = action.payload.user;
-                state.token = action.payload.token;
+                state.user = action.payload.user || null;
+                state.token = action.payload.token || null;
                 state.isAuthenticated = true;
                 state.isLoading = false;
                 state.error = null;
-                setGlobalToken(action.payload.token);
+                setGlobalToken(action.payload.token || null);
             })
             .addCase(socialLoginThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -575,14 +628,14 @@ const authSlice = createSlice({
                     // We don't set state.user, state.token, or state.isAuthenticated
                 } else {
                     // Normal customer flow: auto-authenticate
-                    state.user = action.payload.user;
-                    state.token = action.payload.token;
+                    state.user = action.payload.user || null;
+                    state.token = action.payload.token || null;
                     state.isAuthenticated = true;
                     state.isLoading = false;
                     state.error = null;
                     state.verificationToken = null;
                     state.pendingRegistration = null;
-                    setGlobalToken(action.payload.token);
+                    setGlobalToken(action.payload.token || null);
                 }
             })
             .addCase(verifyOtpThunk.rejected, (state, action) => {
@@ -667,5 +720,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { setUser, setSelectedUserType, clearError, clearVerification } = authSlice.actions;
+export const { setUser, setSelectedUserType, clearError, clearVerification, updateToken } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getRFQMessages, RFQMessage, sendRFQMessage } from '../api/rfq.api';
-import socketService from '@/services/socket/socketService';
+import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 
 interface UseRFQMessagesResult {

@@ -25,8 +25,8 @@ import { theme } from '@/theme';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { removeOfflineProduct, upsertOfflineProduct } from '@/store/slices/offlineProductsSlice';
 import { deleteOfflineProduct, deleteLocalMedia, updateOfflineProduct } from '@/services/offline';
+import { syncPendingProducts } from '@/services/offline/offline-sync.service';
 import { OfflineProductCard } from './components/OfflineProductCard';
-import { useOfflineSync } from '../shared/hooks/useOfflineSync';
 import type { OfflineProduct } from '@/services/offline/offline-product.types';
 
 export function OfflineProductsScreen() {
@@ -36,9 +36,11 @@ export function OfflineProductsScreen() {
 
     const { products, isSyncing } = useAppSelector((state) => state.offlineProducts);
     const isConnected = useAppSelector((state) => state.network.isConnected);
+    const supplierId = useAppSelector((state) => state.supplierAuth.supplier?.id);
 
-    // Use the real sync trigger
-    const { triggerSync } = useOfflineSync();
+    // isSyncing comes from Redux (set by the global useOfflineSync in the drawer layout).
+    // We do NOT call useOfflineSync() here — it's already mounted globally and calling
+    // it a second time creates two racing instances with diverging prevConnected refs.
 
     // Sort: errors first, then pending, then by date desc
     const sorted = [...products].sort((a, b) => {
@@ -63,9 +65,13 @@ export function OfflineProductsScreen() {
                         text: 'Delete',
                         style: 'destructive',
                         onPress: async () => {
+                            const variantImagePaths = Object.values(
+                                product.localVariantImagePaths ?? {}
+                            ).flat();
                             await deleteLocalMedia([
                                 ...product.localImagePaths,
                                 ...(product.localVideoPath ? [product.localVideoPath] : []),
+                                ...variantImagePaths,
                             ]);
                             await deleteOfflineProduct(product.localId);
                             dispatch(removeOfflineProduct(product.localId));
@@ -82,7 +88,7 @@ export function OfflineProductsScreen() {
             Alert.alert('No Connection', 'Please connect to the internet to sync your products.');
             return;
         }
-        triggerSync();
+        syncPendingProducts(dispatch, supplierId ?? undefined);
     };
 
     const renderEmpty = () => (
@@ -116,9 +122,9 @@ export function OfflineProductsScreen() {
                     dispatch(upsertOfflineProduct(updatedProduct));
 
                     if (isConnected) {
-                        // Trigger sync queue processing asynchronously
+                        // Trigger sync queue — small delay lets Redux state settle first
                         setTimeout(() => {
-                            triggerSync();
+                            syncPendingProducts(dispatch, supplierId ?? undefined);
                         }, 50);
                     } else {
                         Alert.alert('Offline Mode', 'Retry queued. Product will sync when you are back online.');

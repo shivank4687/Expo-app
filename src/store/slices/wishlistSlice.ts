@@ -134,7 +134,7 @@ const wishlistSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchWishlistThunk.fulfilled, (state, action) => {
-        console.log("[wishlistSlice] Setting items in state:", action.payload);
+        // console.log("[wishlistSlice] Setting items in state:", action.payload);
         state.isLoading = false;
         state.items = action.payload;
         console.log(

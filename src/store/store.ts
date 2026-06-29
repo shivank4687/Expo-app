@@ -42,6 +42,15 @@ const storage = Platform.OS === 'web'
     }
     : AsyncStorage;
 
+// Offline products: persist the product list but NOT the volatile runtime flags.
+// isSyncing and isLoaded must always start as false on every app launch —
+// if persisted, a crash mid-sync would leave isSyncing=true forever.
+const offlineProductsPersistConfig = {
+    key: 'offlineProducts',
+    storage,
+    blacklist: ['isSyncing', 'isLoaded'],
+};
+
 // Persist config
 const persistConfig = {
     key: 'root',
@@ -62,7 +71,7 @@ const rootReducer = combineReducers({
     customerStats: customerStatsReducer,
     recentlyViewed: recentlyViewedReducer,
     network: networkReducer,
-    offlineProducts: offlineProductsReducer,
+    offlineProducts: persistReducer(offlineProductsPersistConfig, offlineProductsReducer),
 });
 
 // Persisted reducer

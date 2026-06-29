@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { coreApi, Locale, Currency, Channel, Country } from '@/services/api/core.api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setGlobalLocale, setGlobalCurrency } from '@/services/api/client';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -188,6 +189,14 @@ const coreSlice = createSlice({
                 state.selectedCurrency = action.payload.selectedCurrency;
                 state.selectedChannel = action.payload.selectedChannel;
                 state.lastSelectedCountry = action.payload.lastSelectedCountry;
+
+                // Sync with API client cache
+                if (action.payload.selectedLocale) {
+                    setGlobalLocale(action.payload.selectedLocale.code);
+                }
+                if (action.payload.selectedCurrency) {
+                    setGlobalCurrency(action.payload.selectedCurrency.code);
+                }
             })
             .addCase(fetchCoreConfig.rejected, (state, action) => {
                 state.isLoading = false;
@@ -215,6 +224,9 @@ const coreSlice = createSlice({
         builder
             .addCase(setLocale.fulfilled, (state, action) => {
                 state.selectedLocale = action.payload;
+                if (action.payload) {
+                    setGlobalLocale(action.payload.code);
+                }
             })
             .addCase(setLocale.rejected, (state, action) => {
                 state.error = action.payload as string;
@@ -224,6 +236,9 @@ const coreSlice = createSlice({
         builder
             .addCase(setCurrency.fulfilled, (state, action) => {
                 state.selectedCurrency = action.payload;
+                if (action.payload) {
+                    setGlobalCurrency(action.payload.code);
+                }
             })
             .addCase(setCurrency.rejected, (state, action) => {
                 state.error = action.payload as string;

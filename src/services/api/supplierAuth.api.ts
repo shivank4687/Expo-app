@@ -32,6 +32,8 @@ export interface SupplierAuthResponse {
     data: Supplier;
     message: string;
     token: string;
+    refresh_token?: string;
+    expires_in?: number;
 }
 
 export const supplierAuthApi = {
@@ -100,6 +102,15 @@ export const supplierAuthApi = {
         otp: string;
     }): Promise<{ data: Supplier; message: string }> {
         return restApiClient.post('/supplier-app/verify-phone-otp', data);
+    },
+
+    /**
+     * Refresh authentication token for supplier
+     */
+    async refreshToken(refreshToken: string): Promise<SupplierAuthResponse> {
+        return restApiClient.post<SupplierAuthResponse>(API_ENDPOINTS.SUPPLIER_REFRESH_TOKEN, {
+            refresh_token: refreshToken,
+        });
     },
 };
 

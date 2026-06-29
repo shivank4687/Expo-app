@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -27,6 +27,10 @@ export const AddAddressScreen: React.FC = () => {
     const { showToast } = useToast();
     const { id } = useLocalSearchParams<{ id?: string }>();
     const isEditMode = !!id;
+
+    const user = useAppSelector(state => state.auth.user);
+    const lastSelectedCountry = useAppSelector(state => state.core.lastSelectedCountry);
+    const hasInitializedDefaults = useRef(false);
 
     // Form state
     const [formData, setFormData] = useState<AddressFormData>({
@@ -60,13 +64,33 @@ export const AddAddressScreen: React.FC = () => {
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [showStatePicker, setShowStatePicker] = useState(false);
 
-    // Load countries on mount
+    // Load countries on mount and populate defaults if in add mode
     useEffect(() => {
         dispatch(fetchCountriesThunk());
         if (isEditMode) {
             loadAddress();
+        } else if (user && !hasInitializedDefaults.current) {
+            hasInitializedDefaults.current = true;
+
+            // Extract first and last name from user details
+            let fName = user.first_name || '';
+            let lName = user.last_name || '';
+            if (!fName && !lName && user.name) {
+                const nameParts = user.name.trim().split(/\s+/);
+                fName = nameParts[0] || '';
+                lName = nameParts.slice(1).join(' ') || '';
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                first_name: fName,
+                last_name: lName,
+                email: user.email || '',
+                phone: user.phone || '',
+                country: lastSelectedCountry?.code || '',
+            }));
         }
-    }, []);
+    }, [isEditMode, user, lastSelectedCountry, dispatch]);
 
     // Load states when country changes
     useEffect(() => {

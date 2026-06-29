@@ -12,7 +12,7 @@ import {
 import { ordersApi, ItemSupportMessage } from '@/services/api/orders.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
 import { AnimatedTypingDots } from '@/shared/components/AnimatedTypingDots';
-import socketService from '@/services/socket/socketService';
+import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';

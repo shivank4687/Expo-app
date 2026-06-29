@@ -23,6 +23,12 @@ export interface PriceStockVariantsCardRef {
     getData: () => any;
     validate: () => boolean;
     updateFields: (data: any) => void;
+    /**
+     * Highlight server-side sync errors on specific fields.
+     * Call this after updateFields() so the errors are not cleared.
+     * @param fieldErrors - Record<fieldName, string[]> from SyncError.fieldErrors
+     */
+    highlightSyncErrors: (fieldErrors: Record<string, string[]>) => void;
 }
 
 const MAX_VARIANT_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
@@ -355,6 +361,19 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
 
             return finalResult;
         },
+        /**
+         * Apply server-side sync validation errors directly to form fields.
+         * Re-uses the existing useFormValidation error state so the same
+         * red-border + error-text UI appears as with normal validation.
+         * The errors auto-clear when the supplier edits the field.
+         */
+        highlightSyncErrors: (fieldErrors: Record<string, string[]>) => {
+            if (fieldErrors.sku?.length) {
+                setError('sku', fieldErrors.sku[0]);
+                // Also mark skuExists so validate() blocks submission
+                setSkuExists(true);
+            }
+        },
         updateFields: (data: any) => {
             console.log('📦 PriceStockVariantsCard updateFields called', data);
 
@@ -404,20 +423,40 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             if (data.super_attributes && Array.isArray(data.super_attributes)) {
                 const variantAttrIds = data.super_attributes.map((attr: any) => attr.id.toString());
                 setSelectedVariantAttributes(variantAttrIds);
-            } else if (data.variants && Array.isArray(data.variants) && data.variants.length > 0) {
-                // Fallback: Determine which attributes are variant attributes by looking at the first variant
-                const firstVariant = data.variants[0];
+            } else if (data.super_attributes && typeof data.super_attributes === 'object') {
                 const variantAttrIds: string[] = [];
-                attributes.forEach(attr => {
-                    if (firstVariant[attr.code] !== undefined) {
+                Object.keys(data.super_attributes).forEach(code => {
+                    const attr = attributes.find(a => a.code === code);
+                    if (attr) {
                         variantAttrIds.push(attr.id.toString());
                     }
                 });
                 setSelectedVariantAttributes(variantAttrIds);
+            } else if (data.variants) {
+                const variantList = Array.isArray(data.variants)
+                    ? data.variants
+                    : Object.values(data.variants);
+                if (variantList.length > 0) {
+                    const firstVariant = variantList[0];
+                    const variantAttrIds: string[] = [];
+                    attributes.forEach(attr => {
+                        if (firstVariant[attr.code] !== undefined) {
+                            variantAttrIds.push(attr.id.toString());
+                        }
+                    });
+                    setSelectedVariantAttributes(variantAttrIds);
+                }
             }
 
-            if (data.variants && Array.isArray(data.variants)) {
-                const mappedVariants = data.variants.map((v: any, index: number) => {
+            if (data.variants) {
+                const variantsArray = Array.isArray(data.variants)
+                    ? data.variants
+                    : Object.entries(data.variants).map(([key, value]: [string, any]) => ({
+                        id: key,
+                        ...value
+                    }));
+
+                const mappedVariants = variantsArray.map((v: any, index: number) => {
                     const variantAttrs: Record<string, string> = {};
                     attributes.forEach(attr => {
                         if (v[attr.code] !== undefined && v[attr.code] !== null) {
@@ -426,7 +465,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                     });
 
                     return {
-                        id: v.id.toString(),
+                        id: v.id ? v.id.toString() : `variant_${index}`,
                         sku: v.sku,
                         name: v.name,
                         price: v.price?.toString() || '',
@@ -449,7 +488,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                         height: v.height?.toString() || '',
                         attributes: variantAttrs,
                         images: v.images?.length > 0
-                            ? v.images.map((img: any) => ({ uri: img.url, id: img.id }))
+                            ? v.images.map((img: any) => ({ uri: img.url || img.uri, id: img.id }))
                             : (v.base_image ? [{ uri: v.base_image.original_image_url }] : [])
                     };
                 });

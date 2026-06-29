@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
     LANGUAGE: 'language',
     SUPPLIER_AUTH_TOKEN: 'supplier_auth_token',
     SUPPLIER_DATA: 'supplier_data',
+    TOKEN_EXPIRES_AT: 'token_expires_at',
+    SUPPLIER_REFRESH_TOKEN: 'supplier_refresh_token',
 };
 
 export const API_ENDPOINTS = {
@@ -37,6 +39,7 @@ export const API_ENDPOINTS = {
     SUPPLIER_VERIFICATION_IDENTITY: '/supplier-app/verification/identity',
     SUPPLIER_FORGOT_PASSWORD_PHONE: '/supplier-app/forgot-password-phone',
     SUPPLIER_RESET_PASSWORD: '/supplier-app/reset-password',
+    SUPPLIER_REFRESH_TOKEN: '/supplier-app/refresh-token',
     // Supplier Device Token (push notifications)
     SUPPLIER_DEVICE_TOKEN_REGISTER: '/supplier-app/device-token/register',
     SUPPLIER_DEVICE_TOKEN_UNREGISTER: '/supplier-app/device-token/unregister',
