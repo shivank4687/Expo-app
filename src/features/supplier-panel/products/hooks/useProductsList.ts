@@ -1,5 +1,5 @@
 /**
- * Custom hook to fetch products list for supplier panel with infinite scroll
+ * Custom hook to fetch products list for supplier panel with infinite scroll and search
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -8,7 +8,12 @@ import type { Product } from '../types/products.types';
 
 const PRODUCTS_PER_PAGE = 20;
 
-export const useProductsList = () => {
+export interface ProductsSearchParams {
+    search?: string;
+    status?: string;
+}
+
+export const useProductsList = (searchParams?: ProductsSearchParams) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
@@ -42,6 +47,9 @@ export const useProductsList = () => {
             const response = await productsApi.getProductsList({
                 page,
                 per_page: PRODUCTS_PER_PAGE,
+                // Pass search params — backend ignores undefined values
+                ...(searchParams?.search ? { search: searchParams.search } : {}),
+                ...(searchParams?.status ? { status: searchParams.status } : {}),
             });
 
             const newProducts = response.products || [];
@@ -77,8 +85,9 @@ export const useProductsList = () => {
             isLoadingRef.current = false;
             isLoadingMoreRef.current = false;
         }
-    }, []);
+    }, [searchParams?.search, searchParams?.status]);
 
+    // Initial load + re-load when search params change
     useEffect(() => {
         loadProducts(1, true);
     }, [loadProducts]);

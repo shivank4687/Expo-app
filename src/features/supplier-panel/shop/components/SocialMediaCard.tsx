@@ -21,10 +21,10 @@ export const SocialMediaCard: React.FC<SocialMediaCardProps> = ({ data, onChange
         { label: 'Facebook Id', key: 'facebook' },
         { label: 'Youtube Id', key: 'youtube' },
         { label: 'Instagram Id', key: 'instagram' },
-        { label: 'Skype Id', key: 'skype' },
+        // { label: 'Skype Id', key: 'skype' },
         { label: 'Linked In', key: 'linked_in' },
         { label: 'Pinterest Id', key: 'pinterest' },
-        { label: 'Shareable Link', key: 'shareable_link' },
+        // { label: 'Shareable Link', key: 'shareable_link' },
     ];
 
     return (

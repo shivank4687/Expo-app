@@ -108,16 +108,29 @@ export const AddressStep: React.FC<AddressStepProps> = ({
         address: CheckoutAddress | null,
         title: string,
         onAdd: () => void,
-        onChange: () => void
+        onChange: () => void,
+        disabled?: boolean
     ) => {
         return (
-            <Card style={styles.addressCard}>
-                <View style={styles.addressHeader}>
-                    <Text style={styles.addressTitle}>{title}</Text>
+            <Card
+                style={[styles.addressCard, disabled && styles.disabledAddressCard]}
+                variant={disabled ? 'flat' : 'elevated'}
+            >
+                <View style={[styles.addressHeader, disabled && styles.disabledAddressHeader]}>
+                    <View style={styles.headerTitleRow}>
+                        <Text style={[styles.addressTitle, disabled && styles.disabledAddressTitle]}>{title}</Text>
+                        {disabled && (
+                            <View style={styles.sameAsBillingBadge}>
+                                <Text style={styles.sameAsBillingBadgeText}>
+                                    {t('checkout.sameAsBillingBadge', 'Same as Billing')}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
 
                 {address ? (
-                    <>
+                    <View style={disabled && styles.disabledContentWrapper}>
                         <View style={styles.addressContent}>
                             <Text style={styles.addressName}>
                                 {address.first_name} {address.last_name}
@@ -138,59 +151,63 @@ export const AddressStep: React.FC<AddressStepProps> = ({
                             <TouchableOpacity
                                 style={styles.actionButton}
                                 onPress={onAdd}
+                                disabled={disabled}
                             >
                                 <Ionicons
                                     name="add-circle-outline"
                                     size={18}
-                                    color={theme.colors.primary[500]}
+                                    color={disabled ? theme.colors.gray[400] : theme.colors.primary[500]}
                                 />
-                                <Text style={styles.actionButtonText}>
+                                <Text style={[styles.actionButtonText, disabled && styles.disabledActionButtonText]}>
                                     {t('checkout.addAddress', 'Add')}
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.actionButton}
                                 onPress={onChange}
+                                disabled={disabled}
                             >
                                 <Ionicons
                                     name="swap-horizontal"
                                     size={18}
-                                    color={theme.colors.primary[500]}
+                                    color={disabled ? theme.colors.gray[400] : theme.colors.primary[500]}
                                 />
-                                <Text style={styles.actionButtonText}>
+                                <Text style={[styles.actionButtonText, disabled && styles.disabledActionButtonText]}>
                                     {t('checkout.changeAddress', 'Change')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    </>
+                    </View>
                 ) : (
-                    <View style={styles.emptyAddressContainer}>
+                    <View style={[styles.emptyAddressContainer, disabled && styles.disabledContentWrapper]}>
                         <TouchableOpacity
-                            style={styles.emptyStateButton}
+                            style={[styles.emptyStateButton, disabled && styles.disabledEmptyStateButton]}
                             onPress={onChange}
+                            disabled={disabled}
                         >
                             <Ionicons
                                 name="list-outline"
                                 size={24}
-                                color={theme.colors.primary[500]}
+                                color={disabled ? theme.colors.gray[400] : theme.colors.primary[500]}
                             />
-                            <Text style={styles.emptyStateButtonText}>
+                            <Text style={[styles.emptyStateButtonText, disabled && styles.disabledEmptyStateButtonText]}>
                                 {t('checkout.chooseAddress', 'Choose Address')}
                             </Text>
                         </TouchableOpacity>
 
-                        <Text style={styles.orText}>- {t('common.or', 'OR')} -</Text>
+                        <Text style={[styles.orText, disabled && styles.disabledOrText]}>- {t('common.or', 'OR')} -</Text>
 
                         <TouchableOpacity
-                            style={styles.emptyStateButton}
+                            style={[styles.emptyStateButton, disabled && styles.disabledEmptyStateButton]}
                             onPress={onAdd}
+                            disabled={disabled}
                         >
                             <Ionicons
                                 name="add-circle-outline"
                                 size={24}
-                                color={theme.colors.primary[500]}
+                                color={disabled ? theme.colors.gray[400] : theme.colors.primary[500]}
                             />
-                            <Text style={styles.emptyStateButtonText}>
+                            <Text style={[styles.emptyStateButtonText, disabled && styles.disabledEmptyStateButtonText]}>
                                 {t('checkout.addNewAddress', 'Add New Address')}
                             </Text>
                         </TouchableOpacity>
@@ -249,18 +266,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({
                         </Text>
                     </TouchableOpacity>
 
-                    {/* Shipping Address (if different from billing) */}
-                    {!sameAsBilling && (
-                        <>
-                            <View style={styles.divider} />
-                            {renderAddressCard(
-                                shippingAddress,
-                                t('address.shippingAddress'),
-                                handleAddShippingAddress,
-                                handleChangeShippingAddress
-                            )}
-                        </>
-                    )}
+                    {/* Shipping Address */}
+                    <>
+                        <View style={styles.divider} />
+                        {renderAddressCard(
+                            shippingAddress,
+                            t('address.shippingAddress'),
+                            handleAddShippingAddress,
+                            handleChangeShippingAddress,
+                            sameAsBilling
+                        )}
+                    </>
                 </ScrollView>
             )}
 
@@ -488,6 +504,53 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: theme.colors.gray[200],
         marginVertical: theme.spacing.md,
+    },
+    disabledAddressCard: {
+        borderColor: theme.colors.gray[200],
+        backgroundColor: theme.colors.gray[50],
+    },
+    disabledAddressHeader: {
+        backgroundColor: theme.colors.gray[100],
+        borderBottomColor: theme.colors.gray[200],
+    },
+    disabledAddressTitle: {
+        color: theme.colors.text.disabled,
+    },
+    disabledContentWrapper: {
+        opacity: 0.6,
+    },
+    disabledActionButtonText: {
+        color: theme.colors.text.disabled,
+    },
+    disabledEmptyStateButton: {
+        borderColor: theme.colors.gray[300],
+        backgroundColor: theme.colors.gray[100],
+        borderStyle: 'solid',
+    },
+    disabledEmptyStateButtonText: {
+        color: theme.colors.gray[400],
+    },
+    disabledOrText: {
+        color: theme.colors.gray[400],
+    },
+    headerTitleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flex: 1,
+    },
+    sameAsBillingBadge: {
+        backgroundColor: theme.colors.primary[50],
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 2,
+        borderRadius: theme.borderRadius.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.primary[100],
+    },
+    sameAsBillingBadgeText: {
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.semiBold,
+        color: theme.colors.primary[600],
     },
     modalContainer: {
         flex: 1,

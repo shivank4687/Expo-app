@@ -18,6 +18,8 @@ export interface Product {
 export interface ProductsListParams {
     page?: number;
     per_page?: number;
+    search?: string;        // search by name or SKU
+    status?: string;        // 'active' | 'inactive' | '' (all)
 }
 
 export interface ProductsListResponse {

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSupplierProfile, SupplierProfile, updateSupplierProfile } from '../api/supplier-profile.api';
 import { AddressCard, DeliveryMethodCard, IdentityCard, PoliciesCard, SalesShippingCard, ShopDetailsCard, ShopMediaCard, SocialMediaCard } from '../components';
 import { consumeContactUpdate } from '@/features/supplier-panel/profile/contactUpdateTracker';
+import { parseValidDate } from '@/shared/utils/dateUtils';
 
 export default function ShopScreen() {
     const { showToast } = useToast();
@@ -72,12 +73,6 @@ export default function ShopScreen() {
     const validateForm = () => {
         const requiredFields = [
             { key: 'company_name', label: 'Company Name' },
-            { key: 'company_tag_line', label: 'Tagline' },
-            { key: 'registerd_in', label: 'Registered In' },
-            { key: 'designation', label: 'Designation' },
-            { key: 'team_size', label: 'Team Size' },
-            { key: 'certification', label: 'Certification' },
-            { key: 'response_time', label: 'Response Time' },
             { key: 'address1', label: 'Address' },
             { key: 'city', label: 'City/Region' },
             { key: 'country', label: 'Country' },
@@ -109,19 +104,28 @@ export default function ShopScreen() {
         }
 
         // Validate holiday period dates
-        if (profileData.holiday_start_date && profileData.holiday_end_date) {
-            const startDate = new Date(profileData.holiday_start_date);
-            const endDate = new Date(profileData.holiday_end_date);
-            if (endDate <= startDate) {
+        // Use parseValidDate (same as UI) so invalid/empty strings are treated as "no date"
+        const holidayStartParsed = parseValidDate(profileData.holiday_start_date);
+        const holidayEndParsed = parseValidDate(profileData.holiday_end_date);
+        if (holidayStartParsed && !holidayEndParsed) {
+            newErrors['holiday_end_date'] = 'End date is required if start date is set';
+        } else if (!holidayStartParsed && holidayEndParsed) {
+            newErrors['holiday_start_date'] = 'Start date is required if end date is set';
+        } else if (holidayStartParsed && holidayEndParsed) {
+            if (holidayEndParsed <= holidayStartParsed) {
                 newErrors['holiday_end_date'] = 'Holiday end date must be after start date';
             }
         }
 
         // Validate discount special time dates
-        if (profileData.discount_special_start_date && profileData.discount_special_end_date) {
-            const startDate = new Date(profileData.discount_special_start_date);
-            const endDate = new Date(profileData.discount_special_end_date);
-            if (endDate <= startDate) {
+        const discountStartParsed = parseValidDate(profileData.discount_special_start_date);
+        const discountEndParsed = parseValidDate(profileData.discount_special_end_date);
+        if (discountStartParsed && !discountEndParsed) {
+            newErrors['discount_special_end_date'] = 'End date is required if start date is set';
+        } else if (!discountStartParsed && discountEndParsed) {
+            newErrors['discount_special_start_date'] = 'Start date is required if end date is set';
+        } else if (discountStartParsed && discountEndParsed) {
+            if (discountEndParsed <= discountStartParsed) {
                 newErrors['discount_special_end_date'] = 'Discount end date must be after start date';
             }
         }

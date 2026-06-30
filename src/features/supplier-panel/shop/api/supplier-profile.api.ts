@@ -137,13 +137,22 @@ export const updateSupplierProfile = async (
         return response?.data ?? response;
     };
 
+    // Date fields that must be sent as null (not empty string) for backend validation
+    const dateFields = ['holiday_start_date', 'holiday_end_date', 'discount_special_start_date', 'discount_special_end_date'];
+
     // Prefer JSON payload when images are unchanged.
     // This avoids multipart issues seen in some Android release builds.
     if (!hasImageUpload && !hasImageDelete) {
         const payload: Record<string, any> = {};
 
         Object.keys(data).forEach((key) => {
-            const value = data[key as keyof SupplierProfileUpdateData];
+            let value = data[key as keyof SupplierProfileUpdateData];
+            // Normalize empty/null-string dates to actual null so Laravel's
+            // nullable|date validation passes (request()->merge() doesn't
+            // affect JSON request data in Laravel)
+            if (dateFields.includes(key) && (value === '' || value === 'null')) {
+                value = null;
+            }
             if (value !== undefined) {
                 payload[key] = value;
             }
@@ -173,6 +182,9 @@ export const updateSupplierProfile = async (
                 ? JSON.stringify(value)
                 : String(value);
             formData.append(key, serializedValue);
+        } else if (value === null && dateFields.includes(key)) {
+            // Send empty string for null date fields so backend can clear them
+            formData.append(key, '');
         }
     });
 

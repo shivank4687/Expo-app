@@ -9,8 +9,8 @@ import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useRef, useState, useCallback } from 'react';
-import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ViewMode = 'list' | 'grid';
@@ -28,8 +28,27 @@ export function ProductsScreen() {
         (p) => p.syncStatus === 'pending' || p.syncStatus === 'error' || p.syncStatus === 'syncing'
     ).length;
 
-    // Fetch products from API with infinite scroll
-    const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading, quickUpdateProduct, refreshKey } = useProductsList();
+    // Search and filter states
+    const [searchText, setSearchText] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all');
+
+    // Debounce search text changes
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchText);
+        }, 400);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchText]);
+
+    // Fetch products from API with infinite scroll and filters
+    const { products, loading, isLoadingMore, isRefreshing, error, hasMore, loadMore, refresh, reloadWithLoading, quickUpdateProduct, refreshKey } = useProductsList({
+        search: debouncedSearch,
+        status: selectedStatus === 'all' ? '' : selectedStatus
+    });
 
     // Reload products when screen comes into focus (after adding/editing products)
     // Skip the first focus to avoid double-loading on initial mount
@@ -231,7 +250,7 @@ export function ProductsScreen() {
             <View style={styles.stateContainer}>
                 <Ionicons name="cube-outline" size={64} color={COLORS.textSecondary} />
                 <Text style={styles.emptyText}>No products found</Text>
-                <Text style={styles.emptySubtext}>Add your first product to get started</Text>
+                <Text style={styles.emptySubtext}>Try changing your search filters or add a new product</Text>
             </View>
         );
     };
@@ -294,6 +313,48 @@ export function ProductsScreen() {
                     </View>
                 </View>
 
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                    <Ionicons name="search-outline" size={20} color="#666666" style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search products by name, SKU..."
+                        placeholderTextColor="#999999"
+                        value={searchText}
+                        onChangeText={setSearchText}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                    {searchText.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchText('')} style={styles.clearButton}>
+                            <Ionicons name="close-circle" size={18} color="#999999" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Status Filter Pills */}
+                <View style={styles.filterRow}>
+                    {(['all', 'active', 'inactive'] as const).map((status) => (
+                        <TouchableOpacity
+                            key={status}
+                            style={[
+                                styles.filterPill,
+                                selectedStatus === status && styles.filterPillActive
+                            ]}
+                            onPress={() => setSelectedStatus(status)}
+                        >
+                            <Text
+                                style={[
+                                    styles.filterPillText,
+                                    selectedStatus === status && styles.filterPillTextActive
+                                ]}
+                            >
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
                 {/* Add Product Button */}
                 <TouchableOpacity
                     style={styles.addButton}
@@ -303,6 +364,7 @@ export function ProductsScreen() {
                     <Text style={styles.addButtonText}>Add Product</Text>
                 </TouchableOpacity>
             </View>
+
 
             {/* Products List */}
             {loading ? (
@@ -436,6 +498,58 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: 'bold',
         fontFamily: 'Inter',
+    },
+
+    // Search and Filter Styles
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        height: 40,
+        marginBottom: 12,
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        height: '100%',
+        fontSize: 14,
+        fontFamily: 'Inter',
+        color: COLORS.black,
+        paddingVertical: 0,
+    },
+    clearButton: {
+        padding: 4,
+    },
+    filterRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 12,
+    },
+    filterPill: {
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    filterPillActive: {
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.primary,
+    },
+    filterPillText: {
+        fontSize: 13,
+        fontFamily: 'Inter',
+        color: '#666666',
+        fontWeight: '500',
+    },
+    filterPillTextActive: {
+        color: COLORS.black,
+        fontWeight: '600',
     },
 
     // Add Product Button

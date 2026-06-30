@@ -554,9 +554,15 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             setVariants(prev => prev.filter(v => v.id !== exists.id));
             if (mainVariantId === exists.id) setMainVariantId(null);
         } else {
+            // Auto-generate variant name from option label
+            const attr = attributes.find(a => a.id.toString() === attrId);
+            const option = attr?.options?.find(o => o.id.toString() === optionId);
+            const autoName = option?.admin_name || '';
+
             // Add
             const newVariant = {
                 id: Date.now().toString(),
+                name: autoName,
                 attributes: { [attrId]: optionId },
                 sku: '',
                 price: '',
@@ -596,8 +602,16 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             return;
         }
 
+        // Auto-generate variant name from selected option labels
+        const autoName = selectedVariantAttributes.map(attrId => {
+            const attr = attributes.find(a => a.id.toString() === attrId);
+            const option = attr?.options?.find(o => o.id.toString() === tempSelection[attrId]);
+            return option?.admin_name || '';
+        }).filter(Boolean).join(' - ');
+
         const newVariant = {
             id: Date.now().toString(),
+            name: autoName,
             attributes: { ...tempSelection },
             sku: '',
             price: '',
@@ -961,7 +975,16 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             {variants.map((variant, index) => (
                 <View key={variant.id} style={styles.variantEditorCard}>
                     <View style={styles.variantHeader}>
-                        <Text style={styles.variantTitle}>{getVariantLabel(variant)}</Text>
+                        <View style={styles.variantHeaderLeft}>
+                            <Text style={styles.variantAttrLabel}>{getVariantLabel(variant)}</Text>
+                            <TextInput
+                                style={styles.variantNameInput}
+                                value={variant.name || ''}
+                                onChangeText={v => updateVariantField(variant.id, 'name', v)}
+                                placeholder="Variant name..."
+                                placeholderTextColor="#999999"
+                            />
+                        </View>
                         <TouchableOpacity onPress={() => removeVariant(variant.id)}>
                             <Ionicons name="trash-outline" size={20} color={COLORS.error} />
                         </TouchableOpacity>
@@ -1473,11 +1496,30 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: 8,
     },
-    variantTitle: {
-        fontWeight: '600',
+    variantHeaderLeft: {
+        flex: 1,
+        flexDirection: 'column',
+        gap: 4,
+    },
+    variantAttrLabel: {
+        fontWeight: '500',
+        fontSize: 12,
+        color: '#6B7280',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    variantNameInput: {
         fontSize: 16,
+        fontWeight: '600',
+        fontFamily: 'Inter',
         color: '#1F2937',
+        backgroundColor: '#EEEEEF',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        height: 38,
     },
     rowInputs: {
         flexDirection: 'row',

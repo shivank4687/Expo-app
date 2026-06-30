@@ -39,7 +39,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
 
             {/* Tagline */}
             <View style={[styles.fieldContainer, errors.company_tag_line ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Tagline <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Tagline</Text>
                 <View style={[styles.inputContainer, errors.company_tag_line ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}
@@ -56,7 +56,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
 
             {/* Registered In */}
             <View style={[styles.fieldContainer, errors.registerd_in ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Registered In <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Registered In</Text>
                 <View style={[styles.inputContainer, errors.registerd_in ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}
@@ -73,7 +73,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
 
             {/* Designation */}
             <View style={[styles.fieldContainer, errors.designation ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Designation <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Designation</Text>
                 <View style={[styles.inputContainer, errors.designation ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}
@@ -90,7 +90,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
 
             {/* Team Size */}
             <View style={[styles.fieldContainer, errors.team_size ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Team Size <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Team Size</Text>
                 <View style={[styles.inputContainer, errors.team_size ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}
@@ -108,7 +108,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
 
             {/* Certification */}
             <View style={[styles.fieldContainer, errors.certification ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Certification <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Certification</Text>
                 <View style={[styles.inputContainer, errors.certification ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}
@@ -125,7 +125,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
 
             {/* Response Time */}
             <View style={[styles.fieldContainer, errors.response_time ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Response Time (hours) <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Response Time (hours)</Text>
                 <View style={[styles.inputContainer, errors.response_time ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}

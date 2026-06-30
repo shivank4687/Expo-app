@@ -457,6 +457,60 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
         }
     };
 
+    const pickVideo = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                showToast({
+                    message: 'Please grant permission to access your media library.',
+                    type: 'error',
+                });
+                return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                allowsMultipleSelection: false,
+                quality: 1,
+            });
+            if (!result.canceled && result.assets) {
+                processSelectedFiles(result.assets);
+            }
+        } catch (error) {
+            console.error('Error picking video:', error);
+            showToast({
+                message: 'Failed to select video. Please try again.',
+                type: 'error',
+            });
+        }
+    };
+
+    const takeVideo = async () => {
+        try {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                showToast({
+                    message: 'Please grant permission to access your camera.',
+                    type: 'error',
+                });
+                return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                videoMaxDuration: MAX_VIDEO_DURATION,
+                quality: 1,
+            });
+            if (!result.canceled && result.assets) {
+                processSelectedFiles(result.assets);
+            }
+        } catch (error) {
+            console.error('Error recording video:', error);
+            showToast({
+                message: 'Failed to record video. Please try again.',
+                type: 'error',
+            });
+        }
+    };
+
     const processSelectedFiles = (assets: ImagePicker.ImagePickerAsset[]) => {
         const newImages: MediaFile[] = [];
         let newVideo: MediaFile | null = null;
@@ -693,12 +747,15 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     })}
 
                     {/* Video placeholder or preview */}
-                    <View style={styles.previewBox}>
+                    <View style={[styles.previewBox, !video && styles.previewBoxRow]}>
                         {video ? (
                             <>
                                 <View style={styles.videoPreview}>
-                                    <Ionicons name="videocam" size={40} color={COLORS.primary} />
-                                    <Text style={styles.videoFileName}>{video.fileName}</Text>
+                                    <Ionicons name="videocam" size={28} color={COLORS.primary} />
+                                    <Text style={styles.videoFileName} numberOfLines={2}>{video.fileName}</Text>
+                                    {video.duration !== undefined && (
+                                        <Text style={styles.videoDuration}>{Math.round(video.duration)}s</Text>
+                                    )}
                                 </View>
                                 <TouchableOpacity
                                     style={styles.removeButton}
@@ -709,9 +766,15 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                             </>
                         ) : (
                             <>
-                                <Ionicons name="videocam-outline" size={40} color="#CCCCCC" />
-                                <Text style={styles.previewPlaceholderText}>Video</Text>
-                                <Text style={styles.previewVideoLimit}>(25s max)</Text>
+                                <TouchableOpacity style={styles.videoActionBtn} onPress={pickVideo}>
+                                    <Ionicons name="folder-open-outline" size={18} color={COLORS.primary} />
+                                    <Text style={styles.videoActionText}>{'Add\nVideo'}</Text>
+                                </TouchableOpacity>
+                                <View style={styles.videoActionDivider} />
+                                <TouchableOpacity style={styles.videoActionBtn} onPress={takeVideo}>
+                                    <Ionicons name="videocam-outline" size={18} color={COLORS.primary} />
+                                    <Text style={styles.videoActionText}>{'Take\nVideo'}</Text>
+                                </TouchableOpacity>
                             </>
                         )}
                     </View>
@@ -1339,6 +1402,39 @@ const styles = StyleSheet.create({
         color: '#000000',
         textAlign: 'center',
         paddingHorizontal: 4,
+    },
+    videoDuration: {
+        fontFamily: 'Inter',
+        fontSize: 10,
+        fontWeight: '400',
+        lineHeight: 12,
+        color: '#666666',
+    },
+    previewBoxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 2,
+    },
+    videoActionBtn: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
+        paddingVertical: 4,
+    },
+    videoActionText: {
+        fontFamily: 'Inter',
+        fontSize: 9,
+        fontWeight: '600',
+        color: COLORS.primary,
+        textAlign: 'center',
+        lineHeight: 12,
+    },
+    videoActionDivider: {
+        width: 1,
+        height: '55%',
+        backgroundColor: '#E0E0E0',
     },
     inputError: {
         borderWidth: 1,

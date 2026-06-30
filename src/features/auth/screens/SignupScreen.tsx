@@ -341,11 +341,11 @@ export const SignupScreen: React.FC = () => {
                 newErrors.company_name = t('auth.companyNameRequired', 'Company name is required');
             }
 
-            if (!validation.isRequired(formData.url)) {
-                newErrors.url = t('auth.urlRequired', 'Shop URL is required');
-            } else if (errors.url) {
-                newErrors.url = errors.url;
-            }
+            // if (!validation.isRequired(formData.url)) {
+            //     newErrors.url = t('auth.urlRequired', 'Shop URL is required');
+            // } else if (errors.url) {
+            //     newErrors.url = errors.url;
+            // }
         }
 
         setErrors(newErrors);
@@ -398,24 +398,24 @@ export const SignupScreen: React.FC = () => {
             }
         }
 
-        // Validate URL if supplier
-        if (selectedUserType === 'supplier' && formData.url && /^[a-z0-9-]+$/.test(formData.url)) {
-            try {
-                const urlResponse = await authApi.checkDuplicate({
-                    type: 'url',
-                    value: formData.url,
-                }, 'supplier');
-                if (!urlResponse.available) {
-                    setErrors(prev => ({
-                        ...prev,
-                        url: urlResponse.message || t('auth.urlAlreadyExists', 'This URL is already taken. Please choose another.'),
-                    }));
-                    hasDuplicateErrors = true;
-                }
-            } catch (error) {
-                console.error('URL validation error:', error);
-            }
-        }
+        // // Validate URL if supplier
+        // if (selectedUserType === 'supplier' && formData.url && /^[a-z0-9-]+$/.test(formData.url)) {
+        //     try {
+        //         const urlResponse = await authApi.checkDuplicate({
+        //             type: 'url',
+        //             value: formData.url,
+        //         }, 'supplier');
+        //         if (!urlResponse.available) {
+        //             setErrors(prev => ({
+        //                 ...prev,
+        //                 url: urlResponse.message || t('auth.urlAlreadyExists', 'This URL is already taken. Please choose another.'),
+        //             }));
+        //             hasDuplicateErrors = true;
+        //         }
+        //     } catch (error) {
+        //         console.error('URL validation error:', error);
+        //     }
+        // }
 
         // If duplicate errors found, stop submission
         if (hasDuplicateErrors) {
@@ -446,7 +446,7 @@ export const SignupScreen: React.FC = () => {
             // Add supplier fields
             if (selectedUserType === 'supplier') {
                 signupPayload.company_name = formData.company_name;
-                signupPayload.url = formData.url;
+                // signupPayload.url = formData.url;
             }
 
             const result = await dispatch(signupThunk(signupPayload)).unwrap();
@@ -705,7 +705,8 @@ export const SignupScreen: React.FC = () => {
                                     labelStyle={styles.inputLabel}
                                 />
 
-                                <Input
+                                {/* Shop URL hidden from mobile signup */}
+                                {/* <Input
                                     label={t('auth.shopUrl', 'Shop URL')}
                                     placeholder={t('auth.enterShopUrl', 'Enter your shop URL (e.g. my-shop)')}
                                     value={formData.url}
@@ -717,7 +718,7 @@ export const SignupScreen: React.FC = () => {
                                     inputContainerStyle={styles.inputField}
                                     style={styles.inputText}
                                     labelStyle={styles.inputLabel}
-                                />
+                                /> */}
                             </>
                         )}
 
