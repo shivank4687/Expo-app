@@ -37,6 +37,7 @@ export interface SupplierProfile {
     minimum_order_amount?: number | null;
     free_shipping_threshold?: number | null;
     preparation_time_days?: number | null;
+    standard_delivery_days?: number | null;
     automatic_validation_enabled?: boolean;
     special_price_from_wholesale?: boolean;
     wholesale_price_multiplier?: number | null;
@@ -87,6 +88,7 @@ export interface SupplierProfileUpdateData {
     minimum_order_amount?: number | null;
     free_shipping_threshold?: number | null;
     preparation_time_days?: number | null;
+    standard_delivery_days?: number | null;
     automatic_validation_enabled?: boolean;
     special_price_from_wholesale?: boolean;
     wholesale_price_multiplier?: number | null;

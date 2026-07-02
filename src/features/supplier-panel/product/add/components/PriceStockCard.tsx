@@ -73,7 +73,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
         immediateShipping: true,
         inOrOrderQty: '',
         inOrderQtyUnit: '',
-        madeToOrderEnabled: true,
+        madeToOrderEnabled: false,
         madeToOrderQuantity: '',
         productionTime: '',
         discounts: '',
@@ -266,8 +266,8 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 made_to_order_days: formData.productionTime,
                 discounts: formData.discounts,
                 discount_type: discountType, // 'percentage' or 'price'
-                manage_stock: formData.manageStock ? 1 : 0,
-                inventories: formData.inventoryQty ? { 1: formData.inventoryQty } : {},
+                manage_stock: 1,
+                inventories: formData.inOrOrderQty ? { 1: formData.inOrOrderQty } : {},
                 customer_group_prices: customerGroupPrices
             };
         },
@@ -319,7 +319,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             if (data.in_order_qty_type !== undefined) setFormData(prev => ({ ...prev, inOrderQtyUnit: data.in_order_qty_type?.toString() || '' }));
             if (data.made_to_order_qty !== undefined) setFormData(prev => ({ ...prev, madeToOrderQuantity: data.made_to_order_qty }));
             if (data.made_to_order_days !== undefined) setFormData(prev => ({ ...prev, productionTime: data.made_to_order_days }));
-            if (data.immediate_shipping !== undefined) setFormData(prev => ({ ...prev, immediateShipping: !!data.immediate_shipping }));
+            if (data.immediate_shipping !== undefined) setFormData(prev => ({ ...prev, immediateShipping: true }));
             if (data.made_to_order !== undefined) setFormData(prev => ({ ...prev, madeToOrderEnabled: !!data.made_to_order }));
             if (data.manage_stock !== undefined) {
                 setFormData(prev => ({ ...prev, manageStock: !!data.manage_stock }));
@@ -469,14 +469,14 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 <View style={styles.checkboxRow}>
                     <TouchableOpacity
                         style={styles.checkbox}
-                        onPress={() => updateField('immediateShipping', !formData.immediateShipping)}
+                        disabled={true}
                     >
                         {formData.immediateShipping && <View style={styles.checkboxChecked} />}
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.checkboxContent}
-                        onPress={() => updateField('immediateShipping', !formData.immediateShipping)}
-                        activeOpacity={0.7}
+                        disabled={true}
+                        activeOpacity={1}
                     >
                         <Text style={styles.sectionTitle}>In Stock (Immediate Shipping)</Text>
                         <Text style={styles.tipText}>
@@ -560,7 +560,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 )}
             </View>
 
-            {/* Manage Stock Section */}
+            {/* Manage Stock Section
             <View style={styles.borderedSection}>
                 <View style={styles.checkboxRow}>
                     <TouchableOpacity
@@ -595,6 +595,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                     </View>
                 )}
             </View>
+            */}
 
             {/* Discounts Section */}
             <View style={styles.section}>

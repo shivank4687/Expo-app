@@ -74,7 +74,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
 
     // UI States
     const [inStockEnabled, setInStockEnabled] = useState(false);
-    const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(true);
+    const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(false);
     const [isAddingOption, setIsAddingOption] = useState(false);
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [targetAttributeId, setTargetAttributeId] = useState<string | null>(null);
@@ -385,7 +385,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             setMasterLength('');
             setMasterWidth('');
             setImmediateShipping(true);
-            setMadeToOrderEnabled(true);
+            setMadeToOrderEnabled(false);
             setInOrderQty('');
             setInOrderQtyUnit('');
             setMadeToOrderQty('');
@@ -410,7 +410,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             if (data.length !== undefined) setMasterLength(data.length?.toString() || '');
             if (data.width !== undefined) setMasterWidth(data.width?.toString() || '');
 
-            if (data.immediate_shipping !== undefined) setImmediateShipping(!!data.immediate_shipping);
+            if (data.immediate_shipping !== undefined) setImmediateShipping(true);
             if (data.made_to_order !== undefined) setMadeToOrderEnabled(!!data.made_to_order);
             if (data.in_order_qty !== undefined) setInOrderQty(data.in_order_qty);
             if (data.in_order_qty_type !== undefined) setInOrderQtyUnit(data.in_order_qty_type?.toString() || '');
@@ -1178,14 +1178,14 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 <View style={styles.checkboxRow}>
                     <TouchableOpacity
                         style={styles.checkbox}
-                        onPress={() => setImmediateShipping(!immediateShipping)}
+                        disabled={true}
                     >
                         {immediateShipping && <View style={styles.checkboxChecked} />}
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.checkboxContent}
-                        onPress={() => setImmediateShipping(!immediateShipping)}
-                        activeOpacity={0.7}
+                        disabled={true}
+                        activeOpacity={1}
                     >
                         <Text style={styles.sectionTitle}>In Stock (Immediate Shipping)</Text>
                         <Text style={styles.tipText}>

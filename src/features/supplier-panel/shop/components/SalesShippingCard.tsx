@@ -164,6 +164,34 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                 )}
             </View>
 
+            {/* Standard delivery days */}
+            <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Standard delivery days</Text>
+                <Text style={styles.description}>Estimated number of days for standard delivery to the customer</Text>
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter standard delivery days"
+                        placeholderTextColor="#666666"
+                        keyboardType="numeric"
+                        value={data?.standard_delivery_days?.toString() || ''}
+                        onChangeText={(value) => {
+                            if (!value) {
+                                onChange('standard_delivery_days', null);
+                                return;
+                            }
+                            const numericString = value.replace(/[^0-9]/g, '');
+                            if (!numericString) return;
+                            const numValue = parseInt(numericString, 10);
+                            if (numValue === 0) return;
+                            onChange('standard_delivery_days', numValue);
+                        }}
+                        textContentType="none"
+                        autoComplete="off"
+                    />
+                </View>
+            </View>
+
             {/* Automatic validation - Radio buttons */}
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Order Validation Mode</Text>

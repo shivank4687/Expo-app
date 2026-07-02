@@ -621,6 +621,8 @@
     "publish": "Publish",
     "generateAiContent": "Generate AI Content",
     "aiContentPlaceholder": "Enter product name or brief description...",
+    "generateAiPolicies": "Generate AI Policies",
+    "aiPoliciesPlaceholder": "Enter details about your shop (e.g. products, shipping and return rules) to generate policies...",
     "generate": "Generate",
     "essential": "Essential",
     "name": "Name"

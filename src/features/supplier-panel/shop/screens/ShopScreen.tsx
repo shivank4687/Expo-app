@@ -9,14 +9,20 @@ import { getSupplierProfile, SupplierProfile, updateSupplierProfile } from '../a
 import { AddressCard, DeliveryMethodCard, IdentityCard, PoliciesCard, SalesShippingCard, ShopDetailsCard, ShopMediaCard, SocialMediaCard } from '../components';
 import { consumeContactUpdate } from '@/features/supplier-panel/profile/contactUpdateTracker';
 import { parseValidDate } from '@/shared/utils/dateUtils';
+import aiContentApi from '@/services/api/ai-content.api';
+import { InputModal } from '@/shared/components';
+import { useTranslation } from 'react-i18next';
 
 export default function ShopScreen() {
+    const { t } = useTranslation();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profileData, setProfileData] = useState<Partial<SupplierProfile>>({});
     const [originalData, setOriginalData] = useState<Partial<SupplierProfile>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [showAIModal, setShowAIModal] = useState(false);
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -176,6 +182,26 @@ export default function ShopScreen() {
         }
     };
 
+    const handleAIGeneration = async (prompt: string) => {
+        setIsGeneratingAI(true);
+        try {
+            const generatedContent = await aiContentApi.generateShopPolicies(prompt);
+            setProfileData(prev => ({
+                ...prev,
+                shipping_policy: generatedContent.shipping_policy,
+                privacy_policy: generatedContent.privacy_policy,
+                return_policy: generatedContent.return_policy,
+            }));
+            setShowAIModal(false);
+            showToast({ message: 'AI policies generated successfully!', type: 'success' });
+        } catch (error) {
+            console.error('Error generating AI policies:', error);
+            showToast({ message: 'Failed to generate policies. Please try again.', type: 'error' });
+        } finally {
+            setIsGeneratingAI(false);
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -222,6 +248,7 @@ export default function ShopScreen() {
                     <PoliciesCard
                         data={profileData}
                         onChange={handleInputChange}
+                        onAIGenerateClick={() => setShowAIModal(true)}
                     />
                 </View>
 
@@ -274,6 +301,17 @@ export default function ShopScreen() {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            {/* AI Policies Generation Modal */}
+            <InputModal
+                visible={showAIModal}
+                onClose={() => setShowAIModal(false)}
+                onSubmit={handleAIGeneration}
+                title={t('supplierPanel.generateAiPolicies')}
+                placeholder={t('supplierPanel.aiPoliciesPlaceholder')}
+                submitButtonText={t('supplierPanel.generate')}
+                isLoading={isGeneratingAI}
+            />
         </View>
     );
 }

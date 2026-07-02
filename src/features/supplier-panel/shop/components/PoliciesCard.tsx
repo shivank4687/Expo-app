@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { AiIcon } from '@/assets/icons';
+import { COLORS } from '@/features/supplier-panel/styles';
+import { useAppSelector } from '@/store/hooks';
 
 interface PoliciesCardProps {
     data: {
@@ -8,12 +11,25 @@ interface PoliciesCardProps {
         return_policy?: string;
     };
     onChange: (field: string, value: string) => void;
+    onAIGenerateClick: () => void;
 }
 
-export const PoliciesCard: React.FC<PoliciesCardProps> = ({ data, onChange }) => {
+export const PoliciesCard: React.FC<PoliciesCardProps> = ({ data, onChange, onAIGenerateClick }) => {
+    const isConnected = useAppSelector((state) => state.network.isConnected);
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>3) Policies</Text>
+            <View style={styles.headerRow}>
+                <Text style={styles.title}>3) Policies</Text>
+                <TouchableOpacity
+                    style={[styles.aiButton, !isConnected && styles.aiButtonDisabled]}
+                    onPress={onAIGenerateClick}
+                    disabled={!isConnected}
+                >
+                    <AiIcon width={14} height={14} color={isConnected ? COLORS.primary : '#999999'} />
+                    <Text style={[styles.aiButtonText, !isConnected && styles.aiButtonTextDisabled]}>Auto-generate</Text>
+                </TouchableOpacity>
+            </View>
 
             {/* Shipping Policy */}
             <View style={styles.fieldContainerLarge}>
@@ -78,15 +94,46 @@ const styles = StyleSheet.create({
         gap: 16,
         alignSelf: 'stretch',
     },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+    },
     title: {
-        width: "100%",
-        height: 24,
         fontFamily: 'Inter',
         fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 20,
         lineHeight: 24,
         color: '#000000',
+    },
+    aiButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        gap: 6,
+        backgroundColor: COLORS.primaryLight,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderRadius: 8,
+    },
+    aiButtonDisabled: {
+        backgroundColor: '#F3F3F3',
+        borderColor: '#D1D1D1',
+        opacity: 0.55,
+    },
+    aiButtonText: {
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        fontWeight: '500',
+        fontSize: 14,
+        color: COLORS.primary,
+    },
+    aiButtonTextDisabled: {
+        color: '#999999',
     },
     fieldContainerLarge: {
         display: 'flex',
