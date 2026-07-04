@@ -193,7 +193,18 @@
     "productionTime": "Tiempo de producción: {{days}} días",
     "madeToOrderQty": "Cantidad mínima de pedido: {{qty}} unidades",
     "selectOptions": "Seleccionar Opciones",
-    "hideOptions": "Ocultar Opciones"
+    "hideOptions": "Ocultar Opciones",
+    "calculatingShipping": "Calculando estimación de envío...",
+    "loginToSeeEstimate": "Inicie sesión para ver las fechas estimadas de entrega.",
+    "addAddressForEstimate": "Agregar dirección para estimación",
+    "noAddressFoundDesc": "Agregue una dirección de entrega para calcular los días y precios de entrega.",
+    "addAddress": "Agregar dirección",
+    "shippingUnavailable": "Envío no disponible",
+    "noRatesForLocation": "No se encontraron opciones de envío para esta ubicación.",
+    "estimatedDelivery": "Entrega estimada",
+    "deliveryDateVal": "Llega el {{date}}",
+    "shippingQuoteError": "Error al calcular el envío",
+    "deliveryEstimate": "Estimación de entrega"
   },
   "cart": {
     "cart": "Carrito",

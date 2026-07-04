@@ -185,3 +185,17 @@ export interface ProductFilters {
     // Dynamic attribute filters (e.g., color, brand, size)
     [key: string]: any; // Allow dynamic filter keys from API
 }
+
+export interface ShippingQuoteRate {
+    provider: string;
+    service_name: string;
+    formatted_price: string;
+    price: number;
+    days: number | null;
+    estimated_delivery: string;
+}
+
+export interface ShippingQuoteResult {
+    rates: ShippingQuoteRate[];
+    cheapest: ShippingQuoteRate | null;
+}

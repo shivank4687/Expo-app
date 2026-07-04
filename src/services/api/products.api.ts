@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '@/config/constants';
-import { Product, ProductFilters } from '@/features/product/types/product.types';
+import { Product, ProductFilters, ShippingQuoteResult } from '@/features/product/types/product.types';
 import { PaginatedResponse } from '@/types/global.types';
 import { restApiClient } from './client';
 import { formatFileUri, multipartFetch } from './fetchClient';
@@ -132,6 +132,27 @@ export const productsApi = {
         // Handle case where API might return wrapped data or direct object
         const data = (response as any).data || response;
         return transformProduct(data);
+    },
+
+    /**
+     * Get shipping quote for a single product
+     */
+    async getShippingQuote(
+        productId: number,
+        address: { postcode: string; country: string; state: string; city: string },
+        quantity: number = 1
+    ): Promise<ShippingQuoteResult> {
+        const response = await restApiClient.post<{ data: ShippingQuoteResult }>(
+            `${API_ENDPOINTS.PRODUCTS}/${productId}/shipping-quote`,
+            {
+                postcode: address.postcode,
+                country: address.country,
+                state: address.state,
+                city: address.city,
+                quantity,
+            }
+        );
+        return response.data;
     },
 
     /**

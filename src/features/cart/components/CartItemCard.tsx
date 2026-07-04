@@ -141,7 +141,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                                 <View style={styles.availabilityBadgeOrange}>
                                     <Ionicons name="time-outline" size={14} color="#c2410c" />
                                 </View>
-                            ) : item.product.immediate_shipping ? (
+                            ) : (item.product.immediate_shipping && item.product.in_stock) ? (
                                 <View style={styles.availabilityBadgeGreen}>
                                     <Ionicons name="checkmark" size={16} color="#15803d" />
                                 </View>

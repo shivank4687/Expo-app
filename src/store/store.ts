@@ -14,6 +14,7 @@ import customerStatsReducer from './slices/customerStatsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
 import networkReducer from './slices/networkSlice';
 import offlineProductsReducer from './slices/offlineProductsSlice';
+import addressReducer from './slices/addressSlice';
 
 // Use AsyncStorage for native, localStorage for web
 const storage = Platform.OS === 'web'
@@ -72,6 +73,7 @@ const rootReducer = combineReducers({
     recentlyViewed: recentlyViewedReducer,
     network: networkReducer,
     offlineProducts: persistReducer(offlineProductsPersistConfig, offlineProductsReducer),
+    address: addressReducer,
 });
 
 // Persisted reducer

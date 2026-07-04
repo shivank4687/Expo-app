@@ -169,7 +169,7 @@ function populateCards(product: any, type: ProductType, refs: CardRefs) {
         refs.priceStockCardRef.current.updateFields({
             price: product.price?.toString() || '',
             sku: product.sku || '',
-            in_order_qty: product.in_order_qty?.toString() || '',
+            in_order_qty: product.inventories?.[0]?.qty?.toString() || product.in_order_qty?.toString() || '',
             in_order_qty_type: product.in_order_qty_type || '',
             made_to_order_qty: product.made_to_order_qty?.toString() || '',
             made_to_order_days: product.made_to_order_days?.toString() || '',

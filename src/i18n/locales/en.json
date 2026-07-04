@@ -193,7 +193,18 @@
     "productionTime": "Production time: {{days}} days",
     "madeToOrderQty": "Minimum order quantity: {{qty}} units",
     "selectOptions": "Select Options",
-    "hideOptions": "Hide Options"
+    "hideOptions": "Hide Options",
+    "calculatingShipping": "Calculating shipping estimate...",
+    "loginToSeeEstimate": "Login to see estimated delivery dates.",
+    "addAddressForEstimate": "Add Address for Estimate",
+    "noAddressFoundDesc": "Add a delivery address to calculate delivery days and prices.",
+    "addAddress": "Add Address",
+    "shippingUnavailable": "Shipping Unavailable",
+    "noRatesForLocation": "No shipping options found for this location.",
+    "estimatedDelivery": "Estimated Delivery",
+    "deliveryDateVal": "Arrives by {{date}}",
+    "shippingQuoteError": "Failed to calculate shipping",
+    "deliveryEstimate": "Delivery Estimate"
   },
   "cart": {
     "cart": "Cart",

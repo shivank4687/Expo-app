@@ -16,6 +16,7 @@ import { addressApi } from '@/services/api/address.api';
 import { coreApi, State } from '@/services/api/core.api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
+import { fetchAddressesThunk } from '@/store/slices/addressSlice';
 import { AddressFormData } from '../types/address.types';
 import { theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
@@ -204,6 +205,9 @@ export const AddAddressScreen: React.FC = () => {
                 await addressApi.createAddress(formData);
                 showToast({ message: 'Address added successfully', type: 'success' });
             }
+
+            // Force reload addresses list in Redux
+            dispatch(fetchAddressesThunk(true));
 
             router.back();
         } catch (error: any) {

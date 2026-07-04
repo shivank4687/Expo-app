@@ -32,6 +32,7 @@ import { PricingGroup } from '../components/PricingGroup';
 import { ProductSpecificationCard } from '../components/ProductSpecificationCard';
 import { ProductReviewCard } from '../components/ProductReviewCard';
 import { AvailabilityCard } from '../components/AvailabilityCard';
+import { EstimatedDeliveryCard } from '../components/EstimatedDeliveryCard';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -308,10 +309,16 @@ export const ProductDetailScreen: React.FC = () => {
 
                     {/* Availability Card */}
                     <AvailabilityCard
-                        immediateShipping={product.immediate_shipping}
+                        immediateShipping={product.immediate_shipping && product.in_stock}
                         madeToOrder={product.made_to_order}
                         madeToOrderDays={product.made_to_order_days}
                         madeToOrderQty={product.made_to_order_qty}
+                    />
+
+                    {/* Estimated Delivery Card */}
+                    <EstimatedDeliveryCard
+                        productId={product.id}
+                        isAuthenticated={isAuthenticated}
                     />
 
                     {/* Rating */}

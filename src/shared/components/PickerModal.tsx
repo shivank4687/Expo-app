@@ -9,6 +9,7 @@ import {
     TextInput,
     Platform,
     KeyboardAvoidingView,
+    Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/theme';
@@ -119,47 +120,49 @@ export const PickerModal: React.FC<PickerModalProps> = ({
                     )}
 
                     {/* Items List */}
-                    <FlatList
-                        data={filteredItems}
-                        keyExtractor={(item) => item.value}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                style={[
-                                    styles.item,
-                                    item.value === selectedValue && styles.selectedItem,
-                                ]}
-                                onPress={() => handleSelect(item.value)}
-                            >
-                                <Text
+                    <View style={styles.listWrapper}>
+                        <FlatList
+                            data={filteredItems}
+                            keyExtractor={(item) => item.value}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
                                     style={[
-                                        styles.itemText,
-                                        item.value === selectedValue && styles.selectedItemText,
+                                        styles.item,
+                                        item.value === selectedValue && styles.selectedItem,
                                     ]}
+                                    onPress={() => handleSelect(item.value)}
                                 >
-                                    {item.label}
-                                </Text>
-                                {item.value === selectedValue && (
-                                    <Ionicons
-                                        name="checkmark"
-                                        size={20}
-                                        color={theme.colors.primary[500]}
-                                    />
-                                )}
-                            </TouchableOpacity>
-                        )}
-                        ItemSeparatorComponent={() => <View style={styles.separator} />}
-                        ListEmptyComponent={() => (
-                            <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>
-                                    {searchQuery
-                                        ? 'No results found'
-                                        : `No ${title.toLowerCase()} available`}
-                                </Text>
-                            </View>
-                        )}
-                        contentContainerStyle={styles.listContainer}
-                        keyboardShouldPersistTaps="handled"
-                    />
+                                    <Text
+                                        style={[
+                                            styles.itemText,
+                                            item.value === selectedValue && styles.selectedItemText,
+                                        ]}
+                                    >
+                                        {item.label}
+                                    </Text>
+                                    {item.value === selectedValue && (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={20}
+                                            color={theme.colors.primary[500]}
+                                        />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                            ItemSeparatorComponent={() => <View style={styles.separator} />}
+                            ListEmptyComponent={() => (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>
+                                        {searchQuery
+                                            ? 'No results found'
+                                            : `No ${title.toLowerCase()} available`}
+                                    </Text>
+                                </View>
+                            )}
+                            contentContainerStyle={styles.listContainer}
+                            keyboardShouldPersistTaps="handled"
+                        />
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </Modal>
@@ -179,7 +182,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.white,
         borderTopLeftRadius: theme.borderRadius.xl,
         borderTopRightRadius: theme.borderRadius.xl,
-        maxHeight: '80%',
+        maxHeight: Dimensions.get('window').height * 0.8,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -191,6 +194,10 @@ const styles = StyleSheet.create({
                 elevation: 8,
             },
         }),
+    },
+    listWrapper: {
+        height: Dimensions.get('window').height * 0.45,
+        minHeight: 300,
     },
     header: {
         flexDirection: 'row',
