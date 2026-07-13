@@ -262,13 +262,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         />
 
                         {/* Availability Badge */}
-                        {product.made_to_order ? (
-                            <View style={styles.availabilityBadgeOrange}>
-                                <Ionicons name="time-outline" size={16} color="#c2410c" />
-                            </View>
-                        ) : (product.immediate_shipping && product.in_stock) ? (
+                        {(product.immediate_shipping && product.in_stock) ? (
                             <View style={styles.availabilityBadgeGreen}>
                                 <Ionicons name="checkmark" size={18} color="#15803d" />
+                            </View>
+                        ) : product.made_to_order ? (
+                            <View style={styles.availabilityBadgeOrange}>
+                                <Ionicons name="time-outline" size={16} color="#c2410c" />
                             </View>
                         ) : null}
 

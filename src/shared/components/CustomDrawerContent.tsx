@@ -31,11 +31,11 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     }, [dispatch, selectedLocale, selectedCurrency]);
 
     // Load CMS pages when locale changes
-    useEffect(() => {
-        if (selectedLocale?.code) {
-            dispatch(fetchCMSPages({ locale: selectedLocale.code }));
-        }
-    }, [selectedLocale?.code, dispatch]);
+    // useEffect(() => {
+    //     if (selectedLocale?.code) {
+    //         dispatch(fetchCMSPages({ locale: selectedLocale.code }));
+    //     }
+    // }, [selectedLocale?.code, dispatch]);
 
     const handleLoginPress = () => {
         router.push('/login');

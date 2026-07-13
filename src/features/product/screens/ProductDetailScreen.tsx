@@ -264,65 +264,65 @@ export const ProductDetailScreen: React.FC = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                {/* Image Gallery */}
-                <ProductGallery
-                    images={displayImages}
-                    isOnSale={!!(product.on_sale || hasDiscount)}
-                    isNew={!!(product.is_new || product.new === true || product.new === 1)}
-                    inStock={product.in_stock}
-                    priceLabel={priceLabel}
-                    formattedPrice={formatters.formatPrice(displayPrice, currencySymbol)}
-                    formattedRegularPrice={(hasDiscount && displayRegularPrice) ? formatters.formatPrice(displayRegularPrice, currencySymbol) : undefined}
-                    discountPercent={(hasDiscount && displayRegularPrice) ? Math.round(((displayRegularPrice - displayPrice) / displayRegularPrice) * 100) : undefined}
-                    rating={product.rating}
-                    reviewCount={product.reviews_count}
-                />
+                    {/* Image Gallery */}
+                    <ProductGallery
+                        images={displayImages}
+                        isOnSale={!!(product.on_sale || hasDiscount)}
+                        isNew={!!(product.is_new || product.new === true || product.new === 1)}
+                        inStock={product.in_stock}
+                        priceLabel={priceLabel}
+                        formattedPrice={formatters.formatPrice(displayPrice, currencySymbol)}
+                        formattedRegularPrice={(hasDiscount && displayRegularPrice) ? formatters.formatPrice(displayRegularPrice, currencySymbol) : undefined}
+                        discountPercent={(hasDiscount && displayRegularPrice) ? Math.round(((displayRegularPrice - displayPrice) / displayRegularPrice) * 100) : undefined}
+                        rating={product.rating}
+                        reviewCount={product.reviews_count}
+                    />
 
-                {/* Product Info */}
-                <View style={styles.content}>
-                    {/* Header with Name and Wishlist */}
-                    <View style={styles.header}>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.name}>{product.name}</Text>
-                            {product.supplier ? (
-                                <SoldBy supplier={product.supplier} />
-                            ) : null}
+                    {/* Product Info */}
+                    <View style={styles.content}>
+                        {/* Header with Name and Wishlist */}
+                        <View style={styles.header}>
+                            <View style={styles.titleContainer}>
+                                <Text style={styles.name}>{product.name}</Text>
+                                {product.supplier ? (
+                                    <SoldBy supplier={product.supplier} />
+                                ) : null}
+                            </View>
+
+                            {/* Wishlist Button */}
+                            <TouchableOpacity
+                                style={styles.wishlistButton}
+                                onPress={handleToggleWishlist}
+                                disabled={isTogglingWishlist}
+                            >
+                                {isTogglingWishlist ? (
+                                    <ActivityIndicator size="small" color={theme.colors.error.main} />
+                                ) : (
+                                    <Ionicons
+                                        name={isInWishlist ? 'heart' : 'heart-outline'}
+                                        size={28}
+                                        color={isInWishlist ? theme.colors.error.main : theme.colors.text.secondary}
+                                    />
+                                )}
+                            </TouchableOpacity>
                         </View>
 
-                        {/* Wishlist Button */}
-                        <TouchableOpacity
-                            style={styles.wishlistButton}
-                            onPress={handleToggleWishlist}
-                            disabled={isTogglingWishlist}
-                        >
-                            {isTogglingWishlist ? (
-                                <ActivityIndicator size="small" color={theme.colors.error.main} />
-                            ) : (
-                                <Ionicons
-                                    name={isInWishlist ? 'heart' : 'heart-outline'}
-                                    size={28}
-                                    color={isInWishlist ? theme.colors.error.main : theme.colors.text.secondary}
-                                />
-                            )}
-                        </TouchableOpacity>
-                    </View>
+                        {/* Availability Card */}
+                        <AvailabilityCard
+                            immediateShipping={product.immediate_shipping && product.in_stock}
+                            madeToOrder={product.made_to_order}
+                            madeToOrderDays={product.made_to_order_days}
+                            madeToOrderQty={product.made_to_order_qty}
+                        />
 
-                    {/* Availability Card */}
-                    <AvailabilityCard
-                        immediateShipping={product.immediate_shipping && product.in_stock}
-                        madeToOrder={product.made_to_order}
-                        madeToOrderDays={product.made_to_order_days}
-                        madeToOrderQty={product.made_to_order_qty}
-                    />
+                        {/* Estimated Delivery Card */}
+                        <EstimatedDeliveryCard
+                            productId={product.id}
+                            isAuthenticated={isAuthenticated}
+                        />
 
-                    {/* Estimated Delivery Card */}
-                    <EstimatedDeliveryCard
-                        productId={product.id}
-                        isAuthenticated={isAuthenticated}
-                    />
-
-                    {/* Rating */}
-                    {/* {product.rating && product.rating > 0 ? (
+                        {/* Rating */}
+                        {/* {product.rating && product.rating > 0 ? (
                         <View style={styles.ratingContainer}>
                             <View style={styles.stars}>
                                 {[1, 2, 3, 4, 5].map((star) => (
@@ -340,8 +340,8 @@ export const ProductDetailScreen: React.FC = () => {
                         </View>
                     ) : null} */}
 
-                    {/* Price */}
-                    {/* <View style={styles.priceSection}>
+                        {/* Price */}
+                        {/* <View style={styles.priceSection}>
                         <View style={styles.priceLeftContainer}>
                             {priceLabel ? (
                                 <Text style={styles.priceLabel}>{priceLabel}</Text>
@@ -392,8 +392,8 @@ export const ProductDetailScreen: React.FC = () => {
                         ) : null}
                     </View> */}
 
-                    {/* Stock Status */}
-                    {/* <View style={styles.stockContainer}>
+                        {/* Stock Status */}
+                        {/* <View style={styles.stockContainer}>
                         <Ionicons
                             name={product.in_stock ? 'checkmark-circle' : 'close-circle'}
                             size={20}
@@ -411,72 +411,72 @@ export const ProductDetailScreen: React.FC = () => {
 
 
 
-                    {/* Configurable Product Options */}
-                    {product.type === 'configurable' && (product.super_attributes || product.variants) ? (
+                        {/* Configurable Product Options */}
+                        {product.type === 'configurable' && (product.super_attributes || product.variants) ? (
+                            <View style={styles.section}>
+                                <ConfigurableOptions
+                                    product={product}
+                                    configurableConfig={configurableConfig}
+                                    superAttributes={product.configurable_attributes || product.super_attributes}
+                                    variants={product.variants}
+                                    onVariantChange={(variantId, variant) => {
+                                        console.log('📍 ProductDetailScreen - Variant changed:', variantId);
+                                        setSelectedVariantId(variantId);
+                                    }}
+                                    onPriceChange={(price, regularPrice) => {
+                                        console.log('📍 ProductDetailScreen - Price changed:', price, regularPrice);
+                                        setSelectedVariantPrice(price);
+                                        setSelectedVariantRegularPrice(regularPrice ?? null);
+                                    }}
+                                    onImagesChange={(images) => {
+                                        console.log('📍 ProductDetailScreen - Images changed:', images.length, images[0]);
+                                        setVariantImages(images);
+                                    }}
+                                />
+                            </View>
+                        ) : null}
+
+
+
+                        {/* Pricing Group */}
+                        {product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0 ? (
+                            <View style={styles.section}>
+                                <PricingGroup offers={product.customer_group_pricing_offers} />
+                            </View>
+                        ) : null}
+
                         <View style={styles.section}>
-                            <ConfigurableOptions
-                                product={product}
-                                configurableConfig={configurableConfig}
-                                superAttributes={product.configurable_attributes || product.super_attributes}
-                                variants={product.variants}
-                                onVariantChange={(variantId, variant) => {
-                                    console.log('📍 ProductDetailScreen - Variant changed:', variantId);
-                                    setSelectedVariantId(variantId);
-                                }}
-                                onPriceChange={(price, regularPrice) => {
-                                    console.log('📍 ProductDetailScreen - Price changed:', price, regularPrice);
-                                    setSelectedVariantPrice(price);
-                                    setSelectedVariantRegularPrice(regularPrice ?? null);
-                                }}
-                                onImagesChange={(images) => {
-                                    console.log('📍 ProductDetailScreen - Images changed:', images.length, images[0]);
-                                    setVariantImages(images);
-                                }}
+                            <ProductSpecificationCard
+                                shortDescription={product.short_description}
+                                specifications={product.specifications}
+                                supplier={product.supplier}
                             />
                         </View>
-                    ) : null}
 
+                        {/* Description Accordion */}
+                        {product.description ? (
+                            <Accordion
+                                title={t('product.description')}
+                                defaultExpanded={false}
+                                style={styles.accordion}
+                            >
+                                <HTMLContent
+                                    html={product.description}
+                                    baseStyle={styles.htmlContent}
+                                />
+                            </Accordion>
+                        ) : null}
 
-
-                    {/* Pricing Group */}
-                    {product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0 ? (
-                        <View style={styles.section}>
-                            <PricingGroup offers={product.customer_group_pricing_offers} />
-                        </View>
-                    ) : null}
-
-                    <View style={styles.section}>
-                        <ProductSpecificationCard
-                            shortDescription={product.short_description}
-                            specifications={product.specifications}
-                            supplier={product.supplier}
-                        />
-                    </View>
-
-                    {/* Description Accordion */}
-                    {product.description ? (
-                        <Accordion
-                            title={t('product.description')}
-                            defaultExpanded={false}
-                            style={styles.accordion}
-                        >
-                            <HTMLContent
-                                html={product.description}
-                                baseStyle={styles.htmlContent}
-                            />
-                        </Accordion>
-                    ) : null}
-
-                    {/* Sold By Accordion */}
-                    {product.supplier ? (
-                        <Accordion
-                            title={t('product.soldBy')}
-                            defaultExpanded={false}
-                            style={styles.accordion}
-                        >
-                            <View style={styles.supplierContainer}>
-                                {/* Supplier Company Name */}
-                                {/* <TouchableOpacity 
+                        {/* Sold By Accordion */}
+                        {product.supplier ? (
+                            <Accordion
+                                title={t('product.soldBy')}
+                                defaultExpanded={false}
+                                style={styles.accordion}
+                            >
+                                <View style={styles.supplierContainer}>
+                                    {/* Supplier Company Name */}
+                                    {/* <TouchableOpacity 
                                     style={styles.supplierNameContainer}
                                     onPress={() => {
                                         // Navigate to supplier shop page
@@ -487,172 +487,172 @@ export const ProductDetailScreen: React.FC = () => {
                                         });
                                     }}
                                 > */}
-                                <Text style={styles.supplierName}>
-                                    {product.supplier.company_name}
-                                </Text>
-                                {/* <Ionicons 
+                                    <Text style={styles.supplierName}>
+                                        {product.supplier.company_name}
+                                    </Text>
+                                    {/* <Ionicons 
                                         name="chevron-forward" 
                                         size={20} 
                                         color={theme.colors.text.secondary} 
                                     />
                                 </TouchableOpacity> */}
 
-                                {/* Supplier Rating */}
-                                {product.supplier.rating && product.supplier.rating > 0 ? (
-                                    <View style={styles.supplierRatingContainer}>
-                                        <View style={styles.supplierStars}>
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                <Ionicons
-                                                    key={star}
-                                                    name={star <= Math.round(product.supplier!.rating!) ? 'star' : 'star-outline'}
-                                                    size={16}
-                                                    color={theme.colors.warning.main}
-                                                />
-                                            ))}
+                                    {/* Supplier Rating */}
+                                    {product.supplier.rating && product.supplier.rating > 0 ? (
+                                        <View style={styles.supplierRatingContainer}>
+                                            <View style={styles.supplierStars}>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <Ionicons
+                                                        key={star}
+                                                        name={star <= Math.round(product.supplier!.rating!) ? 'star' : 'star-outline'}
+                                                        size={16}
+                                                        color={theme.colors.warning.main}
+                                                    />
+                                                ))}
+                                            </View>
+                                            <Text style={styles.supplierRatingText}>
+                                                {product.supplier.rating.toFixed(1)}
+                                                {product.supplier.total_reviews
+                                                    ? ` (${product.supplier.total_reviews} ${product.supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')})`
+                                                    : ''
+                                                }
+                                            </Text>
                                         </View>
-                                        <Text style={styles.supplierRatingText}>
-                                            {product.supplier.rating.toFixed(1)}
-                                            {product.supplier.total_reviews
-                                                ? ` (${product.supplier.total_reviews} ${product.supplier.total_reviews === 1 ? t('supplier.review') : t('supplier.reviews')})`
-                                                : ''
+                                    ) : null}
+
+                                    {/* View Supplier Shop Button */}
+                                    <TouchableOpacity
+                                        style={styles.viewSupplierButton}
+                                        onPress={() => {
+                                            if (product.supplier?.url) {
+                                                router.push(`/supplier/${product.supplier.url}`);
+                                            } else {
+                                                showToast({
+                                                    message: t('product.supplierShopNotAvailable'),
+                                                    type: 'warning'
+                                                });
                                             }
+                                        }}
+                                    >
+                                        <Text style={styles.viewSupplierButtonText}>
+                                            {t('product.viewSupplierShop')}
                                         </Text>
-                                    </View>
-                                ) : null}
+                                        <Ionicons
+                                            name="storefront-outline"
+                                            size={18}
+                                            color={theme.colors.primary[500]}
+                                        />
+                                    </TouchableOpacity>
 
-                                {/* View Supplier Shop Button */}
-                                <TouchableOpacity
-                                    style={styles.viewSupplierButton}
-                                    onPress={() => {
-                                        if (product.supplier?.url) {
-                                            router.push(`/supplier/${product.supplier.url}`);
-                                        } else {
-                                            showToast({
-                                                message: t('product.supplierShopNotAvailable'),
-                                                type: 'warning'
-                                            });
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.viewSupplierButtonText}>
-                                        {t('product.viewSupplierShop')}
-                                    </Text>
-                                    <Ionicons
-                                        name="storefront-outline"
-                                        size={18}
-                                        color={theme.colors.primary[500]}
-                                    />
-                                </TouchableOpacity>
+                                    {/* Message Supplier Button */}
+                                    <TouchableOpacity
+                                        style={styles.messageSupplierButton}
+                                        onPress={() => {
+                                            if (!isAuthenticated) {
+                                                showToast({
+                                                    message: t('product.loginToMessageSupplier'),
+                                                    type: 'warning'
+                                                });
+                                                return;
+                                            }
+                                            setIsMessageModalVisible(true);
+                                        }}
+                                    >
+                                        <Ionicons
+                                            name="chatbubble-outline"
+                                            size={18}
+                                            color={theme.colors.primary[500]}
+                                        />
+                                        <Text style={styles.messageSupplierButtonText}>
+                                            {t('product.messageSupplier')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </Accordion>
+                        ) : null}
 
-                                {/* Message Supplier Button */}
-                                <TouchableOpacity
-                                    style={styles.messageSupplierButton}
-                                    onPress={() => {
-                                        if (!isAuthenticated) {
-                                            showToast({
-                                                message: t('product.loginToMessageSupplier'),
-                                                type: 'warning'
-                                            });
-                                            return;
-                                        }
-                                        setIsMessageModalVisible(true);
-                                    }}
-                                >
-                                    <Ionicons
-                                        name="chatbubble-outline"
-                                        size={18}
-                                        color={theme.colors.primary[500]}
-                                    />
-                                    <Text style={styles.messageSupplierButtonText}>
-                                        {t('product.messageSupplier')}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </Accordion>
-                    ) : null}
+                        {/* Message Supplier Modal */}
+                        {product.supplier && (
+                            <MessageSupplierModal
+                                visible={isMessageModalVisible}
+                                supplierId={product.supplier.id}
+                                supplierCompanyName={product.supplier.company_name}
+                                onClose={() => setIsMessageModalVisible(false)}
+                                onSuccess={() => {
+                                    showToast({
+                                        message: t('product.messageSentSuccess'),
+                                        type: 'success'
+                                    });
+                                }}
+                            />
+                        )}
 
-                    {/* Message Supplier Modal */}
-                    {product.supplier && (
-                        <MessageSupplierModal
-                            visible={isMessageModalVisible}
-                            supplierId={product.supplier.id}
-                            supplierCompanyName={product.supplier.company_name}
-                            onClose={() => setIsMessageModalVisible(false)}
-                            onSuccess={() => {
-                                showToast({
-                                    message: t('product.messageSentSuccess'),
-                                    type: 'success'
-                                });
-                            }}
-                        />
-                    )}
-
-                    {/* Customer Reviews Accordion */}
-                    {/* <ProductReviews
+                        {/* Customer Reviews Accordion */}
+                        {/* <ProductReviews
                         productId={product.id}
                         averageRating={product.rating || 0}
                         totalReviews={product.reviews_count || 0}
                     /> */}
 
-                    {/* New Single Review Card */}
-                    <View style={styles.section}>
-                        <ProductReviewCard
-                            productId={product.id}
-                            totalReviews={Number(product.reviews_count) || 0}
-                        />
-                    </View>
+                        {/* New Single Review Card */}
+                        <View style={styles.section}>
+                            <ProductReviewCard
+                                productId={product.id}
+                                totalReviews={Number(product.reviews_count) || 0}
+                            />
+                        </View>
 
 
 
-                    {/* More from Category */}
-                    <MoreFromCategory product={product} />
+                        {/* More from Category */}
+                        <MoreFromCategory product={product} />
 
-                    {/* More from Other Suppliers */}
-                    <MoreFromOtherSuppliers product={product} />
+                        {/* More from Other Suppliers */}
+                        <MoreFromOtherSuppliers product={product} />
 
-                    {/* More Categories (Child Categories Carousel) */}
-                    <MoreCategories product={product} />
-                    {/* SKU */}
-                    {/* <View style={styles.section}>
+                        {/* More Categories (Child Categories Carousel) */}
+                        <MoreCategories product={product} />
+                        {/* SKU */}
+                        {/* <View style={styles.section}>
                         <Text style={styles.label}>
                             SKU: <Text style={styles.value}>{product.sku}</Text>
                         </Text>
                     </View> */}
-                </View>
-            </ScrollView>
+                    </View>
+                </ScrollView>
 
-            {/* Product Totals Card */}
-            {canAddToCart ? (
-                <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
-                    <ProductTotals
-                        price={formatters.formatPrice(displayPrice * quantity, currencySymbol)}
-                        deliveryText="Delivery 22 Dec - 24 Dec"
-                        quantity={quantity}
-                        onIncreaseQty={() => handleQuantityChange(1)}
-                        onDecreaseQty={() => handleQuantityChange(-1)}
-                        onQuantityChange={handleQuantityDirectInput}
-                        showRfq={!!product?.supplier?.id}
-                        rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
-                        onRfqPress={() => {
-                            if (isAuthenticated) {
-                                router.push({
-                                    pathname: `/rfq/${product.supplier!.id}` as any,
-                                    params: {
-                                        productId: product.id.toString(),
-                                        productName: product.name,
-                                    }
-                                });
-                            } else {
-                                router.push('/login');
-                            }
-                        }}
-                        onAddToCart={handleAddToCart}
-                        addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
-                        isAddingToCart={isAddingToCart}
-                        showAddToCart={canAddToCart}
-                    />
-                </View>
-            ) : null}
+                {/* Product Totals Card */}
+                {canAddToCart ? (
+                    <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
+                        <ProductTotals
+                            price={formatters.formatPrice(displayPrice * quantity, currencySymbol)}
+                            deliveryText="Delivery 22 Dec - 24 Dec"
+                            quantity={quantity}
+                            onIncreaseQty={() => handleQuantityChange(1)}
+                            onDecreaseQty={() => handleQuantityChange(-1)}
+                            onQuantityChange={handleQuantityDirectInput}
+                            showRfq={!!product?.supplier?.id}
+                            rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
+                            onRfqPress={() => {
+                                if (isAuthenticated) {
+                                    router.push({
+                                        pathname: `/rfq/${product.supplier!.id}` as any,
+                                        params: {
+                                            productId: product.id.toString(),
+                                            productName: product.name,
+                                        }
+                                    });
+                                } else {
+                                    router.push('/login');
+                                }
+                            }}
+                            onAddToCart={handleAddToCart}
+                            addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
+                            isAddingToCart={isAddingToCart}
+                            showAddToCart={canAddToCart}
+                        />
+                    </View>
+                ) : null}
             </KeyboardAvoidingView>
         </View>
     );

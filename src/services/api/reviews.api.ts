@@ -18,6 +18,15 @@ export const reviewsApi = {
     },
 
     /**
+     * Check if customer is eligible to write a review
+     */
+    async checkReviewEligibility(productId: number): Promise<{ eligible: boolean; reason?: string; days_remaining?: number; message?: string }> {
+        const url = `${API_ENDPOINTS.PRODUCTS}/${productId}/reviews/eligibility`;
+        const response = await restApiClient.get<any>(url);
+        return response;
+    },
+
+    /**
      * Submit a product review (requires authentication)
      */
     async submitReview(productId: number, payload: SubmitReviewPayload): Promise<{ data: ProductReview; message: string }> {

@@ -65,7 +65,7 @@ export const PickerModal: React.FC<PickerModalProps> = ({
             onRequestClose={handleClose}
         >
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.overlay}
             >
                 <TouchableOpacity

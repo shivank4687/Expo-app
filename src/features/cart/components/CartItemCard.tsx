@@ -137,13 +137,13 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                             />
 
                             {/* Availability Badge - top right (made_to_order wins over immediate_shipping) */}
-                            {item.product.made_to_order ? (
-                                <View style={styles.availabilityBadgeOrange}>
-                                    <Ionicons name="time-outline" size={14} color="#c2410c" />
-                                </View>
-                            ) : (item.product.immediate_shipping && item.product.in_stock) ? (
+                            {(item.product.immediate_shipping && item.product.in_stock) ? (
                                 <View style={styles.availabilityBadgeGreen}>
                                     <Ionicons name="checkmark" size={16} color="#15803d" />
+                                </View>
+                            ) : item.product.made_to_order ? (
+                                <View style={styles.availabilityBadgeOrange}>
+                                    <Ionicons name="time-outline" size={14} color="#c2410c" />
                                 </View>
                             ) : null}
                         </View>

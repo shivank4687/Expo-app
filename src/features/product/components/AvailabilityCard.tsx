@@ -24,7 +24,26 @@ export const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
 }) => {
     const { t } = useTranslation();
 
-    // Prioritize Made to Order
+    if (immediateShipping) {
+        return (
+            <View style={[styles.card, styles.immediateShippingCard]}>
+                <View style={styles.iconContainer}>
+                    <View style={[styles.iconCircle, styles.immediateShippingIconCircle]}>
+                        <Ionicons name="checkmark" size={22} color="#15803d" />
+                    </View>
+                </View>
+                <View style={styles.content}>
+                    <Text style={[styles.title, styles.immediateShippingTitle]}>
+                        {t('product.immediateShipping')}
+                    </Text>
+                    <Text style={styles.description}>
+                        {t('product.immediateShippingDesc')}
+                    </Text>
+                </View>
+            </View>
+        );
+    }
+
     if (madeToOrder) {
         return (
             <View style={[styles.card, styles.madeToOrderCard]}>
@@ -59,25 +78,7 @@ export const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
         );
     }
 
-    if (immediateShipping) {
-        return (
-            <View style={[styles.card, styles.immediateShippingCard]}>
-                <View style={styles.iconContainer}>
-                    <View style={[styles.iconCircle, styles.immediateShippingIconCircle]}>
-                        <Ionicons name="checkmark" size={22} color="#15803d" />
-                    </View>
-                </View>
-                <View style={styles.content}>
-                    <Text style={[styles.title, styles.immediateShippingTitle]}>
-                        {t('product.immediateShipping')}
-                    </Text>
-                    <Text style={styles.description}>
-                        {t('product.immediateShippingDesc')}
-                    </Text>
-                </View>
-            </View>
-        );
-    }
+
 
     return null;
 };

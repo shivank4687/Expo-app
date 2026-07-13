@@ -40,6 +40,8 @@ export const ProductReviewsScreen: React.FC = () => {
     const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
     const [isGalleryVisible, setIsGalleryVisible] = useState(false);
+    const [eligibility, setEligibility] = useState<{ eligible: boolean; message?: string } | null>(null);
+    const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
 
     const openGallery = (media: MediaItem[], index = 0) => {
         setGalleryMedia(media);
@@ -62,6 +64,23 @@ export const ProductReviewsScreen: React.FC = () => {
 
         loadReviews(1);
     }, [productId]);
+
+    useEffect(() => {
+        const checkEligibility = async () => {
+            if (!isAuthenticated || !hasValidId) return;
+            setIsCheckingEligibility(true);
+            try {
+                const result = await reviewsApi.checkReviewEligibility(productId);
+                setEligibility(result);
+            } catch (error) {
+                console.error('Failed to check review eligibility on reviews screen:', error);
+            } finally {
+                setIsCheckingEligibility(false);
+            }
+        };
+
+        checkEligibility();
+    }, [productId, isAuthenticated]);
 
     const computeAverageRating = (metaAverage: any, records: ProductReview[]) => {
         if (typeof metaAverage === 'number') return metaAverage;
@@ -282,14 +301,42 @@ export const ProductReviewsScreen: React.FC = () => {
                             />
                         </View>
                         {isAuthenticated && (
-                            <TouchableOpacity
-                                style={styles.writeReviewButton}
-                                onPress={handleWriteReview}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="create-outline" size={18} color="#1E3A8A" />
-                                <Text style={styles.writeReviewText}>Write a Review</Text>
-                            </TouchableOpacity>
+                            <View style={styles.writeReviewContainer}>
+                                {isCheckingEligibility ? (
+                                    <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                                ) : (
+                                    <>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.writeReviewButton,
+                                                eligibility && !eligibility.eligible && styles.writeReviewButtonDisabled
+                                            ]}
+                                            onPress={handleWriteReview}
+                                            disabled={eligibility !== null && !eligibility.eligible}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Ionicons 
+                                                name="create-outline" 
+                                                size={18} 
+                                                color={eligibility && !eligibility.eligible ? '#9CA3AF' : '#1E3A8A'} 
+                                            />
+                                            <Text 
+                                                style={[
+                                                    styles.writeReviewText,
+                                                    eligibility && !eligibility.eligible && styles.writeReviewTextDisabled
+                                                ]}
+                                            >
+                                                Write a Review
+                                            </Text>
+                                        </TouchableOpacity>
+                                        {eligibility && !eligibility.eligible && (
+                                            <Text style={styles.eligibilityMessage}>
+                                                {eligibility.message}
+                                            </Text>
+                                        )}
+                                    </>
+                                )}
+                            </View>
                         )}
                     </>
                 )}
@@ -468,5 +515,25 @@ const styles = StyleSheet.create({
         fontSize: 11,
         lineHeight: 14,
         color: '#4B5563',
+    },
+    writeReviewContainer: {
+        width: '100%',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.md,
+    },
+    writeReviewButtonDisabled: {
+        backgroundColor: '#F3F4F6',
+        borderColor: '#E5E7EB',
+    },
+    writeReviewTextDisabled: {
+        color: '#9CA3AF',
+    },
+    eligibilityMessage: {
+        fontSize: 12,
+        color: '#D97706',
+        marginTop: 6,
+        textAlign: 'center',
+        fontWeight: '500',
     },
 });

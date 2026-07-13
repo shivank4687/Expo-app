@@ -21,6 +21,8 @@ export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId,
     const [expandedReviewId, setExpandedReviewId] = useState<number | null>(null);
     const [galleryMedia, setGalleryMedia] = useState<MediaItem[]>([]);
     const [isGalleryVisible, setIsGalleryVisible] = useState(false);
+    const [eligibility, setEligibility] = useState<{ eligible: boolean; message?: string } | null>(null);
+    const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
 
     const openGallery = (review: ProductReview) => {
         const media: MediaItem[] = (review.images || []).map((a) => ({
@@ -55,6 +57,23 @@ export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId,
             setIsLoading(false);
         }
     }, [productId, totalReviews]);
+
+    useEffect(() => {
+        const checkEligibility = async () => {
+            if (!isAuthenticated) return;
+            setIsCheckingEligibility(true);
+            try {
+                const result = await reviewsApi.checkReviewEligibility(productId);
+                setEligibility(result);
+            } catch (error) {
+                console.error('Failed to check review eligibility:', error);
+            } finally {
+                setIsCheckingEligibility(false);
+            }
+        };
+
+        checkEligibility();
+    }, [productId, isAuthenticated]);
 
     const toggleExpand = (id: number) => {
         setExpandedReviewId(prev => prev === id ? null : id);
@@ -102,41 +121,33 @@ export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId,
                                     activeOpacity={0.7}
                                 >
                                     <View style={styles.reviewHeaderLeft}>
-                                        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color="#000000" />
-                                        <Text style={styles.collapsedText} numberOfLines={1}>
-                                            {review.title}
+                                        <Text style={styles.name} numberOfLines={1}>
+                                            {review.name}
                                         </Text>
+                                        <View style={styles.stars}>
+                                            {Array.from({ length: 5 }).map((_, index) => (
+                                                <Ionicons
+                                                    key={index}
+                                                    name={index < review.rating ? 'star' : 'star-outline'}
+                                                    size={12}
+                                                    color={theme.colors.warning.main}
+                                                />
+                                            ))}
+                                        </View>
                                     </View>
-                                    <View style={styles.ratingContainer}>
-                                        <Text style={styles.ratingText}>{Number(review.rating).toFixed(1)}</Text>
-                                        <Ionicons name="star" size={12} color={theme.colors.warning.main} />
-                                    </View>
+                                    <Ionicons
+                                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                        size={16}
+                                        color={theme.colors.text.secondary}
+                                    />
                                 </TouchableOpacity>
 
                                 {isExpanded && (
                                     <View style={styles.expandedContent}>
-                                        <View style={styles.reviewerDetailsRow}>
-                                            <Text style={styles.reviewerName}>{review.name}</Text>
-                                            <Text style={styles.reviewDate}>
-                                                {new Date(review.created_at).toLocaleDateString()}
-                                            </Text>
-                                        </View>
-                                        <Text style={styles.reviewComment}>{review.comment}</Text>
+                                        <Text style={styles.expandedTitle}>{review.title}</Text>
+                                        <Text style={styles.comment}>{review.comment}</Text>
 
-                                        {review.reply_text ? (
-                                            <View style={styles.replyContainer}>
-                                                <View style={styles.replyHeaderRow}>
-                                                    <Ionicons name="chatbubble-ellipses" size={12} color="#00615E" />
-                                                    <Text style={styles.replyHeaderLabel}>
-                                                        {review.reply_name ? `${review.reply_name} (Supplier)` : 'Supplier Reply'}
-                                                    </Text>
-                                                </View>
-                                                <Text style={styles.replyContentText}>{review.reply_text}</Text>
-                                            </View>
-                                        ) : null}
-
-                                        {/* Media button — only shown if review has attachments */}
-                                        {(review.images?.length ?? 0) > 0 && (
+                                        {review.images && review.images.length > 0 && (
                                             <TouchableOpacity
                                                 style={styles.mediaButton}
                                                 onPress={() => openGallery(review)}
@@ -152,6 +163,18 @@ export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId,
                                                 </Text>
                                             </TouchableOpacity>
                                         )}
+                                        
+                                        {review.reply_text ? (
+                                            <View style={styles.replyContainer}>
+                                                <View style={styles.replyHeaderRow}>
+                                                    <Ionicons name="chatbubble-ellipses" size={12} color="#00615E" />
+                                                    <Text style={styles.replyHeaderLabel}>
+                                                        {review.reply_name ? `${review.reply_name} (Supplier)` : 'Supplier Reply'}
+                                                    </Text>
+                                                </View>
+                                                <Text style={styles.replyContentText}>{review.reply_text}</Text>
+                                            </View>
+                                        ) : null}
                                     </View>
                                 )}
                             </View>
@@ -164,14 +187,42 @@ export const ProductReviewCard: React.FC<ProductReviewCardProps> = ({ productId,
 
             {/* Write Review Button */}
             {isAuthenticated ? (
-                <TouchableOpacity
-                    style={styles.writeReviewButton}
-                    onPress={handleWriteReview}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name="create-outline" size={20} color="#1E3A8A" />
-                    <Text style={styles.writeReviewText}>Write a Review</Text>
-                </TouchableOpacity>
+                <View style={styles.writeReviewContainer}>
+                    {isCheckingEligibility ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                    ) : (
+                        <>
+                            <TouchableOpacity
+                                style={[
+                                    styles.writeReviewButton,
+                                    eligibility && !eligibility.eligible && styles.writeReviewButtonDisabled
+                                ]}
+                                onPress={handleWriteReview}
+                                disabled={eligibility !== null && !eligibility.eligible}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons 
+                                    name="create-outline" 
+                                    size={20} 
+                                    color={eligibility && !eligibility.eligible ? '#9CA3AF' : '#1E3A8A'} 
+                                />
+                                <Text 
+                                    style={[
+                                        styles.writeReviewText,
+                                        eligibility && !eligibility.eligible && styles.writeReviewTextDisabled
+                                    ]}
+                                >
+                                    Write a Review
+                                </Text>
+                            </TouchableOpacity>
+                            {eligibility && !eligibility.eligible && (
+                                <Text style={styles.eligibilityMessage}>
+                                    {eligibility.message}
+                                </Text>
+                            )}
+                        </>
+                    )}
+                </View>
             ) : null}
 
             <MediaGalleryModal
@@ -358,5 +409,24 @@ const styles = StyleSheet.create({
         fontSize: 11,
         lineHeight: 14,
         color: '#4B5563',
+    },
+    writeReviewContainer: {
+        width: '100%',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    writeReviewButtonDisabled: {
+        backgroundColor: '#F3F4F6',
+        borderColor: '#E5E7EB',
+    },
+    writeReviewTextDisabled: {
+        color: '#9CA3AF',
+    },
+    eligibilityMessage: {
+        fontSize: 12,
+        color: '#D97706',
+        marginTop: 6,
+        textAlign: 'center',
+        fontWeight: '500',
     },
 });
