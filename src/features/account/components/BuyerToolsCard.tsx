@@ -61,7 +61,7 @@ export const BuyerToolsCard = () => {
                 </TouchableOpacity>
 
                 {/* 4. Support center */}
-                <TouchableOpacity style={styles.listItem}>
+                <TouchableOpacity style={styles.listItem} onPress={() => router.push('/support-center')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="headset-outline" size={20} color="#00615E" />
                     </View>
