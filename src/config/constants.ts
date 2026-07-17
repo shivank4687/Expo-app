@@ -60,11 +60,17 @@ export const API_ENDPOINTS = {
     ORDER_DETAIL: '/orders/:id',
 
     // Customer
+    CUSTOMER_GET: '/customer/get',
     PROFILE: '/customer/profile',
     UPDATE_PROFILE: '/customer/profile',
     UPDATE_SECURITY: '/customer/security',
     ADDRESSES: '/customer/addresses',
     NEWSLETTER_SUBSCRIPTION: '/customer/subscription',
+
+    // Customer Type & Tax
+    CUSTOMER_GROUPS: '/customer/groups',
+    CUSTOMER_GROUP_UPDATE: '/customer/group',
+    CUSTOMER_TAX_PROFILE: '/customer/tax-profile',
 
     // B2B Marketplace - Supplier Messages
     MESSAGE_SUPPLIER: '/supplier/message',

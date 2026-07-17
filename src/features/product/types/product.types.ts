@@ -21,7 +21,7 @@ export interface Product {
     reviews_count?: number;
     in_stock: boolean;
     is_saleable?: boolean; // Can this product be added to cart
-    quantity?: number;
+    quantity?: number; // Available stock count
     created_at?: string;
     new?: boolean | number; // Product is marked as "new"
     on_sale?: boolean; // Product is on sale (has special price)

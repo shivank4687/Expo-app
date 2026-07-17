@@ -72,9 +72,9 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
 
                 const addressPayload = {
                     postcode: activeAddress.postcode,
-                    country: activeAddress.country || 'MX',
-                    state: activeAddress.state || '',
-                    city: activeAddress.city || '',
+                    country: activeAddress.country,
+                    state: activeAddress.state,
+                    city: activeAddress.city,
                 };
 
                 const quote = await productsApi.getShippingQuote(productId, addressPayload);
@@ -202,9 +202,12 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
                         {t('product.estimatedDelivery', 'Estimated Delivery')}
                     </Text>
                     <Text style={styles.deliveryDateText}>
-                        {t('product.deliveryDateVal', 'Arrives by {{date}}', {
-                            date: shippingRate.estimated_delivery,
-                        })}
+                        {shippingRate.days
+                            ? t('product.deliveryDaysVal', 'Arrives in {{count}} day', {
+                                count: shippingRate.days,
+                                defaultValue_plural: 'Arrives in {{count}} days',
+                            })
+                            : shippingRate.estimated_delivery}
                     </Text>
                     <View style={styles.providerRow}>
                         <Text style={styles.providerLabel}>
@@ -426,11 +429,13 @@ const styles = StyleSheet.create({
     providerRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexWrap: 'wrap',
         marginBottom: 4,
     },
     providerLabel: {
         fontSize: theme.typography.fontSize.sm,
         color: '#15803d',
+        flexShrink: 1,
     },
     priceDivider: {
         fontSize: theme.typography.fontSize.sm,
@@ -441,6 +446,7 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.sm,
         fontWeight: theme.typography.fontWeight.bold,
         color: '#166534',
+        flexShrink: 1,
     },
     addressRow: {
         flexDirection: 'row',

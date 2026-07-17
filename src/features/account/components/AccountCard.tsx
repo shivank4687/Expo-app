@@ -70,7 +70,19 @@ export const AccountCard = () => {
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
 
-                {/* 3. Sign out */}
+                {/* 3. Customer Type & Tax */}
+                <TouchableOpacity style={styles.listItem} onPress={() => router.push('/customer-type-tax' as any)}>
+                    <View style={styles.iconContainer}>
+                        <Ionicons name="people-outline" size={20} color="#00615E" />
+                    </View>
+                    <View style={styles.itemTextContainer}>
+                        <Text style={styles.itemTitle}>Customer Type & Tax</Text>
+                        <Text style={styles.itemSubtitle}>Group, VAT & tax details.</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="#000000" />
+                </TouchableOpacity>
+
+                {/* 4. Sign out */}
                 <TouchableOpacity style={styles.listItem} onPress={handleLogout}>
                     <View style={[styles.iconContainer, { backgroundColor: 'rgba(189, 86, 38, 0.1)' }]}>
                         <Ionicons name="log-out-outline" size={20} color="#BD5626" />
