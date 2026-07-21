@@ -297,6 +297,9 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingRight: 8,
     },
+    stars: {
+        flexDirection: 'row',
+    },
     collapsedText: {
         fontWeight: '400',
         fontSize: 11,

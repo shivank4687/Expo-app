@@ -516,6 +516,11 @@ const authSlice = createSlice({
         updateToken: (state, action: PayloadAction<{ token: string }>) => {
             state.token = action.payload.token;
         },
+        updateCustomerGroupId: (state, action: PayloadAction<number | null>) => {
+            if (state.user) {
+                state.user.customer_group_id = action.payload;
+            }
+        },
     },
     extraReducers: (builder) => {
         // Check Auth
@@ -720,5 +725,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { setUser, setSelectedUserType, clearError, clearVerification, updateToken } = authSlice.actions;
+export const { setUser, setSelectedUserType, clearError, clearVerification, updateToken, updateCustomerGroupId } = authSlice.actions;
 export default authSlice.reducer;

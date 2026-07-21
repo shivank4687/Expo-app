@@ -121,7 +121,7 @@ export default function VatTaxesCard({
         onStatusChange?.(isSaved ? true : false)
     }, [isSaved]);
     useEffect(() => {
-        if (selectedBusinessOption === 'company' && vatMode !== '1') {
+        if ((selectedBusinessOption === 'company' || selectedBusinessOption === 'business') && vatMode !== '1') {
             setVatMode('1');
         }
     }, [selectedBusinessOption, vatMode]);
@@ -300,11 +300,23 @@ export default function VatTaxesCard({
     const businessOptions: DropdownOption[] = [
         {
             value: 'artisan',
-            label: 'Artisan / Local shop / Independent professional',
+            label: 'Artisan',
+        },
+        {
+            value: 'local_shop',
+            label: 'Local shop',
+        },
+        {
+            value: 'independent_professional',
+            label: 'Independent professional',
         },
         {
             value: 'company',
-            label: 'Company / Business',
+            label: 'Company',
+        },
+        {
+            value: 'business',
+            label: 'Business',
         },
     ];
 
@@ -371,7 +383,7 @@ export default function VatTaxesCard({
                                     onSelect={setVatMode}
                                     placeholder="Select"
                                     style={{ container: { flex: 1 } }}
-                                    disabled={selectedBusinessOption === 'company'}
+                                    disabled={selectedBusinessOption === 'company' || selectedBusinessOption === 'business'}
                                 />
                             </View>
 

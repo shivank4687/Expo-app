@@ -29,6 +29,7 @@ export const ProductListScreen: React.FC = () => {
     const router = useRouter();
     const { selectedLocale } = useAppSelector((state) => state.core);
     const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
+    const { user } = useAppSelector((state) => state.auth);
 
     const cartRightContent = (
         <TouchableOpacity
@@ -71,7 +72,7 @@ export const ProductListScreen: React.FC = () => {
 
     useEffect(() => {
         loadProducts(1, true);
-    }, [params.id, params.featured, params.new, selectedLocale?.code, sortBy, filters]);
+    }, [params.id, params.featured, params.new, selectedLocale?.code, sortBy, filters, user?.customer_group_id]);
 
     const loadProducts = async (page: number, reset: boolean = false, isRefresh: boolean = false) => {
         // Prevent duplicate requests

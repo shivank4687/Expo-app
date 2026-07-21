@@ -13,6 +13,7 @@ export interface User {
     subscribed_to_news_letter?: boolean;
     two_factor_enabled?: boolean;
     created_at?: string;
+    customer_group_id?: number | null;
 }
 
 export interface LoginRequest {

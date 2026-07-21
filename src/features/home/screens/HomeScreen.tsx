@@ -32,6 +32,7 @@ export const HomeScreen: React.FC = () => {
     const router = useRouter();
     const { selectedLocale } = useAppSelector((state) => state.core);
     const { categories } = useAppSelector((state) => state.category);
+    const { user } = useAppSelector((state) => state.auth);
 
     const [activeTabId, setActiveTabId] = useState<string | number>('home');
     const [customizations, setCustomizations] = useState<ThemeCustomizationType[]>([]);
@@ -87,7 +88,7 @@ export const HomeScreen: React.FC = () => {
 
     useEffect(() => {
         loadData();
-    }, [loadData]);
+    }, [loadData, user?.customer_group_id]);
 
     const handleRefresh = useCallback(() => {
         setIsRefreshing(true);

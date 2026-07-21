@@ -31,6 +31,7 @@ export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ catego
     const [error, setError] = useState<string | null>(null);
 
     const { categories } = useAppSelector((state) => state.category);
+    const { user } = useAppSelector((state) => state.auth);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -103,7 +104,7 @@ export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ catego
 
     useEffect(() => {
         loadCategoryData();
-    }, [loadCategoryData]);
+    }, [loadCategoryData, user?.customer_group_id]);
 
     const loadMoreProducts = async () => {
         if (isLoadingMore || currentPage >= totalPages) return;

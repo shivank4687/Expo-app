@@ -12,19 +12,57 @@ import { Card } from '@/shared/components/Card';
 import { theme } from '@/theme';
 import { formatters } from '@/shared/utils/formatters';
 import { ShippingMethod } from '../types/checkout.types';
+import { Cart } from '@/features/cart/types/cart.types';
 
 interface ShippingStepProps {
+    cart: Cart | null;
     shippingMethods: Record<string, ShippingMethod> | null;
     selectedMethod: string | null;
     onMethodSelect: (method: string) => void;
 }
 
 export const ShippingStep: React.FC<ShippingStepProps> = ({
+    cart,
     shippingMethods,
     selectedMethod,
     onMethodSelect,
 }) => {
     const { t } = useTranslation();
+
+    const getAdditionalDaysForSupplier = (storeName: string): number => {
+        if (!cart || !cart.items || !storeName) return 0;
+
+        // Filter items belonging to this supplier
+        const supplierItems = cart.items.filter(item => {
+            const itemSupplierName = item.product?.supplier?.company_name;
+            if (!itemSupplierName) {
+                return storeName.toLowerCase() === 'admin' || storeName.toLowerCase() === 'supplier';
+            }
+            return itemSupplierName.trim().toLowerCase() === storeName.trim().toLowerCase();
+        });
+
+        if (supplierItems.length === 0) return 0;
+
+        // Calculate additional days for each item
+        const itemsProductionDays = supplierItems.map(item => {
+            const product = item.product;
+            if (!product || !product.made_to_order) return 0;
+
+            const orderQty = item.quantity;
+            const availableQty = product.quantity ?? 0;
+
+            if (orderQty > availableQty) {
+                const qtyToProduce = orderQty - Math.max(0, availableQty);
+                const productionTimePerItem = product.made_to_order_days ?? 0;
+                return qtyToProduce * productionTimePerItem;
+            }
+
+            return 0;
+        });
+
+        // Use the Consolidated (Maximum) Strategy approved by the user
+        return Math.max(0, ...itemsProductionDays);
+    };
     // Expand all carriers by default
     const [expandedCarriers, setExpandedCarriers] = useState<Set<string>>(
         new Set(shippingMethods ? Object.keys(shippingMethods) : [])
@@ -187,7 +225,16 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                                                                             </Text>
                                                                             {breakdown.days && (
                                                                                 <Text style={styles.breakdownDays}>
-                                                                                    {t('checkout.estDelivery', 'Est. Delivery')}: {formatters.getEstimatedDeliveryDate(breakdown.days)}
+                                                                                    {t('checkout.estDelivery', 'Est. Delivery')}: {
+                                                                                        (() => {
+                                                                                            const additionalDays = getAdditionalDaysForSupplier(breakdown.store_name);
+                                                                                            const baseDays = typeof breakdown.days === 'string'
+                                                                                                ? parseInt(breakdown.days, 10)
+                                                                                                : breakdown.days;
+                                                                                            const totalDays = isNaN(baseDays) ? additionalDays : baseDays + additionalDays;
+                                                                                            return formatters.getEstimatedDeliveryDate(totalDays);
+                                                                                        })()
+                                                                                    }
                                                                                 </Text>
                                                                             )}
                                                                         </View>

@@ -665,6 +665,7 @@ export const CheckoutScreen: React.FC = () => {
 
                         {/* Shipping Step */}
                         <ShippingStep
+                            cart={cart}
                             shippingMethods={shippingMethods}
                             selectedMethod={selectedShippingMethod}
                             onMethodSelect={handleShippingMethodSelect}

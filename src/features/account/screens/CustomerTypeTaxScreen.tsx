@@ -14,6 +14,10 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
+import { updateCustomerGroupId } from '@/store/slices/authSlice';
+import { clearRecentlyViewed } from '@/store/slices/recentlyViewedSlice';
+import { resetCart, fetchCartThunk } from '@/store/slices/cartSlice';
+import { resetWishlist, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
 import { PickerModal, PickerItem } from '@/shared/components/PickerModal';
 import { TopHeader } from '@/shared/components/TopHeader';
 import { useToast } from '@/shared/components/Toast';
@@ -397,6 +401,14 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                     postcode: postcode.trim() || null,
                 });
             }
+
+            // Clear stale state values since product prices change based on customer group
+            dispatch(updateCustomerGroupId(Number(selectedGroupId)));
+            dispatch(clearRecentlyViewed());
+            dispatch(resetCart());
+            dispatch(fetchCartThunk());
+            dispatch(resetWishlist());
+            dispatch(fetchWishlistThunk());
 
             showToast({ message: 'Settings saved successfully.', type: 'success' });
         } catch (error) {

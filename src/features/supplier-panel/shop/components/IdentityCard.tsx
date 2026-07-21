@@ -22,7 +22,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
             <Text style={styles.title}>1) Identity</Text>
 
             <View style={[styles.fieldContainer, errors.company_name ? styles.fieldContainerWithError : null]}>
-                <Text style={styles.label}>Seller/Company Name <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.label}>Seller/Shop Name <Text style={styles.required}>*</Text></Text>
                 <View style={[styles.inputContainer, errors.company_name ? styles.inputError : null]}>
                     <TextInput
                         style={styles.input}

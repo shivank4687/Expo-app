@@ -78,7 +78,7 @@ export default function ShopScreen() {
 
     const validateForm = () => {
         const requiredFields = [
-            { key: 'company_name', label: 'Company Name' },
+            { key: 'company_name', label: 'Shop Name' },
             { key: 'address1', label: 'Address' },
             { key: 'city', label: 'City/Region' },
             { key: 'country', label: 'Country' },
