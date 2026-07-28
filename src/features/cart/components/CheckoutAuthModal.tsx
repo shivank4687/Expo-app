@@ -22,12 +22,12 @@ export const CheckoutAuthModal: React.FC<CheckoutAuthModalProps> = ({ visible, o
 
     const handleLogin = () => {
         onClose();
-        router.push('/login');
+        router.push({ pathname: '/login', params: { redirect: 'cart' } });
     };
 
     const handleSignup = () => {
         onClose();
-        router.push('/signup');
+        router.push({ pathname: '/signup', params: { redirect: 'cart' } });
     };
 
     const handleGuestCheckout = () => {

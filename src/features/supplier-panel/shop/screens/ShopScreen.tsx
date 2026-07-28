@@ -12,10 +12,13 @@ import { parseValidDate } from '@/shared/utils/dateUtils';
 import aiContentApi from '@/services/api/ai-content.api';
 import { InputModal } from '@/shared/components';
 import { useTranslation } from 'react-i18next';
+import { useAppDispatch } from '@/store/hooks';
+import { updateSupplierCompanyNameThunk } from '@/store/slices/supplierAuthSlice';
 
 export default function ShopScreen() {
     const { t } = useTranslation();
     const { showToast } = useToast();
+    const dispatch = useAppDispatch();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profileData, setProfileData] = useState<Partial<SupplierProfile>>({});
@@ -162,6 +165,11 @@ export default function ShopScreen() {
 
             await updateSupplierProfile(updateData);
             setOriginalData({ ...profileData }); // Update the "pristine" copy after successful save
+            // Sync updated company_name into Redux so PriceStockCard & PriceStockVariantsCard
+            // SKU prefixes reflect the new name immediately (and survive app restarts).
+            if (profileData.company_name) {
+                dispatch(updateSupplierCompanyNameThunk(profileData.company_name));
+            }
             showToast({
                 type: 'success',
                 message: 'Profile updated successfully.'

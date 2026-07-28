@@ -5,11 +5,11 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { cartApi } from '@/services/api/cart.api';
-import { 
-    Cart, 
-    AddToCartPayload, 
+import {
+    Cart,
+    AddToCartPayload,
     UpdateCartItemPayload,
-    ApplyCouponPayload 
+    ApplyCouponPayload
 } from '@/features/cart/types/cart.types';
 import { guestCartStorage } from '@/services/storage/guestCartStorage';
 
@@ -56,14 +56,14 @@ export const fetchCartThunk = createAsyncThunk(
                 // Fetch from API for authenticated users
                 try {
                     const cart = await cartApi.getCart();
-                    
+
                     // If API returns null (no cart or 401/404), fall back to guest cart
                     if (cart === null) {
                         console.log('API returned null cart, loading guest cart');
                         const guestCart = await guestCartStorage.getGuestCart();
                         return guestCart;
                     }
-                    
+
                     return cart;
                 } catch (apiError: any) {
                     console.log('API error, falling back to guest cart:', apiError.message);

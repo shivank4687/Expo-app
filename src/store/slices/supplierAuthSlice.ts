@@ -243,6 +243,19 @@ export const resendSupplierOtpThunk = createAsyncThunk(
     }
 );
 
+export const updateSupplierCompanyNameThunk = createAsyncThunk(
+    'supplierAuth/updateCompanyName',
+    async (companyName: string, { getState }) => {
+        const state = getState() as { supplierAuth: SupplierAuthState };
+        const currentSupplier = state.supplierAuth.supplier;
+        if (currentSupplier) {
+            const updatedSupplier = { ...currentSupplier, company_name: companyName };
+            await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(updatedSupplier));
+        }
+        return companyName;
+    }
+);
+
 export const updateSupplierSecurityThunk = createAsyncThunk(
     'supplierAuth/updateSecurity',
     async (data: { two_factor_enabled: boolean }, { rejectWithValue, getState }) => {
@@ -369,6 +382,14 @@ const supplierAuthSlice = createSlice({
             .addCase(verifySupplierPhoneOtpThunk.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
+            });
+
+        // Update Company Name
+        builder
+            .addCase(updateSupplierCompanyNameThunk.fulfilled, (state, action) => {
+                if (state.supplier) {
+                    state.supplier.company_name = action.payload;
+                }
             });
 
         // Update Security

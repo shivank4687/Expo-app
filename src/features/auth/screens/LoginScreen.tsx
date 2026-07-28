@@ -34,7 +34,7 @@ export const LoginScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
-    const params = useLocalSearchParams<{ type?: string }>();
+    const params = useLocalSearchParams<{ type?: string; redirect?: string }>();
     const { lastSelectedCountry } = useAppSelector(state => state.core);
     const selectedUserType = useAppSelector(state => state.auth.selectedUserType ?? 'customer');
 
@@ -174,6 +174,7 @@ export const LoginScreen: React.FC = () => {
                             phone: result.phone,
                             type: result.type,
                             userType: 'customer',
+                            redirect: params.redirect,
                         }
                     });
                     return;
@@ -194,7 +195,12 @@ export const LoginScreen: React.FC = () => {
                     if (!result.user?.phone) {
                         router.replace('/add-phone');
                     } else {
-                        router.replace('/(drawer)/(tabs)');
+                        // Only redirect to cart for customer type
+                        if (params.redirect === 'cart') {
+                            router.replace('/(drawer)/(tabs)/cart');
+                        } else {
+                            router.replace('/(drawer)/(tabs)');
+                        }
                     }
                 }, 500);
             }
@@ -278,7 +284,7 @@ export const LoginScreen: React.FC = () => {
 
 
     const handleSignupPress = () => {
-        router.push('/signup');
+        router.push({ pathname: '/signup', params: { redirect: params.redirect } });
     };
 
     return (

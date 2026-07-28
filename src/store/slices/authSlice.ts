@@ -493,13 +493,21 @@ export const verifyPhoneOtpThunk = createAsyncThunk(
     }
 );
 
+const normalizeUserObject = (user: User | null): User | null => {
+    if (!user) return null;
+    if (!user.customer_group_id && user.group?.id) {
+        user.customer_group_id = user.group.id;
+    }
+    return user;
+};
+
 // Slice
 const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
         setUser: (state, action: PayloadAction<User>) => {
-            state.user = action.payload;
+            state.user = normalizeUserObject(action.payload);
             state.isAuthenticated = true;
         },
         setSelectedUserType: (state, action: PayloadAction<'customer' | 'supplier'>) => {
@@ -516,9 +524,28 @@ const authSlice = createSlice({
         updateToken: (state, action: PayloadAction<{ token: string }>) => {
             state.token = action.payload.token;
         },
-        updateCustomerGroupId: (state, action: PayloadAction<number | null>) => {
+        updateCustomerGroupId: (state, action: PayloadAction<{ id: number | null; code?: string | null } | number | null>) => {
             if (state.user) {
-                state.user.customer_group_id = action.payload;
+                const groupCodeMap: Record<number, string> = { 1: 'guest', 2: 'general', 3: 'wholesale' };
+                let id: number | null = null;
+                let code: string | null = null;
+
+                if (typeof action.payload === 'object' && action.payload !== null) {
+                    id = action.payload.id;
+                    code = action.payload.code || (id ? groupCodeMap[id] : null);
+                } else {
+                    id = action.payload;
+                    code = id ? groupCodeMap[id] : null;
+                }
+
+                state.user.customer_group_id = id;
+                if (code && id) {
+                    state.user.group = {
+                        id,
+                        code,
+                        name: code.charAt(0).toUpperCase() + code.slice(1),
+                    };
+                }
             }
         },
     },
@@ -529,7 +556,7 @@ const authSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(checkAuthThunk.fulfilled, (state, action) => {
-                state.user = action.payload.user;
+                state.user = normalizeUserObject(action.payload.user);
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
                 state.isLoading = false;
@@ -554,7 +581,7 @@ const authSlice = createSlice({
                 state.error = null;
 
                 if (!(action.payload as any).requiresOtp) {
-                    state.user = action.payload.user || null;
+                    state.user = normalizeUserObject(action.payload.user || null);
                     state.token = action.payload.token || null;
                     state.isAuthenticated = true;
                     // Set global token for API client

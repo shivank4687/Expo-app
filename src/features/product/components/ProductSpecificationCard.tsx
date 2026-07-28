@@ -19,7 +19,13 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
     const { cart } = useAppSelector((state) => state.cart);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
-    const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+    const isWholesale =
+        user?.group?.code?.toLowerCase() === 'wholesale' ||
+        user?.group?.name?.toLowerCase() === 'wholesale' ||
+        user?.group?.id === 3 ||
+        user?.customer_group_id === 3;
     // Compute how much the user currently has in cart from this supplier
     const currentAmount = React.useMemo(() => {
         if (!cart?.items || !supplier?.id) return 0;
@@ -38,7 +44,10 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
     const freeShippingThreshold = supplier?.free_shipping_threshold ?? 0;
     const freeShippingEnable = supplier?.free_shipping_enable ?? false;
 
-    const showProgress = isAuthenticated && (minimumAmount > 0 || (freeShippingEnable && freeShippingThreshold > 0));
+    const showProgress = isAuthenticated && (
+        (minimumAmount > 0 && isWholesale) ||
+        (freeShippingEnable && freeShippingThreshold > 0)
+    );
 
     const progressRatio = minimumAmount > 0 ? Math.min(currentAmount / minimumAmount, 1) : 0;
     const progressPercent = `${Math.round(progressRatio * 100)}%`;
@@ -106,7 +115,9 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
                 {showProgress && (
                     <>
                         <View style={styles.supplierRow}>
-                            <Text style={styles.supplierLabel}>Supplier minimum order</Text>
+                            <Text style={styles.supplierLabel}>
+                                {isWholesale && minimumAmount > 0 ? 'Supplier minimum order' : 'Free Shipping Offer'}
+                            </Text>
                             {freeShippingEnable && freeShippingThreshold > 0 && (
                                 <View style={styles.freeShippingBadge}>
                                     <Text style={styles.freeShippingText}>
@@ -119,26 +130,28 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
                             )}
                         </View>
 
-                        {/* Progress Box */}
-                        <View style={styles.progressBox}>
-                            <View style={styles.progressHeader}>
-                                <Text style={styles.progressTitle}>
-                                    {hasMetMinimum ? 'Minimum reached! 🎉' : 'Progress to minimum'}
+                        {/* Progress Box — only for wholesale users */}
+                        {isWholesale && minimumAmount > 0 && (
+                            <View style={styles.progressBox}>
+                                <View style={styles.progressHeader}>
+                                    <Text style={styles.progressTitle}>
+                                        {hasMetMinimum ? 'Minimum reached! 🎉' : 'Progress to minimum'}
+                                    </Text>
+                                    <Text style={[styles.progressAmount, hasMetMinimum && styles.progressAmountMet]}>
+                                        {currencySymbol}{(currentAmount || 0).toFixed(0)} / {currencySymbol}{(minimumAmount || 0).toFixed(0)}
+                                    </Text>
+                                </View>
+                                <Text style={styles.progressDesc}>
+                                    {hasMetMinimum
+                                        ? `You've reached the minimum order of ${currencySymbol}${(minimumAmount || 0).toFixed(0)} from this supplier.`
+                                        : `You have ${currencySymbol}${(currentAmount || 0).toFixed(0)} in cart from this supplier. Add ${currencySymbol}${(remaining || 0).toFixed(0)} more to reach the minimum.`
+                                    }
                                 </Text>
-                                <Text style={[styles.progressAmount, hasMetMinimum && styles.progressAmountMet]}>
-                                    {currencySymbol}{(currentAmount || 0).toFixed(0)} / {currencySymbol}{(minimumAmount || 0).toFixed(0)}
-                                </Text>
+                                <View style={styles.progressBarTrack}>
+                                    <View style={[styles.progressBarFill, { width: progressPercent as DimensionValue }, hasMetMinimum && styles.progressBarFillComplete]} />
+                                </View>
                             </View>
-                            <Text style={styles.progressDesc}>
-                                {hasMetMinimum
-                                    ? `You've reached the minimum order of ${currencySymbol}${(minimumAmount || 0).toFixed(0)} from this supplier.`
-                                    : `You have ${currencySymbol}${(currentAmount || 0).toFixed(0)} in cart from this supplier. Add ${currencySymbol}${(remaining || 0).toFixed(0)} more to reach the minimum.`
-                                }
-                            </Text>
-                            <View style={styles.progressBarTrack}>
-                                <View style={[styles.progressBarFill, { width: progressPercent as DimensionValue }, hasMetMinimum && styles.progressBarFillComplete]} />
-                            </View>
-                        </View>
+                        )}
                     </>
                 )}
             </View>

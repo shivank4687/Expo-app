@@ -403,7 +403,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
             }
 
             // Clear stale state values since product prices change based on customer group
-            dispatch(updateCustomerGroupId(Number(selectedGroupId)));
+            dispatch(updateCustomerGroupId({ id: Number(selectedGroupId), code: selectedGroupCode }));
             dispatch(clearRecentlyViewed());
             dispatch(resetCart());
             dispatch(fetchCartThunk());

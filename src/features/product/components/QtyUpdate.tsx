@@ -64,6 +64,11 @@ export const QtyUpdate: React.FC<QtyUpdateProps> = ({
           // Allow only numeric characters while typing
           const numeric = text.replace(/[^0-9]/g, '');
           setInputValue(numeric);
+          // Immediately notify parent so quantity state is always current
+          const parsed = parseInt(numeric, 10);
+          if (!isNaN(parsed) && parsed >= minQuantity && parsed <= maxQuantity) {
+            onQuantityChange?.(parsed);
+          }
         }}
         onBlur={() => commitValue(inputValue)}
         onSubmitEditing={() => commitValue(inputValue)}

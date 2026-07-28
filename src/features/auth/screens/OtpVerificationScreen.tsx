@@ -24,6 +24,7 @@ interface OtpVerificationParams {
     phone: string;
     type?: string;
     userType?: string;
+    redirect?: string;
 }
 
 export const OtpVerificationScreen: React.FC = () => {
@@ -146,7 +147,12 @@ export const OtpVerificationScreen: React.FC = () => {
                     if (params.userType === 'supplier') {
                         router.replace('/(supplier-drawer)/(supplier-tabs)');
                     } else {
-                        router.replace('/(drawer)/(tabs)');
+                        // Only redirect to cart for customer type
+                        if (params.redirect === 'cart') {
+                            router.replace('/(drawer)/(tabs)/cart');
+                        } else {
+                            router.replace('/(drawer)/(tabs)');
+                        }
                     }
                 }
             }, 500);

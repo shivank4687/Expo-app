@@ -8,7 +8,7 @@ import {
     Platform,
     TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { signupThunk, setSelectedUserType, socialLoginThunk } from '@/store/slices/authSlice';
@@ -30,6 +30,7 @@ import { GoogleIcon } from '@/assets/icons/GoogleIcon';
 export const SignupScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
+    const params = useLocalSearchParams<{ redirect?: string }>();
     const dispatch = useAppDispatch();
     const { lastSelectedCountry } = useAppSelector(state => state.core);
     const { isLoading } = useAppSelector((state) => state.auth);
@@ -464,6 +465,8 @@ export const SignupScreen: React.FC = () => {
                         verificationToken: result.verificationToken,
                         phone: phoneWithCode,
                         type: selectedUserType,
+                        // Forward redirect only for customer type
+                        ...(selectedUserType === 'customer' && params.redirect ? { redirect: params.redirect } : {}),
                     },
                 });
                 return;
@@ -485,7 +488,12 @@ export const SignupScreen: React.FC = () => {
                 if (result.user && !result.user.phone) {
                     router.replace('/add-phone');
                 } else {
-                    router.replace('/(drawer)/(tabs)');
+                    // Only redirect to cart for customer type
+                    if (selectedUserType === 'customer' && params.redirect === 'cart') {
+                        router.replace('/(drawer)/(tabs)/cart');
+                    } else {
+                        router.replace('/(drawer)/(tabs)');
+                    }
                 }
             }, 500);
         } catch (err: any) {
@@ -543,7 +551,12 @@ export const SignupScreen: React.FC = () => {
                     if (selectedUserType === 'supplier') {
                         router.replace('/(supplier-drawer)/(supplier-tabs)');
                     } else {
-                        router.replace('/(drawer)/(tabs)');
+                        // Only redirect to cart for customer type
+                        if (params.redirect === 'cart') {
+                            router.replace('/(drawer)/(tabs)/cart');
+                        } else {
+                            router.replace('/(drawer)/(tabs)');
+                        }
                     }
                 }, 500);
             }

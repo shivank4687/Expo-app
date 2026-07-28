@@ -18,6 +18,20 @@ export const MinimumOrderProgressCard: React.FC<MinimumOrderProgressCardProps> =
     freeShippingThreshold = 0,
     currencySymbol = 'MX$',
 }) => {
+    const showMinimum = minimumAmount > 0;
+    const showFreeShipping = freeShippingEnable && freeShippingThreshold > 0;
+
+    console.log('🛒 [MinimumOrderProgressCard] Props:', {
+        currentAmount,
+        minimumAmount,
+        freeShippingEnable,
+        freeShippingThreshold,
+        showMinimum,
+        showFreeShipping
+    });
+
+    if (!showMinimum && !showFreeShipping) return null;
+
     // Calculate progress percentage (capped at 100%)
     const progressPercent = Math.min(
         (currentAmount / (minimumAmount || 1)) * 100,
@@ -32,47 +46,53 @@ export const MinimumOrderProgressCard: React.FC<MinimumOrderProgressCardProps> =
     return (
         <View style={styles.container}>
             {/* Supplier Minimum Order & Free Shipping */}
-            <View style={styles.supplierRow}>
-                <Text style={styles.supplierLabel}>Supplier minimum order</Text>
-                {freeShippingEnable && freeShippingThreshold > 0 && (
-                    <View style={styles.freeShippingBadge}>
-                        <Text style={styles.freeShippingText}>
-                            {hasMetFreeShipping
-                                ? 'Free Shipping Met 🎉'
-                                : `Add ${formatters.formatPrice(freeShippingRemaining, currencySymbol)} for Free Shipping`}
-                        </Text>
-                    </View>
-                )}
-            </View>
+            {(showMinimum || showFreeShipping) && (
+                <View style={styles.supplierRow}>
+                    <Text style={styles.supplierLabel}>
+                        {showMinimum ? 'Supplier minimum order' : 'Free Shipping Offer'}
+                    </Text>
+                    {showFreeShipping && (
+                        <View style={styles.freeShippingBadge}>
+                            <Text style={styles.freeShippingText}>
+                                {hasMetFreeShipping
+                                    ? 'Free Shipping Met 🎉'
+                                    : `Add ${formatters.formatPrice(freeShippingRemaining, currencySymbol)} for Free Shipping`}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            )}
 
             {/* Progress Box */}
-            <View style={styles.progressBox}>
-                <View style={styles.progressHeader}>
-                    <Text style={styles.progressTitle}>Progress to minimum</Text>
-                    <Text style={styles.progressAmount}>
-                        {formatters.formatPrice(currentAmount, currencySymbol)} / {formatters.formatPrice(minimumAmount, currencySymbol)}
-                    </Text>
-                </View>
+            {showMinimum && (
+                <View style={styles.progressBox}>
+                    <View style={styles.progressHeader}>
+                        <Text style={styles.progressTitle}>Progress to minimum</Text>
+                        <Text style={styles.progressAmount}>
+                            {formatters.formatPrice(currentAmount, currencySymbol)} / {formatters.formatPrice(minimumAmount, currencySymbol)}
+                        </Text>
+                    </View>
 
-                {remainingAmount > 0 ? (
-                    <Text style={styles.progressDesc}>
-                        You have {formatters.formatPrice(currentAmount, currencySymbol)} in cart from this supplier. Add {formatters.formatPrice(remainingAmount, currencySymbol)} more to reach the minimum.
-                    </Text>
-                ) : (
-                    <Text style={styles.progressDesc}>
-                        Congratulations! You have reached the minimum order amount for this supplier.
-                    </Text>
-                )}
+                    {remainingAmount > 0 ? (
+                        <Text style={styles.progressDesc}>
+                            You have {formatters.formatPrice(currentAmount, currencySymbol)} in cart from this supplier. Add {formatters.formatPrice(remainingAmount, currencySymbol)} more to reach the minimum.
+                        </Text>
+                    ) : (
+                        <Text style={styles.progressDesc}>
+                            Congratulations! You have reached the minimum order amount for this supplier.
+                        </Text>
+                    )}
 
-                <View style={styles.progressBarTrack}>
-                    <View
-                        style={[
-                            styles.progressBarFill,
-                            { width: `${progressPercent}%` }
-                        ]}
-                    />
+                    <View style={styles.progressBarTrack}>
+                        <View
+                            style={[
+                                styles.progressBarFill,
+                                { width: `${progressPercent}%` }
+                            ]}
+                        />
+                    </View>
                 </View>
-            </View>
+            )}
         </View>
     );
 };

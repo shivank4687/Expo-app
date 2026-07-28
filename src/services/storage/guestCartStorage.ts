@@ -17,26 +17,26 @@ export const guestCartStorage = {
             const cartData = await AsyncStorage.getItem(GUEST_CART_KEY);
             if (cartData) {
                 const cart = JSON.parse(cartData);
-                
+
                 // Validate cart structure - clear if corrupted
                 if (!cart.items || !Array.isArray(cart.items)) {
                     console.warn('Invalid guest cart structure, clearing...');
                     await this.clearGuestCart();
                     return null;
                 }
-                
+
                 // Check for invalid IDs (non-integers or invalid)
                 const hasInvalidIds = cart.items.some((item: any) => {
                     const id = Number(item.id);
                     return !Number.isInteger(id) || id <= 0;
                 });
-                
+
                 if (hasInvalidIds) {
                     console.warn('Guest cart has invalid IDs, clearing...');
                     await this.clearGuestCart();
                     return null;
                 }
-                
+
                 return cart;
             }
             return null;
@@ -65,7 +65,7 @@ export const guestCartStorage = {
     async addItem(product: any, quantity: number = 1): Promise<Cart> {
         try {
             let cart = await this.getGuestCart();
-            
+
             if (!cart) {
                 // Create new guest cart
                 cart = {
@@ -98,7 +98,7 @@ export const guestCartStorage = {
             if (existingItemIndex > -1) {
                 // Update quantity
                 cart.items[existingItemIndex].quantity += quantity;
-                cart.items[existingItemIndex].total = 
+                cart.items[existingItemIndex].total =
                     cart.items[existingItemIndex].price * cart.items[existingItemIndex].quantity;
             } else {
                 // Add new item - use product_id as base to ensure uniqueness
@@ -134,7 +134,7 @@ export const guestCartStorage = {
 
             // Recalculate totals
             this.recalculateTotals(cart);
-            
+
             await this.saveGuestCart(cart);
             return cart;
         } catch (error) {
@@ -153,14 +153,14 @@ export const guestCartStorage = {
 
             // Convert itemId to number to ensure comparison works
             const numericItemId = Number(itemId);
-            
+
             console.log('Updating item:', {
                 searchingFor: numericItemId,
                 availableItems: cart.items.map(i => ({ id: i.id, type: typeof i.id, name: i.name }))
             });
-            
+
             const item = cart.items.find(i => Number(i.id) === numericItemId);
-            
+
             if (!item) {
                 console.error('Item not found. ItemId:', itemId, 'Type:', typeof itemId, 'Available IDs:', cart.items.map(i => ({ id: i.id, type: typeof i.id })));
                 throw new Error('Item not found');
@@ -224,7 +224,7 @@ export const guestCartStorage = {
         cart.base_sub_total = cart.sub_total;
         cart.items_qty = cart.items.reduce((sum, item) => sum + item.quantity, 0);
         cart.items_count = cart.items.length;
-        
+
         // For guest cart, no tax or discount
         cart.tax_total = 0;
         cart.discount_amount = 0;

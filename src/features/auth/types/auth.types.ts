@@ -14,6 +14,11 @@ export interface User {
     two_factor_enabled?: boolean;
     created_at?: string;
     customer_group_id?: number | null;
+    group?: {
+        id: number;
+        code: string;
+        name: string;
+    } | null;
 }
 
 export interface LoginRequest {
