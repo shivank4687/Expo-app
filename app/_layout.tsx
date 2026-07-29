@@ -10,6 +10,7 @@ import { fetchCoreConfig } from "@/store/slices/coreSlice";
 import { checkSupplierAuthThunk } from "@/store/slices/supplierAuthSlice";
 import { fetchWishlistThunk } from "@/store/slices/wishlistSlice";
 import { persistor, store } from "@/store/store";
+import { guestCartToken } from "@/services/storage/guestCartToken";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments, usePathname } from "expo-router";
 import { useEffect, useRef } from "react";
@@ -387,6 +388,9 @@ export default function RootLayout() {
     if (!appInitialized) {
       console.log('✨ Initializing app after rehydration...');
       appInitialized = true;
+
+      // Initialize guest cart token on startup
+      guestCartToken.getOrCreate();
 
       // Initialize core config (locale, currency, channels) on app start
       store.dispatch(fetchCoreConfig());

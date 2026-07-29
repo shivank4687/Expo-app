@@ -178,7 +178,6 @@ export const ProductDetailScreen: React.FC = () => {
             const cartData: any = {
                 product_id: product.id,
                 quantity: quantity,
-                product: product,
             };
 
             // Add selected variant for configurable products

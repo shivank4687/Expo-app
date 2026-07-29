@@ -240,7 +240,15 @@ class ApiClient {
                         config.headers.Authorization = `Bearer ${token}`;
                         //console.log('✅ Token added to request:', config.url, config.params);
                     } else {
-                        //console.log('⚠️ No token found for request:', config.url);
+                        try {
+                            const { guestCartToken } = await import('../storage/guestCartToken');
+                            const guestToken = await guestCartToken.get();
+                            if (guestToken) {
+                                config.headers['X-Guest-Cart-Token'] = guestToken;
+                            }
+                        } catch (guestTokenError) {
+                            console.error('Error attaching X-Guest-Cart-Token:', guestTokenError);
+                        }
                     }
                 } catch (tokenError) {
                     console.error('❌ Error retrieving token:', tokenError);

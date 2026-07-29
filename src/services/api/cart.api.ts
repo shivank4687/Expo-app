@@ -49,11 +49,7 @@ export const cartApi = {
             // REST API expects: POST /customer/cart/add/{productId} with product_id in body too
             const response = await restApiClient.post<CartResponse>(
                 `/customer/cart/add/${payload.product_id}`,
-                {
-                    product_id: payload.product_id,
-                    quantity: payload.quantity || 1,
-                    ...payload
-                }
+                payload
             );
             // restApiClient.post already returns response.data
             if (!response.data) {
@@ -233,18 +229,88 @@ export const cartApi = {
     },
 
     /**
-     * Merge guest cart items into customer cart
+     * Get guest cart
      */
-    mergeCart: async (items: { product_id: number; quantity: number }[]): Promise<Cart | null> => {
+    guestGetCart: async (): Promise<Cart | null> => {
+        try {
+            const response = await restApiClient.get<CartResponse>('/guest/cart');
+            return response?.data || null;
+        } catch (error: any) {
+            console.error('Get guest cart error:', error);
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Add item to guest cart
+     */
+    guestAddToCart: async (payload: AddToCartPayload): Promise<Cart> => {
         try {
             const response = await restApiClient.post<CartResponse>(
-                '/customer/cart/merge',
-                { items }
+                `/guest/cart/add/${payload.product_id}`,
+                {
+                    product_id: payload.product_id,
+                    quantity: payload.quantity || 1,
+                    selected_configurable_option: payload.selected_configurable_option,
+                    super_attribute: payload.super_attribute,
+                }
+            );
+            if (!response.data) {
+                throw new Error(response.message || 'Invalid cart response');
+            }
+            return response.data;
+        } catch (error: any) {
+            console.error('Guest add to cart error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to add item to cart');
+        }
+    },
+
+    /**
+     * Update guest cart item quantity
+     */
+    guestUpdateCart: async (qty: Record<number, number>): Promise<Cart> => {
+        try {
+            const response = await restApiClient.put<CartResponse>(
+                '/guest/cart/update',
+                { qty }
+            );
+            if (!response.data) {
+                throw new Error(response.message || 'Invalid guest cart response');
+            }
+            return response.data;
+        } catch (error: any) {
+            console.error('Guest update cart error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to update guest cart');
+        }
+    },
+
+    /**
+     * Remove item from guest cart
+     */
+    guestRemoveItem: async (cartItemId: number): Promise<Cart | null> => {
+        try {
+            const response = await restApiClient.delete<CartResponse>(
+                `/guest/cart/remove/${cartItemId}`
             );
             return response?.data || null;
         } catch (error: any) {
-            console.error('Merge cart error:', error);
-            throw new Error(error.response?.data?.message || error.message || 'Failed to merge cart');
+            console.error('Guest remove from cart error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to remove item from guest cart');
+        }
+    },
+
+    /**
+     * Clear entire guest cart
+     */
+    guestClearCart: async (): Promise<void> => {
+        try {
+            await restApiClient.delete('/guest/cart/remove');
+        } catch (error: any) {
+            console.error('Guest clear cart error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to clear guest cart');
         }
     },
 };

@@ -173,7 +173,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
             const cartData: any = {
                 product_id: product.id,
                 quantity: qty,
-                product: product,
             };
 
             if (isConfigurable && selectedVariantId) {

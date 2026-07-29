@@ -12,7 +12,7 @@ import {
     OtpVerificationRequest,
     ResendOtpRequest,
 } from '@/features/auth/types/auth.types';
-import { resetCart, mergeGuestCartThunk } from './cartSlice';
+import { resetCart, fetchCartThunk } from './cartSlice';
 import { setGlobalToken } from '@/services/api/client';
 import { expoPushNotificationService } from '@/services/notifications/expo-push-notification.service';
 import socketService from '@/services/socket.service';
@@ -154,8 +154,16 @@ export const loginThunk = createAsyncThunk(
                 // Don't fail login if notification registration fails
             }
 
-            // Sync/Merge guest cart
-            await dispatch(mergeGuestCartThunk());
+            // Clear guest cart token now that backend has automatically merged
+            try {
+                const { guestCartToken } = await import('@/services/storage/guestCartToken');
+                await guestCartToken.clear();
+            } catch (err) {
+                console.error('Failed to clear guest cart token:', err);
+            }
+
+            // Sync/Fetch authenticated cart
+            await dispatch(fetchCartThunk());
 
             return { requiresOtp: false, user, token };
         } catch (error: any) {
@@ -220,9 +228,15 @@ export const socialLoginThunk = createAsyncThunk(
                 console.error('Failed to register push notification token:', notificationError);
             }
 
-            // Sync/Merge guest cart (only if customer logging in)
+            // Clear guest cart token now that backend has automatically merged
             if (data.user_type !== 'supplier') {
-                await dispatch(mergeGuestCartThunk());
+                try {
+                    const { guestCartToken } = await import('@/services/storage/guestCartToken');
+                    await guestCartToken.clear();
+                } catch (err) {
+                    console.error('Failed to clear guest cart token:', err);
+                }
+                await dispatch(fetchCartThunk());
             }
 
             return { user, token };
@@ -289,8 +303,16 @@ export const signupThunk = createAsyncThunk(
                 await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
             }
 
-            // Sync/Merge guest cart
-            await dispatch(mergeGuestCartThunk());
+            // Clear guest cart token now that backend has automatically merged
+            try {
+                const { guestCartToken } = await import('@/services/storage/guestCartToken');
+                await guestCartToken.clear();
+            } catch (err) {
+                console.error('Failed to clear guest cart token:', err);
+            }
+
+            // Sync/Fetch authenticated cart
+            await dispatch(fetchCartThunk());
 
             return { user, token, requiresOtp: false };
         } catch (error: any) {
@@ -349,8 +371,16 @@ export const verifyOtpThunk = createAsyncThunk(
                     console.error('Failed to register push notification token (non-critical):', notificationError);
                 }
 
-                // Sync/Merge guest cart
-                await dispatch(mergeGuestCartThunk());
+                // Clear guest cart token now that backend has automatically merged
+                try {
+                    const { guestCartToken } = await import('@/services/storage/guestCartToken');
+                    await guestCartToken.clear();
+                } catch (err) {
+                    console.error('Failed to clear guest cart token:', err);
+                }
+
+                // Sync/Fetch authenticated cart
+                await dispatch(fetchCartThunk());
             }
 
             return {
