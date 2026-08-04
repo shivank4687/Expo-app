@@ -41,11 +41,13 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     const { supplier } = useAppSelector((state) => state.supplierAuth);
     const shopName = supplier?.company_name || '';
 
-    // Helper to get SKU prefix
+    // Helper to get SKU prefix — strips spaces/special chars before slicing
+    // so they never count toward the 3/2 char limit.
+    // e.g. "My shop" → "MYS", "A-B C" → "ABC"
     const getSkuPrefix = () => {
-        const shop = shopName.substring(0, 3).toUpperCase().padEnd(3, 'X');
-        const prod = productName.substring(0, 2).toUpperCase().padEnd(2, 'X');
-        return `${shop}-${prod}-`;
+        const clean = (str: string, len: number) =>
+            str.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, len).padEnd(len, 'X');
+        return `${clean(shopName, 3)}-${clean(productName, 2)}-`;
     };
 
     // Selected attributes for configuration (e.g. Color, Size)

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { ShippingTruckIcon } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
@@ -13,11 +14,15 @@ import { Address } from '@/features/address/types/address.types';
 interface EstimatedDeliveryCardProps {
     productId: number;
     isAuthenticated: boolean;
+    standardDeliveryDays?: number | null;
+    preparationTimeDays?: number | null;
 }
 
 export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
     productId,
     isAuthenticated,
+    standardDeliveryDays,
+    preparationTimeDays,
 }) => {
     const { t } = useTranslation();
     const router = useRouter();
@@ -111,20 +116,45 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
 
         // Render state: Not authenticated
         if (!isAuthenticated) {
+            const totalStandardDays = standardDeliveryDays ? (standardDeliveryDays + (preparationTimeDays || 0)) : null;
+
             return (
                 <View style={[styles.card, styles.infoCard]}>
                     <View style={styles.iconContainer}>
                         <View style={[styles.iconCircle, styles.infoIconCircle]}>
-                            <Ionicons name="home-outline" size={20} color={theme.colors.primary[500]} />
+                            {totalStandardDays ? (
+                                <ShippingTruckIcon width={16} height={16} color={theme.colors.primary[500]} />
+                            ) : (
+                                <Ionicons name="home-outline" size={16} color={theme.colors.primary[500]} />
+                            )}
                         </View>
                     </View>
                     <View style={styles.content}>
-                        <Text style={styles.title}>
-                            {t('product.deliveryEstimate', 'Delivery Estimate')}
-                        </Text>
-                        <Text style={styles.description}>
-                            {t('product.loginToSeeEstimate', 'Login to see estimated delivery dates.')}
-                        </Text>
+                        {totalStandardDays ? (
+                            <>
+                                <Text style={styles.title} numberOfLines={1}>
+                                    {t('product.deliveryEstimate', 'Delivery Estimate')}:{' '}
+                                    <Text style={styles.deliveryDateText}>
+                                        {t('product.deliveryDaysRange', '{{min}}-{{max}} days', {
+                                            min: totalStandardDays,
+                                            max: totalStandardDays + 2,
+                                        })}
+                                    </Text>
+                                </Text>
+                                {/* <Text style={styles.description}>
+                                    {t('product.loginToSeePreciseEstimate', 'Login to see shipping costs for your address.')}
+                                </Text> */}
+                            </>
+                        ) : (
+                            <>
+                                {/* <Text style={styles.title}>
+                                    {t('product.deliveryEstimate', 'Delivery Estimate')}
+                                </Text> */}
+                                <Text style={styles.description}>
+                                    {t('product.loginToSeeEstimate', 'Login to see estimated delivery dates.')}
+                                </Text>
+                            </>
+                        )}
                     </View>
                 </View>
             );
@@ -169,9 +199,9 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
                         <Text style={[styles.title, styles.errorTitle]}>
                             {t('product.shippingUnavailable', 'Shipping Unavailable')}
                         </Text>
-                        <Text style={styles.errorDescription}>
+                        {/* <Text style={styles.errorDescription}>
                             {quoteError || t('product.noRatesForLocation', 'No shipping options found for this location.')}
-                        </Text>
+                        </Text> */}
                         {activeAddress && (
                             <View style={styles.addressRowContainer}>
                                 <Text style={styles.addressSnippet}>
@@ -189,27 +219,29 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
             );
         }
 
+        const totalShippingDays = shippingRate.days ? (shippingRate.days + (preparationTimeDays || 0)) : null;
+
         // Render state: Success quote details
         return (
             <View style={[styles.card, styles.successCard]}>
                 <View style={styles.iconContainer}>
                     <View style={[styles.iconCircle, styles.successIconCircle]}>
-                        <Ionicons name="bus-outline" size={20} color="#15803d" />
+                        <ShippingTruckIcon width={20} height={20} color="#15803d" />
                     </View>
                 </View>
                 <View style={styles.content}>
-                    <Text style={[styles.title, styles.successTitle]}>
-                        {t('product.estimatedDelivery', 'Estimated Delivery')}
+                    <Text style={[styles.title, styles.successTitle]} numberOfLines={1}>
+                        {t('product.estimatedDelivery', 'Estimated Delivery')}:{' '}
+                        <Text style={styles.deliveryDateText}>
+                            {totalShippingDays
+                                ? t('product.deliveryDaysRange', '{{min}}-{{max}} days', {
+                                    min: totalShippingDays,
+                                    max: totalShippingDays + 2,
+                                })
+                                : shippingRate.estimated_delivery}
+                        </Text>
                     </Text>
-                    <Text style={styles.deliveryDateText}>
-                        {shippingRate.days
-                            ? t('product.deliveryDaysVal', 'Arrives in {{count}} day', {
-                                count: shippingRate.days,
-                                defaultValue_plural: 'Arrives in {{count}} days',
-                            })
-                            : shippingRate.estimated_delivery}
-                    </Text>
-                    <View style={styles.providerRow}>
+                    {/* <View style={styles.providerRow}>
                         <Text style={styles.providerLabel}>
                             {shippingRate.provider} ({shippingRate.service_name})
                         </Text>
@@ -217,7 +249,7 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
                         <Text style={styles.priceText}>
                             {shippingRate.formatted_price}
                         </Text>
-                    </View>
+                    </View> */}
                     <View style={styles.addressRowContainer}>
                         <View style={styles.addressRow}>
                             <Ionicons name="location-sharp" size={12} color={theme.colors.text.secondary} />
@@ -326,7 +358,7 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
 const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
-        padding: theme.spacing.md,
+        padding: theme.spacing.xs,
         borderRadius: theme.borderRadius.xl,
         marginBottom: theme.spacing.sm,
         borderWidth: 1,
@@ -346,6 +378,8 @@ const styles = StyleSheet.create({
     infoCard: {
         backgroundColor: '#f0fdf4',
         borderColor: '#dcfce7',
+        alignItems: 'center',
+        paddingVertical: 6,
     },
     successCard: {
         backgroundColor: '#f0fdf4',
@@ -371,6 +405,9 @@ const styles = StyleSheet.create({
     },
     infoIconCircle: {
         backgroundColor: theme.colors.primary[50],
+        width: 28,
+        height: 28,
+        borderRadius: 14,
     },
     successIconCircle: {
         backgroundColor: '#dcfce7',
@@ -473,9 +510,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 4,
+        marginTop: 2,
         width: '100%',
     },
+
     changeLinkText: {
         fontSize: theme.typography.fontSize.xs,
         fontWeight: theme.typography.fontWeight.bold,

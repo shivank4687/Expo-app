@@ -18,7 +18,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     const { selectedLocale, selectedCurrency } = useAppSelector((state) => state.core);
     const { categories } = useAppSelector((state) => state.category);
-    const { pages: cmsPages, isLoading: cmsLoading } = useAppSelector((state) => state.cms);
+    // const { pages: cmsPages, isLoading: cmsLoading } = useAppSelector((state) => state.cms);
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -69,7 +69,10 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: isAuthenticated ? theme.spacing.lg : insets.bottom + theme.spacing.xl }}
+            >
                 {/* User Profile Section */}
                 <View style={styles.profileSection}>
                     {isAuthenticated ? (
@@ -131,7 +134,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
                 {/* Other Section - Dynamic CMS Pages */}
                 <DrawerSection title={t('drawer.other')} icon="information-circle-outline" defaultExpanded={true}>
-                    {cmsLoading ? (
+                    {/* {cmsLoading ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="small" color={theme.colors.primary[500]} />
                         </View>
@@ -149,7 +152,12 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                         key={t('drawer.contactUs')}
                         label={t('drawer.contactUs')}
                         onPress={() => navigateTo(`/contact-us`)}
-                    />}
+                    />} */}
+                    <DrawerItem
+                        key={t('drawer.contactUs')}
+                        label={t('drawer.contactUs')}
+                        onPress={() => navigateTo(`/contact-us`)}
+                    />
                 </DrawerSection>
 
                 {/* Preferences Section */}

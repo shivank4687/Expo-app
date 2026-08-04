@@ -3,6 +3,11 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { deviceTokenApi } from '../api/device-token.api';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
+
+const EXPO_PROJECT_ID = Constants.expoConfig?.extra?.eas?.projectId ?? 
+    Constants.easConfig?.projectId ?? 
+    'c700ef87-1bf1-4c01-ba8a-5164822dca55';
 
 /**
  * Configure how notifications are handled when app is in foreground
@@ -45,7 +50,7 @@ class ExpoPushNotificationService {
             }
 
             const tokenData = await Notifications.getExpoPushTokenAsync({
-                projectId: 'your-expo-project-id', // Replace with your Expo project ID
+                projectId: EXPO_PROJECT_ID,
             });
 
             return tokenData.data;
@@ -86,7 +91,7 @@ class ExpoPushNotificationService {
     async unregisterToken(): Promise<boolean> {
         try {
             const tokenData = await Notifications.getExpoPushTokenAsync({
-                projectId: 'your-expo-project-id', // Replace with your Expo project ID
+                projectId: EXPO_PROJECT_ID,
             });
 
             await deviceTokenApi.unregister(tokenData.data);

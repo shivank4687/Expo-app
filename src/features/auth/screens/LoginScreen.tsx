@@ -155,7 +155,7 @@ export const LoginScreen: React.FC = () => {
                     if (router.canGoBack()) {
                         router.dismissAll();
                     }
-                    
+
                     if (!result.supplier?.phone) {
                         router.replace('/add-phone');
                     } else {
@@ -221,7 +221,8 @@ export const LoginScreen: React.FC = () => {
             GoogleSignin.configure({
                 // Web Client ID from Google Cloud Console (synced with backend)
                 webClientId: '196127222713-n8e0kegh0k7sdhf62osf5og3qc3ju6pd.apps.googleusercontent.com',
-
+                androidClientId:
+                    "196127222713-pf90o25gj6orc3dbcld7s0brmgcehmcb.apps.googleusercontent.com",
                 offlineAccess: true,
                 forceCodeForRefreshToken: true,
             });
@@ -440,7 +441,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingHorizontal: theme.spacing.lg,
         paddingTop: theme.spacing.lg,
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: theme.spacing['5xl'],
     },
     header: {
         marginBottom: theme.spacing.xl,

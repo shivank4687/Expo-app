@@ -29,22 +29,38 @@ export const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
             <View style={[styles.card, styles.immediateShippingCard]}>
                 <View style={styles.iconContainer}>
                     <View style={[styles.iconCircle, styles.immediateShippingIconCircle]}>
-                        <Ionicons name="checkmark" size={22} color="#15803d" />
+                        <Ionicons name="checkmark" size={16} color="#15803d" />
                     </View>
                 </View>
                 <View style={styles.content}>
                     <Text style={[styles.title, styles.immediateShippingTitle]}>
                         {t('product.immediateShipping')}
                     </Text>
-                    <Text style={styles.description}>
+                    {/* <Text style={styles.description}>
                         {t('product.immediateShippingDesc')}
-                    </Text>
+                    </Text> */}
                 </View>
             </View>
         );
     }
 
     if (madeToOrder) {
+        let detailsText = '';
+        if (madeToOrderDays && madeToOrderQty) {
+            detailsText = t('product.madeToOrderBoth', 'Time: {{days}} days, Quantity: {{qty}} units', {
+                days: madeToOrderDays,
+                qty: madeToOrderQty,
+            });
+        } else if (madeToOrderDays) {
+            detailsText = t('product.madeToOrderTimeOnly', 'Time: {{days}} days', {
+                days: madeToOrderDays,
+            });
+        } else if (madeToOrderQty) {
+            detailsText = t('product.madeToOrderQtyOnly', 'Quantity: {{qty}} units', {
+                qty: madeToOrderQty,
+            });
+        }
+
         return (
             <View style={[styles.card, styles.madeToOrderCard]}>
                 <View style={styles.iconContainer}>
@@ -56,23 +72,11 @@ export const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
                     <Text style={[styles.title, styles.madeToOrderTitle]}>
                         {t('product.madeToOrder')}
                     </Text>
-                    <View style={styles.detailsRow}>
-                        {madeToOrderDays ? (
-                            <Text style={styles.detailText}>
-                                {t('product.productionTime', { days: madeToOrderDays })}
-                            </Text>
-                        ) : null}
-
-                        {madeToOrderDays && madeToOrderQty ? (
-                            <Text style={styles.separator}> · </Text>
-                        ) : null}
-
-                        {madeToOrderQty ? (
-                            <Text style={styles.detailText}>
-                                {t('product.madeToOrderQty', { qty: madeToOrderQty })}
-                            </Text>
-                        ) : null}
-                    </View>
+                    {detailsText ? (
+                        <View style={styles.detailsRow}>
+                            <Text style={styles.detailText}>{detailsText}</Text>
+                        </View>
+                    ) : null}
                 </View>
             </View>
         );
@@ -98,6 +102,8 @@ const styles = StyleSheet.create({
     immediateShippingCard: {
         backgroundColor: '#f0fdf4', // green-50
         borderColor: '#dcfce7', // green-100
+        paddingVertical: 6,
+        alignItems: 'center',
     },
     iconContainer: {
         marginRight: theme.spacing.md,
@@ -115,6 +121,9 @@ const styles = StyleSheet.create({
     },
     immediateShippingIconCircle: {
         backgroundColor: '#dcfce7', // green-100
+        width: 28,
+        height: 28,
+        borderRadius: 14,
     },
     content: {
         flex: 1,

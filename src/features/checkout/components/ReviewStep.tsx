@@ -12,6 +12,7 @@ import {
     TextInput,
     ActivityIndicator,
     ScrollView,
+    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +26,51 @@ import { useAppDispatch } from '@/store/hooks';
 import { applyCouponThunk, removeCouponThunk } from '@/store/slices/cartSlice';
 import { useToast } from '@/shared/components/Toast';
 import { getAbsoluteImageUrl } from '@/shared/utils/imageUtils';
+import { OxxoIcon, PaypalIcon, StripeIcon } from '@/assets/icons';
+
+// ─── Brand icon tiles ─────────────────────────────────────────────────────────
+
+/** Cash icon for COD */
+const CashIcon: React.FC = () => (
+    <View style={[brandStyles.base, { backgroundColor: '#F0FDF4', borderRadius: 4, borderWidth: 1, borderColor: '#86EFAC', justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="cash-outline" size={26} color="#16A34A" />
+    </View>
+);
+
+/** Fallback / generic card icon */
+const GenericCardIcon: React.FC = () => (
+    <View style={[brandStyles.base, { backgroundColor: '#F8F8F8', borderRadius: 4, borderWidth: 1, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="card-outline" size={26} color="#555" />
+    </View>
+);
+
+const getBrandIcon = (method: PaymentMethod): React.ReactElement => {
+    const key = method.method.toLowerCase();
+
+    // Use high-quality local SVG overrides (now matching global icon assets)
+    if (key === 'paypal' || key === 'paypal_smart_button') return <PaypalIcon />;
+    if (key === 'stripe' || key === 'stripeconnect' || key === 'razorpay' || key === 'moneytransfer') {
+        return <StripeIcon />;
+    }
+    if (key === 'oxxo' || key === 'stripeoxxo') return <OxxoIcon />;
+
+    // Prefer the icon URL returned by the API
+    if (method.image) {
+        return (
+            <View style={brandStyles.base}>
+                <Image
+                    source={{ uri: method.image }}
+                    style={brandStyles.apiImage}
+                    resizeMode="cover"
+                />
+            </View>
+        );
+    }
+
+    // Fallback to hand-crafted brand tiles
+    if (key === 'cashondelivery') return <CashIcon />;
+    return <GenericCardIcon />;
+};
 
 interface ReviewStepProps {
     cart: Cart;
@@ -51,10 +97,6 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     isProcessing,
     onEditStep,
 }) => {
-    if (!cart || !cart.items) {
-        return null;
-    }
-
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
@@ -63,6 +105,10 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
     const [isRemovingCoupon, setIsRemovingCoupon] = useState(false);
     const [isCouponExpanded, setIsCouponExpanded] = useState(false);
     const [isPriceDetailsExpanded, setIsPriceDetailsExpanded] = useState(true);
+
+    if (!cart || !cart.items) {
+        return null;
+    }
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) {
@@ -213,17 +259,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                     </View>
                     <Card style={styles.infoCard}>
                         <View style={styles.paymentRow}>
-                            {paymentImageSource && (
-                                <LazyImage
-                                    source={paymentImageSource}
-                                    style={styles.paymentImage}
-                                    contentFit="contain"
-                                    transition={{ duration: 200 }}
-                                    priority="high"
-                                    placeholderIcon="card-outline"
-                                    accessibilityLabel={paymentMethodDetails.method_title}
-                                />
-                            )}
+                            <View style={brandStyles.wrapper}>
+                                {getBrandIcon(paymentMethodDetails)}
+                            </View>
                             <View style={styles.paymentContent}>
                                 <Text style={styles.methodTitle}>
                                     {paymentMethodDetails.method_title}
@@ -245,34 +283,62 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                     {t('checkout.orderSummary', 'Order Summary')}
                 </Text>
 
-                {cart.items.map((item) => (
-                    <Card key={item.id} style={styles.productCard}>
-                        <View style={styles.productRow}>
-                            <ProductImage
-                                imageUrl={item.product.thumbnail}
-                                style={styles.productImage}
-                                recyclingKey={item.product_id?.toString()}
-                                priority="normal"
-                            />
-                            <View style={styles.productDetails}>
-                                <Text style={styles.productName} numberOfLines={2}>
-                                    {item.name}
-                                </Text>
-                                <View style={styles.productMeta}>
-                                    <Text style={styles.productQty}>
-                                        {t('checkout.qty', 'Qty')}: {item.quantity}
+                {cart.items.map((item) => {
+                    const imageUrl = item.child?.product?.thumbnail || 
+                                     (item.child?.product?.images && item.child.product.images[0]?.url) ||
+                                     item.product?.thumbnail || 
+                                     (item.product?.images && item.product.images[0]?.url);
+
+                    return (
+                        <Card key={item.id} style={styles.productCard}>
+                            <View style={styles.productRow}>
+                                <ProductImage
+                                    imageUrl={imageUrl}
+                                    style={styles.productImage}
+                                    recyclingKey={item.product_id?.toString()}
+                                    priority="normal"
+                                />
+                                <View style={styles.productDetails}>
+                                    <Text style={styles.productName} numberOfLines={2}>
+                                        {item.name}
                                     </Text>
-                                    <Text style={styles.productPrice}>
-                                        {formatters.formatPrice(item.price)}
+                                    {(() => {
+                                        const attributes = item.additional?.attributes 
+                                            ? (Array.isArray(item.additional.attributes) 
+                                                ? item.additional.attributes 
+                                                : Object.values(item.additional.attributes)) 
+                                            : [];
+                                        
+                                        if (attributes.length === 0) return null;
+
+                                        return (
+                                            <View style={styles.chipsContainer}>
+                                                {attributes.map((attr: any, index: number) => (
+                                                    <View key={index} style={styles.chip}>
+                                                        <Text style={styles.chipText}>
+                                                            {attr.attribute_name}: {attr.option_label}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        );
+                                    })()}
+                                    <View style={styles.productMeta}>
+                                        <Text style={styles.productQty}>
+                                            {t('checkout.qty', 'Qty')}: {item.quantity}
+                                        </Text>
+                                        <Text style={styles.productPrice}>
+                                            {formatters.formatPrice(item.price)}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.productSubtotal}>
+                                        {t('cart.subtotal')}: {formatters.formatPrice(item.total)}
                                     </Text>
                                 </View>
-                                <Text style={styles.productSubtotal}>
-                                    {t('cart.subtotal')}: {formatters.formatPrice(item.total)}
-                                </Text>
                             </View>
-                        </View>
-                    </Card>
-                ))}
+                        </Card>
+                    );
+                })}
             </View>
 
             {/* Apply Coupon Section */}
@@ -687,5 +753,44 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
+    },
+    chipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        marginTop: 6,
+        marginBottom: 6,
+    },
+    chip: {
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    chipText: {
+        fontSize: 10,
+        fontWeight: '500',
+        color: '#4B5563',
+    },
+});
+
+const brandStyles = StyleSheet.create({
+    base: {
+        width: 70,
+        height: 48,
+        borderRadius: 4,
+        overflow: 'hidden',
+        backgroundColor: '#F8F8F8',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    apiImage: {
+        width: '100%',
+        height: '100%',
+    },
+    wrapper: {
+        marginRight: theme.spacing.md,
     },
 });

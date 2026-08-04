@@ -314,47 +314,56 @@ class ApiClient {
                     switch (status) {
                         case 401:
                             const originalRequest = error.config;
-                            if (originalRequest && !(originalRequest as any)._retry) {
-                                (originalRequest as any)._retry = true;
+                            if (originalRequest) {
                                 const url = originalRequest.url || '';
-                                const isRefreshEndpoint = url.includes('/customer/refresh-token') || url.includes('/supplier-app/refresh-token');
+                                const isLogoutEndpoint = url.includes('/logout');
 
-                                if (isRefreshEndpoint) {
-                                    console.log('❌ Token refresh failed with 401. Logging out...');
-                                    await this.handleUnauthorized();
+                                if (this.isLoggingOut || isLogoutEndpoint) {
+                                    console.log(`🚨 401 Unauthorized for ${url} during logout. Rejecting immediately...`);
                                     break;
                                 }
 
-                                console.log('🚨 401 Unauthorized received, trying to refresh token for:', url);
-                                if (isRefreshing) {
+                                if (!(originalRequest as any)._retry) {
+                                    (originalRequest as any)._retry = true;
+                                    const isRefreshEndpoint = url.includes('/customer/refresh-token') || url.includes('/supplier-app/refresh-token');
+
+                                    if (isRefreshEndpoint) {
+                                        console.log('❌ Token refresh failed with 401. Logging out...');
+                                        await this.handleUnauthorized();
+                                        break;
+                                    }
+
+                                    console.log('🚨 401 Unauthorized received, trying to refresh token for:', url);
+                                    if (isRefreshing) {
+                                        try {
+                                            const newToken = await new Promise<string>((resolve) => {
+                                                refreshQueue.push((token) => resolve(token));
+                                            });
+                                            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                                            return this.instance(originalRequest);
+                                        } catch (queueErr) {
+                                            return Promise.reject(queueErr);
+                                        }
+                                    }
+
+                                    isRefreshing = true;
                                     try {
-                                        const newToken = await new Promise<string>((resolve) => {
-                                            refreshQueue.push((token) => resolve(token));
-                                        });
+                                        const newToken = await performTokenRefresh();
+                                        processQueue(null, newToken);
+                                        isRefreshing = false;
                                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                                         return this.instance(originalRequest);
-                                    } catch (queueErr) {
-                                        return Promise.reject(queueErr);
+                                    } catch (refreshErr) {
+                                        processQueue(refreshErr);
+                                        isRefreshing = false;
+                                        await this.handleUnauthorized();
+                                        return Promise.reject(error);
                                     }
-                                }
-
-                                isRefreshing = true;
-                                try {
-                                    const newToken = await performTokenRefresh();
-                                    processQueue(null, newToken);
-                                    isRefreshing = false;
-                                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                                    return this.instance(originalRequest);
-                                } catch (refreshErr) {
-                                    processQueue(refreshErr);
-                                    isRefreshing = false;
-                                    await this.handleUnauthorized();
-                                    return Promise.reject(error);
-                                }
-                            } else {
-                                console.error('🚨 401 Unauthorized received for URL (no retry):', error.config?.url);
-                                if (!this.isLoggingOut) {
-                                    await this.handleUnauthorized();
+                                } else {
+                                    console.error('🚨 401 Unauthorized received for URL (no retry):', error.config?.url);
+                                    if (!this.isLoggingOut) {
+                                        await this.handleUnauthorized();
+                                    }
                                 }
                             }
                             break;

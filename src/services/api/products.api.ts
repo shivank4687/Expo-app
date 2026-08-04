@@ -58,6 +58,10 @@ const transformProduct = (data: any): Product => {
             minimum_order_amount: data.supplier.minimum_order_amount,
             free_shipping_enable: data.supplier.free_shipping_enable,
             free_shipping_threshold: data.supplier.free_shipping_threshold,
+            standard_delivery_days: data.supplier.standard_delivery_days,
+            preparation_time_days: data.supplier.preparation_time_days,
+            wholesale_price_multiplier: data.supplier.wholesale_price_multiplier,
+            special_price_from_wholesale: data.supplier.special_price_from_wholesale,
         } : undefined,
     };
 };

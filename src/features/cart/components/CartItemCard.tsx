@@ -42,7 +42,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
 
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
-    const imageUrl = item.product?.thumbnail || (item.product?.images && item.product.images[0]?.url);
+    const imageUrl = item.child?.product?.thumbnail || 
+                     (item.child?.product?.images && item.child.product.images[0]?.url) ||
+                     item.product?.thumbnail || 
+                     (item.product?.images && item.product.images[0]?.url);
     const subtotal = item.price * item.quantity;
 
     const handleProductPress = () => {
@@ -137,7 +140,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                             />
 
                             {/* Availability Badge - top right (made_to_order wins over immediate_shipping) */}
-                            {(item.product.immediate_shipping && item.product.in_stock) ? (
+                            {(item.product.immediate_shipping && item.product.in_stock && (item.product.quantity ?? 0) > 0) ? (
                                 <View style={styles.availabilityBadgeGreen}>
                                     <Ionicons name="checkmark" size={16} color="#15803d" />
                                 </View>
@@ -154,9 +157,30 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                         <View style={styles.productInfoSection}>
                             <View style={styles.nameAndPrice}>
                                 <TouchableOpacity style={{ flex: 1, paddingRight: 8 }} onPress={handleProductPress} activeOpacity={0.7}>
-                                    <Text style={styles.productName} numberOfLines={2}>
+                                    <Text style={styles.productName} numberOfLines={1}>
                                         {item.name}
                                     </Text>
+                                    {(() => {
+                                        const attributes = item.additional?.attributes 
+                                            ? (Array.isArray(item.additional.attributes) 
+                                                ? item.additional.attributes 
+                                                : Object.values(item.additional.attributes)) 
+                                            : [];
+                                        
+                                        if (attributes.length === 0) return null;
+
+                                        return (
+                                            <View style={styles.chipsContainer}>
+                                                {attributes.map((attr: any, index: number) => (
+                                                    <View key={index} style={styles.chip}>
+                                                        <Text style={styles.chipText}>
+                                                            {attr.attribute_name}: {attr.option_label}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        );
+                                    })()}
                                 </TouchableOpacity>
                                 <Text style={styles.price}>
                                     {formatters.formatPrice(item.price, currencySymbol)}
@@ -168,8 +192,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                         <View style={styles.qtyAndSubtotal}>
                             <QuantitySelector
                                 quantity={item.quantity}
-                                onIncrease={() => handleQuantityChange(item.quantity + 1)}
-                                onDecrease={() => handleQuantityChange(item.quantity - 1)}
+                                onChangeQuantity={handleQuantityChange}
                                 isLoading={isUpdating}
                                 minQuantity={1}
                                 disabled={isUpdating}
@@ -283,6 +306,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginTop: theme.spacing.sm,
+    },
+    chipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        marginTop: 6,
+    },
+    chip: {
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    chipText: {
+        fontSize: 10,
+        fontWeight: '500',
+        color: '#4B5563',
     },
     subtotalRow: {
         flexDirection: 'column',

@@ -120,7 +120,7 @@ function AppContent() {
       console.log('➡️ Redirecting: Not authenticated -> Shop Home');
       router.replace('/(drawer)/(tabs)');
     }
-    
+
     console.log('✅ Auth Guard: No redirect needed');
   }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, user, supplier, segments, pathname, router]);
 

@@ -71,6 +71,18 @@ export const getCustomerGroups = async (): Promise<CustomerGroup[]> => {
 };
 
 /**
+ * Fetch customer groups without requiring authentication.
+ * Used on the Signup screen to populate the Customer Type dropdown.
+ * restApiClient will simply omit the Authorization header when no token is stored.
+ */
+export const getPublicCustomerGroups = async (): Promise<CustomerGroup[]> => {
+    const response = await restApiClient.get<{ data: CustomerGroup[] }>(
+        API_ENDPOINTS.CUSTOMER_GROUPS_PUBLIC
+    );
+    return response.data;
+};
+
+/**
  * Update the authenticated customer's group
  */
 export const updateCustomerGroup = async (groupId: number): Promise<void> => {

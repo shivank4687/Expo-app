@@ -68,7 +68,8 @@ export const API_ENDPOINTS = {
     NEWSLETTER_SUBSCRIPTION: '/customer/subscription',
 
     // Customer Type & Tax
-    CUSTOMER_GROUPS: '/customer/groups',
+    CUSTOMER_GROUPS: '/customer/groups',          // authenticated
+    CUSTOMER_GROUPS_PUBLIC: '/customer/public-groups',   // public (no token required for signup)
     CUSTOMER_GROUP_UPDATE: '/customer/group',
     CUSTOMER_TAX_PROFILE: '/customer/tax-profile',
 

@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,7 @@ import { AvailabilityCard } from '../components/AvailabilityCard';
 import { EstimatedDeliveryCard } from '../components/EstimatedDeliveryCard';
 import { formatters } from '@/shared/utils/formatters';
 import { theme } from '@/theme';
+import { config } from '@/config/env';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCartThunk } from '@/store/slices/cartSlice';
 import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
@@ -64,7 +66,7 @@ export const ProductDetailScreen: React.FC = () => {
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
     const [isMessageModalVisible, setIsMessageModalVisible] = useState(false);
 
-    const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const cartItemsCount = useAppSelector((state) => state.cart.cart?.items_count || 0);
@@ -160,6 +162,24 @@ export const ProductDetailScreen: React.FC = () => {
         }
     };
 
+    const handleShareProduct = async () => {
+        if (!product) return;
+
+        try {
+            const shareUrl = `${config.baseUrl}/product/${product.sku}`;
+            await Share.share({
+                title: product.name,
+                message: t('product.shareMessage', { name: product.name, url: shareUrl }),
+                url: shareUrl,
+            });
+        } catch (error: any) {
+            showToast({
+                message: error.message || t('product.failedToShare'),
+                type: 'error',
+            });
+        }
+    };
+
     const handleAddToCart = async () => {
         if (!product) return;
 
@@ -236,6 +256,32 @@ export const ProductDetailScreen: React.FC = () => {
     const displayRegularPrice = selectedVariantRegularPrice ?? product.regular_price;
     const hasDiscount = product.on_sale || (displayRegularPrice && displayRegularPrice > displayPrice);
 
+    // Calculate unit price based on quantity tiers and B2B multipliers
+    const getUnitPriceForQty = (qty: number) => {
+        let unitPrice = displayPrice;
+
+        if (product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0) {
+            let activeOffer = null;
+            // Offers are returned sorted by qty ascending from backend
+            for (const offer of product.customer_group_pricing_offers) {
+                if (qty >= offer.qty) {
+                    activeOffer = offer;
+                }
+            }
+
+            if (activeOffer) {
+                const isWholesale = user?.group?.code === 'wholesale' || user?.customer_group_id === 3;
+                const shouldApplyMultiplier = !isWholesale && product.supplier?.special_price_from_wholesale;
+                const multiplier = shouldApplyMultiplier ? (product.supplier?.wholesale_price_multiplier ?? 1.0) : 1.0;
+
+                const rawPrice = typeof activeOffer.price === 'string' ? parseFloat(activeOffer.price) : (activeOffer.price || 0);
+                unitPrice = rawPrice * multiplier;
+            }
+        }
+
+        return unitPrice;
+    };
+
     console.log('💵 Display price:', displayPrice, 'selectedVariantPrice:', selectedVariantPrice, 'product.price:', product.price);
 
     const showQuantityBox = product.type !== 'grouped' && product.type !== 'bundle';
@@ -289,37 +335,39 @@ export const ProductDetailScreen: React.FC = () => {
                                 ) : null}
                             </View>
 
-                            {/* Wishlist Button */}
-                            <TouchableOpacity
-                                style={styles.wishlistButton}
-                                onPress={handleToggleWishlist}
-                                disabled={isTogglingWishlist}
-                            >
-                                {isTogglingWishlist ? (
-                                    <ActivityIndicator size="small" color={theme.colors.error.main} />
-                                ) : (
+                            {/* Action Buttons */}
+                            <View style={styles.actionsContainer}>
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={handleToggleWishlist}
+                                    disabled={isTogglingWishlist}
+                                    activeOpacity={0.7}
+                                >
+                                    {isTogglingWishlist ? (
+                                        <ActivityIndicator size="small" color={theme.colors.error.main} />
+                                    ) : (
+                                        <Ionicons
+                                            name={isInWishlist ? 'heart' : 'heart-outline'}
+                                            size={22}
+                                            color={isInWishlist ? theme.colors.error.main : theme.colors.text.secondary}
+                                        />
+                                    )}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={handleShareProduct}
+                                    activeOpacity={0.7}
+                                >
                                     <Ionicons
-                                        name={isInWishlist ? 'heart' : 'heart-outline'}
-                                        size={28}
-                                        color={isInWishlist ? theme.colors.error.main : theme.colors.text.secondary}
+                                        name="share-social-outline"
+                                        size={22}
+                                        color={theme.colors.text.secondary}
                                     />
-                                )}
-                            </TouchableOpacity>
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
-                        {/* Availability Card */}
-                        <AvailabilityCard
-                            immediateShipping={product.immediate_shipping && product.in_stock}
-                            madeToOrder={product.made_to_order}
-                            madeToOrderDays={product.made_to_order_days}
-                            madeToOrderQty={product.made_to_order_qty}
-                        />
-
-                        {/* Estimated Delivery Card */}
-                        <EstimatedDeliveryCard
-                            productId={product.id}
-                            isAuthenticated={isAuthenticated}
-                        />
 
                         {/* Rating */}
                         {/* {product.rating && product.rating > 0 ? (
@@ -436,12 +484,30 @@ export const ProductDetailScreen: React.FC = () => {
                             </View>
                         ) : null}
 
+                        {/* Availability Card */}
+                        <AvailabilityCard
+                            immediateShipping={product.immediate_shipping && product.in_stock && (product.quantity ?? 0) > 0}
+                            madeToOrder={product.made_to_order}
+                            madeToOrderDays={product.made_to_order_days}
+                            madeToOrderQty={product.made_to_order_qty}
+                        />
 
+                        {/* Estimated Delivery Card */}
+                        <EstimatedDeliveryCard
+                            productId={product.id}
+                            isAuthenticated={isAuthenticated}
+                            standardDeliveryDays={product.supplier?.standard_delivery_days}
+                            preparationTimeDays={product.supplier?.preparation_time_days}
+                        />
 
                         {/* Pricing Group */}
                         {product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0 ? (
                             <View style={styles.section}>
-                                <PricingGroup offers={product.customer_group_pricing_offers} />
+                                <PricingGroup
+                                    offers={product.customer_group_pricing_offers}
+                                    supplier={product.supplier}
+                                    currencySymbol={currencySymbol}
+                                />
                             </View>
                         ) : null}
 
@@ -625,7 +691,7 @@ export const ProductDetailScreen: React.FC = () => {
                 {canAddToCart ? (
                     <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
                         <ProductTotals
-                            price={formatters.formatPrice(displayPrice * quantity, currencySymbol)}
+                            price={formatters.formatPrice(getUnitPriceForQty(quantity) * quantity, currencySymbol)}
                             deliveryText="Delivery 22 Dec - 24 Dec"
                             quantity={quantity}
                             onIncreaseQty={() => handleQuantityChange(1)}
@@ -678,14 +744,19 @@ const styles = StyleSheet.create({
         marginRight: theme.spacing.md,
     },
     name: {
-        fontSize: theme.typography.fontSize['2xl'],
-        fontWeight: theme.typography.fontWeight.bold,
+        fontSize: theme.typography.fontSize['xl'],
+        fontWeight: theme.typography.fontWeight.medium,
         color: theme.colors.text.primary,
     },
-    wishlistButton: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
+    actionsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+    actionButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: theme.colors.white,
         borderWidth: 1,
         borderColor: theme.colors.border.main,

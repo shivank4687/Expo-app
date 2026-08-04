@@ -130,6 +130,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
                         <ProductCard
                             product={product}
                             onPress={() => handleProductPress(product.id)}
+                            cardVariant="flat"
                         />
                     </View>
                 ))}
@@ -140,7 +141,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: theme.spacing.sm,
     },
     loadingContainer: {
         padding: theme.spacing.lg,

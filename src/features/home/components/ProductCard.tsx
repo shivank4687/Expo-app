@@ -18,6 +18,7 @@ import { CardVariantSelector } from '@/features/product/components/CardVariantSe
 interface ProductCardProps {
     product: Product;
     onPress: () => void;
+    cardVariant?: 'elevated' | 'outlined' | 'flat';
 }
 
 const RATING_ICON_SIZE = 14;
@@ -29,7 +30,7 @@ const RATING_ICON_SIZE = 14;
  * user pick options, see the updated image/price, and add to cart — all
  * without navigating to the ProductDetailScreen.
  */
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, cardVariant = 'elevated' }) => {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const { showToast } = useToast();
@@ -243,7 +244,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
             // accidental navigation while the user is picking options.
             disabled={isSelectorOpen}
         >
-            <Card variant="elevated" style={styles.card}>
+            <Card variant={cardVariant} style={styles.card}>
                 {/* ── Image + Info ──────────────────────────────────────── */}
                 <TouchableOpacity
                     activeOpacity={0.8}
@@ -261,7 +262,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
                         />
 
                         {/* Availability Badge */}
-                        {(product.immediate_shipping && product.in_stock) ? (
+                        {(product.immediate_shipping && product.in_stock && (product.quantity ?? 0) > 0) ? (
                             <View style={styles.availabilityBadgeGreen}>
                                 <Ionicons name="checkmark" size={18} color="#15803d" />
                             </View>
@@ -343,11 +344,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) =>
 
                         <View style={styles.priceWrapper}>
                             {/* Price label — "as low as" only when no variant chosen yet */}
-                            <View style={styles.priceLabelContainer}>
+                            {/* <View style={styles.priceLabelContainer}>
                                 {priceLabel ? (
                                     <Text style={styles.priceLabel}>{priceLabel}</Text>
                                 ) : null}
-                            </View>
+                            </View> */}
 
                             <View style={styles.priceRow}>
                                 <View style={styles.priceContainer}>
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 24,
+        minHeight: 10,
     },
     priceContainer: {
         flexDirection: 'row',
@@ -702,18 +703,18 @@ const styles = StyleSheet.create({
 
     /* Prices */
     price: {
-        fontSize: theme.typography.fontSize.lg,
+        fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary[500],
     },
     specialPrice: {
-        fontSize: theme.typography.fontSize.lg,
+        fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.error.main,
         marginRight: theme.spacing.sm,
     },
     originalPrice: {
-        fontSize: theme.typography.fontSize.sm,
+        fontSize: theme.typography.fontSize.xs,
         color: '#9CA3AF',
         textDecorationLine: 'line-through',
         textDecorationColor: '#9CA3AF',

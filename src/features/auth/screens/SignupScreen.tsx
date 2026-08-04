@@ -7,15 +7,15 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { signupThunk, setSelectedUserType, socialLoginThunk } from '@/store/slices/authSlice';
 import { GoogleSignin, statusCodes } from '@/services/googleAuth';
 import { Input } from '@/shared/components/Input';
-
-
 import { Button } from '@/shared/components/Button';
 import { CountryCodeDropdown } from '@/shared/components/CountryCodeDropdown';
 import { TabGroup } from '@/shared/components';
@@ -25,6 +25,97 @@ import { useToast } from '@/shared/components/Toast';
 import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
 import { GoogleIcon } from '@/assets/icons/GoogleIcon';
+import { CustomerGroup, getPublicCustomerGroups } from '@/features/account/api/customer-tax-profile.api';
+
+// ─── Inline Customer Type Dropdown ────────────────────────────────────────────
+// Mirrors the InlineDrop component from CustomerTypeTaxScreen
+
+interface DropdownOption { value: string; label: string; }
+
+const InlineDrop: React.FC<{
+    label: string;
+    options: DropdownOption[];
+    value: string | null;
+    onSelect: (v: string) => void;
+    placeholder?: string;
+    error?: string;
+    zIndex?: number;
+}> = ({ label, options, value, onSelect, placeholder = 'Select...', error, zIndex = 10 }) => {
+    const [open, setOpen] = useState(false);
+    const selected = options.find((o) => o.value === value);
+    return (
+        <View style={{ overflow: 'visible', zIndex: open ? 9999 : zIndex, marginBottom: 4 }}>
+            <View style={dropStyles.row}>
+                <Text style={dropStyles.label}>{label}</Text>
+                <TouchableOpacity
+                    style={dropStyles.trigger}
+                    onPress={() => setOpen((p) => !p)}
+                    activeOpacity={0.7}
+                >
+                    <Text style={[dropStyles.triggerText, !selected && dropStyles.placeholder]} numberOfLines={1}>
+                        {selected ? selected.label : placeholder}
+                    </Text>
+                    <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color="#0A292D" />
+                </TouchableOpacity>
+            </View>
+            {error ? <Text style={dropStyles.errorText}>{error}</Text> : null}
+            {open && (
+                <>
+                    <TouchableOpacity
+                        style={dropStyles.overlay}
+                        activeOpacity={1}
+                        onPress={() => setOpen(false)}
+                    />
+                    <View style={dropStyles.menu}>
+                        {options.map((item) => {
+                            const isActive = item.value === value;
+                            return (
+                                <TouchableOpacity
+                                    key={item.value}
+                                    style={[dropStyles.option, isActive && dropStyles.optionActive]}
+                                    onPress={() => { onSelect(item.value); setOpen(false); }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[dropStyles.optionText, isActive && dropStyles.optionTextActive]}>
+                                        {item.label}
+                                    </Text>
+                                    {isActive && <Ionicons name="checkmark-circle" size={16} color="#00615E" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </>
+            )}
+        </View>
+    );
+};
+
+const dropStyles = StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
+    label: { fontFamily: 'Inter', fontWeight: '500', fontSize: 14, color: '#4B5563', width: 110, flexShrink: 0 },
+    trigger: {
+        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        borderWidth: 1, borderColor: '#E1D9CF', borderRadius: 8,
+        backgroundColor: '#FAF9F6', paddingHorizontal: 12, paddingVertical: 10,
+    },
+    triggerText: { flex: 1, fontFamily: 'Inter', fontSize: 14, color: '#0A292D', marginRight: 6 },
+    placeholder: { color: '#7D8A8C' },
+    overlay: { position: 'absolute', top: -1000, left: -1000, right: -1000, bottom: -1000, zIndex: 1 },
+    menu: {
+        position: 'absolute', top: 44, left: 122, right: 0,
+        backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1D9CF',
+        borderRadius: 10, paddingVertical: 4, zIndex: 9999,
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12 },
+            android: { elevation: 20 },
+        }),
+    },
+    option: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, marginHorizontal: 4 },
+    optionActive: { backgroundColor: '#F0FCF8' },
+    optionText: { fontFamily: 'Inter', fontSize: 14, color: '#0A292D', flex: 1 },
+    optionTextActive: { color: '#00615E', fontWeight: '600' },
+    errorText: { fontFamily: 'Inter', fontSize: 12, color: '#DC2626', marginTop: 2, marginLeft: 122 },
+});
 
 
 export const SignupScreen: React.FC = () => {
@@ -72,9 +163,15 @@ export const SignupScreen: React.FC = () => {
         confirmPassword?: string;
         company_name?: string;
         url?: string;
+        customer_group?: string;
     }>({});
 
     const [selectedCountry, setSelectedCountry] = useState<Country | null>(lastSelectedCountry || null);
+
+    // ── Customer group dropdown state (customer tab only) ────────────────────
+    const [groups, setGroups] = useState<CustomerGroup[]>([]);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+    const [groupsLoading, setGroupsLoading] = useState(false);
 
     // Update selectedCountry if lastSelectedCountry changes
     useEffect(() => {
@@ -82,6 +179,18 @@ export const SignupScreen: React.FC = () => {
             setSelectedCountry(lastSelectedCountry);
         }
     }, [lastSelectedCountry]);
+
+    // Fetch customer groups when customer tab is active
+    useEffect(() => {
+        if (selectedUserType === 'customer') {
+            setGroupsLoading(true);
+            getPublicCustomerGroups()
+                .then(setGroups)
+                .catch(() => {})
+                .finally(() => setGroupsLoading(false));
+        }
+    }, [selectedUserType]);
+
     const [validating, setValidating] = useState<{
         email?: boolean;
         phone?: boolean;
@@ -341,12 +450,10 @@ export const SignupScreen: React.FC = () => {
             if (!validation.isRequired(formData.company_name)) {
                 newErrors.company_name = t('auth.companyNameRequired', 'Company name is required');
             }
+        }
 
-            // if (!validation.isRequired(formData.url)) {
-            //     newErrors.url = t('auth.urlRequired', 'Shop URL is required');
-            // } else if (errors.url) {
-            //     newErrors.url = errors.url;
-            // }
+        if (selectedUserType === 'customer' && !selectedGroupId) {
+            newErrors.customer_group = t('auth.customerTypeRequired', 'Please select your customer type');
         }
 
         setErrors(newErrors);
@@ -447,7 +554,11 @@ export const SignupScreen: React.FC = () => {
             // Add supplier fields
             if (selectedUserType === 'supplier') {
                 signupPayload.company_name = formData.company_name;
-                // signupPayload.url = formData.url;
+            }
+
+            // Add customer group for customer signup
+            if (selectedUserType === 'customer' && selectedGroupId) {
+                signupPayload.customer_group_id = Number(selectedGroupId);
             }
 
             const result = await dispatch(signupThunk(signupPayload)).unwrap();
@@ -705,6 +816,24 @@ export const SignupScreen: React.FC = () => {
                             labelStyle={styles.inputLabel}
                         />
 
+                        {selectedUserType === 'customer' && (
+                            <View style={styles.customerTypeWrapper}>
+                                {groupsLoading ? (
+                                    <ActivityIndicator size="small" color={primaryColor} style={{ marginVertical: 8 }} />
+                                ) : (
+                                    <InlineDrop
+                                        label={`${t('auth.customerType', 'Customer Type')} *`}
+                                        options={groups.map(g => ({ value: String(g.id), label: g.name }))}
+                                        value={selectedGroupId}
+                                        onSelect={setSelectedGroupId}
+                                        placeholder={t('auth.selectCustomerType', 'Select customer type')}
+                                        error={errors.customer_group}
+                                        zIndex={100}
+                                    />
+                                )}
+                            </View>
+                        )}
+
                         {selectedUserType === 'supplier' && (
                             <>
                                 <Input
@@ -811,7 +940,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingHorizontal: theme.spacing.lg,
         paddingTop: theme.spacing.md,
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: theme.spacing['5xl'],
     },
     header: {
         marginBottom: theme.spacing.lg,
@@ -874,6 +1003,11 @@ const styles = StyleSheet.create({
         borderRightWidth: 1,
         borderRightColor: borderLightColor,
         marginRight: 4,
+    },
+    customerTypeWrapper: {
+        overflow: 'visible',
+        zIndex: 200,
+        marginBottom: theme.spacing.md,
     },
     actionContainer: {
         marginTop: theme.spacing.md,

@@ -41,6 +41,7 @@ export interface SignupRequest {
     is_subscribed?: boolean;
     company_name?: string;
     url?: string;
+    customer_group_id?: number;
 }
 
 export interface UpdateProfileRequest {
