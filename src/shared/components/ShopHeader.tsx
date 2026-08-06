@@ -79,13 +79,16 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
 
     // Refetch when authentication changes
     useEffect(() => {
-        dispatch(fetchCartThunk());
+        // Only fetch cart on header mount if not already loaded in Redux
+        if (!cart) {
+            dispatch(fetchCartThunk());
+        }
 
         // Fetch notification count for authenticated users
         if (isAuthenticated) {
             dispatch(fetchUnreadCountThunk());
         }
-    }, [isAuthenticated, dispatch]);
+    }, [isAuthenticated, dispatch, cart]);
 
     // Listen for real-time notification updates
     useEffect(() => {

@@ -163,7 +163,10 @@
     "invalidQuantity": "Please enter a valid quantity",
     "addedToCart": "{{name}} added to cart!",
     "failedToAddToCart": "Failed to add to cart",
+    "onlyQtyAvailable": "Only {{count}} units available in stock",
+    "addedQtyClamped": "Only {{count}} units available. Added {{count}} to cart.",
     "loginToAddWishlist": "Please login first to add items to wishlist",
+    "loginToViewWholesale": "Login to view wholesale price",
     "addedToWishlist": "{{name}} added to wishlist!",
     "removedFromWishlist": "{{name}} removed from wishlist",
     "failedToUpdateWishlist": "Failed to update wishlist",
@@ -269,7 +272,15 @@
     "removeSelected": "Remove Selected",
     "removeSelectedConfirm": "Are you sure you want to remove {{count}} items from your cart?",
     "itemsRemoved": "Items removed from cart",
-    "itemsMovedToWishlist": "Items moved to wishlist"
+    "itemsMovedToWishlist": "Items moved to wishlist",
+    "onlyQtyAvailable": "Only {{count}} left in stock",
+    "lowStockWarning": "Low Stock: Only {{count}} left",
+    "adjustUnavailableItems": "Some items in your cart are not available",
+    "mtoSplitAlert": "{{inStock}} Available • {{mto}} Made to Order",
+    "mtoSplitAlertWithDays": "{{inStock}} Available • {{mto}} Made to Order",
+    "mtoFullAlert": "Made to order",
+    "mtoFullAlertWithDays": "Made to order",
+    "readyToShip": "Ready to ship"
   },
   "address": {
     "addresses": "Addresses",

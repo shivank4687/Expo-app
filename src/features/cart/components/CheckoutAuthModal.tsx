@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: theme.borderRadius.xl,
         borderTopRightRadius: theme.borderRadius.xl,
         padding: theme.spacing.xl,
-        paddingBottom: Platform.OS === 'ios' ? theme.spacing.xxl : theme.spacing.xl,
+        paddingBottom: Platform.OS === 'ios' ? theme.spacing['2xl'] : theme.spacing.xl,
         ...theme.shadows.lg,
     },
     closeButton: {
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
     },
     title: {
-        fontSize: theme.typography.fontSize.xxl,
+        fontSize: theme.typography.fontSize['2xl'],
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.text.primary,
         textAlign: 'center',

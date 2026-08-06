@@ -12,6 +12,7 @@ import wishlistReducer from './slices/wishlistSlice';
 import notificationReducer from './slices/notificationSlice';
 import customerStatsReducer from './slices/customerStatsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
+import recentlyVisitedCategoriesReducer from './slices/recentlyVisitedCategoriesSlice';
 import networkReducer from './slices/networkSlice';
 import offlineProductsReducer from './slices/offlineProductsSlice';
 import addressReducer from './slices/addressSlice';
@@ -56,7 +57,7 @@ const offlineProductsPersistConfig = {
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms', 'recentlyViewed', 'offlineProducts'],
+    whitelist: ['auth', 'supplierAuth', 'core', 'category', 'cms', 'recentlyViewed', 'recentlyVisitedCategories', 'offlineProducts'],
 };
 
 // Root reducer
@@ -71,6 +72,7 @@ const rootReducer = combineReducers({
     notifications: notificationReducer,
     customerStats: customerStatsReducer,
     recentlyViewed: recentlyViewedReducer,
+    recentlyVisitedCategories: recentlyVisitedCategoriesReducer,
     network: networkReducer,
     offlineProducts: persistReducer(offlineProductsPersistConfig, offlineProductsReducer),
     address: addressReducer,

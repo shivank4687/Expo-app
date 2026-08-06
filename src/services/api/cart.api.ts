@@ -63,6 +63,25 @@ export const cartApi = {
     },
 
     /**
+     * Add item to cart (lightweight version)
+     */
+    addToCartMini: async (payload: AddToCartPayload): Promise<any> => {
+        try {
+            const response = await restApiClient.post<any>(
+                `/customer/cart/add-mini/${payload.product_id}`,
+                payload
+            );
+            if (!response.data) {
+                throw new Error(response.message || 'Invalid cart response');
+            }
+            return response.data;
+        } catch (error: any) {
+            console.error('Add to cart mini error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to add item to cart');
+        }
+    },
+
+    /**
      * Update cart item quantity
      */
     updateCartItem: async (payload: UpdateCartItemPayload): Promise<Cart> => {
@@ -264,6 +283,30 @@ export const cartApi = {
             return response.data;
         } catch (error: any) {
             console.error('Guest add to cart error:', error);
+            throw new Error(error.response?.data?.message || error.message || 'Failed to add item to cart');
+        }
+    },
+
+    /**
+     * Add item to guest cart (lightweight version)
+     */
+    guestAddToCartMini: async (payload: AddToCartPayload): Promise<any> => {
+        try {
+            const response = await restApiClient.post<any>(
+                `/guest/cart/add-mini/${payload.product_id}`,
+                {
+                    product_id: payload.product_id,
+                    quantity: payload.quantity || 1,
+                    selected_configurable_option: payload.selected_configurable_option,
+                    super_attribute: payload.super_attribute,
+                }
+            );
+            if (!response.data) {
+                throw new Error(response.message || 'Invalid cart response');
+            }
+            return response.data;
+        } catch (error: any) {
+            console.error('Guest add to cart mini error:', error);
             throw new Error(error.response?.data?.message || error.message || 'Failed to add item to cart');
         }
     },

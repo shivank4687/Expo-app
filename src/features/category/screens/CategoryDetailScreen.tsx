@@ -11,7 +11,8 @@ import { SortModal } from '@/shared/components/SortModal';
 import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { addCategory } from '@/store/slices/recentlyVisitedCategoriesSlice';
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, Keyboard, TextInput } from 'react-native';
@@ -23,6 +24,7 @@ const PRODUCTS_PER_PAGE = 12; // Increased for grid view
 export const CategoryDetailScreen: React.FC = () => {
     const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const { t } = useTranslation();
     const [category, setCategory] = useState<Category | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
@@ -138,6 +140,9 @@ export const CategoryDetailScreen: React.FC = () => {
 
             setCategory(categoryData);
             setProducts(productsData.data);
+            if (categoryData) {
+                dispatch(addCategory(categoryData));
+            }
             const meta = productsData.meta;
             setCurrentPage(productsData.current_page || meta?.current_page || 1);
             setTotalPages(productsData.last_page || meta?.last_page || 1);

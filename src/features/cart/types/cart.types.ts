@@ -114,6 +114,8 @@ export interface Cart {
     base_grand_total: number;
     discount_amount: number;
     base_discount_amount: number;
+    discount?: number;
+    base_discount?: number;
     tax_total: number;
     base_tax_total: number;
     shipping_amount?: number;
@@ -121,6 +123,7 @@ export interface Cart {
     formatted_sub_total: string;
     formatted_grand_total: string;
     formatted_discount_amount: string;
+    formatted_discount?: string;
     formatted_tax_total: string;
     formatted_shipping_amount?: string;
     formatted_base_shipping_amount?: string;

@@ -16,6 +16,7 @@ export interface Product {
     special_price?: number; // Discounted price (when on sale)
     regular_price?: number; // Original price before discount
     images: ProductImage[];
+    videos?: ProductVideo[];
     thumbnail?: string;
     rating?: number;
     reviews_count?: number;
@@ -85,6 +86,12 @@ export interface ProductImage {
     alt?: string;
 }
 
+export interface ProductVideo {
+    id: number;
+    type: string;
+    url: string;
+}
+
 export interface ProductVariant {
     id: number;
     name: string;
@@ -94,6 +101,11 @@ export interface ProductVariant {
     in_stock: boolean;
     attributes: VariantAttribute[];
     images?: ProductImage[];
+    quantity?: number;
+    made_to_order?: boolean;
+    made_to_order_days?: number | null;
+    immediate_shipping?: boolean;
+    made_to_order_qty?: number | null;
 }
 
 export interface VariantAttribute {

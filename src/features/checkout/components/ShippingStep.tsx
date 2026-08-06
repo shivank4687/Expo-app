@@ -45,7 +45,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
 
         // Calculate additional days for each item
         const itemsProductionDays = supplierItems.map(item => {
-            const product = item.product;
+            const product = item.child?.product || item.product;
             if (!product || !product.made_to_order) return 0;
 
             const orderQty = item.quantity;

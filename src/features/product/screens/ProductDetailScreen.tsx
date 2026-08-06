@@ -79,6 +79,11 @@ export const ProductDetailScreen: React.FC = () => {
         return wishlistItems.some((item) => item.product.id === product.id);
     }, [wishlistItems, product]);
 
+    const selectedVariant = useMemo(() => {
+        if (product?.type !== 'configurable' || !selectedVariantId || !product?.variants) return null;
+        return product.variants.find((v) => v.id === selectedVariantId);
+    }, [product, selectedVariantId]);
+
     const cartRightContent = (
         <TouchableOpacity
             onPress={() => router.push('/(drawer)/(tabs)/cart')}
@@ -313,6 +318,7 @@ export const ProductDetailScreen: React.FC = () => {
                     {/* Image Gallery */}
                     <ProductGallery
                         images={displayImages}
+                        videos={product.videos}
                         isOnSale={!!(product.on_sale || hasDiscount)}
                         isNew={!!(product.is_new || product.new === true || product.new === 1)}
                         inStock={product.in_stock}
@@ -486,10 +492,10 @@ export const ProductDetailScreen: React.FC = () => {
 
                         {/* Availability Card */}
                         <AvailabilityCard
-                            immediateShipping={product.immediate_shipping && product.in_stock && (product.quantity ?? 0) > 0}
-                            madeToOrder={product.made_to_order}
-                            madeToOrderDays={product.made_to_order_days}
-                            madeToOrderQty={product.made_to_order_qty}
+                            immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && ((selectedVariant ? selectedVariant.quantity : product.quantity) ?? 0) > 0}
+                            madeToOrder={selectedVariant ? selectedVariant.made_to_order : product.made_to_order}
+                            madeToOrderDays={selectedVariant ? selectedVariant.made_to_order_days : product.made_to_order_days}
+                            madeToOrderQty={selectedVariant ? selectedVariant.made_to_order_qty : product.made_to_order_qty}
                         />
 
                         {/* Estimated Delivery Card */}

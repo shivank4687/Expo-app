@@ -14,6 +14,7 @@ type PriceDetailsSummaryCardProps = {
     disabled?: boolean;
     shipping?: string;
     grandTotal?: string;
+    hasUnavailableItems?: boolean;
 };
 
 export const PriceDetailsSummaryCard: React.FC<PriceDetailsSummaryCardProps> = ({
@@ -27,6 +28,7 @@ export const PriceDetailsSummaryCard: React.FC<PriceDetailsSummaryCardProps> = (
     disabled,
     shipping,
     grandTotal,
+    hasUnavailableItems = false,
 }) => {
     const { t } = useTranslation();
 
@@ -72,7 +74,9 @@ export const PriceDetailsSummaryCard: React.FC<PriceDetailsSummaryCardProps> = (
             )}
             {disabled && !loading && (
                 <Text style={styles.minimumOrderHint}>
-                    {t('cart.minimumOrderNotMet', 'Meet the minimum order for all stores to proceed')}
+                    {hasUnavailableItems
+                        ? t('cart.adjustUnavailableItems', 'Some items in your cart are not available')
+                        : t('cart.minimumOrderNotMet', 'Meet the minimum order for all stores to proceed')}
                 </Text>
             )}
             <TouchableOpacity

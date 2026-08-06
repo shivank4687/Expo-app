@@ -22,6 +22,7 @@ interface CartState {
     removingCartItemId: number | null;
     isMovingToWishlist: boolean;
     movingToWishlistItemId: number | null;
+    needsRefresh: boolean;
 }
 
 const initialState: CartState = {
@@ -34,6 +35,7 @@ const initialState: CartState = {
     removingCartItemId: null,
     isMovingToWishlist: false,
     movingToWishlistItemId: null,
+    needsRefresh: false,
 };
 
 /**
@@ -72,10 +74,12 @@ export const addToCartThunk = createAsyncThunk(
             const isAuthenticated = state.auth.isAuthenticated;
 
             if (isAuthenticated) {
-                const cart = await cartApi.addToCart(payload);
+                //const cart = await cartApi.addToCart(payload)
+                const cart = await cartApi.addToCartMini(payload);
                 return { cart, productId: payload.product_id };
             } else {
-                const cart = await cartApi.guestAddToCart(payload);
+                //const cart = await cartApi.guestAddToCart(payload)
+                const cart = await cartApi.guestAddToCartMini(payload);
                 return { cart, productId: payload.product_id };
             }
         } catch (error: any) {
@@ -223,6 +227,7 @@ const cartSlice = createSlice({
             state.cart = null;
             state.error = null;
             state.lastAddedProductId = null;
+            state.needsRefresh = false;
         },
     },
     extraReducers: (builder) => {
@@ -235,6 +240,7 @@ const cartSlice = createSlice({
             .addCase(fetchCartThunk.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(fetchCartThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -251,8 +257,28 @@ const cartSlice = createSlice({
             })
             .addCase(addToCartThunk.fulfilled, (state, action) => {
                 state.isAddingToCart = false;
-                state.cart = action.payload.cart;
+                // Merge mini-cart attributes if items list is not present
+                if (action.payload.cart && !('items' in action.payload.cart)) {
+                    if (state.cart) {
+                        state.cart = {
+                            ...state.cart,
+                            id: action.payload.cart.id,
+                            items_count: action.payload.cart.items_count,
+                            items_qty: action.payload.cart.items_qty,
+                        };
+                    } else {
+                        state.cart = {
+                            id: action.payload.cart.id,
+                            items_count: action.payload.cart.items_count,
+                            items_qty: action.payload.cart.items_qty,
+                            items: [],
+                        } as any;
+                    }
+                } else {
+                    state.cart = action.payload.cart;
+                }
                 state.lastAddedProductId = action.payload.productId;
+                state.needsRefresh = true;
             })
             .addCase(addToCartThunk.rejected, (state, action) => {
                 state.isAddingToCart = false;
@@ -268,6 +294,7 @@ const cartSlice = createSlice({
             })
             .addCase(updateCartItemThunk.fulfilled, (state, action) => {
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(updateCartItemThunk.rejected, (state, action) => {
                 state.error = action.payload as string;
@@ -284,6 +311,7 @@ const cartSlice = createSlice({
                 state.isRemovingFromCart = false;
                 state.removingCartItemId = null;
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(removeFromCartThunk.rejected, (state, action) => {
                 state.isRemovingFromCart = false;
@@ -298,6 +326,7 @@ const cartSlice = createSlice({
             })
             .addCase(applyCouponThunk.fulfilled, (state, action) => {
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(applyCouponThunk.rejected, (state, action) => {
                 state.error = action.payload as string;
@@ -310,6 +339,7 @@ const cartSlice = createSlice({
             })
             .addCase(removeCouponThunk.fulfilled, (state, action) => {
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(removeCouponThunk.rejected, (state, action) => {
                 state.error = action.payload as string;
@@ -328,6 +358,7 @@ const cartSlice = createSlice({
                 // Update cart with the payload (can be null if cart is now empty)
                 // Null indicates empty cart after moving last item to wishlist
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(moveToWishlistThunk.rejected, (state, action) => {
                 state.isMovingToWishlist = false;
@@ -344,6 +375,7 @@ const cartSlice = createSlice({
             .addCase(removeSelectedFromCartThunk.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(removeSelectedFromCartThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -359,6 +391,7 @@ const cartSlice = createSlice({
             .addCase(moveSelectedToWishlistThunk.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.cart = action.payload;
+                state.needsRefresh = false;
             })
             .addCase(moveSelectedToWishlistThunk.rejected, (state, action) => {
                 state.isLoading = false;
@@ -369,7 +402,8 @@ const cartSlice = createSlice({
             state.cart = null;
             state.error = null;
             state.lastAddedProductId = null;
-            
+            state.needsRefresh = false;
+
             // Clear and regenerate guest cart token for next guest session
             try {
                 const { guestCartToken } = require('@/services/storage/guestCartToken');

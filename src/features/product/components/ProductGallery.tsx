@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from 'react-native';
-import { ProductImage as ProductImageType } from '../types/product.types';
+import React, { useState, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { ProductImage as ProductImageType, ProductVideo as ProductVideoType } from '../types/product.types';
 import { ProductImage } from '@/shared/components/LazyImage';
 import { theme } from '@/theme';
 import { PriceBadge } from './PriceBadge';
 import { DiscountBadge } from './DiscountBadge';
+import { useAppSelector } from '@/store/hooks';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { WebView } from 'react-native-webview';
 
 const { width } = Dimensions.get('window');
 const IMAGE_HEIGHT = 400;
@@ -14,6 +18,7 @@ const THUMBNAIL_SPACING = 8;
 
 interface ProductGalleryProps {
     images: ProductImageType[];
+    videos?: ProductVideoType[];
     isOnSale?: boolean;
     isNew?: boolean;
     inStock?: boolean;
@@ -25,8 +30,106 @@ interface ProductGalleryProps {
     reviewCount?: number;
 }
 
+const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+};
+
+const getWebViewSource = (url: string) => {
+    // 1. YouTube
+    const ytId = getYoutubeId(url);
+    if (ytId) {
+        return { uri: `https://www.youtube.com/embed/${ytId}?autoplay=1` };
+    }
+    
+    // 2. Vimeo
+    const vimeoRegex = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/;
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch && vimeoMatch[3]) {
+        return { uri: `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1` };
+    }
+    
+    // 3. Direct video URLs (S3 etc.) wrapped in HTML5 player to bypass direct load blocks (403s)
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                body, html {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: #000;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    overflow: hidden;
+                    position: relative;
+                }
+                video {
+                    width: 100%;
+                    height: 100%;
+                    max-height: 100%;
+                    object-fit: contain;
+                    z-index: 1;
+                }
+                .spinner-container {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 10;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .spinner {
+                    width: 40px;
+                    height: 40px;
+                    border: 4px solid rgba(255, 255, 255, 0.1);
+                    border-left-color: #00615E; /* Teal primary color */
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        </head>
+        <body>
+            <div id="spinner" class="spinner-container">
+                <div class="spinner"></div>
+            </div>
+            
+            <video 
+                id="videoPlayer"
+                controls 
+                autoplay 
+                playsinline
+                oncanplay="document.getElementById('spinner').style.display='none';"
+                onplaying="document.getElementById('spinner').style.display='none';"
+                onwaiting="document.getElementById('spinner').style.display='flex';"
+                onseeking="document.getElementById('spinner').style.display='flex';"
+                onseeked="document.getElementById('spinner').style.display='none';"
+            >
+                <source src="${url}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </body>
+        </html>
+    `;
+    
+    return { html: htmlContent, baseUrl: url };
+};
+
 export const ProductGallery: React.FC<ProductGalleryProps> = ({
     images,
+    videos = [],
     isOnSale = false,
     isNew = false,
     inStock = true,
@@ -37,23 +140,71 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     rating,
     reviewCount
 }) => {
+    const router = useRouter();
+    const { t } = useTranslation();
+    const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+    const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const mainGalleryRef = useRef<FlatList>(null);
+    const isProgrammaticScroll = useRef(false);
 
     const handleScroll = (event: any) => {
+        if (isProgrammaticScroll.current) return;
         const slideSize = event.nativeEvent.layoutMeasurement.width;
         const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
         setActiveIndex(index);
     };
 
     const handleThumbnailPress = (index: number) => {
+        if (index === activeIndex) return;
+        isProgrammaticScroll.current = true;
         setActiveIndex(index);
         mainGalleryRef.current?.scrollToIndex({ index, animated: true });
     };
 
-    const imageUrls = images.length > 0
-        ? images.map(img => img.url)
-        : ['https://via.placeholder.com/400'];
+    const handleMomentumScrollEnd = (event: any) => {
+        isProgrammaticScroll.current = false;
+        const slideSize = event.nativeEvent.layoutMeasurement.width;
+        const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+        setActiveIndex(index);
+    };
+
+    const handleScrollBeginDrag = () => {
+        isProgrammaticScroll.current = false;
+    };
+
+    const galleryItems = useMemo(() => {
+        const items: Array<{ type: 'image' | 'video'; url: string; thumbnail: string }> = [];
+
+        images.forEach(img => {
+            items.push({
+                type: 'image',
+                url: img.url,
+                thumbnail: img.url
+            });
+        });
+
+        if (videos && videos.length > 0) {
+            videos.forEach(vid => {
+                let thumbUrl = 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=200&auto=format&fit=crop'; // fallback video thumbnail
+                const ytId = getYoutubeId(vid.url);
+                if (ytId) {
+                    thumbUrl = `https://img.youtube.com/vi/${ytId}/0.jpg`;
+                }
+                items.push({
+                    type: 'video',
+                    url: vid.url,
+                    thumbnail: thumbUrl
+                });
+            });
+        }
+
+        return items;
+    }, [images, videos]);
+
+    const activeItems = galleryItems.length > 0
+        ? galleryItems
+        : [{ type: 'image' as const, url: 'https://via.placeholder.com/400', thumbnail: 'https://via.placeholder.com/400' }];
 
     return (
         <View style={styles.container}>
@@ -61,20 +212,35 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             <View style={styles.mainGalleryContainer}>
                 <FlatList
                     ref={mainGalleryRef}
-                    data={imageUrls}
+                    data={activeItems}
                     horizontal
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
                     onScroll={handleScroll}
+                    onMomentumScrollEnd={handleMomentumScrollEnd}
+                    onScrollBeginDrag={handleScrollBeginDrag}
                     scrollEventThrottle={16}
-                    keyExtractor={(item, index) => `image-${index}`}
+                    keyExtractor={(item, index) => `${item.type}-${index}`}
                     renderItem={({ item, index }) => (
-                        <ProductImage
-                            imageUrl={item}
-                            style={styles.image}
-                            recyclingKey={`product-gallery-${index}`}
-                            priority={index === 0 ? 'high' : 'normal'}
-                        />
+                        <View style={styles.imageContainer}>
+                            <ProductImage
+                                imageUrl={item.thumbnail}
+                                style={styles.image}
+                                recyclingKey={`product-gallery-${index}`}
+                                priority={index === 0 ? 'high' : 'normal'}
+                            />
+                            {item.type === 'video' && (
+                                <TouchableOpacity
+                                    style={styles.playOverlay}
+                                    onPress={() => setSelectedVideoUrl(item.url)}
+                                    activeOpacity={0.8}
+                                >
+                                    <View style={styles.playButtonCircle}>
+                                        <Ionicons name="play" size={32} color={theme.colors.white} style={{ marginLeft: 4 }} />
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     )}
                     onScrollToIndexFailed={(info) => {
                         const wait = new Promise(resolve => setTimeout(resolve, 500));
@@ -124,22 +290,36 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                     </View>
                 ) : null}
 
-                {/* Price Badge */}
-                {formattedPrice ? (
-                    <PriceBadge
-                        priceLabel={priceLabel}
-                        formattedPrice={formattedPrice}
-                        formattedRegularPrice={formattedRegularPrice}
-                        style={styles.priceBadge}
-                    />
-                ) : null}
+                {/* Price and Guest Login Badges */}
+                <View style={styles.rightBadgesContainer}>
+                    {!isAuthenticated && (
+                        <TouchableOpacity
+                            style={styles.wholesaleLoginBadge}
+                            onPress={() => router.push('/login')}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="lock-closed-outline" size={12} color={theme.colors.white} />
+                            <Text style={styles.wholesaleLoginText}>
+                                {t('product.loginToViewWholesale')}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {formattedPrice ? (
+                        <PriceBadge
+                            priceLabel={priceLabel}
+                            formattedPrice={formattedPrice}
+                            formattedRegularPrice={formattedRegularPrice}
+                        />
+                    ) : null}
+                </View>
             </View>
 
             {/* Thumbnail Navigation */}
-            {imageUrls.length > 1 && (
+            {activeItems.length > 1 && (
                 <View style={styles.thumbnailContainer}>
                     <FlatList
-                        data={imageUrls}
+                        data={activeItems}
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.thumbnailList}
@@ -153,17 +333,76 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                                 onPress={() => handleThumbnailPress(index)}
                                 activeOpacity={0.7}
                             >
-                                <ProductImage
-                                    imageUrl={item}
-                                    style={styles.thumbnail}
-                                    recyclingKey={`thumbnail-${index}`}
-                                    priority="normal"
-                                />
+                                <View style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                    <ProductImage
+                                        imageUrl={item.thumbnail}
+                                        style={styles.thumbnail}
+                                        recyclingKey={`thumbnail-${index}`}
+                                        priority="normal"
+                                    />
+                                    {item.type === 'video' && (
+                                        <View style={styles.thumbnailVideoBadge}>
+                                            <Ionicons name="videocam" size={10} color={theme.colors.white} />
+                                        </View>
+                                    )}
+                                </View>
                             </TouchableOpacity>
                         )}
                     />
                 </View>
             )}
+
+            {/* Video Player Modal */}
+            <Modal
+                visible={selectedVideoUrl !== null}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setSelectedVideoUrl(null)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContent}>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setSelectedVideoUrl(null)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="close-circle" size={36} color={theme.colors.white} />
+                        </TouchableOpacity>
+                        
+                        {selectedVideoUrl && (
+                            <View style={styles.videoPlayerContainer}>
+                                <WebView
+                                    source={getWebViewSource(selectedVideoUrl)}
+                                    style={styles.videoPlayer}
+                                    allowsFullscreenVideo={true}
+                                    mediaPlaybackRequiresUserAction={false}
+                                    javaScriptEnabled={true}
+                                    domStorageEnabled={true}
+                                    startInLoadingState={true}
+                                    onError={(syntheticEvent) => {
+                                        const { nativeEvent } = syntheticEvent;
+                                        console.warn('🎥 WebView error payload:', JSON.stringify(nativeEvent, null, 2));
+                                    }}
+                                    onHttpError={(syntheticEvent) => {
+                                        const { nativeEvent } = syntheticEvent;
+                                        console.warn('🎥 WebView HTTP error payload:', JSON.stringify(nativeEvent, null, 2));
+                                    }}
+                                    onNavigationStateChange={(navState) => {
+                                        console.log('🎥 WebView Navigation State:', JSON.stringify(navState, null, 2));
+                                    }}
+                                    renderLoading={() => (
+                                        <ActivityIndicator
+                                            size="large"
+                                            color={theme.colors.primary[500]}
+                                            style={styles.videoLoader}
+                                        />
+                                    )}
+                                />
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -236,11 +475,29 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.semiBold,
         textTransform: 'uppercase',
     },
-    priceBadge: {
+    rightBadgesContainer: {
         position: 'absolute',
         bottom: theme.spacing.lg,
         right: theme.spacing.lg,
+        alignItems: 'flex-end',
+        gap: theme.spacing.xs,
         zIndex: 10,
+    },
+    wholesaleLoginBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(0, 97, 94, 0.9)', // Teal primary color with opacity
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 4,
+        borderRadius: theme.borderRadius.full,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    wholesaleLoginText: {
+        fontSize: 10,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.white,
     },
     reviewBadge: {
         position: 'absolute',
@@ -291,6 +548,71 @@ const styles = StyleSheet.create({
     thumbnail: {
         width: '100%',
         height: '100%',
+    },
+    imageContainer: {
+        width,
+        height: IMAGE_HEIGHT,
+        position: 'relative',
+    },
+    playOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    },
+    playButtonCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: theme.colors.white,
+    },
+    thumbnailVideoBadge: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        padding: 2,
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        zIndex: 20,
+        padding: 10,
+    },
+    videoPlayerContainer: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        backgroundColor: '#000',
+    },
+    videoPlayer: {
+        flex: 1,
+    },
+    videoLoader: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -20 }, { translateY: -20 }],
     },
 });
 

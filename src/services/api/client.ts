@@ -296,7 +296,7 @@ class ApiClient {
                     delete config.headers['Content-Type'];
                     delete config.headers['content-type'];
                 }
-
+                console.log('📤 Request:', config.url, config.params, config.data);
                 return config;
             },
             (error) => {

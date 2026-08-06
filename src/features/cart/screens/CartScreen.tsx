@@ -18,7 +18,8 @@ import {
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
@@ -43,7 +44,7 @@ export const CartScreen: React.FC = () => {
     const router = useRouter();
     const { showToast } = useToast();
     const { t } = useTranslation();
-    const { cart, isLoading } = useAppSelector((state) => state.cart);
+    const { cart, isLoading, needsRefresh } = useAppSelector((state) => state.cart);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const [couponCode, setCouponCode] = useState('');
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -58,22 +59,32 @@ export const CartScreen: React.FC = () => {
     const [isRemoving, setIsRemoving] = useState(false);
     const insets = useSafeAreaInsets();
 
-    useEffect(() => {
-        loadCart();
-    }, []);
+    // Use refs to avoid stale closures in useFocusEffect without triggering re-runs on cart updates
+    const needsRefreshRef = useRef(needsRefresh);
+    const cartRef = useRef(cart);
 
-    const loadCart = async () => {
+    useEffect(() => {
+        needsRefreshRef.current = needsRefresh;
+        cartRef.current = cart;
+    }, [needsRefresh, cart]);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (needsRefreshRef.current || !cartRef.current) {
+                dispatch(fetchCartThunk());
+            }
+        }, [dispatch])
+    );
+
+    const onRefresh = async () => {
+        setRefreshing(true);
         try {
             await dispatch(fetchCartThunk()).unwrap();
         } catch (error) {
             // Error handled in slice
+        } finally {
+            setRefreshing(false);
         }
-    };
-
-    const onRefresh = async () => {
-        setRefreshing(true);
-        await loadCart();
-        setRefreshing(false);
     };
 
     const handleApplyCoupon = async () => {
@@ -188,10 +199,25 @@ export const CartScreen: React.FC = () => {
     }
 
     if (!cart || !cart.items || cart.items.length === 0) {
-        return <EmptyCart />;
+        return (
+            <View style={styles.container}>
+                <EmptyCart />
+                {isLoading && (
+                    <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                    </View>
+                )}
+            </View>
+        );
     }
 
     const hasDiscount = Number(cart.discount || 0) !== 0;
+
+    const hasUnavailableItems = cart?.items?.some(item => {
+        const productInfo = item.child?.product || item.product;
+        return !productInfo.made_to_order &&
+            (!productInfo.in_stock || (productInfo.quantity ?? 0) < item.quantity);
+    }) ?? false;
 
     // Debug: Log cart structure
     // console.log('🛒 Cart object keys:', Object.keys(cart));
@@ -244,6 +270,55 @@ export const CartScreen: React.FC = () => {
         cart.formatted_grand_total || formatters.formatPrice(cart.grand_total || cart.base_grand_total || 0);
     return (
         <View style={styles.container}>
+            {/* Sticky Items Header Container */}
+            <View style={styles.itemsHeaderContainerSticky}>
+                <View style={styles.titleWithCheckbox}>
+                    <TouchableOpacity
+                        onPress={handleSelectAll}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons
+                            name={selectedItemIds.length === (cart?.items?.length || 0) ? 'checkbox' : 'square-outline'}
+                            size={24}
+                            color={selectedItemIds.length === (cart?.items?.length || 0) ? theme.colors.primary[500] : theme.colors.gray[400]}
+                        />
+                    </TouchableOpacity>
+                    <Text style={styles.sectionTitle}>
+                        {t('cart.itemsInCart', { count: cart.items_count })}
+                    </Text>
+                </View>
+
+                {selectedItemIds.length > 0 && (
+                    <View style={styles.bulkActions}>
+                        <TouchableOpacity
+                            style={styles.bulkActionButton}
+                            onPress={handleBulkMoveToWishlist}
+                            activeOpacity={0.7}
+                            disabled={isMovingToWishlist || isRemoving}
+                        >
+                            {isMovingToWishlist ? (
+                                <ActivityIndicator size="small" color={theme.colors.primary[500]} />
+                            ) : (
+                                <Ionicons name="heart-outline" size={24} color={theme.colors.primary[500]} />
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.bulkActionButton}
+                            onPress={handleBulkRemove}
+                            activeOpacity={0.7}
+                            disabled={isRemoving || isMovingToWishlist}
+                        >
+                            {isRemoving ? (
+                                <ActivityIndicator size="small" color={theme.colors.error.main} />
+                            ) : (
+                                <Ionicons name="trash-outline" size={24} color={theme.colors.error.main} />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
+
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={[
@@ -256,53 +331,6 @@ export const CartScreen: React.FC = () => {
             >
                 {/* Cart Items */}
                 <View style={styles.itemsSection}>
-                    <View style={styles.itemsHeaderContainer}>
-                        <View style={styles.titleWithCheckbox}>
-                            <TouchableOpacity
-                                onPress={handleSelectAll}
-                                activeOpacity={0.7}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons
-                                    name={selectedItemIds.length === (cart?.items?.length || 0) ? 'checkbox' : 'square-outline'}
-                                    size={24}
-                                    color={selectedItemIds.length === (cart?.items?.length || 0) ? theme.colors.primary[500] : theme.colors.gray[400]}
-                                />
-                            </TouchableOpacity>
-                            <Text style={styles.sectionTitle}>
-                                {t('cart.itemsInCart', { count: cart.items_count })}
-                            </Text>
-                        </View>
-
-                        {selectedItemIds.length > 0 && (
-                            <View style={styles.bulkActions}>
-                                <TouchableOpacity
-                                    style={styles.bulkActionButton}
-                                    onPress={handleBulkMoveToWishlist}
-                                    activeOpacity={0.7}
-                                    disabled={isMovingToWishlist || isRemoving}
-                                >
-                                    {isMovingToWishlist ? (
-                                        <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-                                    ) : (
-                                        <Ionicons name="heart-outline" size={24} color={theme.colors.primary[500]} />
-                                    )}
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.bulkActionButton}
-                                    onPress={handleBulkRemove}
-                                    activeOpacity={0.7}
-                                    disabled={isRemoving || isMovingToWishlist}
-                                >
-                                    {isRemoving ? (
-                                        <ActivityIndicator size="small" color={theme.colors.error.main} />
-                                    ) : (
-                                        <Ionicons name="trash-outline" size={24} color={theme.colors.error.main} />
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
 
                     <SupplierWiseCartItems
                         items={cart.items}
@@ -458,7 +486,8 @@ export const CartScreen: React.FC = () => {
                     couponCode={cart.coupon_code}
                     grandTotal={formattedGrandTotal}
                     onCheckoutPress={handleProceedToCheckout}
-                    disabled={!allMinimumsMet}
+                    disabled={!allMinimumsMet || hasUnavailableItems}
+                    hasUnavailableItems={hasUnavailableItems}
                 />
             </View>
 
@@ -467,6 +496,13 @@ export const CartScreen: React.FC = () => {
                 visible={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
             />
+
+            {/* Faded background overlay when loading subsequent updates */}
+            {isLoading && cart && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                </View>
+            )}
         </View>
     );
 };
@@ -475,6 +511,23 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background.default,
+    },
+    itemsHeaderContainerSticky: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.sm,
+        backgroundColor: theme.colors.background.default,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.gray[200],
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
     },
     scrollView: {
         flex: 1,

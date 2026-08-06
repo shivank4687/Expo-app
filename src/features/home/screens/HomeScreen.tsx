@@ -21,6 +21,7 @@ import { HomeCategoryContent } from '../components/HomeCategoryContent';
 import { DiscountSection } from '../components/DiscountSection';
 import { CategoryGridSection } from '../components/CategoryGridSection';
 import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
+import { RecentlyVisitedCategoriesSection } from '../components/RecentlyVisitedCategoriesSection';
 import { useRouter } from 'expo-router';
 
 /**
@@ -178,6 +179,7 @@ export const HomeScreen: React.FC = () => {
                         />
                     ))}
                     <RecentlyViewedSection />
+                    <RecentlyVisitedCategoriesSection />
                     {carousel_customization.map((customization) => (
                         <ThemeCustomization
                             key={customization.id}

@@ -144,11 +144,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
         }
     };
 
+    const selectedVariant = useMemo(() => {
+        if (!isConfigurable || !selectedVariantId || !product.variants) return null;
+        return product.variants.find((v) => v.id === selectedVariantId);
+    }, [isConfigurable, selectedVariantId, product.variants]);
+
     // ─── Add to cart ─────────────────────────────────────────────────────────
     const handleAddToCart = async (e: any) => {
         e.stopPropagation();
 
-        if (!product.in_stock) {
+        const activeInStock = selectedVariant ? selectedVariant.in_stock : product.in_stock;
+
+        if (!activeInStock) {
             showToast({ message: t('product.productOutOfStock'), type: 'error' });
             return;
         }
@@ -171,9 +178,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
                 return;
             }
 
+            const availableQty = selectedVariant
+                ? selectedVariant.quantity ?? 0
+                : product.quantity ?? 0;
+            const activeMadeToOrder = selectedVariant
+                ? selectedVariant.made_to_order
+                : product.made_to_order;
+            let qtyToAdd = qty;
+
+            if (!activeMadeToOrder) {
+                if (availableQty === 0 || !activeInStock) {
+                    showToast({ message: t('product.productOutOfStock'), type: 'error' });
+                    return;
+                }
+
+                if (qty > availableQty) {
+                    qtyToAdd = availableQty;
+                    setQuantity(String(availableQty));
+                    showToast({
+                        message: t('product.addedQtyClamped', { count: availableQty }),
+                        type: 'warning'
+                    });
+                }
+            }
+
             const cartData: any = {
                 product_id: product.id,
-                quantity: qty,
+                quantity: qtyToAdd,
             };
 
             if (isConfigurable && selectedVariantId) {

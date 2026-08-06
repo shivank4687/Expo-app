@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.xl,
     },
     title: {
-        fontSize: theme.typography.fontSize.xxl,
+        fontSize: theme.typography.fontSize['2xl'],
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.text.primary,
         marginBottom: theme.spacing.md,
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.secondary,
         textAlign: 'center',
-        marginBottom: theme.spacing.xxl * 2,
+        marginBottom: theme.spacing['2xl'] * 2,
         lineHeight: 20,
     },
     button: {

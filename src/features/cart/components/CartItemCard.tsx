@@ -42,10 +42,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
 
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
-    const imageUrl = item.child?.product?.thumbnail || 
-                     (item.child?.product?.images && item.child.product.images[0]?.url) ||
-                     item.product?.thumbnail || 
-                     (item.product?.images && item.product.images[0]?.url);
+    const productInfo = item.child?.product || item.product;
+
+    const imageUrl = productInfo?.thumbnail || 
+                     (productInfo?.images && productInfo.images[0]?.url);
     const subtotal = item.price * item.quantity;
 
     const handleProductPress = () => {
@@ -67,10 +67,37 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
     const handleQuantityChange = async (newQuantity: number) => {
         if (newQuantity < 1) return;
 
+        const availableQty = productInfo.quantity ?? 0;
+        let targetQty = newQuantity;
+
+        if (!productInfo.made_to_order) {
+            if (availableQty === 0 || !productInfo.in_stock) {
+                showToast({
+                    message: t('cart.outOfStock') || 'This item is out of stock.',
+                    type: 'error'
+                });
+                return;
+            }
+
+            if (newQuantity > availableQty) {
+                if (newQuantity < item.quantity) {
+                    // Clamping decrement to available stock
+                    targetQty = availableQty;
+                } else {
+                    // Prevent incrementing beyond stock
+                    showToast({
+                        message: t('cart.onlyQtyAvailable', { count: availableQty }) || `Only ${availableQty} units available in stock.`,
+                        type: 'warning'
+                    });
+                    return;
+                }
+            }
+        }
+
         setIsUpdating(true);
         try {
             await dispatch(updateCartItemThunk({
-                qty: { [item.id]: newQuantity }
+                qty: { [item.id]: targetQty }
             })).unwrap();
         } catch (error: any) {
             showToast({ message: error || t('cart.failedToUpdate'), type: 'error' });
@@ -139,12 +166,16 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                                 priority="normal"
                             />
 
-                            {/* Availability Badge - top right (made_to_order wins over immediate_shipping) */}
-                            {(item.product.immediate_shipping && item.product.in_stock && (item.product.quantity ?? 0) > 0) ? (
+                            {/* Availability Badge - top right (made_to_order wins over immediate_shipping, followed by stock check) */}
+                            {(!productInfo.made_to_order && (!productInfo.in_stock || (productInfo.quantity ?? 0) < item.quantity)) ? (
+                                <View style={styles.availabilityBadgeRed}>
+                                    <Ionicons name="close" size={16} color={theme.colors.error.main} />
+                                </View>
+                            ) : (productInfo.immediate_shipping && productInfo.in_stock && (productInfo.quantity ?? 0) >= item.quantity) ? (
                                 <View style={styles.availabilityBadgeGreen}>
                                     <Ionicons name="checkmark" size={16} color="#15803d" />
                                 </View>
-                            ) : item.product.made_to_order ? (
+                            ) : productInfo.made_to_order ? (
                                 <View style={styles.availabilityBadgeOrange}>
                                     <Ionicons name="time-outline" size={14} color="#c2410c" />
                                 </View>
@@ -186,15 +217,97 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                                     {formatters.formatPrice(item.price, currencySymbol)}
                                 </Text>
                             </View>
+                            
+                            {/* Warning / Availability Indicators */}
+                            {(() => {
+                                const isMadeToOrder = productInfo.made_to_order;
+                                const availableQty = productInfo.quantity ?? 0;
+                                const inStock = productInfo.in_stock;
+
+                                if (isMadeToOrder) {
+                                    const inStockQty = Math.max(0, availableQty);
+                                    const mtoQty = Math.max(0, item.quantity - inStockQty);
+                                    const days = productInfo.made_to_order_days;
+
+                                    if (inStockQty > 0 && mtoQty > 0) {
+                                        // Split MTO and in-stock units
+                                        return (
+                                            <View style={[styles.stockAlertContainer, styles.warningStockAlert]}>
+                                                <Ionicons name="time-outline" size={16} color={theme.colors.warning.main} />
+                                                <Text style={[styles.stockAlertText, styles.warningStockText]}>
+                                                    {t('cart.mtoSplitAlert', { inStock: inStockQty, mto: mtoQty })}
+                                                </Text>
+                                            </View>
+                                        );
+                                    } else if (mtoQty > 0) {
+                                        // Entire quantity is MTO
+                                        return (
+                                            <View style={[styles.stockAlertContainer, styles.warningStockAlert]}>
+                                                <Ionicons name="time-outline" size={16} color={theme.colors.warning.main} />
+                                                <Text style={[styles.stockAlertText, styles.warningStockText]}>
+                                                    {t('cart.mtoFullAlert')}
+                                                </Text>
+                                            </View>
+                                        );
+                                    } else {
+                                        // All units in stock (ready to ship)
+                                        return (
+                                            <View style={[styles.stockAlertContainer, styles.successStockAlert]}>
+                                                <Ionicons name="checkmark-circle-outline" size={16} color={theme.colors.success.main} />
+                                                <Text style={[styles.stockAlertText, styles.successStockText]}>
+                                                    {t('cart.readyToShip')}
+                                                </Text>
+                                            </View>
+                                        );
+                                    }
+                                }
+
+                                // Else: Immediate shipping stock logic
+                                if (!inStock || availableQty === 0) {
+                                    return (
+                                        <View style={[styles.stockAlertContainer, styles.outOfStockAlert]}>
+                                            <Ionicons name="alert-circle-outline" size={16} color={theme.colors.error.main} />
+                                            <Text style={[styles.stockAlertText, styles.outOfStockText]}>
+                                                {t('cart.outOfStock')}
+                                            </Text>
+                                        </View>
+                                    );
+                                }
+
+                                if (item.quantity > availableQty) {
+                                    return (
+                                        <View style={[styles.stockAlertContainer, styles.errorStockAlert]}>
+                                            <Ionicons name="alert-circle-outline" size={16} color={theme.colors.error.main} />
+                                            <Text style={[styles.stockAlertText, styles.errorStockText]}>
+                                                {t('cart.onlyQtyAvailable', { count: availableQty })}
+                                            </Text>
+                                        </View>
+                                    );
+                                }
+
+                                if (availableQty < 50) {
+                                    return (
+                                        <View style={[styles.stockAlertContainer, styles.warningStockAlert]}>
+                                            <Ionicons name="warning-outline" size={16} color={theme.colors.warning.main} />
+                                            <Text style={[styles.stockAlertText, styles.warningStockText]}>
+                                                {t('cart.lowStockWarning', { count: availableQty })}
+                                            </Text>
+                                        </View>
+                                    );
+                                }
+
+                                return null;
+                            })()}
                         </View>
 
                         {/* Quantity Controls + Subtotal */}
                         <View style={styles.qtyAndSubtotal}>
-                            <QuantitySelector
+                             <QuantitySelector
                                 quantity={item.quantity}
                                 onChangeQuantity={handleQuantityChange}
                                 isLoading={isUpdating}
                                 minQuantity={1}
+                                maxQuantity={!productInfo.made_to_order ? (productInfo.quantity ?? 999) : 999}
                                 disabled={isUpdating}
                             />
                             <View style={styles.subtotalRow}>
@@ -379,6 +492,70 @@ const styles = StyleSheet.create({
     },
     removeText: {
         color: theme.colors.error.main,
+    },
+    availabilityBadgeRed: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+        elevation: 2,
+        zIndex: 10,
+    },
+    stockAlertContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+    },
+    outOfStockAlert: {
+        backgroundColor: '#FEE2E2', // red-100
+        borderColor: '#FCA5A5', // red-300
+        borderWidth: 0.5,
+    },
+    errorStockAlert: {
+        backgroundColor: '#FEE2E2', // red-100
+        borderColor: '#FCA5A5', // red-300
+        borderWidth: 0.5,
+    },
+    warningStockAlert: {
+        backgroundColor: '#FEF3C7', // amber-100
+        borderColor: '#FDE68A', // amber-200
+        borderWidth: 0.5,
+    },
+    stockAlertText: {
+        fontSize: 12,
+        fontWeight: '600',
+        fontFamily: 'Inter',
+    },
+    outOfStockText: {
+        color: theme.colors.error.main,
+    },
+    errorStockText: {
+        color: theme.colors.error.main,
+    },
+    warningStockText: {
+        color: '#D97706',
+    },
+    successStockAlert: {
+        backgroundColor: '#ECFDF5', // green-50
+        borderColor: '#A7F3D0', // green-200
+        borderWidth: 0.5,
+    },
+    successStockText: {
+        color: theme.colors.success.dark,
     },
 });
 

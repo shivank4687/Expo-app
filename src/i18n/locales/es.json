@@ -163,7 +163,10 @@
     "invalidQuantity": "Por favor, ingrese una cantidad válida",
     "addedToCart": "¡{{name}} agregado al carrito!",
     "failedToAddToCart": "Error al agregar al carrito",
+    "onlyQtyAvailable": "Solo {{count}} unidades disponibles en stock",
+    "addedQtyClamped": "Solo {{count}} unidades disponibles. Se agregaron {{count}} al carrito.",
     "loginToAddWishlist": "Por favor inicie sesión primero para agregar artículos a favoritos",
+    "loginToViewWholesale": "Inicie sesión para ver el precio al por mayor",
     "addedToWishlist": "¡{{name}} agregado a favoritos!",
     "removedFromWishlist": "{{name}} eliminado de favoritos",
     "failedToUpdateWishlist": "Error al actualizar favoritos",
@@ -269,7 +272,15 @@
     "removeSelected": "Eliminar seleccionados",
     "removeSelectedConfirm": "¿Estás seguro de que deseas eliminar {{count}} artículos de tu carrito?",
     "itemsRemoved": "Artículos eliminados del carrito",
-    "itemsMovedToWishlist": "Artículos movidos a la lista de deseos"
+    "itemsMovedToWishlist": "Artículos movidos a la lista de deseos",
+    "onlyQtyAvailable": "Solo {{count}} disponibles en stock",
+    "lowStockWarning": "Stock bajo: Solo quedan {{count}}",
+    "adjustUnavailableItems": "Algunos artículos en su carrito no están disponibles",
+    "mtoSplitAlert": "{{inStock}} Disponible • {{mto}} Fabricado a pedido",
+    "mtoSplitAlertWithDays": "{{inStock}} Disponible • {{mto}} Fabricado a pedido",
+    "mtoFullAlert": "Fabricado a pedido",
+    "mtoFullAlertWithDays": "Fabricado a pedido",
+    "readyToShip": "Listo para enviar"
   },
   "address": {
     "addresses": "Direcciones",
