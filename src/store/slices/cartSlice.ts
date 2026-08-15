@@ -68,7 +68,7 @@ export const fetchCartThunk = createAsyncThunk(
 // Add to cart
 export const addToCartThunk = createAsyncThunk(
     'cart/addToCart',
-    async (payload: AddToCartPayload & { product?: any }, { rejectWithValue, getState }) => {
+    async (payload: AddToCartPayload & { product?: any }, { rejectWithValue, getState, dispatch }) => {
         try {
             const state = getState() as any;
             const isAuthenticated = state.auth.isAuthenticated;
@@ -76,10 +76,12 @@ export const addToCartThunk = createAsyncThunk(
             if (isAuthenticated) {
                 //const cart = await cartApi.addToCart(payload)
                 const cart = await cartApi.addToCartMini(payload);
+                dispatch(fetchCartThunk());
                 return { cart, productId: payload.product_id };
             } else {
                 //const cart = await cartApi.guestAddToCart(payload)
                 const cart = await cartApi.guestAddToCartMini(payload);
+                dispatch(fetchCartThunk());
                 return { cart, productId: payload.product_id };
             }
         } catch (error: any) {

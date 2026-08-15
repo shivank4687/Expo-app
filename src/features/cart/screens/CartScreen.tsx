@@ -194,7 +194,7 @@ export const CartScreen: React.FC = () => {
         }
     };
 
-    if (isLoading && !cart) {
+    if (isLoading && (!cart || !cart.items || cart.items.length === 0)) {
         return <LoadingSpinner />;
     }
 
@@ -202,11 +202,6 @@ export const CartScreen: React.FC = () => {
         return (
             <View style={styles.container}>
                 <EmptyCart />
-                {isLoading && (
-                    <View style={styles.loadingOverlay}>
-                        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-                    </View>
-                )}
             </View>
         );
     }
