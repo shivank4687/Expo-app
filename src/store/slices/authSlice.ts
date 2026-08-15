@@ -241,6 +241,11 @@ export const socialLoginThunk = createAsyncThunk(
 
             return { user, token };
         } catch (error: any) {
+            console.error('socialLoginThunk error details:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message,
+            });
             return rejectWithValue(error.response?.data?.message || 'Social login failed');
         }
     }

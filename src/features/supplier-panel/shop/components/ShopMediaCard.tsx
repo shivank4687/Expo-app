@@ -71,9 +71,9 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
             <View style={styles.sectionContainer}>
                 <View style={styles.headerRow}>
                     <Text style={styles.label}>Main Banner</Text>
-                    <View style={styles.badge}>
+                    {/* <View style={styles.badge}>
                         <Text style={styles.badgeText}>Edit (app)</Text>
-                    </View>
+                    </View> */}
                 </View>
 
                 <TouchableOpacity
@@ -105,7 +105,7 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
             </View>
 
             {/* Gallery section */}
-            <View style={styles.sectionContainer}>
+            {/* <View style={styles.sectionContainer}>
                 <View style={styles.headerRow}>
                     <Text style={styles.label}>Gallery (photos + videos)</Text>
                     <View style={styles.badge}>
@@ -124,7 +124,7 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                     Max. 8 images (photos + videos). Video 20s max (to show process).
                 </Text>
 
-                {/* Photo Grid */}
+               
                 <View style={styles.photoGrid}>
                     {[1, 2, 3, 4, 5].map((item) => (
                         <View key={item} style={styles.photoSlot}>
@@ -132,7 +132,7 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                         </View>
                     ))}
                 </View>
-            </View>
+            </View> */}
 
         </View>
     );

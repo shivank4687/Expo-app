@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 import { updateCustomerGroupId } from '@/store/slices/authSlice';
@@ -28,6 +29,7 @@ import {
     updateCustomerGroup,
     updateCustomerTaxProfile,
     CustomerGroup,
+    CUSTOMER_SUBTYPES,
 } from '../api/customer-tax-profile.api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ const fiscalRegimeOptions = [
 interface DropdownOption {
     value: string;
     label: string;
+    description?: string;
 }
 
 interface InlineDropProps {
@@ -129,14 +132,26 @@ const InlineDrop: React.FC<InlineDropProps> = ({
                                     }}
                                     activeOpacity={0.7}
                                 >
-                                    <Text
-                                        style={[
-                                            dropStyles.optionText,
-                                            isActive && dropStyles.optionTextActive,
-                                        ]}
-                                    >
-                                        {item.label}
-                                    </Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text
+                                            style={[
+                                                dropStyles.optionText,
+                                                isActive && dropStyles.optionTextActive,
+                                            ]}
+                                        >
+                                            {item.label}
+                                        </Text>
+                                        {item.description ? (
+                                            <Text
+                                                style={[
+                                                    dropStyles.optionDesc,
+                                                    isActive && dropStyles.optionDescActive,
+                                                ]}
+                                            >
+                                                {item.description}
+                                            </Text>
+                                        ) : null}
+                                    </View>
                                     {isActive && (
                                         <Ionicons name="checkmark-circle" size={16} color="#00615E" />
                                     )}
@@ -249,6 +264,15 @@ const dropStyles = StyleSheet.create({
         color: '#00615E',
         fontWeight: '600',
     },
+    optionDesc: {
+        fontFamily: 'Inter',
+        fontSize: 12,
+        color: '#7D8A8C',
+        marginTop: 2,
+    },
+    optionDescActive: {
+        color: '#00615E',
+    },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -257,14 +281,18 @@ export const CustomerTypeTaxScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
+    const { t } = useTranslation();
 
     const countries = useAppSelector((state) => state.core.countries);
     const isLoadingCountries = useAppSelector((state) => state.core.isLoadingCountries);
+
+
 
     // ── Group state ──────────────────────────────────────────────────────────
     const [groups, setGroups] = useState<CustomerGroup[]>([]);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedGroupCode, setSelectedGroupCode] = useState<string | null>(null);
+    const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null);
 
     // ── Tax profile state ────────────────────────────────────────────────────
     const [vatMode, setVatMode] = useState<string | null>(null);
@@ -303,17 +331,32 @@ export const CustomerTypeTaxScreen: React.FC = () => {
             setGroups(groupList);
 
             // Pre-select the customer's current group.
-            // The API returns a nested `group` object: { id, code, name }
             const currentGroup = customerProfile?.group;
+            let activeGroupId = '';
+            let activeGroupCode = '';
+
             if (currentGroup?.id) {
-                setSelectedGroupId(String(currentGroup.id));
-                setSelectedGroupCode(currentGroup.code ?? null);
+                activeGroupId = String(currentGroup.id);
+                activeGroupCode = currentGroup.code ?? '';
             } else if (customerProfile?.customer_group_id) {
-                // Fallback: match by id if group object is absent
-                const currentId = String(customerProfile.customer_group_id);
-                setSelectedGroupId(currentId);
-                const matched = groupList.find((g) => String(g.id) === currentId);
-                setSelectedGroupCode(matched?.code ?? null);
+                activeGroupId = String(customerProfile.customer_group_id);
+                const matched = groupList.find((g) => String(g.id) === activeGroupId);
+                activeGroupCode = matched?.code ?? '';
+            }
+
+            setSelectedGroupId(activeGroupId || null);
+            setSelectedGroupCode(activeGroupCode || null);
+
+            // Restore saved buyer_type
+            if (customerProfile?.buyer_type) {
+                setSelectedSubtype(customerProfile.buyer_type);
+            } else if (activeGroupCode) {
+                // Fallback to active group if buyer_type is not set
+                if (activeGroupCode === 'general') {
+                    setSelectedSubtype('individual');
+                } else if (activeGroupCode === 'wholesale') {
+                    setSelectedSubtype('independent'); // default
+                }
             }
 
             // Restore saved tax profile
@@ -343,17 +386,30 @@ export const CustomerTypeTaxScreen: React.FC = () => {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    const groupOptions: DropdownOption[] = groups.map((g) => ({
-        value: String(g.id),
-        label: g.name,
+    const groupOptions: DropdownOption[] = CUSTOMER_SUBTYPES.map((sub) => ({
+        value: sub.value,
+        label: t(sub.labelKey),
+        description: t(sub.descKey),
     }));
 
-    const handleGroupSelect = (value: string) => {
-        setSelectedGroupId(value);
-        const group = groups.find((g) => String(g.id) === value);
-        setSelectedGroupCode(group?.code ?? null);
-        if (group?.code !== WHOLESALE_CODE) {
-            setVatMode(null);
+    const handleSubtypeSelect = (value: string) => {
+        setSelectedSubtype(value);
+        const sub = CUSTOMER_SUBTYPES.find((s) => s.value === value);
+        if (sub) {
+            const group = groups.find((g) => g.code === sub.groupCode);
+            if (group) {
+                setSelectedGroupId(String(group.id));
+                setSelectedGroupCode(group.code);
+            } else {
+                // Fallback mapping if groups aren't loaded or codes don't match
+                const fallbackId = sub.groupCode === 'general' ? '2' : '3';
+                setSelectedGroupId(fallbackId);
+                setSelectedGroupCode(sub.groupCode);
+            }
+
+            if (sub.groupCode !== 'wholesale') {
+                setVatMode(null);
+            }
         }
     };
 
@@ -385,7 +441,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
 
         setSaving(true);
         try {
-            await updateCustomerGroup(Number(selectedGroupId));
+            await updateCustomerGroup(Number(selectedGroupId), selectedSubtype);
 
             if (isWholesale && vatMode) {
                 await updateCustomerTaxProfile({
@@ -456,8 +512,8 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                         <InlineDrop
                             label="Group"
                             options={groupOptions}
-                            value={selectedGroupId}
-                            onSelect={handleGroupSelect}
+                            value={selectedSubtype}
+                            onSelect={handleSubtypeSelect}
                             placeholder="Select group"
                             zIndex={100}
                         />

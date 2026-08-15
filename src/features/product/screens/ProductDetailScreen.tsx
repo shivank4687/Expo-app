@@ -492,7 +492,8 @@ export const ProductDetailScreen: React.FC = () => {
 
                         {/* Availability Card */}
                         <AvailabilityCard
-                            immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && ((selectedVariant ? selectedVariant.quantity : product.quantity) ?? 0) > 0}
+                            // immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && ((selectedVariant ? selectedVariant.quantity : product.quantity) ?? 0) > 0}
+                            immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && (product.quantity ?? 0) > 0}
                             madeToOrder={selectedVariant ? selectedVariant.made_to_order : product.made_to_order}
                             madeToOrderDays={selectedVariant ? selectedVariant.made_to_order_days : product.made_to_order_days}
                             madeToOrderQty={selectedVariant ? selectedVariant.made_to_order_qty : product.made_to_order_qty}

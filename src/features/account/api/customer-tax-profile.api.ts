@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from '@/config/constants';
 export interface CustomerProfile {
     id: number;
     customer_group_id: number | null;
+    buyer_type: string | null;
     group?: {
         id: number;
         code: string;
@@ -85,9 +86,10 @@ export const getPublicCustomerGroups = async (): Promise<CustomerGroup[]> => {
 /**
  * Update the authenticated customer's group
  */
-export const updateCustomerGroup = async (groupId: number): Promise<void> => {
+export const updateCustomerGroup = async (groupId: number, buyerType?: string | null): Promise<void> => {
     await restApiClient.put(API_ENDPOINTS.CUSTOMER_GROUP_UPDATE, {
         group_id: groupId,
+        buyer_type: buyerType,
     });
 };
 
@@ -113,3 +115,18 @@ export const updateCustomerTaxProfile = async (
     );
     return response.data;
 };
+
+export interface CustomerSubtypeConfig {
+    value: string;
+    groupCode: 'general' | 'wholesale';
+    labelKey: string;
+    descKey: string;
+}
+
+export const CUSTOMER_SUBTYPES: CustomerSubtypeConfig[] = [
+    { value: 'individual', groupCode: 'general', labelKey: 'customerTypes.individual.label', descKey: 'customerTypes.individual.description' },
+    { value: 'independent', groupCode: 'wholesale', labelKey: 'customerTypes.independent.label', descKey: 'customerTypes.independent.description' },
+    { value: 'retailer', groupCode: 'wholesale', labelKey: 'customerTypes.retailer.label', descKey: 'customerTypes.retailer.description' },
+    { value: 'wholesale', groupCode: 'wholesale', labelKey: 'customerTypes.wholesale.label', descKey: 'customerTypes.wholesale.description' },
+    { value: 'business', groupCode: 'wholesale', labelKey: 'customerTypes.business.label', descKey: 'customerTypes.business.description' },
+];

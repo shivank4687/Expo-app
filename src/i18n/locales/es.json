@@ -652,5 +652,27 @@
     "generate": "Generar",
     "essential": "Esencial",
     "name": "Nombre"
+  },
+  "customerTypes": {
+    "individual": {
+      "label": "Comprador particular",
+      "description": "B2C / precios al por menor"
+    },
+    "independent": {
+      "label": "Profesional independiente / Artesano",
+      "description": "B2B / precios profesionales"
+    },
+    "retailer": {
+      "label": "Minorista / Revendedor",
+      "description": "B2B / precios profesionales"
+    },
+    "wholesale": {
+      "label": "Comprador mayorista / Distribuidor",
+      "description": "B2B / precios profesionales"
+    },
+    "business": {
+      "label": "Comprador empresarial",
+      "description": "B2B / precios profesionales"
+    }
   }
 }

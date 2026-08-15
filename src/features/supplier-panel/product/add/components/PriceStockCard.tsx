@@ -19,10 +19,10 @@ const UNIT_OPTIONS = [
     { label: 'Box', value: 'box' },
     { label: 'Kg', value: 'kg' },
 ];
-
 import { useAppSelector } from '@/store/hooks';
-
 import { ProductAttribute } from '../api/product-attributes.api';
+
+const WHOLESALE_CUSTOMER_GROUP_ID = 3;
 
 interface PriceTier {
     id: string; // UI ID for React key
@@ -248,7 +248,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                 // Use existing database ID if available, otherwise use price_* prefix for new tiers
                 const key = tier.dbId ? tier.dbId.toString() : `price_${index}`;
                 customerGroupPrices[key] = {
-                    customer_group_id: tier.customer_group_id || '', // Empty = applies to all customer groups
+                    customer_group_id: tier.customer_group_id || WHOLESALE_CUSTOMER_GROUP_ID,
                     qty: tier.qty,
                     value_type: 'fixed',
                     value: tier.price
@@ -654,7 +654,11 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
 
                 {/* Tier Rows */}
                 {priceTiers.map((tier, index) => {
-                    const disabledInput = !(tier.customer_group_id == undefined || tier.customer_group_id == null);
+                    const groupId = tier.customer_group_id !== undefined && tier.customer_group_id !== null ? Number(tier.customer_group_id) : NaN;
+                    const disabledInput =
+                        !isNaN(groupId) &&
+                        groupId !== 0 &&
+                        groupId !== WHOLESALE_CUSTOMER_GROUP_ID;
                     return (<View key={tier.id} style={styles.tierContainer}>
                         <View style={styles.tierRow}>
                             <TextInput

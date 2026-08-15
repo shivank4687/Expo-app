@@ -268,9 +268,9 @@ export default function ShopScreen() {
                     />
                 </View>
 
-                <View style={styles.card}>
+                {/* <View style={styles.card}>
                     <DeliveryMethodCard />
-                </View>
+                </View> */}
 
                 <View style={styles.card}>
                     <ShopMediaCard

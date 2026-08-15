@@ -106,7 +106,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                 {errors.team_size && <Text style={styles.errorText}>{errors.team_size}</Text>}
             </View>
 
-            {/* Certification */}
+            {/* Certification
             <View style={[styles.fieldContainer, errors.certification ? styles.fieldContainerWithError : null]}>
                 <Text style={styles.label}>Certification</Text>
                 <View style={[styles.inputContainer, errors.certification ? styles.inputError : null]}>
@@ -122,8 +122,9 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                 </View>
                 {errors.certification && <Text style={styles.errorText}>{errors.certification}</Text>}
             </View>
+            */}
 
-            {/* Response Time */}
+            {/* Response Time
             <View style={[styles.fieldContainer, errors.response_time ? styles.fieldContainerWithError : null]}>
                 <Text style={styles.label}>Response Time (hours)</Text>
                 <View style={[styles.inputContainer, errors.response_time ? styles.inputError : null]}>
@@ -140,6 +141,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({ data, onChange, erro
                 </View>
                 {errors.response_time && <Text style={styles.errorText}>{errors.response_time}</Text>}
             </View>
+            */}
         </View>
     );
 };

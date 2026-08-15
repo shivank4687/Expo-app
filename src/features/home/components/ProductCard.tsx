@@ -178,9 +178,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
                 return;
             }
 
-            const availableQty = selectedVariant
-                ? selectedVariant.quantity ?? 0
-                : product.quantity ?? 0;
+            // const availableQty = selectedVariant
+            //     ? selectedVariant.quantity ?? 0
+            //     : product.quantity ?? 0;
+            const availableQty = product.quantity ?? 0;
             const activeMadeToOrder = selectedVariant
                 ? selectedVariant.made_to_order
                 : product.made_to_order;

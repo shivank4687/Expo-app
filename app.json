@@ -11,8 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "associatedDomains": [
+        "applinks:artemayor.com",
         "applinks:artemayor.com"
-      ]
+      ],
+      "bundleIdentifier": "com.artemayor.app"
     },
     "android": {
       "package": "com.artemayor.app",

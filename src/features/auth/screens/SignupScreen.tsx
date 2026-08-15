@@ -25,12 +25,12 @@ import { useToast } from '@/shared/components/Toast';
 import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
 import { GoogleIcon } from '@/assets/icons/GoogleIcon';
-import { CustomerGroup, getPublicCustomerGroups } from '@/features/account/api/customer-tax-profile.api';
+import { CustomerGroup, getPublicCustomerGroups, CUSTOMER_SUBTYPES } from '@/features/account/api/customer-tax-profile.api';
 
 // ─── Inline Customer Type Dropdown ────────────────────────────────────────────
 // Mirrors the InlineDrop component from CustomerTypeTaxScreen
 
-interface DropdownOption { value: string; label: string; }
+interface DropdownOption { value: string; label: string; description?: string; }
 
 const InlineDrop: React.FC<{
     label: string;
@@ -76,9 +76,16 @@ const InlineDrop: React.FC<{
                                     onPress={() => { onSelect(item.value); setOpen(false); }}
                                     activeOpacity={0.7}
                                 >
-                                    <Text style={[dropStyles.optionText, isActive && dropStyles.optionTextActive]}>
-                                        {item.label}
-                                    </Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[dropStyles.optionText, isActive && dropStyles.optionTextActive]}>
+                                            {item.label}
+                                        </Text>
+                                        {item.description ? (
+                                            <Text style={[dropStyles.optionDesc, isActive && dropStyles.optionDescActive]}>
+                                                {item.description}
+                                            </Text>
+                                        ) : null}
+                                    </View>
                                     {isActive && <Ionicons name="checkmark-circle" size={16} color="#00615E" />}
                                 </TouchableOpacity>
                             );
@@ -114,6 +121,8 @@ const dropStyles = StyleSheet.create({
     optionActive: { backgroundColor: '#F0FCF8' },
     optionText: { fontFamily: 'Inter', fontSize: 14, color: '#0A292D', flex: 1 },
     optionTextActive: { color: '#00615E', fontWeight: '600' },
+    optionDesc: { fontFamily: 'Inter', fontSize: 12, color: '#7D8A8C', marginTop: 2 },
+    optionDescActive: { color: '#00615E' },
     errorText: { fontFamily: 'Inter', fontSize: 12, color: '#DC2626', marginTop: 2, marginLeft: 122 },
 });
 
@@ -171,7 +180,27 @@ export const SignupScreen: React.FC = () => {
     // ── Customer group dropdown state (customer tab only) ────────────────────
     const [groups, setGroups] = useState<CustomerGroup[]>([]);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+    const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null);
     const [groupsLoading, setGroupsLoading] = useState(false);
+
+    const groupOptions = useMemo(() => CUSTOMER_SUBTYPES.map((sub) => ({
+        value: sub.value,
+        label: t(sub.labelKey),
+        description: t(sub.descKey),
+    })), [t]);
+
+    const handleSubtypeSelect = useCallback((value: string) => {
+        setSelectedSubtype(value);
+        const sub = CUSTOMER_SUBTYPES.find((s) => s.value === value);
+        if (sub) {
+            const group = groups.find((g) => g.code === sub.groupCode);
+            if (group) {
+                setSelectedGroupId(String(group.id));
+            } else {
+                setSelectedGroupId(sub.groupCode === 'general' ? '2' : '3');
+            }
+        }
+    }, [groups]);
 
     // Update selectedCountry if lastSelectedCountry changes
     useEffect(() => {
@@ -452,7 +481,7 @@ export const SignupScreen: React.FC = () => {
             }
         }
 
-        if (selectedUserType === 'customer' && !selectedGroupId) {
+        if (selectedUserType === 'customer' && !selectedSubtype) {
             newErrors.customer_group = t('auth.customerTypeRequired', 'Please select your customer type');
         }
 
@@ -559,6 +588,7 @@ export const SignupScreen: React.FC = () => {
             // Add customer group for customer signup
             if (selectedUserType === 'customer' && selectedGroupId) {
                 signupPayload.customer_group_id = Number(selectedGroupId);
+                signupPayload.buyer_type = selectedSubtype;
             }
 
             const result = await dispatch(signupThunk(signupPayload)).unwrap();
@@ -823,9 +853,9 @@ export const SignupScreen: React.FC = () => {
                                 ) : (
                                     <InlineDrop
                                         label={`${t('auth.customerType', 'Customer Type')} *`}
-                                        options={groups.map(g => ({ value: String(g.id), label: g.name }))}
-                                        value={selectedGroupId}
-                                        onSelect={setSelectedGroupId}
+                                        options={groupOptions}
+                                        value={selectedSubtype}
+                                        onSelect={handleSubtypeSelect}
                                         placeholder={t('auth.selectCustomerType', 'Select customer type')}
                                         error={errors.customer_group}
                                         zIndex={100}
