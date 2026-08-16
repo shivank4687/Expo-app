@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -7,6 +7,7 @@ import {
     StyleProp,
     ViewStyle,
     TextStyle,
+    Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -39,16 +40,30 @@ export default function InlineDropdown({
     style = {},
 }: InlineDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
+    const triggerRef = useRef<View>(null);
     const selectedOption = options.find((option) => option.value === value);
 
     const toggle = () => {
         if (disabled) return;
-        setIsOpen((prev) => !prev);
+        if (isOpen) {
+            setIsOpen(false);
+        } else {
+            triggerRef.current?.measureInWindow((x, y, width, height) => {
+                setMenuPosition({
+                    top: y + height,
+                    left: x,
+                    width: width,
+                });
+                setIsOpen(true);
+            });
+        }
     };
 
     return (
         <View style={[styles.container, style.container]}>
             <TouchableOpacity
+                ref={triggerRef}
                 style={[
                     styles.trigger,
                     disabled && styles.triggerDisabled,
@@ -74,49 +89,58 @@ export default function InlineDropdown({
             </TouchableOpacity>
 
             {isOpen && (
-                <View style={styles.dropdownLayer}>
+                <Modal
+                    visible={isOpen}
+                    transparent={true}
+                    animationType="none"
+                    onRequestClose={() => setIsOpen(false)}
+                >
                     <TouchableOpacity
                         style={styles.overlay}
                         activeOpacity={1}
                         onPress={() => setIsOpen(false)}
-                    />
-                    <View style={[styles.menu, style.menu]}>
-                        {options.map((option) => {
-                            const isActive = option.value === value;
-                            return (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.option,
-                                        isActive && styles.optionActive,
-                                        style.option,
-                                    ]}
-                                    onPress={() => {
-                                        onSelect(option.value);
-                                        setIsOpen(false);
-                                    }}
-                                >
-                                    <Text
+                    >
+                        <View
+                            style={[
+                                styles.menu,
+                                style.menu,
+                                {
+                                    top: menuPosition.top,
+                                    left: menuPosition.left,
+                                    width: menuPosition.width,
+                                },
+                            ]}
+                        >
+                            {options.map((option) => {
+                                const isActive = option.value === value;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
                                         style={[
-                                            styles.optionText,
-                                            isActive && styles.optionTextActive,
-                                            style.optionText,
+                                            styles.option,
+                                            isActive && styles.optionActive,
+                                            style.option,
                                         ]}
+                                        onPress={() => {
+                                            onSelect(option.value);
+                                            setIsOpen(false);
+                                        }}
                                     >
-                                        {option.label}
-                                    </Text>
-                                    {/* {isActive && (
-                                        <Ionicons
-                                            name="checkmark-circle"
-                                            size={18}
-                                            color="#00615E"
-                                        />
-                                    )} */}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
+                                        <Text
+                                            style={[
+                                                styles.optionText,
+                                                isActive && styles.optionTextActive,
+                                                style.optionText,
+                                            ]}
+                                        >
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
             )}
         </View>
     );
@@ -152,19 +176,12 @@ const styles = StyleSheet.create({
     placeholderText: {
         color: '#7D8A8C',
     },
-    dropdownLayer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 20,
-    },
     overlay: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
+        flex: 1,
+        backgroundColor: 'transparent',
     },
     menu: {
         position: 'absolute',
-        top: 50,
-        left: 0,
-        right: 0,
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
         borderColor: '#E1D9CF',

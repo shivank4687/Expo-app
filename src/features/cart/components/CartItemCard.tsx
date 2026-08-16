@@ -141,6 +141,21 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
 
     return (
         <Card style={styles.card}>
+            {/* Delete/Cross Button (Option A: Top-Left) */}
+            <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleRemove}
+                disabled={isRemovingThis}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+                {isRemovingThis ? (
+                    <ActivityIndicator size="small" color={theme.colors.error.main} />
+                ) : (
+                    <Ionicons name="close" size={16} color={theme.colors.error.main} />
+                )}
+            </TouchableOpacity>
+
             <View style={styles.mainContent}>
                 <View style={styles.topSection}>
                     {/* Selection Checkbox */}
@@ -332,6 +347,25 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.background.default,
         borderWidth: 1,
         borderColor: theme.colors.border.card_light,
+    },
+    deleteButton: {
+        position: 'absolute',
+        top: 6,
+        left: 4,
+        zIndex: 20,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#FEF2F2',
+        borderWidth: 1,
+        borderColor: '#FCA5A5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
+        elevation: 1,
     },
     mainContent: {
         paddingVertical: theme.spacing.sm,

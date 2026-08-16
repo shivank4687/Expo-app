@@ -68,6 +68,22 @@ export const CartScreen: React.FC = () => {
         cartRef.current = cart;
     }, [needsRefresh, cart]);
 
+    // Sync selected item IDs with the actual items in the cart (clears out removed items)
+    useEffect(() => {
+        if (cart?.items) {
+            const validItemIds = new Set(cart.items.map(item => item.id));
+            setSelectedItemIds(prev => {
+                const filtered = prev.filter(id => validItemIds.has(id));
+                if (filtered.length !== prev.length) {
+                    return filtered;
+                }
+                return prev;
+            });
+        } else {
+            setSelectedItemIds([]);
+        }
+    }, [cart?.items]);
+
     useFocusEffect(
         useCallback(() => {
             if (needsRefreshRef.current || !cartRef.current) {
