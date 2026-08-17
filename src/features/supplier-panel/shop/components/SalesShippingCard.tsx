@@ -132,7 +132,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
             {/* Preparation time */}
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Preparation time (days)</Text>
-                <Text style={styles.description}>Faster is better, but guaranteed (max 10 days)</Text>
+                <Text style={styles.description}>We recommend 3 days or less (max 10 days)</Text>
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={styles.input}
@@ -243,9 +243,9 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         )}
                     </View>
                     <View style={styles.flex1}>
-                        <Text style={styles.label}>Activate special sales</Text>
+                        <Text style={styles.label}>Activate individual purchase (B2C)</Text>
                         <Text style={styles.description}>
-                            The special price is calculated from the wholesale price
+                            This setting determines whether individual consumers are allowed to purchase the product.
                         </Text>
                     </View>
                 </TouchableOpacity>

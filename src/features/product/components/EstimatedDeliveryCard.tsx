@@ -11,6 +11,58 @@ import { productsApi } from '@/services/api/products.api';
 import { ShippingQuoteRate } from '../types/product.types';
 import { Address } from '@/features/address/types/address.types';
 
+const formatSkydropxError = (errors: any, defaultMessage: string): string => {
+    if (!errors) return defaultMessage;
+    if (typeof errors === 'string') return errors;
+
+    const messages: string[] = [];
+
+    if (errors.address_to) {
+        if (errors.address_to.postal_code) {
+            messages.push(`Destination Postcode: ${errors.address_to.postal_code.join(', ')}`);
+        }
+        // General address_to errors
+        Object.keys(errors.address_to).forEach(key => {
+            if (key !== 'postal_code' && Array.isArray(errors.address_to[key])) {
+                messages.push(`Destination address field '${key}': ${errors.address_to[key].join(', ')}`);
+            }
+        });
+    }
+
+    if (errors.address_from) {
+        if (errors.address_from.postal_code) {
+            messages.push(`Origin Postcode: ${errors.address_from.postal_code.join(', ')}`);
+        }
+        // General address_from errors
+        Object.keys(errors.address_from).forEach(key => {
+            if (key !== 'postal_code' && Array.isArray(errors.address_from[key])) {
+                messages.push(`Origin address field '${key}': ${errors.address_from[key].join(', ')}`);
+            }
+        });
+    }
+
+    if (errors.products) {
+        const prodErrors = Array.isArray(errors.products) ? errors.products : [errors.products];
+        messages.push(`Products: ${prodErrors.join(', ')}`);
+    }
+
+    // Fallback if we didn't find specific fields but have other keys
+    if (messages.length === 0) {
+        const extractMessages = (obj: any) => {
+            if (typeof obj === 'string') {
+                messages.push(obj);
+            } else if (Array.isArray(obj)) {
+                obj.forEach(item => extractMessages(item));
+            } else if (typeof obj === 'object' && obj !== null) {
+                Object.values(obj).forEach(val => extractMessages(val));
+            }
+        };
+        extractMessages(errors);
+    }
+
+    return messages.length > 0 ? messages.join('; ') : defaultMessage;
+};
+
 interface EstimatedDeliveryCardProps {
     productId: number;
     isAuthenticated: boolean;
@@ -86,7 +138,19 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
                 setShippingRate(quote.cheapest);
             } catch (err: any) {
                 console.error('[EstimatedDeliveryCard] Error fetching quote:', err);
-                setQuoteError(t('product.shippingQuoteError', 'Failed to calculate shipping'));
+                
+                const responseData = err?.response?.data;
+                let errorMsg = '';
+                
+                if (responseData) {
+                    if (responseData.errors) {
+                        errorMsg = formatSkydropxError(responseData.errors, responseData.message || '');
+                    } else if (responseData.message) {
+                        errorMsg = responseData.message;
+                    }
+                }
+                
+                setQuoteError(errorMsg || t('product.shippingQuoteError', 'Failed to calculate shipping'));
             } finally {
                 setIsLoadingQuote(false);
             }
@@ -199,9 +263,9 @@ export const EstimatedDeliveryCard: React.FC<EstimatedDeliveryCardProps> = ({
                         <Text style={[styles.title, styles.errorTitle]}>
                             {t('product.shippingUnavailable', 'Shipping Unavailable')}
                         </Text>
-                        {/* <Text style={styles.errorDescription}>
+                        <Text style={styles.errorDescription}>
                             {quoteError || t('product.noRatesForLocation', 'No shipping options found for this location.')}
-                        </Text> */}
+                        </Text>
                         {activeAddress && (
                             <View style={styles.addressRowContainer}>
                                 <Text style={styles.addressSnippet}>

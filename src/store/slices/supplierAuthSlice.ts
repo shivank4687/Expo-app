@@ -7,6 +7,8 @@ import { authApi } from '@/services/api/auth.api';
 import { setGlobalToken } from '@/services/api/client';
 import { supplierPushNotificationService } from '@/services/notifications/supplier-push-notification.service';
 import socketService from '@/services/socket.service';
+import { socialLoginThunk } from './authSlice';
+import { GoogleSignin } from '@/services/googleAuth';
 
 interface SupplierAuthState {
     supplier: Supplier | null;
@@ -127,6 +129,13 @@ export const supplierLogoutThunk = createAsyncThunk(
             } catch (notificationError) {
                 console.error('Failed to unregister push notification token (non-critical):', notificationError);
                 // Don't fail logout if notification unregistration fails
+            }
+
+            // Sign out from Google if signed in
+            try {
+                await GoogleSignin.signOut();
+            } catch (googleError) {
+                console.error('Failed to sign out from Google (non-critical):', googleError);
             }
 
             await supplierAuthApi.logout();
@@ -345,6 +354,35 @@ const supplierAuthSlice = createSlice({
                 state.supplier = null;
                 state.token = null;
                 state.isAuthenticated = false;
+            });
+
+        // Social Login
+        builder
+            .addCase(socialLoginThunk.pending, (state, action) => {
+                if (action.meta.arg.user_type === 'supplier') {
+                    state.isLoading = true;
+                    state.error = null;
+                }
+            })
+            .addCase(socialLoginThunk.fulfilled, (state, action) => {
+                if (action.meta.arg.user_type === 'supplier') {
+                    state.isLoading = false;
+                    state.supplier = (action.payload.user as any) || null;
+                    state.token = action.payload.token || null;
+                    state.isAuthenticated = true;
+                    state.error = null;
+                    // Set global token for API client
+                    setGlobalToken(action.payload.token || null);
+                }
+            })
+            .addCase(socialLoginThunk.rejected, (state, action) => {
+                if (action.meta.arg.user_type === 'supplier') {
+                    state.isLoading = false;
+                    state.error = action.payload as string;
+                    state.supplier = null;
+                    state.token = null;
+                    state.isAuthenticated = false;
+                }
             });
 
         // Logout

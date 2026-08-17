@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authApi } from '@/services/api/auth.api';
 import { secureStorage } from '@/services/storage/secureStorage';
 import { STORAGE_KEYS } from '@/config/constants';
+import { GoogleSignin } from '@/services/googleAuth';
 import {
     User,
     LoginRequest,
@@ -200,13 +201,21 @@ export const socialLoginThunk = createAsyncThunk(
                 console.error('Could not find user in social login response');
             }
 
-            // Store in secure storage
+            // Store in secure storage depending on user type
             if (token && typeof token === 'string') {
-                await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+                if (data.user_type === 'supplier') {
+                    await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_AUTH_TOKEN, token);
+                } else {
+                    await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+                }
             }
 
             if (response.refresh_token) {
-                await secureStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
+                if (data.user_type === 'supplier') {
+                    await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_REFRESH_TOKEN, response.refresh_token);
+                } else {
+                    await secureStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
+                }
             }
 
             if (response.expires_in) {
@@ -218,12 +227,21 @@ export const socialLoginThunk = createAsyncThunk(
             }
 
             if (user) {
-                await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+                if (data.user_type === 'supplier') {
+                    await secureStorage.setItem(STORAGE_KEYS.SUPPLIER_DATA, JSON.stringify(user));
+                } else {
+                    await secureStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+                }
             }
 
             // Register device token for push notifications
             try {
-                await expoPushNotificationService.registerToken();
+                if (data.user_type === 'supplier') {
+                    const { supplierPushNotificationService } = await import('@/services/notifications/supplier-push-notification.service');
+                    await supplierPushNotificationService.registerToken();
+                } else {
+                    await expoPushNotificationService.registerToken();
+                }
             } catch (notificationError) {
                 console.error('Failed to register push notification token:', notificationError);
             }
@@ -422,6 +440,13 @@ export const logoutThunk = createAsyncThunk(
             } catch (notificationError) {
                 console.error('Failed to unregister push notification token (non-critical):', notificationError);
                 // Don't fail logout if notification unregistration fails
+            }
+
+            // Sign out from Google if signed in
+            try {
+                await GoogleSignin.signOut();
+            } catch (googleError) {
+                console.error('Failed to sign out from Google (non-critical):', googleError);
             }
 
             await authApi.logout();
@@ -630,21 +655,27 @@ const authSlice = createSlice({
 
         // Social Login
         builder
-            .addCase(socialLoginThunk.pending, (state) => {
-                state.isLoading = true;
-                state.error = null;
+            .addCase(socialLoginThunk.pending, (state, action) => {
+                if (action.meta.arg.user_type !== 'supplier') {
+                    state.isLoading = true;
+                    state.error = null;
+                }
             })
             .addCase(socialLoginThunk.fulfilled, (state, action) => {
-                state.user = action.payload.user || null;
-                state.token = action.payload.token || null;
-                state.isAuthenticated = true;
+                if (action.meta.arg.user_type !== 'supplier') {
+                    state.user = action.payload.user || null;
+                    state.token = action.payload.token || null;
+                    state.isAuthenticated = true;
+                    setGlobalToken(action.payload.token || null);
+                }
                 state.isLoading = false;
                 state.error = null;
-                setGlobalToken(action.payload.token || null);
             })
             .addCase(socialLoginThunk.rejected, (state, action) => {
-                state.isLoading = false;
-                state.error = action.payload as string;
+                if (action.meta.arg.user_type !== 'supplier') {
+                    state.isLoading = false;
+                    state.error = action.payload as string;
+                }
             });
 
 

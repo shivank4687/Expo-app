@@ -291,7 +291,7 @@ export const ConfigurableOptions: React.FC<ConfigurableOptionsProps> = ({
 
                                         // Simple check to ensure we only treat single-word labels or hex as colors
                                         const isValidColorValue = swatchValue && (
-                                            swatchValue.startsWith('#') || 
+                                            swatchValue.startsWith('#') ||
                                             /^[a-zA-Z]+$/.test(swatchValue)
                                         );
 
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.lg,
+        padding: theme.spacing.sm,
         borderWidth: 1,
         borderColor: theme.colors.border.main,
         marginBottom: theme.spacing.xs,

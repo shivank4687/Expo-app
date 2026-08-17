@@ -99,7 +99,7 @@ export const CardVariantSelector: React.FC<CardVariantSelectorProps> = ({ varian
 
                                     // Simple check to ensure we only treat single-word labels or hex as colors
                                     const isValidColorValue = swatchValue && (
-                                        swatchValue.startsWith('#') || 
+                                        swatchValue.startsWith('#') ||
                                         /^[a-zA-Z]+$/.test(swatchValue)
                                     );
 
@@ -123,7 +123,7 @@ export const CardVariantSelector: React.FC<CardVariantSelectorProps> = ({ varian
                                                         { backgroundColor: swatchValue.toLowerCase() },
                                                     ]}
                                                 />
-                                             </TouchableOpacity>
+                                            </TouchableOpacity>
                                         );
                                     }
 
@@ -199,8 +199,8 @@ export const CardVariantSelector: React.FC<CardVariantSelectorProps> = ({ varian
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: theme.spacing.xs,
         gap: theme.spacing.sm,
         borderTopWidth: 1,
         borderTopColor: theme.colors.border.card_light,
