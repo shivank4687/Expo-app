@@ -106,6 +106,7 @@ export interface ProductVariant {
     made_to_order_days?: number | null;
     immediate_shipping?: boolean;
     made_to_order_qty?: number | null;
+    customer_group_pricing_offers?: CustomerGroupPricingOffer[];
 }
 
 export interface VariantAttribute {

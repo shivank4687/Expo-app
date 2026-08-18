@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { ProductImage as ProductImageType, ProductVideo as ProductVideoType } from '../types/product.types';
 import { ProductImage } from '@/shared/components/LazyImage';
@@ -147,6 +147,17 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     const [activeIndex, setActiveIndex] = useState(0);
     const mainGalleryRef = useRef<FlatList>(null);
     const isProgrammaticScroll = useRef(false);
+
+    // Reset index and scroll position when the images list changes (e.g. variant is selected/switched)
+    useEffect(() => {
+        setActiveIndex(0);
+        isProgrammaticScroll.current = true;
+        mainGalleryRef.current?.scrollToOffset({ offset: 0, animated: false });
+        const timer = setTimeout(() => {
+            isProgrammaticScroll.current = false;
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [images]);
 
     const handleScroll = (event: any) => {
         if (isProgrammaticScroll.current) return;

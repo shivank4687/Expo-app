@@ -84,6 +84,13 @@ export const ProductDetailScreen: React.FC = () => {
         return product.variants.find((v) => v.id === selectedVariantId);
     }, [product, selectedVariantId]);
 
+    const activePricingOffers = useMemo(() => {
+        if (selectedVariant && selectedVariant.customer_group_pricing_offers && selectedVariant.customer_group_pricing_offers.length > 0) {
+            return selectedVariant.customer_group_pricing_offers;
+        }
+        return product?.customer_group_pricing_offers || [];
+    }, [product, selectedVariant]);
+
     const cartRightContent = (
         <TouchableOpacity
             onPress={() => router.push('/(drawer)/(tabs)/cart')}
@@ -265,10 +272,10 @@ export const ProductDetailScreen: React.FC = () => {
     const getUnitPriceForQty = (qty: number) => {
         let unitPrice = displayPrice;
 
-        if (product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0) {
+        if (activePricingOffers && activePricingOffers.length > 0) {
             let activeOffer = null;
             // Offers are returned sorted by qty ascending from backend
-            for (const offer of product.customer_group_pricing_offers) {
+            for (const offer of activePricingOffers) {
                 if (qty >= offer.qty) {
                     activeOffer = offer;
                 }
@@ -491,27 +498,31 @@ export const ProductDetailScreen: React.FC = () => {
                         ) : null}
 
                         {/* Availability Card */}
-                        <AvailabilityCard
-                            // immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && ((selectedVariant ? selectedVariant.quantity : product.quantity) ?? 0) > 0}
-                            immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && (product.quantity ?? 0) > 0}
-                            madeToOrder={selectedVariant ? selectedVariant.made_to_order : product.made_to_order}
-                            madeToOrderDays={selectedVariant ? selectedVariant.made_to_order_days : product.made_to_order_days}
-                            madeToOrderQty={selectedVariant ? selectedVariant.made_to_order_qty : product.made_to_order_qty}
-                        />
+                        {(product.type !== 'configurable' || selectedVariantId) && (
+                            <AvailabilityCard
+                                // immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && ((selectedVariant ? selectedVariant.quantity : product.quantity) ?? 0) > 0}
+                                immediateShipping={(selectedVariant ? selectedVariant.immediate_shipping : product.immediate_shipping) && (selectedVariant ? selectedVariant.in_stock : product.in_stock) && (product.quantity ?? 0) > 0}
+                                madeToOrder={selectedVariant ? selectedVariant.made_to_order : product.made_to_order}
+                                madeToOrderDays={selectedVariant ? selectedVariant.made_to_order_days : product.made_to_order_days}
+                                madeToOrderQty={selectedVariant ? selectedVariant.made_to_order_qty : product.made_to_order_qty}
+                            />
+                        )}
 
                         {/* Estimated Delivery Card */}
-                        <EstimatedDeliveryCard
-                            productId={product.id}
-                            isAuthenticated={isAuthenticated}
-                            standardDeliveryDays={product.supplier?.standard_delivery_days}
-                            preparationTimeDays={product.supplier?.preparation_time_days}
-                        />
+                        {(product.type !== 'configurable' || selectedVariantId) && (
+                            <EstimatedDeliveryCard
+                                productId={selectedVariantId || product.id}
+                                isAuthenticated={isAuthenticated}
+                                standardDeliveryDays={product.supplier?.standard_delivery_days}
+                                preparationTimeDays={product.supplier?.preparation_time_days}
+                            />
+                        )}
 
                         {/* Pricing Group */}
-                        {product.customer_group_pricing_offers && product.customer_group_pricing_offers.length > 0 ? (
+                        {activePricingOffers && activePricingOffers.length > 0 ? (
                             <View style={styles.section}>
                                 <PricingGroup
-                                    offers={product.customer_group_pricing_offers}
+                                    offers={activePricingOffers}
                                     supplier={product.supplier}
                                     currencySymbol={currencySymbol}
                                 />

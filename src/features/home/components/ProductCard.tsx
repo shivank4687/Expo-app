@@ -144,16 +144,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
         }
     };
 
-    const selectedVariant = useMemo(() => {
-        if (!isConfigurable || !selectedVariantId || !product.variants) return null;
-        return product.variants.find((v) => v.id === selectedVariantId);
-    }, [isConfigurable, selectedVariantId, product.variants]);
+    // const selectedVariant = useMemo(() => {
+    //     if (!isConfigurable || !selectedVariantId || !product.variants) return null;
+    //     return product.variants.find((v) => v.id === selectedVariantId);
+    // }, [isConfigurable, selectedVariantId, product.variants]);
 
     // ─── Add to cart ─────────────────────────────────────────────────────────
     const handleAddToCart = async (e: any) => {
         e.stopPropagation();
 
-        const activeInStock = selectedVariant ? selectedVariant.in_stock : product.in_stock;
+        //const activeInStock = selectedVariant ? selectedVariant.in_stock : product.in_stock;
+        const activeInStock = product.in_stock;
 
         if (!activeInStock) {
             showToast({ message: t('product.productOutOfStock'), type: 'error' });
@@ -182,9 +183,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
             //     ? selectedVariant.quantity ?? 0
             //     : product.quantity ?? 0;
             const availableQty = product.quantity ?? 0;
-            const activeMadeToOrder = selectedVariant
-                ? selectedVariant.made_to_order
-                : product.made_to_order;
+            // const activeMadeToOrder = selectedVariant
+            //     ? selectedVariant.made_to_order
+            //     : product.made_to_order;
+            const activeMadeToOrder = product.made_to_order;
             let qtyToAdd = qty;
 
             if (!activeMadeToOrder) {
@@ -280,7 +282,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
                 {/* ── Image + Info ──────────────────────────────────────── */}
                 <TouchableOpacity
                     activeOpacity={0.8}
-                    onPress={isSelectorOpen ? undefined : onPress}
+                    onPress={onPress}
                     style={styles.cardBody}
                 >
                     {/* Product Image */}
