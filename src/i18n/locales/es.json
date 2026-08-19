@@ -19,7 +19,8 @@
     "viewAll": "Ver todo",
     "yes": "Sí",
     "no": "No",
-    "loadingMore": "Cargando más..."
+    "loadingMore": "Cargando más...",
+    "explore": "Explorar"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -369,6 +370,7 @@
     "defaultAddress": "Dirección predeterminada",
     "wishlist": "Lista de deseos",
     "notifications": "Notificaciones",
+    "quickActions": "Acciones rápidas",
     "preferences": "Preferencias",
     "personalDetails": "Detalles personales",
     "firstName": "Nombre",
@@ -674,5 +676,126 @@
       "label": "Comprador empresarial",
       "description": "B2B / precios profesionales"
     }
+  },
+  "dashboardCards": {
+    "stats": {
+      "orders": "Pedidos",
+      "spend": "Gasto",
+      "fastActionsNote": "Acciones rápidas a continuación: diseñadas para compras rápidas (MOQ, facturas, repetición de pedidos).",
+      "buyerSuffix": "Comprador",
+      "wallet": "Cartera",
+      "help": "Ayuda",
+      "verifiedBuyer": "Comprador verificado",
+      "score": "Puntaje"
+    },
+    "shortcuts": {
+      "title": "Atajos",
+      "subtitle": "Acceso de un toque a lo que más usas.",
+      "tag": "Rápido",
+      "messages": "Mensajes",
+      "favorites": "Favoritos",
+      "addresses": "Direcciones",
+      "invoices": "Facturas"
+    },
+    "orders": {
+      "title": "Pedidos",
+      "subtitle": "Rastrea, vuelve a pedir o recibe soporte.",
+      "all": "Todos",
+      "toPay": "Por pagar",
+      "processing": "En proceso",
+      "shipped": "Enviado",
+      "delivered": "Entregado",
+      "returns": "Devoluciones"
+    },
+    "buyerTools": {
+      "title": "Herramientas de comprador",
+      "subtitle": "Todo lo que necesitas para compras recurrentes.",
+      "tag": "B2B",
+      "couponsTitle": "Cupones y créditos",
+      "couponsSubtitle": "Aplica descuentos al pagar.",
+      "paymentTitle": "Métodos de pago",
+      "paymentSubtitle": "Tarjeta, transferencia bancaria, condiciones de pago.",
+      "securityTitle": "Seguridad",
+      "securitySubtitle": "Contraseña, 2FA, dispositivos de inicio de sesión.",
+      "supportTitle": "Centro de soporte",
+      "supportSubtitle": "Devoluciones, disputas, ayuda con envíos."
+    },
+    "account": {
+      "title": "Cuenta",
+      "subtitle": "Administra tu perfil y preferencias.",
+      "tag": "Verificado",
+      "profileTitle": "Detalles del perfil",
+      "profileSubtitle": "Nombre, empresa, correo, teléfono.",
+      "preferencesTitle": "Preferencias",
+      "preferencesSubtitle": "Moneda, idioma.",
+      "taxTitle": "Tipo de cliente e impuestos",
+      "taxSubtitle": "Grupo, IVA y detalles fiscales.",
+      "signOutTitle": "Cerrar sesión",
+      "signOutSubtitle": "Cerrar sesión de tu cuenta."
+    }
+  },
+  "customerTypeTax": {
+    "screenTitle": "Tipo de cliente e impuestos",
+    "select": "Seleccionar...",
+    "vatModeOptions": {
+      "yes": "Sí, tengo un ID de impuestos",
+      "no": "No aplica"
+    },
+    "fiscalRegimeOptions": {
+      "general": "General de Ley Personas Morales",
+      "incorporation": "Régimen de Incorporación Fiscal"
+    },
+    "placeholder": {
+      "group": "Seleccionar grupo",
+      "select": "Seleccionar",
+      "regime": "Seleccionar régimen",
+      "country": "Seleccione país"
+    },
+    "messages": {
+      "loadError": "No se pudo cargar su configuración.",
+      "selectGroup": "Por favor seleccione un grupo de clientes.",
+      "selectVatMode": "Por favor seleccione un modo de IVA.",
+      "completeTaxFields": "Por favor complete todos los campos de impuestos requeridos.",
+      "saveSuccess": "Configuración guardada correctamente.",
+      "saveError": "No se pudo guardar la configuración."
+    },
+    "groupCard": {
+      "title": "Grupo de clientes",
+      "subtitle": "Seleccione el tipo que mejor describa su cuenta.",
+      "label": "Grupo",
+      "infoText": "Es posible que las cuentas mayoristas deban proporcionar información fiscal a continuación."
+    },
+    "taxCard": {
+      "title": "Información de IVA e impuestos",
+      "subtitle": "Configuración de impuestos aplicada a sus pedidos de mayoreo.",
+      "vatMode": "Modo de IVA",
+      "noticeText": "Todos los campos a continuación son obligatorios cuando el modo de IVA está activo.",
+      "taxId": "ID de impuestos",
+      "taxIdPlaceholder": "Ingrese ID de impuestos / RFC",
+      "fiscalRegime": "Régimen fiscal",
+      "vatPercent": "IVA (%)",
+      "phone": "Teléfono",
+      "phonePlaceholder": "Ingrese el número de teléfono",
+      "address": "Dirección",
+      "addressPlaceholder": "Ingrese dirección",
+      "city": "Ciudad",
+      "cityPlaceholder": "Ingrese ciudad",
+      "state": "Estado / Provincia",
+      "statePlaceholder": "Ingrese estado",
+      "postcode": "Código postal",
+      "postcodePlaceholder": "Ingrese código postal",
+      "country": "País",
+      "selectCountry": "Seleccione país",
+      "selectCountryModalTitle": "Seleccionar país"
+    },
+    "saveButton": "Guardar cambios"
+  },
+  "tabs": {
+    "home": "Inicio",
+    "categories": "Categorías",
+    "cart": "Carrito",
+    "orders": "Pedidos",
+    "more": "Más",
+    "dashboard": "Panel"
   }
 }

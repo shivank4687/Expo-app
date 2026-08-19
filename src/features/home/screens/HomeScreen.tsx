@@ -23,6 +23,7 @@ import { CategoryGridSection } from '../components/CategoryGridSection';
 import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
 import { RecentlyVisitedCategoriesSection } from '../components/RecentlyVisitedCategoriesSection';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 /**
  * HomeScreen Component
@@ -31,6 +32,7 @@ import { useRouter } from 'expo-router';
  */
 export const HomeScreen: React.FC = () => {
     const router = useRouter();
+    const { t } = useTranslation();
     const { selectedLocale } = useAppSelector((state) => state.core);
     const { categories } = useAppSelector((state) => state.category);
     const { user } = useAppSelector((state) => state.auth);
@@ -96,7 +98,7 @@ export const HomeScreen: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    const tabs = useMemo(() => [{ id: 'home', name: 'Explore' }, ...categories], [categories]);
+    const tabs = useMemo(() => [{ id: 'home', name: t('common.explore') }, ...categories], [categories, t]);
 
     const renderTabBar = () => {
         if (categories.length === 0) return null;

@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ShippingTruckIcon, DollarToPayIcon, OrderProcessingIcon, DeliveredIcon, ReturnOrderIcon } from '@/assets/icons';
 
 export const OrderShortcutsCard = () => {
+    const { t } = useTranslation();
     const router = useRouter();
 
     return (
@@ -11,15 +13,15 @@ export const OrderShortcutsCard = () => {
             {/* Header Row */}
             <View style={styles.headerRow}>
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.title}>Orders</Text>
-                    <Text style={styles.subtitle}>Track, reorder, or get support.</Text>
+                    <Text style={styles.title}>{t('dashboardCards.orders.title')}</Text>
+                    <Text style={styles.subtitle}>{t('dashboardCards.orders.subtitle')}</Text>
                 </View>
                 {/* All Orders */}
                 <TouchableOpacity 
                     style={styles.actionChip} 
                     onPress={() => router.push('/orders-list')}
                 >
-                    <Text style={styles.actionText}>All</Text>
+                    <Text style={styles.actionText}>{t('dashboardCards.orders.all')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -36,7 +38,7 @@ export const OrderShortcutsCard = () => {
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'pending' } })}
                 >
                     <DollarToPayIcon width={24} height={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel} numberOfLines={1}>To Pay</Text>
+                    <Text style={styles.shortcutLabel} numberOfLines={1}>{t('dashboardCards.orders.toPay')}</Text>
                 </TouchableOpacity>
 
                 {/* Processing */}
@@ -45,7 +47,7 @@ export const OrderShortcutsCard = () => {
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'processing' } })}
                 >
                     <OrderProcessingIcon width={24} height={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel} numberOfLines={1}>Processing</Text>
+                    <Text style={styles.shortcutLabel} numberOfLines={1}>{t('dashboardCards.orders.processing')}</Text>
                 </TouchableOpacity>
 
                 {/* Shipped */}
@@ -54,7 +56,7 @@ export const OrderShortcutsCard = () => {
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'shipped' } })}
                 >
                     <ShippingTruckIcon width={24} height={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel} numberOfLines={1}>Shipped</Text>
+                    <Text style={styles.shortcutLabel} numberOfLines={1}>{t('dashboardCards.orders.shipped')}</Text>
                 </TouchableOpacity>
 
                 {/* Delivered */}
@@ -63,7 +65,7 @@ export const OrderShortcutsCard = () => {
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'completed' } })}
                 >
                     <DeliveredIcon width={24} height={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel} numberOfLines={1}>Delivered</Text>
+                    <Text style={styles.shortcutLabel} numberOfLines={1}>{t('dashboardCards.orders.delivered')}</Text>
                 </TouchableOpacity>
 
                 {/* Returns */}
@@ -72,7 +74,7 @@ export const OrderShortcutsCard = () => {
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'canceled' } })}
                 >
                     <ReturnOrderIcon width={24} height={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel} numberOfLines={1}>Returns</Text>
+                    <Text style={styles.shortcutLabel} numberOfLines={1}>{t('dashboardCards.orders.returns')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>

@@ -1,13 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCustomerStatsThunk } from '@/store/slices/customerStatsSlice';
+import { updateBuyerType } from '@/store/slices/authSlice';
 import { useFocusEffect } from '@react-navigation/native';
 import { formatters } from '@/shared/utils/formatters';
+import { getCustomerProfile, CUSTOMER_SUBTYPES } from '../api/customer-tax-profile.api';
 
 export const CustomerStats = () => {
+    const { t } = useTranslation();
     const { user } = useRequireAuth();
     const dispatch = useAppDispatch();
     const { data: stats, isLoading } = useAppSelector((state) => state.customerStats);
@@ -15,10 +19,38 @@ export const CustomerStats = () => {
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
     const formattedSpend = stats?.formatted_total_spend || formatters.formatPrice(stats?.total_spend, currencySymbol);
 
+    // Resolve buyer type label from subtype value
+    const buyerType = React.useMemo(() => {
+        const buyerSuffix = t('dashboardCards.stats.buyerSuffix');
+        if (user?.buyer_type) {
+            const match = CUSTOMER_SUBTYPES.find((s) => s.value === user.buyer_type);
+            if (match) {
+                // Convert the i18n key suffix to a display label (e.g. 'retailer' → 'Retailer Buyer')
+                return user.buyer_type.charAt(0).toUpperCase() + user.buyer_type.slice(1) + ' ' + buyerSuffix;
+            }
+        }
+        // Fall back to group name
+        if (user?.group?.name || user?.group?.code) {
+            const name = user?.group?.name || (user.group!.code.charAt(0).toUpperCase() + user.group!.code.slice(1));
+            return name + ' ' + buyerSuffix;
+        }
+        return null;
+    }, [user?.buyer_type, user?.group, t]);
+
     useFocusEffect(
         React.useCallback(() => {
             dispatch(fetchCustomerStatsThunk());
-        }, [dispatch])
+            // Fetch buyer_type from profile if not yet in Redux
+            if (!user?.buyer_type) {
+                getCustomerProfile()
+                    .then((profile) => {
+                        if (profile?.buyer_type) {
+                            dispatch(updateBuyerType(profile.buyer_type));
+                        }
+                    })
+                    .catch(() => { /* non-critical */ });
+            }
+        }, [dispatch, user?.buyer_type])
     );
 
     return (
@@ -32,30 +64,32 @@ export const CustomerStats = () => {
                     </View>
                     <View style={styles.infoContainer}>
                         <Text style={styles.nameText}>{user?.name || 'User'}</Text>
-                        <Text style={styles.typeText}>Retail Buyer • Hong Kong</Text>
+                        {buyerType && (
+                            <Text style={styles.typeText}>{buyerType}</Text>
+                        )}
 
                         {/* Badges Container */}
-                        <View style={styles.badgesWrapper}>
+                        {/* <View style={styles.badgesWrapper}>
                             <View style={styles.verifiedContainer}>
                                 <Ionicons name="shield-checkmark" size={14} color="#00615E" />
-                                <Text style={styles.verifiedText}>Verified buyer</Text>
+                                <Text style={styles.verifiedText}>{t('dashboardCards.stats.verifiedBuyer')}</Text>
                             </View>
                             <View style={styles.scoreChip}>
-                                <Text style={styles.scoreText}>Score 92</Text>
+                                <Text style={styles.scoreText}>{t('dashboardCards.stats.score')} 92</Text>
                             </View>
-                        </View>
+                        </View> */}
                     </View>
                 </View>
 
                 {/* Top Right Actions */}
-                <View style={styles.actionButtons}>
+                {/* <View style={styles.actionButtons}>
                     <View style={styles.actionChip}>
-                        <Text style={styles.actionText}>Wallet</Text>
+                        <Text style={styles.actionText}>{t('dashboardCards.stats.wallet')}</Text>
                     </View>
                     <View style={styles.actionChip}>
-                        <Text style={styles.actionText}>Help</Text>
+                        <Text style={styles.actionText}>{t('dashboardCards.stats.help')}</Text>
                     </View>
-                </View>
+                </View> */}
             </View>
 
             {/* Stats Row */}
@@ -69,13 +103,13 @@ export const CustomerStats = () => {
                     <Text style={styles.statNumber}>
                         {isLoading ? '...' : (stats?.total_orders ?? '0')}
                     </Text>
-                    <Text style={styles.statLabel}>Orders</Text>
+                    <Text style={styles.statLabel}>{t('dashboardCards.stats.orders')}</Text>
                 </View>
                 <View style={styles.statBlock}>
                     <Text style={styles.statNumber}>
                         {isLoading ? '...' : formattedSpend}
                     </Text>
-                    <Text style={styles.statLabel}>Spend</Text>
+                    <Text style={styles.statLabel}>{t('dashboardCards.stats.spend')}</Text>
                 </View>
                 {/* <View style={styles.statBlock}>
                     <Text style={styles.statNumber}>18</Text>
@@ -85,7 +119,7 @@ export const CustomerStats = () => {
 
             {/* Bottom Note */}
             <Text style={styles.bottomNote}>
-                Fast actions below — designed for quick purchasing (MOQ, invoices, reorders).
+                {t('dashboardCards.stats.fastActionsNote')}
             </Text>
         </View>
     );

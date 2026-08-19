@@ -19,7 +19,8 @@
     "viewAll": "View All",
     "yes": "Yes",
     "no": "No",
-    "loadingMore": "Loading more..."
+    "loadingMore": "Loading more...",
+    "explore": "Explore"
   },
   "auth": {
     "login": "Login",
@@ -369,6 +370,7 @@
     "defaultAddress": "Default Address",
     "wishlist": "Wishlist",
     "notifications": "Notifications",
+    "quickActions": "Quick Actions",
     "preferences": "Preferences",
     "personalDetails": "Personal Details",
     "firstName": "First Name",
@@ -675,5 +677,126 @@
       "label": "Business Buyer",
       "description": "B2B / professional pricing"
     }
+  },
+  "dashboardCards": {
+    "stats": {
+      "orders": "Orders",
+      "spend": "Spend",
+      "fastActionsNote": "Fast actions below — designed for quick purchasing (MOQ, invoices, reorders).",
+      "buyerSuffix": "Buyer",
+      "wallet": "Wallet",
+      "help": "Help",
+      "verifiedBuyer": "Verified buyer",
+      "score": "Score"
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "subtitle": "One-tap access to what you use most.",
+      "tag": "Fast",
+      "messages": "Messages",
+      "favorites": "Favorites",
+      "addresses": "Addresses",
+      "invoices": "Invoices"
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "Track, reorder, or get support.",
+      "all": "All",
+      "toPay": "To Pay",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "returns": "Returns"
+    },
+    "buyerTools": {
+      "title": "Buyer tools",
+      "subtitle": "Everything you need for repeat purchasing.",
+      "tag": "B2B",
+      "couponsTitle": "Coupons & credits",
+      "couponsSubtitle": "Apply discounts at checkout.",
+      "paymentTitle": "Payment methods",
+      "paymentSubtitle": "Card, bank transfer, net terms.",
+      "securityTitle": "Security",
+      "securitySubtitle": "Password, 2FA, login devices.",
+      "supportTitle": "Support center",
+      "supportSubtitle": "Returns, disputes, shipping help."
+    },
+    "account": {
+      "title": "Account",
+      "subtitle": "Manage your profile and preferences.",
+      "tag": "Verified",
+      "profileTitle": "Profile details",
+      "profileSubtitle": "Name, company, email, phone.",
+      "preferencesTitle": "Preferences",
+      "preferencesSubtitle": "Currency, language.",
+      "taxTitle": "Customer Type & Tax",
+      "taxSubtitle": "Group, VAT & tax details.",
+      "signOutTitle": "Sign out",
+      "signOutSubtitle": "Logout from your account."
+    }
+  },
+  "customerTypeTax": {
+    "screenTitle": "Customer Type & Tax",
+    "select": "Select...",
+    "vatModeOptions": {
+      "yes": "Yes, I have a Tax ID",
+      "no": "Not Applicable"
+    },
+    "fiscalRegimeOptions": {
+      "general": "General de Ley Personas Morales",
+      "incorporation": "Régimen de Incorporación Fiscal"
+    },
+    "placeholder": {
+      "group": "Select group",
+      "select": "Select",
+      "regime": "Select regime",
+      "country": "Select country"
+    },
+    "messages": {
+      "loadError": "Unable to load your settings.",
+      "selectGroup": "Please select a customer group.",
+      "selectVatMode": "Please select a VAT mode.",
+      "completeTaxFields": "Please complete all required tax fields.",
+      "saveSuccess": "Settings saved successfully.",
+      "saveError": "Unable to save settings."
+    },
+    "groupCard": {
+      "title": "Customer Group",
+      "subtitle": "Select the type that best describes your account.",
+      "label": "Group",
+      "infoText": "Wholesale accounts may be required to provide tax information below."
+    },
+    "taxCard": {
+      "title": "VAT & Tax Information",
+      "subtitle": "Tax settings applied to your wholesale orders.",
+      "vatMode": "VAT Mode",
+      "noticeText": "All fields below are required when VAT mode is active.",
+      "taxId": "Tax ID",
+      "taxIdPlaceholder": "Enter Tax ID / RFC",
+      "fiscalRegime": "Fiscal Regime",
+      "vatPercent": "VAT (%)",
+      "phone": "Phone",
+      "phonePlaceholder": "Enter phone number",
+      "address": "Address",
+      "addressPlaceholder": "Enter address",
+      "city": "City",
+      "cityPlaceholder": "Enter city",
+      "state": "State / Province",
+      "statePlaceholder": "Enter state",
+      "postcode": "Postcode",
+      "postcodePlaceholder": "Enter postcode",
+      "country": "Country",
+      "selectCountry": "Select country",
+      "selectCountryModalTitle": "Select Country"
+    },
+    "saveButton": "Save Changes"
+  },
+  "tabs": {
+    "home": "Home",
+    "categories": "Categories",
+    "cart": "Cart",
+    "orders": "Orders",
+    "more": "More",
+    "dashboard": "Dashboard"
   }
 }

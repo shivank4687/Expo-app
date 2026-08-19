@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAppDispatch } from '@/store/hooks';
+import { fetchCartThunk } from '@/store/slices/cartSlice';
 import {
     ActivityIndicator,
     Alert,
@@ -57,6 +59,7 @@ export const OrderDetailScreen: React.FC = () => {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
     const { showToast } = useToast();
+    const dispatch = useAppDispatch();
 
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -170,6 +173,7 @@ export const OrderDetailScreen: React.FC = () => {
         try {
             setIsReordering(true);
             await ordersApi.reorder(order.id);
+            dispatch(fetchCartThunk());
             showToast({
                 message: t('orders.reorderSuccess', 'Items added to cart'),
                 type: 'success',
@@ -185,7 +189,7 @@ export const OrderDetailScreen: React.FC = () => {
         } finally {
             setIsReordering(false);
         }
-    }, [order, t, showToast, router]);
+    }, [order, t, showToast, router, dispatch]);
 
     const handleItemSupport = useCallback((item: any) => {
         if (!order) return;

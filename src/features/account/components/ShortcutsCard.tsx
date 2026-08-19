@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 export const ShortcutsCard = () => {
+    const { t } = useTranslation();
     const router = useRouter();
 
     return (
@@ -11,11 +13,11 @@ export const ShortcutsCard = () => {
             {/* Header Row */}
             <View style={styles.headerRow}>
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.title}>Shortcuts</Text>
-                    <Text style={styles.subtitle}>One-tap access to what you use most.</Text>
+                    <Text style={styles.title}>{t('dashboardCards.shortcuts.title')}</Text>
+                    <Text style={styles.subtitle}>{t('dashboardCards.shortcuts.subtitle')}</Text>
                 </View>
                 <View style={styles.actionChip}>
-                    <Text style={styles.actionText}>Fast</Text>
+                    <Text style={styles.actionText}>{t('dashboardCards.shortcuts.tag')}</Text>
                 </View>
             </View>
 
@@ -29,25 +31,25 @@ export const ShortcutsCard = () => {
                 {/* Messages */}
                 <TouchableOpacity style={styles.shortcutBlock} onPress={() => router.push('/messages')}>
                     <Ionicons name="chatbubble-outline" size={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel}>Messages</Text>
+                    <Text style={styles.shortcutLabel}>{t('dashboardCards.shortcuts.messages')}</Text>
                 </TouchableOpacity>
 
                 {/* Favorites */}
                 <TouchableOpacity style={styles.shortcutBlock} onPress={() => router.push('/wishlist')}>
                     <Ionicons name="heart-outline" size={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel}>Favorites</Text>
+                    <Text style={styles.shortcutLabel}>{t('dashboardCards.shortcuts.favorites')}</Text>
                 </TouchableOpacity>
 
                 {/* Addresses */}
                 <TouchableOpacity style={styles.shortcutBlock} onPress={() => router.push('/addresses')}>
                     <Ionicons name="location-outline" size={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel}>Addresses</Text>
+                    <Text style={styles.shortcutLabel}>{t('dashboardCards.shortcuts.addresses')}</Text>
                 </TouchableOpacity>
 
                 {/* Invoices */}
                 <TouchableOpacity style={styles.shortcutBlock} onPress={() => router.push('/orders-list')}>
                     <Ionicons name="document-text-outline" size={24} color="#00615E" />
-                    <Text style={styles.shortcutLabel}>Invoices</Text>
+                    <Text style={styles.shortcutLabel}>{t('dashboardCards.shortcuts.invoices')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>

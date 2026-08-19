@@ -608,6 +608,11 @@ const authSlice = createSlice({
                 }
             }
         },
+        updateBuyerType: (state, action: PayloadAction<string | null>) => {
+            if (state.user) {
+                state.user.buyer_type = action.payload;
+            }
+        },
     },
     extraReducers: (builder) => {
         // Check Auth
@@ -818,5 +823,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { setUser, setSelectedUserType, clearError, clearVerification, updateToken, updateCustomerGroupId } = authSlice.actions;
+export const { setUser, setSelectedUserType, clearError, clearVerification, updateToken, updateCustomerGroupId, updateBuyerType } = authSlice.actions;
 export default authSlice.reducer;

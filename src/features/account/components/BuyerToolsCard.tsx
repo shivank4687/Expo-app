@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 export const BuyerToolsCard = () => {
+    const { t } = useTranslation();
     const router = useRouter();
 
     return (
@@ -11,11 +13,11 @@ export const BuyerToolsCard = () => {
             {/* Header Row */}
             <View style={styles.headerRow}>
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.title}>Buyer tools</Text>
-                    <Text style={styles.subtitle}>Everything you need for repeat purchasing.</Text>
+                    <Text style={styles.title}>{t('dashboardCards.buyerTools.title')}</Text>
+                    <Text style={styles.subtitle}>{t('dashboardCards.buyerTools.subtitle')}</Text>
                 </View>
                 <View style={styles.actionChip}>
-                    <Text style={styles.actionText}>B2B</Text>
+                    <Text style={styles.actionText}>{t('dashboardCards.buyerTools.tag')}</Text>
                 </View>
             </View>
 
@@ -27,26 +29,26 @@ export const BuyerToolsCard = () => {
                         <Ionicons name="pricetag-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Coupons & credits</Text>
-                        <Text style={styles.itemSubtitle}>Apply discounts at checkout.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.buyerTools.couponsTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.buyerTools.couponsSubtitle')}</Text>
                     </View>
-                    <View style={styles.valueChip}>
+                    {/* <View style={styles.valueChip}>
                         <Text style={styles.valueText}>€ 25</Text>
-                    </View>
+                    </View> */}
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
 
                 {/* 2. Payment methods */}
-                <TouchableOpacity style={styles.listItem}>
+                {/* <TouchableOpacity style={styles.listItem}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="card-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Payment methods</Text>
-                        <Text style={styles.itemSubtitle}>Card, bank transfer, net terms.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.buyerTools.paymentTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.buyerTools.paymentSubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 {/* 3. Security */}
                 <TouchableOpacity style={styles.listItem} onPress={() => router.push('/security')}>
@@ -54,8 +56,8 @@ export const BuyerToolsCard = () => {
                         <Ionicons name="lock-closed-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Security</Text>
-                        <Text style={styles.itemSubtitle}>Password, 2FA, login devices.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.buyerTools.securityTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.buyerTools.securitySubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
@@ -66,8 +68,8 @@ export const BuyerToolsCard = () => {
                         <Ionicons name="headset-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Support center</Text>
-                        <Text style={styles.itemSubtitle}>Returns, disputes, shipping help.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.buyerTools.supportTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.buyerTools.supportSubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>

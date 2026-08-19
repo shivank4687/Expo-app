@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { theme } from '@/theme';
 import { useRequireAuth } from '@/shared/hooks/useRequireAuth';
 import { CustomerStats } from '../components/CustomerStats';
@@ -12,12 +13,13 @@ import { OrderShortcutsCard } from '../components/OrderShortcutsCard';
 export const DashboardScreen: React.FC = () => {
     const { user, isLoading } = useRequireAuth();
     const router = useRouter();
+    const { t } = useTranslation();
 
     // Show loading while checking authentication
     if (isLoading) {
         return (
             <>
-                <Stack.Screen options={{ title: 'Dashboard', headerBackTitle: 'Back' }} />
+                <Stack.Screen options={{ title: t('drawer.dashboard'), headerBackTitle: t('common.back') }} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
                 </View>
@@ -35,7 +37,7 @@ export const DashboardScreen: React.FC = () => {
 
     return (
         <>
-            <Stack.Screen options={{ title: 'Dashboard', headerBackTitle: 'Back' }} />
+            <Stack.Screen options={{ title: t('drawer.dashboard'), headerBackTitle: t('common.back') }} />
             <ScrollView style={styles.container}>
                 {/* <View style={styles.header}>
                     <Text style={styles.greeting}>Welcome back,</Text>
@@ -51,40 +53,40 @@ export const DashboardScreen: React.FC = () => {
                 {/* <View style={styles.cardsGrid}>
                     <DashboardCard
                         icon="receipt-outline"
-                        title="Orders"
+                        title={t('drawer.orders')}
                         value="0"
                         onPress={() => router.push('/orders')}
                     />
                     <DashboardCard
                         icon="star-outline"
-                        title="Reviews"
+                        title={t('drawer.reviews')}
                         value="0"
                         onPress={() => router.push('/reviews')}
                     />
                     <DashboardCard
                         icon="heart-outline"
-                        title="Wishlist"
+                        title={t('account.wishlist')}
                         value="0"
                         onPress={() => { }}
                     />
                     <DashboardCard
                         icon="location-outline"
-                        title="Addresses"
+                        title={t('account.addresses')}
                         value="0"
                         onPress={() => { }}
                     />
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+                    <Text style={styles.sectionTitle}>{t('account.quickActions')}</Text>
                     <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/account-info')}>
                         <Ionicons name="person-outline" size={24} color={theme.colors.text.primary} />
-                        <Text style={styles.actionText}>Edit Profile</Text>
+                        <Text style={styles.actionText}>{t('account.editProfile')}</Text>
                         <Ionicons name="chevron-forward" size={24} color={theme.colors.text.secondary} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionItem}>
                         <Ionicons name="notifications-outline" size={24} color={theme.colors.text.primary} />
-                        <Text style={styles.actionText}>Notifications</Text>
+                        <Text style={styles.actionText}>{t('account.notifications')}</Text>
                         <Ionicons name="chevron-forward" size={24} color={theme.colors.text.secondary} />
                     </TouchableOpacity>
                 </View> */}

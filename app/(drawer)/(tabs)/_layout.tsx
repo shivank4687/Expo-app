@@ -4,24 +4,25 @@ import { useAppSelector } from "@/store/hooks";
 import { Tabs } from "expo-router";
 import React from "react";
 import { theme } from "@/theme";
-
-const CUSTOMER_TABS = [
-  { name: "index", label: "Home", icon: "home-outline" },
-  { name: "categories", label: "Categories", icon: "apps-outline" },
-  { name: "cart", label: "Cart", icon: "cart-outline" },
-  { name: "orders", label: "Orders", icon: "receipt-outline" },
-  { name: "profile", label: "More", icon: "person-circle-outline" },
-];
-
-const CUSTOMER_DRAWER_OPTIONS = [
-  //{ name: "profile", label: "Profile" },
-  { name: "dashboard", label: "Dashboard" },
-];
+import { useTranslation } from "react-i18next";
 
 export default function TabLayout() {
   const { isLoading, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { t } = useTranslation();
 
-  const activeTabs = CUSTOMER_TABS.filter(
+  const customerTabs = [
+    { name: "index", label: t("tabs.home"), icon: "home-outline" },
+    { name: "categories", label: t("tabs.categories"), icon: "apps-outline" },
+    { name: "cart", label: t("tabs.cart"), icon: "cart-outline" },
+    { name: "orders", label: t("tabs.orders"), icon: "receipt-outline" },
+    { name: "profile", label: t("tabs.more"), icon: "person-circle-outline" },
+  ];
+
+  const customerDrawerOptions = [
+    { name: "dashboard", label: t("tabs.dashboard") },
+  ];
+
+  const activeTabs = customerTabs.filter(
     (tab) => !["orders", "profile"].includes(tab.name) || isAuthenticated
   );
 
@@ -39,14 +40,14 @@ export default function TabLayout() {
         <TabBar
           {...props}
           tabs={activeTabs as any}
-          drawerOptions={CUSTOMER_DRAWER_OPTIONS}
+          drawerOptions={customerDrawerOptions}
         />
       )}
       screenOptions={{
         headerShown: false,
       }}
     >
-      {CUSTOMER_TABS.map((tab) => (
+      {customerTabs.map((tab) => (
         <Tabs.Screen
           key={tab.name}
           name={tab.name}
@@ -60,7 +61,7 @@ export default function TabLayout() {
         name="dashboard"
         options={{
           href: null,
-          title: "Dashboard",
+          title: t("tabs.dashboard"),
         }}
       />
     </Tabs>

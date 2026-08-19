@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
-import { updateCustomerGroupId } from '@/store/slices/authSlice';
+import { updateCustomerGroupId, updateBuyerType } from '@/store/slices/authSlice';
 import { clearRecentlyViewed } from '@/store/slices/recentlyViewedSlice';
 import { resetCart, fetchCartThunk } from '@/store/slices/cartSlice';
 import { resetWishlist, fetchWishlistThunk } from '@/store/slices/wishlistSlice';
@@ -36,15 +36,6 @@ import {
 
 const WHOLESALE_CODE = 'wholesale';
 
-const vatModeOptions = [
-    { value: '1', label: 'Yes, I have a Tax ID' },
-    { value: '0', label: 'Not Applicable' },
-];
-
-const fiscalRegimeOptions = [
-    { value: 'general_personas_morales', label: 'General de Ley Personas Morales' },
-    { value: 'regimen_incorporacion_fiscal', label: 'Régimen de Incorporación Fiscal' },
-];
 
 // ─── Inline Dropdown ──────────────────────────────────────────────────────────
 // Renders the menu in-place (below the trigger, pushing nothing).
@@ -66,6 +57,7 @@ interface InlineDropProps {
     disabled?: boolean;
     /** Pass descending values so the first dropdown overlaps those below it */
     zIndex?: number;
+    labelWidth?: number;
 }
 
 const InlineDrop: React.FC<InlineDropProps> = ({
@@ -76,6 +68,7 @@ const InlineDrop: React.FC<InlineDropProps> = ({
     placeholder = 'Select...',
     disabled = false,
     zIndex = 10,
+    labelWidth = 110,
 }) => {
     const [open, setOpen] = useState(false);
     const selected = options.find((o) => o.value === value);
@@ -90,7 +83,7 @@ const InlineDrop: React.FC<InlineDropProps> = ({
         >
             {/* Label + trigger in a row */}
             <View style={dropStyles.row}>
-                <Text style={dropStyles.label}>{label}</Text>
+                <Text style={[dropStyles.label, { width: labelWidth }]}>{label}</Text>
                 <TouchableOpacity
                     style={[dropStyles.trigger, disabled && dropStyles.triggerDisabled]}
                     onPress={() => !disabled && setOpen((p) => !p)}
@@ -119,7 +112,7 @@ const InlineDrop: React.FC<InlineDropProps> = ({
                         activeOpacity={1}
                         onPress={() => setOpen(false)}
                     />
-                    <View style={dropStyles.menu}>
+                    <View style={[dropStyles.menu, { left: labelWidth + 12 }]}>
                         {options.map((item) => {
                             const isActive = item.value === value;
                             return (
@@ -181,7 +174,6 @@ const dropStyles = StyleSheet.create({
         fontWeight: '500',
         fontSize: 13,
         color: '#0A292D',
-        width: 110,
         flexShrink: 0,
     },
     trigger: {
@@ -223,7 +215,6 @@ const dropStyles = StyleSheet.create({
         position: 'absolute',
         // Sits just below the trigger (44 px row height)
         top: 44,
-        left: 110 + 12, // label width + gap
         right: 0,
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
@@ -340,6 +331,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                 activeGroupCode = currentGroup.code ?? '';
             } else if (customerProfile?.customer_group_id) {
                 activeGroupId = String(customerProfile.customer_group_id);
+            }
+
+            // Fallback to resolve the code from groupList if not provided by backend group relation
+            if (activeGroupId && !activeGroupCode) {
                 const matched = groupList.find((g) => String(g.id) === activeGroupId);
                 activeGroupCode = matched?.code ?? '';
             }
@@ -374,11 +369,11 @@ export const CustomerTypeTaxScreen: React.FC = () => {
             }
         } catch (error) {
             console.error('Error loading customer type/tax data:', error);
-            showToast({ message: 'Unable to load your settings.', type: 'error' });
+            showToast({ message: t('customerTypeTax.messages.loadError'), type: 'error' });
         } finally {
             setLoading(false);
         }
-    }, [dispatch, showToast]);
+    }, [dispatch, showToast, t]);
 
     useEffect(() => {
         loadData();
@@ -391,6 +386,16 @@ export const CustomerTypeTaxScreen: React.FC = () => {
         label: t(sub.labelKey),
         description: t(sub.descKey),
     }));
+
+    const vatModeOptions: DropdownOption[] = [
+        { value: '1', label: t('customerTypeTax.vatModeOptions.yes') },
+        { value: '0', label: t('customerTypeTax.vatModeOptions.no') },
+    ];
+
+    const fiscalRegimeOptions: DropdownOption[] = [
+        { value: 'general_personas_morales', label: t('customerTypeTax.fiscalRegimeOptions.general') },
+        { value: 'regimen_incorporacion_fiscal', label: t('customerTypeTax.fiscalRegimeOptions.incorporation') },
+    ];
 
     const handleSubtypeSelect = (value: string) => {
         setSelectedSubtype(value);
@@ -427,15 +432,15 @@ export const CustomerTypeTaxScreen: React.FC = () => {
         if (saving || loading) return;
 
         if (!selectedGroupId) {
-            showToast({ message: 'Please select a customer group.', type: 'warning' });
+            showToast({ message: t('customerTypeTax.messages.selectGroup'), type: 'warning' });
             return;
         }
         if (isWholesale && !vatMode) {
-            showToast({ message: 'Please select a VAT mode.', type: 'warning' });
+            showToast({ message: t('customerTypeTax.messages.selectVatMode'), type: 'warning' });
             return;
         }
         if (showTaxFields && (!taxId.trim() || !selectedRegime || !vatPercent.trim())) {
-            showToast({ message: 'Please complete all required tax fields.', type: 'warning' });
+            showToast({ message: t('customerTypeTax.messages.completeTaxFields'), type: 'warning' });
             return;
         }
 
@@ -460,16 +465,17 @@ export const CustomerTypeTaxScreen: React.FC = () => {
 
             // Clear stale state values since product prices change based on customer group
             dispatch(updateCustomerGroupId({ id: Number(selectedGroupId), code: selectedGroupCode }));
+            dispatch(updateBuyerType(selectedSubtype));
             dispatch(clearRecentlyViewed());
             dispatch(resetCart());
             dispatch(fetchCartThunk());
             dispatch(resetWishlist());
             dispatch(fetchWishlistThunk());
 
-            showToast({ message: 'Settings saved successfully.', type: 'success' });
+            showToast({ message: t('customerTypeTax.messages.saveSuccess'), type: 'success' });
         } catch (error) {
             console.error('Error saving:', error);
-            showToast({ message: 'Unable to save settings.', type: 'error' });
+            showToast({ message: t('customerTypeTax.messages.saveError'), type: 'error' });
         } finally {
             setSaving(false);
         }
@@ -480,7 +486,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
     return (
         <View style={styles.screenContainer}>
             <Stack.Screen options={{ headerShown: false }} />
-            <TopHeader title="Customer Type & Tax" onBack={() => router.back()} />
+            <TopHeader title={t('customerTypeTax.screenTitle')} onBack={() => router.back()} />
 
             {loading ? (
                 <View style={styles.loadingContainer}>
@@ -501,28 +507,29 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                 <Ionicons name="people-outline" size={16} color="#FFFFFF" />
                             </View>
                             <View style={styles.cardHeaderText}>
-                                <Text style={styles.cardTitle}>Customer Group</Text>
+                                <Text style={styles.cardTitle}>{t('customerTypeTax.groupCard.title')}</Text>
                                 <Text style={styles.cardSubtitle}>
-                                    Select the type that best describes your account.
+                                    {t('customerTypeTax.groupCard.subtitle')}
                                 </Text>
                             </View>
                         </View>
 
                         {/* zIndex 100 — only dropdown in this card */}
                         <InlineDrop
-                            label="Group"
+                            label={t('customerTypeTax.groupCard.label')}
                             options={groupOptions}
                             value={selectedSubtype}
                             onSelect={handleSubtypeSelect}
-                            placeholder="Select group"
+                            placeholder={t('customerTypeTax.placeholder.group')}
                             zIndex={100}
+                            labelWidth={60}
                         />
 
                         {isWholesale && (
                             <View style={styles.infoBox}>
                                 <Ionicons name="information-circle-outline" size={16} color="#00615E" />
                                 <Text style={styles.infoText}>
-                                    Wholesale accounts may be required to provide tax information below.
+                                    {t('customerTypeTax.groupCard.infoText')}
                                 </Text>
                             </View>
                         )}
@@ -537,34 +544,35 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     <Ionicons name="receipt-outline" size={16} color="#FFFFFF" />
                                 </View>
                                 <View style={styles.cardHeaderText}>
-                                    <Text style={styles.cardTitle}>VAT & Tax Information</Text>
+                                    <Text style={styles.cardTitle}>{t('customerTypeTax.taxCard.title')}</Text>
                                     <Text style={styles.cardSubtitle}>
-                                        Tax settings applied to your wholesale orders.
+                                        {t('customerTypeTax.taxCard.subtitle')}
                                     </Text>
                                 </View>
                             </View>
 
                             {/* VAT Mode — highest zIndex inside this card so it tops Fiscal below */}
                             <InlineDrop
-                                label="VAT Mode"
+                                label={t('customerTypeTax.taxCard.vatMode')}
                                 options={vatModeOptions}
                                 value={vatMode}
                                 onSelect={setVatMode}
-                                placeholder="Select"
+                                placeholder={t('customerTypeTax.placeholder.select')}
                                 zIndex={90}
+                                labelWidth={80}
                             />
 
                             {showTaxFields && (
                                 <>
                                     <Text style={styles.noticeText}>
-                                        All fields below are required when VAT mode is active.
+                                        {t('customerTypeTax.taxCard.noticeText')}
                                     </Text>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>Tax ID</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.taxId')}</Text>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Enter Tax ID / RFC"
+                                            placeholder={t('customerTypeTax.taxCard.taxIdPlaceholder')}
                                             placeholderTextColor="#7D8A8C"
                                             value={taxId}
                                             onChangeText={setTaxId}
@@ -574,16 +582,16 @@ export const CustomerTypeTaxScreen: React.FC = () => {
 
                                     {/* Fiscal Regime — below VAT Mode, so lower zIndex */}
                                     <InlineDrop
-                                        label="Fiscal Regime"
+                                        label={t('customerTypeTax.taxCard.fiscalRegime')}
                                         options={fiscalRegimeOptions}
                                         value={selectedRegime}
                                         onSelect={setSelectedRegime}
-                                        placeholder="Select regime"
+                                        placeholder={t('customerTypeTax.placeholder.regime')}
                                         zIndex={80}
                                     />
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>VAT (%)</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.vatPercent')}</Text>
                                         <TextInput
                                             style={[styles.input, { flex: 0, width: 90 }]}
                                             placeholder="16"
@@ -595,10 +603,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     </View>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>Phone</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.phone')}</Text>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Enter phone number"
+                                            placeholder={t('customerTypeTax.taxCard.phonePlaceholder')}
                                             placeholderTextColor="#7D8A8C"
                                             value={phone}
                                             onChangeText={setPhone}
@@ -607,10 +615,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     </View>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>Address</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.address')}</Text>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Enter address"
+                                            placeholder={t('customerTypeTax.taxCard.addressPlaceholder')}
                                             placeholderTextColor="#7D8A8C"
                                             value={address}
                                             onChangeText={setAddress}
@@ -618,10 +626,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     </View>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>City</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.city')}</Text>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Enter city"
+                                            placeholder={t('customerTypeTax.taxCard.cityPlaceholder')}
                                             placeholderTextColor="#7D8A8C"
                                             value={city}
                                             onChangeText={setCity}
@@ -629,10 +637,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     </View>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>State / Province</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.state')}</Text>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Enter state"
+                                            placeholder={t('customerTypeTax.taxCard.statePlaceholder')}
                                             placeholderTextColor="#7D8A8C"
                                             value={region}
                                             onChangeText={setRegion}
@@ -640,10 +648,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     </View>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>Postcode</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.postcode')}</Text>
                                         <TextInput
                                             style={[styles.input, { flex: 0, width: 90 }]}
-                                            placeholder="Enter postcode"
+                                            placeholder={t('customerTypeTax.taxCard.postcodePlaceholder')}
                                             placeholderTextColor="#7D8A8C"
                                             value={postcode}
                                             onChangeText={setPostcode}
@@ -652,7 +660,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                     </View>
 
                                     <View style={styles.tfRow}>
-                                        <Text style={styles.tfLabel}>Country</Text>
+                                        <Text style={styles.tfLabel}>{t('customerTypeTax.taxCard.country')}</Text>
                                         <TouchableOpacity
                                             style={[styles.input, styles.countryBtn]}
                                             onPress={() => setShowCountryPicker(true)}
@@ -666,10 +674,10 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                                                 numberOfLines={1}
                                             >
                                                 {isLoadingCountries
-                                                    ? 'Loading...'
+                                                    ? t('common.loading')
                                                     : selectedCountry
                                                         ? getSelectedCountryName()
-                                                        : 'Select country'}
+                                                        : t('customerTypeTax.taxCard.selectCountry')}
                                             </Text>
                                             {isLoadingCountries ? (
                                                 <ActivityIndicator size="small" color="#666" />
@@ -695,7 +703,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                         ) : (
                             <>
                                 <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-                                <Text style={styles.saveBtnText}>Save Changes</Text>
+                                <Text style={styles.saveBtnText}>{t('customerTypeTax.saveButton')}</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -704,7 +712,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
 
             <PickerModal
                 visible={showCountryPicker}
-                title="Select Country"
+                title={t('customerTypeTax.taxCard.selectCountryModalTitle')}
                 items={countryItems}
                 selectedValue={selectedCountry || ''}
                 onSelect={(val) => { setSelectedCountry(val); setShowCountryPicker(false); }}

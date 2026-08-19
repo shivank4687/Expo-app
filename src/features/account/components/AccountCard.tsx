@@ -36,11 +36,11 @@ export const AccountCard = () => {
             {/* Header Row */}
             <View style={styles.headerRow}>
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.title}>Account</Text>
-                    <Text style={styles.subtitle}>Manage your profile and preferences.</Text>
+                    <Text style={styles.title}>{t('dashboardCards.account.title')}</Text>
+                    <Text style={styles.subtitle}>{t('dashboardCards.account.subtitle')}</Text>
                 </View>
                 <View style={styles.actionChip}>
-                    <Text style={styles.actionText}>Verified</Text>
+                    <Text style={styles.actionText}>{t('dashboardCards.account.tag')}</Text>
                 </View>
             </View>
 
@@ -52,8 +52,8 @@ export const AccountCard = () => {
                         <Ionicons name="id-card-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Profile details</Text>
-                        <Text style={styles.itemSubtitle}>Name, company, email, phone.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.account.profileTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.account.profileSubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
@@ -64,8 +64,8 @@ export const AccountCard = () => {
                         <Ionicons name="settings-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Preferences</Text>
-                        <Text style={styles.itemSubtitle}>Deals, delivery alerts, language.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.account.preferencesTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.account.preferencesSubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
@@ -76,8 +76,8 @@ export const AccountCard = () => {
                         <Ionicons name="people-outline" size={20} color="#00615E" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Customer Type & Tax</Text>
-                        <Text style={styles.itemSubtitle}>Group, VAT & tax details.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.account.taxTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.account.taxSubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
@@ -88,8 +88,8 @@ export const AccountCard = () => {
                         <Ionicons name="log-out-outline" size={20} color="#BD5626" />
                     </View>
                     <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>Sign out</Text>
-                        <Text style={styles.itemSubtitle}>Logout from your account.</Text>
+                        <Text style={styles.itemTitle}>{t('dashboardCards.account.signOutTitle')}</Text>
+                        <Text style={styles.itemSubtitle}>{t('dashboardCards.account.signOutSubtitle')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#000000" />
                 </TouchableOpacity>
