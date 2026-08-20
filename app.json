@@ -61,8 +61,7 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      "./plugins/withImagePickerColors"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

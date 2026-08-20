@@ -24,6 +24,12 @@ import { ProductAttribute } from '../api/product-attributes.api';
 
 const WHOLESALE_CUSTOMER_GROUP_ID = 3;
 
+const cleanPrice = (val: any): string => {
+    if (val === undefined || val === null || val === '') return '';
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? val.toString() : parsed.toString();
+};
+
 interface PriceTier {
     id: string; // UI ID for React key
     dbId?: number; // Database ID for existing prices
@@ -310,7 +316,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
             return isFormValid && isDiscountValid && !hasTierError && !skuExists;
         },
         updateFields: (data) => {
-            if (data.price !== undefined) setFormData(prev => ({ ...prev, price: data.price }));
+            if (data.price !== undefined) setFormData(prev => ({ ...prev, price: cleanPrice(data.price) }));
             if (data.sku !== undefined) {
                 const skuWithoutPrefix = data.sku.replace(getSkuPrefix(), '');
                 setFormData(prev => ({ ...prev, sku: skuWithoutPrefix }));
@@ -358,7 +364,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                         dbId: tier.id,
                         customer_group_id: tier.customer_group_id,
                         qty: tier.qty?.toString() || '',
-                        price: (tier.value !== undefined ? tier.value : tier.price)?.toString() || ''
+                        price: cleanPrice(tier.value !== undefined ? tier.value : tier.price)
                     }));
                 } else if (typeof tiersSource === 'object') {
                     const keys = Object.keys(tiersSource);
@@ -369,7 +375,7 @@ const PriceStockCard = forwardRef<PriceStockCardRef, PriceStockCardProps>(({ pro
                             dbId: typeof tier.id === 'number' ? tier.id : undefined,
                             customer_group_id: tier.customer_group_id,
                             qty: tier.qty?.toString() || '',
-                            price: (tier.value !== undefined ? tier.value : tier.price)?.toString() || ''
+                            price: cleanPrice(tier.value !== undefined ? tier.value : tier.price)
                         };
                     });
                 }

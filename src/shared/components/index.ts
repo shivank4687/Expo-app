@@ -10,3 +10,4 @@ export { TabGroup, type Tab } from './tabs/TabGroup';
 export { ChatMessageBubble, type ChatSenderType, ChatMessageInput, type ChatMessageInputProps } from './chatbox';
 export { TopHeader } from './TopHeader';
 export { Input } from './Input';
+export { ImageCropModal } from './ImageCropModal';

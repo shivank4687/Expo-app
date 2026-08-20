@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
@@ -7,10 +7,11 @@ import { Dropdown } from '@/features/supplier-panel/components';
 import { AttachIcon, AiIcon } from '@/assets/icons';
 import { ProductAttribute, productAttributesApi } from '../api/product-attributes.api';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { categoriesApi, Category } from '@/services/api/categories.api';
 import { useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useFormValidation } from '@/shared/hooks/useFormValidation';
-import { RichTextEditor, InputModal } from '@/shared/components';
+import { RichTextEditor, InputModal, ImageCropModal } from '@/shared/components';
 import { useToast } from '@/shared/components/Toast';
 import { useTranslation } from 'react-i18next';
 import ImageSelectionModal from './ImageSelectionModal';
@@ -94,6 +95,9 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     const [showPhotoRoomEditModal, setShowPhotoRoomEditModal] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
     const MAX_EDITS = 2;
+
+    // Image cropping queue states
+    const [cropQueue, setCropQueue] = useState<ImagePicker.ImagePickerAsset[]>([]);
 
     // Toast notifications
     const { showToast } = useToast();
@@ -406,15 +410,72 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 return;
             }
 
+            // Calculate available slots accounting for images already added + currently in the crop queue
+            const availableImageSlots = MAX_IMAGES - images.length - cropQueue.length;
+            if (availableImageSlots <= 0) {
+                showToast({
+                    message: `You have already added or queued the maximum limit of ${MAX_IMAGES} images.`,
+                    type: 'warning',
+                });
+                return;
+            }
+
+            const isAndroid = Platform.OS === 'android';
+
             // Launch image picker
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
-                allowsMultipleSelection: true,
+                allowsMultipleSelection: isAndroid, // Only allow multiple on Android to support custom crop queue
+                allowsEditing: !isAndroid, // Use native crop on iOS
+                aspect: isAndroid ? undefined : [560, 609],
                 quality: 1,
             });
 
             if (!result.canceled && result.assets) {
-                processSelectedFiles(result.assets);
+                const imagesSelected = result.assets.filter(asset => asset.type !== 'video');
+                const videos = result.assets.filter(asset => asset.type === 'video');
+
+                if (videos.length > 0) {
+                    processSelectedFiles(videos);
+                }
+
+                if (imagesSelected.length > 0) {
+                    if (isAndroid) {
+                        const validImages: ImagePicker.ImagePickerAsset[] = [];
+                        const invalidFormats: string[] = [];
+
+                        for (const asset of imagesSelected) {
+                            if (!asset.uri.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                                invalidFormats.push(asset.fileName || 'image');
+                            } else {
+                                validImages.push(asset);
+                            }
+                        }
+
+                        if (invalidFormats.length > 0) {
+                            showToast({
+                                message: `Invalid format for: ${invalidFormats.join(', ')}. Only JPG, PNG, GIF, and WebP are allowed.`,
+                                type: 'error',
+                            });
+                        }
+
+                        if (validImages.length > 0) {
+                            if (validImages.length > availableImageSlots) {
+                                showToast({
+                                    message: `Only the first ${availableImageSlots} selected image(s) will be cropped (limit of ${MAX_IMAGES} images reached).`,
+                                    type: 'warning',
+                                  });
+                                const truncatedImages = validImages.slice(0, availableImageSlots);
+                                setCropQueue(prev => [...prev, ...truncatedImages]);
+                            } else {
+                                setCropQueue(prev => [...prev, ...validImages]);
+                            }
+                        }
+                    } else {
+                        // iOS: Natively cropped, pass directly
+                        processSelectedFiles(imagesSelected);
+                    }
+                }
             }
         } catch (error) {
             console.error('Error picking files:', error);
@@ -438,15 +499,36 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 return;
             }
 
+            // Calculate available slots accounting for images already added + currently in the crop queue
+            const availableImageSlots = MAX_IMAGES - images.length - cropQueue.length;
+            if (availableImageSlots <= 0) {
+                showToast({
+                    message: `You have already added or queued the maximum limit of ${MAX_IMAGES} images.`,
+                    type: 'warning',
+                });
+                return;
+            }
+
+            const isAndroid = Platform.OS === 'android';
+
             // Launch camera
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 quality: 1,
-                allowsEditing: false,
+                allowsEditing: !isAndroid, // Use native crop on iOS
+                aspect: isAndroid ? undefined : [560, 609],
             });
 
             if (!result.canceled && result.assets) {
-                processSelectedFiles(result.assets);
+                const imagesToCrop = result.assets.filter(asset => asset.type !== 'video');
+                if (imagesToCrop.length > 0) {
+                    if (isAndroid) {
+                        setCropQueue(prev => [...prev, ...imagesToCrop]);
+                    } else {
+                        // iOS: Natively cropped, pass directly
+                        processSelectedFiles(imagesToCrop);
+                    }
+                }
             }
         } catch (error) {
             console.error('Error taking photo:', error);
@@ -1006,6 +1088,42 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 image={selectedImageIndex !== null ? images[selectedImageIndex] : null}
                 onClose={handleEditCancel}
                 onSave={handleEditSave}
+            />
+
+            <ImageCropModal
+                visible={cropQueue.length > 0}
+                imageUri={cropQueue.length > 0 ? cropQueue[0].uri : ''}
+                aspectRatio={REQUIRED_IMAGE_WIDTH / REQUIRED_IMAGE_HEIGHT}
+                targetWidth={REQUIRED_IMAGE_WIDTH}
+                targetHeight={REQUIRED_IMAGE_HEIGHT}
+                onCancel={() => {
+                    // Remove current image from queue
+                    setCropQueue(prev => prev.slice(1));
+                }}
+                onSave={async (croppedUri, width, height) => {
+                    const currentAsset = cropQueue[0];
+
+                    // Fetch actual size of the cropped file
+                    let fileSize = 0;
+                    try {
+                        const fileInfo = await FileSystem.getInfoAsync(croppedUri);
+                        if (fileInfo.exists) {
+                            fileSize = fileInfo.size;
+                        }
+                    } catch (err) {
+                        console.error('Failed to get cropped file size:', err);
+                    }
+
+                    const croppedAsset: ImagePicker.ImagePickerAsset = {
+                        ...currentAsset,
+                        uri: croppedUri,
+                        width,
+                        height,
+                        fileSize,
+                    };
+                    processSelectedFiles([croppedAsset]);
+                    setCropQueue(prev => prev.slice(1));
+                }}
             />
         </View>
     );
