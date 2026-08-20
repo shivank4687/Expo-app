@@ -30,8 +30,8 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
         user?.group?.id === 3 ||
         user?.customer_group_id === 3;
 
-    console.log('🛒 [SupplierWiseCartItems] User:', JSON.stringify(user));
-    console.log('🛒 [SupplierWiseCartItems] isWholesale:', isWholesale);
+    // console.log('🛒 [SupplierWiseCartItems] User:', JSON.stringify(user));
+    // console.log('🛒 [SupplierWiseCartItems] isWholesale:', isWholesale);
 
     const groupedItems = items.reduce((acc, item) => {
         const storeName = item.product?.supplier?.company_name || 'Other';
@@ -71,14 +71,14 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
                 const freeShippingThreshold = Number(supplierObj?.free_shipping_threshold) || 0;
                 const storeTotal = storeItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
 
-                console.log(`🛒 [SupplierWiseCartItems] Store "${storeName}":`, {
-                    supplierObj,
-                    minimumAmount,
-                    freeShippingEnable,
-                    freeShippingThreshold,
-                    storeTotal,
-                    shouldRenderCard: (minimumAmount > 0 && isWholesale) || (freeShippingEnable && freeShippingThreshold > 0)
-                });
+                // console.log(`🛒 [SupplierWiseCartItems] Store "${storeName}":`, {
+                //     supplierObj,
+                //     minimumAmount,
+                //     freeShippingEnable,
+                //     freeShippingThreshold,
+                //     storeTotal,
+                //     shouldRenderCard: (minimumAmount > 0 && isWholesale) || (freeShippingEnable && freeShippingThreshold > 0)
+                // });
 
                 return (
                     <View key={storeName} style={styles.storeGroup}>

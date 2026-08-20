@@ -106,7 +106,7 @@ export default function TrackingInfoCard({ shipments = [], isSubmitting = false,
     const handlePhotoUpload = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: true,
+            allowsEditing: false,
             aspect: [4, 3],
             quality: 1,
         });

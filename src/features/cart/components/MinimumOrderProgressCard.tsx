@@ -21,14 +21,14 @@ export const MinimumOrderProgressCard: React.FC<MinimumOrderProgressCardProps> =
     const showMinimum = minimumAmount > 0;
     const showFreeShipping = freeShippingEnable && freeShippingThreshold > 0;
 
-    console.log('🛒 [MinimumOrderProgressCard] Props:', {
-        currentAmount,
-        minimumAmount,
-        freeShippingEnable,
-        freeShippingThreshold,
-        showMinimum,
-        showFreeShipping
-    });
+    // console.log('🛒 [MinimumOrderProgressCard] Props:', {
+    //     currentAmount,
+    //     minimumAmount,
+    //     freeShippingEnable,
+    //     freeShippingThreshold,
+    //     showMinimum,
+    //     showFreeShipping
+    // });
 
     if (!showMinimum && !showFreeShipping) return null;
 

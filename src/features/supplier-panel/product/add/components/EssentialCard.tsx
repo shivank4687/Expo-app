@@ -442,7 +442,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 quality: 1,
-                allowsEditing: true,
+                allowsEditing: false,
             });
 
             if (!result.canceled && result.assets) {

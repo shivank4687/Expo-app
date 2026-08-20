@@ -140,7 +140,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
         // Launch image picker with optimized settings
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
+            allowsEditing: false,
             aspect: [1, 1],
             quality: 0.5, // Reduced quality for faster upload (0.5 = 50%)
             base64: false,

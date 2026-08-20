@@ -26,7 +26,7 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
 
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
-                allowsEditing: true,
+                allowsEditing: false,
                 aspect: [16, 9],
                 quality: 0.8,
             });

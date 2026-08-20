@@ -1,4 +1,6 @@
-const { withAndroidColors, withAndroidColorsNight, withAndroidManifest, withAndroidStyles } = require('@expo/config-plugins');
+const { withAndroidColors, withAndroidColorsNight, withAndroidManifest, withAndroidStyles, withDangerousMod } = require('@expo/config-plugins');
+const fs = require('fs');
+const path = require('path');
 
 function setColor(modResults, name, value) {
   if (!modResults.resources) {
@@ -65,7 +67,65 @@ function setStyle(modResults, styleName, parentName, items) {
   return modResults;
 }
 
+/**
+ * Writes android/app/src/main/res/values-v35/styles.xml with a CustomUCropTheme
+ * override scoped to API 35+. This is the *only* reliable way to apply
+ * android:windowOptOutEdgeToEdgeEnforcement on Android 15, because with
+ * edgeToEdgeEnabled:true the main process forces window flags at a level that
+ * the tools:targetApi attribute in values/styles.xml cannot override in time.
+ *
+ * The values-v35 qualifier wins over values/ on API 35 devices, so Android's
+ * resource resolution picks up the opt-out automatically — no manifest changes
+ * needed.
+ */
+const UCROP_VALUES_V35_STYLES = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!--
+    API-35-specific override for the crop activity theme.
+    Opting out of mandatory edge-to-edge enforcement so the toolbar and
+    bottom crop button are not drawn behind the status / navigation bars.
+  -->
+  <style name="CustomUCropTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!-- Opt out of Android 15 mandatory edge-to-edge (API 35 only) -->
+    <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    <!-- Reserve space for status bar at the top -->
+    <item name="android:fitsSystemWindows">true</item>
+    <!-- Allow drawing system bar backgrounds -->
+    <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    <!-- Match status bar to crop toolbar color -->
+    <item name="android:statusBarColor">@color/expoCropToolbarColor</item>
+    <!-- Match nav bar to crop toolbar color (prevents bottom button overlap) -->
+    <item name="android:navigationBarColor">@color/expoCropToolbarColor</item>
+    <!-- Disable translucent system bars -->
+    <item name="android:windowTranslucentStatus">false</item>
+    <item name="android:windowTranslucentNavigation">false</item>
+    <item name="android:windowFullscreen">false</item>
+  </style>
+</resources>
+`;
+
 const withImagePickerColors = (config) => {
+  // 0. Write values-v35/styles.xml for API-35-specific edge-to-edge opt-out
+  config = withDangerousMod(config, [
+    'android',
+    async (config) => {
+      const v35Dir = path.join(
+        config.modRequest.platformProjectRoot,
+        'app',
+        'src',
+        'main',
+        'res',
+        'values-v35'
+      );
+      if (!fs.existsSync(v35Dir)) {
+        fs.mkdirSync(v35Dir, { recursive: true });
+      }
+      const stylesPath = path.join(v35Dir, 'styles.xml');
+      fs.writeFileSync(stylesPath, UCROP_VALUES_V35_STYLES, 'utf8');
+      return config;
+    },
+  ]);
+
   // 1. Update Light Mode resources
   config = withAndroidColors(config, (config) => {
     config.modResults = setColor(config.modResults, 'expoCropToolbarColor', '#00615E');
