@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useToast } from '@/shared/components/Toast/ToastContext';
+import { ImageCropModal } from '@/shared/components';
+import { requestMediaLibraryPermission, pickSingleImage, getActualFileSize } from '@/shared/utils/imageUtils';
 
 interface ShopMediaCardProps {
     data: {
@@ -14,33 +15,34 @@ interface ShopMediaCardProps {
 export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) => {
     const { showToast } = useToast();
     const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+    const [cropImageUri, setCropImageUri] = useState<string | null>(null);
 
     const pickBanner = async () => {
         try {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            const hasPermission = await requestMediaLibraryPermission();
 
-            if (status !== 'granted') {
+            if (!hasPermission) {
                 Alert.alert('Permission Denied', 'Please allow access to your media library to upload images.');
                 return;
             }
 
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: 'images',
-                allowsEditing: false,
-                aspect: [16, 9],
-                quality: 0.8,
-            });
+            const isAndroid = Platform.OS === 'android';
+            const asset = await pickSingleImage([16, 9]);
 
-            if (!result.canceled && result.assets && result.assets.length > 0) {
-                const fileSize = result.assets[0].fileSize || 0;
-                if (fileSize > MAX_IMAGE_SIZE) {
-                    showToast({
-                        message: 'Image size exceeds 1.5MB limit.',
-                        type: 'warning',
-                    });
-                    return;
+            if (asset) {
+                if (isAndroid) {
+                    setCropImageUri(asset.uri);
+                } else {
+                    const fileSize = asset.fileSize || 0;
+                    if (fileSize > MAX_IMAGE_SIZE) {
+                        showToast({
+                            message: 'Image size exceeds 1.5MB limit.',
+                            type: 'warning',
+                        });
+                        return;
+                    }
+                    onChange('banner', asset.uri);
                 }
-                onChange('banner', result.assets[0].uri);
             }
         } catch (error) {
             console.error('Error picking banner:', error);
@@ -133,7 +135,27 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                     ))}
                 </View>
             </View> */}
-
+            <ImageCropModal
+                visible={cropImageUri !== null}
+                imageUri={cropImageUri || ''}
+                aspectRatio={16 / 9}
+                targetWidth={1600}
+                targetHeight={900}
+                onCancel={() => setCropImageUri(null)}
+                onSave={async (croppedUri) => {
+                    setCropImageUri(null);
+                    // Perform size check on the cropped image
+                    const size = await getActualFileSize(croppedUri);
+                    if (size > MAX_IMAGE_SIZE) {
+                        showToast({
+                            message: 'Image size exceeds 1.5MB limit.',
+                            type: 'warning',
+                        });
+                        return;
+                    }
+                    onChange('banner', croppedUri);
+                }}
+            />
         </View>
     );
 };

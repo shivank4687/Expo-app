@@ -7,7 +7,7 @@ import { Dropdown } from '@/features/supplier-panel/components';
 import { AttachIcon, AiIcon } from '@/assets/icons';
 import { ProductAttribute, productAttributesApi } from '../api/product-attributes.api';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { requestMediaLibraryPermission, requestCameraPermission, getActualFileSize } from '@/shared/utils/imageUtils';
 import { categoriesApi, Category } from '@/services/api/categories.api';
 import { useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useFormValidation } from '@/shared/hooks/useFormValidation';
@@ -98,6 +98,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
     // Image cropping queue states
     const [cropQueue, setCropQueue] = useState<ImagePicker.ImagePickerAsset[]>([]);
+    const [cropTotalCount, setCropTotalCount] = useState(0);
 
     // Toast notifications
     const { showToast } = useToast();
@@ -400,9 +401,9 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     const pickFiles = async () => {
         try {
             // Request permission
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            const hasPermission = await requestMediaLibraryPermission();
 
-            if (status !== 'granted') {
+            if (!hasPermission) {
                 showToast({
                     message: 'Please grant permission to access your media library.',
                     type: 'error',
@@ -466,8 +467,10 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                                     type: 'warning',
                                   });
                                 const truncatedImages = validImages.slice(0, availableImageSlots);
+                                setCropTotalCount(truncatedImages.length);
                                 setCropQueue(prev => [...prev, ...truncatedImages]);
                             } else {
+                                setCropTotalCount(validImages.length);
                                 setCropQueue(prev => [...prev, ...validImages]);
                             }
                         }
@@ -489,9 +492,9 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     const takePhoto = async () => {
         try {
             // Request camera permission
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            const hasPermission = await requestCameraPermission();
 
-            if (status !== 'granted') {
+            if (!hasPermission) {
                 showToast({
                     message: 'Please grant permission to access your camera.',
                     type: 'error',
@@ -523,6 +526,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 const imagesToCrop = result.assets.filter(asset => asset.type !== 'video');
                 if (imagesToCrop.length > 0) {
                     if (isAndroid) {
+                        setCropTotalCount(imagesToCrop.length);
                         setCropQueue(prev => [...prev, ...imagesToCrop]);
                     } else {
                         // iOS: Natively cropped, pass directly
@@ -1096,6 +1100,8 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                 aspectRatio={REQUIRED_IMAGE_WIDTH / REQUIRED_IMAGE_HEIGHT}
                 targetWidth={REQUIRED_IMAGE_WIDTH}
                 targetHeight={REQUIRED_IMAGE_HEIGHT}
+                currentStep={cropTotalCount - cropQueue.length + 1}
+                totalSteps={cropTotalCount}
                 onCancel={() => {
                     // Remove current image from queue
                     setCropQueue(prev => prev.slice(1));
@@ -1104,15 +1110,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
                     const currentAsset = cropQueue[0];
 
                     // Fetch actual size of the cropped file
-                    let fileSize = 0;
-                    try {
-                        const fileInfo = await FileSystem.getInfoAsync(croppedUri);
-                        if (fileInfo.exists) {
-                            fileSize = fileInfo.size;
-                        }
-                    } catch (err) {
-                        console.error('Failed to get cropped file size:', err);
-                    }
+                    const fileSize = await getActualFileSize(croppedUri);
 
                     const croppedAsset: ImagePicker.ImagePickerAsset = {
                         ...currentAsset,

@@ -15,6 +15,8 @@ import { parseValidDate } from '@/shared/utils/dateUtils';
 import { TopHeader } from '@/shared/components/TopHeader';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ImageCropModal } from '@/shared/components';
+import { requestMediaLibraryPermission, pickSingleImage, getActualFileSize } from '@/shared/utils/imageUtils';
 
 // Component for editable fields - defined outside to prevent re-creation on each render
 const EditableField: React.FC<{
@@ -98,6 +100,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [cropImageUri, setCropImageUri] = useState<string | null>(null);
 
     // Error state
     const [errors, setErrors] = useState({
@@ -129,60 +132,83 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
     }, [user]);
 
     const pickImage = async () => {
-        // Request permissions
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        try {
+            // Request permissions
+            const hasPermission = await requestMediaLibraryPermission();
 
-        if (permissionResult.granted === false) {
-            Alert.alert(t('account.permissionRequired'), t('account.cameraPermissionMessage'));
+            if (!hasPermission) {
+                Alert.alert(t('account.permissionRequired'), t('account.cameraPermissionMessage'));
+                return;
+            }
+
+            const isAndroid = Platform.OS === 'android';
+            const asset = await pickSingleImage([1, 1]);
+
+            if (asset) {
+                // Validate file type
+                const fileExtension = asset.uri.split('.').pop()?.toLowerCase();
+                const validExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp'];
+
+                if (!validExtensions.includes(fileExtension || '')) {
+                    setErrors(prev => ({
+                        ...prev,
+                        image: t('account.invalidImageFormat'),
+                    }));
+                    return;
+                }
+
+                if (isAndroid) {
+                    setCropImageUri(asset.uri);
+                } else {
+                    const fileSize = asset.fileSize || 0;
+                    if (fileSize > 5 * 1024 * 1024) { // 5MB
+                        Alert.alert(
+                            t('account.largeImage'),
+                            t('account.largeImageMessage'),
+                            [
+                                { text: t('common.cancel'), style: 'cancel' },
+                                {
+                                    text: t('account.continue'), onPress: () => {
+                                        setSelectedImage(asset.uri);
+                                        setErrors(prev => ({ ...prev, image: '' }));
+                                    }
+                                }
+                            ]
+                        );
+                        return;
+                    }
+                    setSelectedImage(asset.uri);
+                    setErrors(prev => ({ ...prev, image: '' }));
+                }
+            }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert(t('common.error'), t('account.pickImageFailed', 'Failed to pick image'));
+        }
+    };
+
+    const handleCropSave = async (croppedUri: string) => {
+        setCropImageUri(null);
+        // Verify file size of the cropped image
+        const fileSize = await getActualFileSize(croppedUri);
+        if (fileSize > 5 * 1024 * 1024) { // 5MB
+            Alert.alert(
+                t('account.largeImage'),
+                t('account.largeImageMessage'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    {
+                        text: t('account.continue'), onPress: () => {
+                            setSelectedImage(croppedUri);
+                            setErrors(prev => ({ ...prev, image: '' }));
+                        }
+                    }
+                ]
+            );
             return;
         }
-
-        // Launch image picker with optimized settings
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: false,
-            aspect: [1, 1],
-            quality: 0.5, // Reduced quality for faster upload (0.5 = 50%)
-            base64: false,
-            exif: false,
-        });
-
-        if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-
-            // Validate file type
-            const fileExtension = asset.uri.split('.').pop()?.toLowerCase();
-            const validExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp'];
-
-            if (!validExtensions.includes(fileExtension || '')) {
-                setErrors(prev => ({
-                    ...prev,
-                    image: t('account.invalidImageFormat'),
-                }));
-                return;
-            }
-
-            // Check file size (optional - warn if too large)
-            if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) { // 5MB
-                Alert.alert(
-                    t('account.largeImage'),
-                    t('account.largeImageMessage'),
-                    [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        {
-                            text: t('account.continue'), onPress: () => {
-                                setSelectedImage(asset.uri);
-                                setErrors(prev => ({ ...prev, image: '' }));
-                            }
-                        }
-                    ]
-                );
-                return;
-            }
-
-            setSelectedImage(asset.uri);
-            setErrors(prev => ({ ...prev, image: '' }));
-        }
+        setSelectedImage(croppedUri);
+        setErrors(prev => ({ ...prev, image: '' }));
     };
 
     if (isLoading) {
@@ -630,6 +656,15 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
+            <ImageCropModal
+                visible={cropImageUri !== null}
+                imageUri={cropImageUri || ''}
+                aspectRatio={1}
+                targetWidth={400}
+                targetHeight={400}
+                onCancel={() => setCropImageUri(null)}
+                onSave={handleCropSave}
+            />
         </View>
     );
 };

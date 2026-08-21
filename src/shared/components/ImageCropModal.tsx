@@ -20,6 +20,8 @@ interface ImageCropModalProps {
     aspectRatio: number; // e.g., 560 / 609
     targetWidth?: number; // e.g., 560
     targetHeight?: number; // e.g., 609
+    currentStep?: number;
+    totalSteps?: number;
     onCancel: () => void;
     onSave: (croppedUri: string, width: number, height: number) => void;
 }
@@ -34,6 +36,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     aspectRatio,
     targetWidth = 560,
     targetHeight = 609,
+    currentStep,
+    totalSteps,
     onCancel,
     onSave,
 }) => {
@@ -278,9 +282,14 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                     {/* Header */}
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>Crop Image</Text>
-                        <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
-                            <Ionicons name="close" size={24} color="#000000" />
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                            {currentStep !== undefined && totalSteps !== undefined && totalSteps > 1 && (
+                                <Text style={styles.stepText}>{currentStep}/{totalSteps}</Text>
+                            )}
+                            <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
+                                <Ionicons name="close" size={24} color="#000000" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {/* Workspace */}
@@ -413,6 +422,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         color: '#000000',
+    },
+    stepText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#666666',
     },
     closeButton: {
         padding: 4,
