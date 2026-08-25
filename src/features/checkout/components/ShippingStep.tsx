@@ -3,7 +3,7 @@
  * Checkout shipping method selection step
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -63,34 +63,19 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
         // Use the Consolidated (Maximum) Strategy approved by the user
         return Math.max(0, ...itemsProductionDays);
     };
-    // Expand all carriers by default
-    const [expandedCarriers, setExpandedCarriers] = useState<Set<string>>(
-        new Set(shippingMethods ? Object.keys(shippingMethods) : [])
-    );
-
-    if (!shippingMethods || Object.keys(shippingMethods).length === 0) {
-        return (
-            <View style={styles.container}>
-                <Card style={styles.messageCard}>
-                    <Text style={styles.messageText}>
-                        {t('checkout.noShippingMethods', 'No shipping methods available')}
-                    </Text>
-                </Card>
-            </View>
-        );
-    }
-
-    const toggleCarrier = (carrier: string) => {
-        setExpandedCarriers((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(carrier)) {
-                newSet.delete(carrier);
-            } else {
-                newSet.add(carrier);
-            }
-            return newSet;
+    const allRates = useMemo(() => {
+        return Object.entries(shippingMethods).flatMap(([carrierCode, carrier]) => {
+            return (carrier.rates || []).map(rate => ({
+                ...rate,
+                carrierCode,
+                carrierTitle: carrier.carrier_title,
+            }));
         });
-    };
+    }, [shippingMethods]);
+
+    const carrierTitle = Object.values(shippingMethods)[0]?.carrier_title || t('checkout.shippingMethod', 'Shipping Method');
+
+    const [isExpanded, setIsExpanded] = useState(true);
 
     return (
         <View style={styles.container}>
@@ -100,161 +85,161 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.sectionTitle}>
-                    {t('checkout.selectShippingMethod', 'Select Shipping Method')}
-                </Text>
-
+                {/* Single early return fallback if shippingMethods is empty (placed here to keep react hooks ordered) */}
+                {(!shippingMethods || Object.keys(shippingMethods).length === 0) && (
+                    <Card style={styles.messageCard}>
+                        <Text style={styles.messageText}>
+                            {t('checkout.noShippingMethods', 'No shipping methods available')}
+                        </Text>
+                    </Card>
+                )}
                 {/* Shipping Method Carriers */}
-                {Object.entries(shippingMethods).map(([carrierCode, carrier]) => {
-                    const isExpanded = expandedCarriers.has(carrierCode);
-
-                    return (
-                        <Card key={carrierCode} style={styles.carrierCard}>
-                            {/* Carrier Header */}
-                            <TouchableOpacity
-                                style={styles.carrierHeader}
-                                onPress={() => toggleCarrier(carrierCode)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.carrierTitleContainer}>
-                                    <Ionicons
-                                        name="cube-outline"
-                                        size={20}
-                                        color={theme.colors.primary[500]}
-                                    />
-                                    <Text style={styles.carrierTitle}>
-                                        {carrier.carrier_title}
-                                    </Text>
-                                </View>
+                {allRates.length > 0 && (
+                    <Card style={styles.carrierCard}>
+                        {/* Carrier Header */}
+                        <TouchableOpacity
+                            style={styles.carrierHeader}
+                            onPress={() => setIsExpanded(!isExpanded)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.carrierTitleContainer}>
                                 <Ionicons
-                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                    size={24}
-                                    color={theme.colors.text.secondary}
+                                    name="cube-outline"
+                                    size={20}
+                                    color={theme.colors.primary[500]}
                                 />
-                            </TouchableOpacity>
+                                <Text style={styles.carrierTitle}>
+                                    {t('checkout.selectShippingMethod', 'Select Shipping Method')}
+                                </Text>
+                            </View>
+                            <Ionicons
+                                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                size={24}
+                                color={theme.colors.text.secondary}
+                            />
+                        </TouchableOpacity>
 
-                            {/* Carrier Rates */}
-                            {isExpanded && (
-                                <View style={styles.ratesContainer}>
-                                    {carrier.rates.map((rate) => {
-                                        const methodKey = `${carrierCode}_${rate.method}`;
-                                        const isSelected = selectedMethod === methodKey;
-                                        const isUnavailable = rate.supplier_breakdown?.some(
-                                            (b) => b.unavailable === true
-                                        ) ?? false;
+                        {/* Carrier Rates */}
+                        {isExpanded && (
+                            <View style={styles.ratesContainer}>
+                                {allRates.map((rate) => {
+                                    const methodKey = `${rate.carrierCode}_${rate.method}`;
+                                    const isSelected = selectedMethod === methodKey;
+                                    const isUnavailable = rate.supplier_breakdown?.some(
+                                        (b) => b.unavailable === true
+                                    ) ?? false;
 
-                                        return (
-                                            <TouchableOpacity
-                                                key={rate.method}
+                                    return (
+                                        <TouchableOpacity
+                                            key={rate.method}
+                                            style={[
+                                                styles.rateItem,
+                                                isSelected && styles.rateItemSelected,
+                                                isUnavailable && styles.rateItemDisabled,
+                                            ]}
+                                            onPress={() => !isUnavailable && onMethodSelect(methodKey)}
+                                            activeOpacity={isUnavailable ? 1 : 0.7}
+                                            disabled={isUnavailable}
+                                        >
+                                            {/* Radio Button */}
+                                            <View
                                                 style={[
-                                                    styles.rateItem,
-                                                    isSelected && styles.rateItemSelected,
-                                                    isUnavailable && styles.rateItemDisabled,
+                                                    styles.radio,
+                                                    isSelected && styles.radioSelected,
+                                                    isUnavailable && styles.radioDisabled,
                                                 ]}
-                                                onPress={() => !isUnavailable && onMethodSelect(methodKey)}
-                                                activeOpacity={isUnavailable ? 1 : 0.7}
-                                                disabled={isUnavailable}
                                             >
-                                                {/* Radio Button */}
-                                                <View
-                                                    style={[
-                                                        styles.radio,
-                                                        isSelected && styles.radioSelected,
-                                                        isUnavailable && styles.radioDisabled,
-                                                    ]}
-                                                >
-                                                    {isSelected && (
-                                                        <View style={styles.radioInner} />
-                                                    )}
+                                                {isSelected && (
+                                                    <View style={styles.radioInner} />
+                                                )}
+                                            </View>
+
+                                            {/* Method Details */}
+                                            <View style={styles.rateDetails}>
+                                                {/* Title and Price Row */}
+                                                <View style={styles.rateTitleRow}>
+                                                    <Text style={[
+                                                        styles.rateTitle,
+                                                        isUnavailable && styles.rateTitleDisabled,
+                                                    ]}>
+                                                        {rate.method_title}
+                                                    </Text>
+                                                    <Text style={[
+                                                        styles.ratePrice,
+                                                        isUnavailable && styles.ratePriceDisabled,
+                                                    ]}>
+                                                        {rate.formatted_price || rate.base_formatted_price}
+                                                    </Text>
                                                 </View>
 
-                                                {/* Method Details */}
-                                                <View style={styles.rateDetails}>
-                                                    {/* Title and Price Row */}
-                                                    <View style={styles.rateTitleRow}>
-                                                        <Text style={[
-                                                            styles.rateTitle,
-                                                            isUnavailable && styles.rateTitleDisabled,
-                                                        ]}>
-                                                            {rate.method_title}
-                                                        </Text>
-                                                        <Text style={[
-                                                            styles.ratePrice,
-                                                            isUnavailable && styles.ratePriceDisabled,
-                                                        ]}>
-                                                            {rate.formatted_price || rate.base_formatted_price}
+                                                {/* Description */}
+                                                {rate.method_description && (
+                                                    <Text style={styles.rateDescription}>
+                                                        {rate.method_description}
+                                                    </Text>
+                                                )}
+
+                                                {/* Unavailability Warning Badge */}
+                                                {isUnavailable && (
+                                                    <View style={styles.unavailableBadge}>
+                                                        <Ionicons name="warning-outline" size={12} color="#DC2626" />
+                                                        <Text style={styles.unavailableText}>
+                                                            Shipping unavailable for some suppliers
                                                         </Text>
                                                     </View>
+                                                )}
 
-                                                    {/* Description */}
-                                                    {rate.method_description && (
-                                                        <Text style={styles.rateDescription}>
-                                                            {rate.method_description}
+                                                {/* Store-wise Shipping Breakdown */}
+                                                {rate.supplier_breakdown && rate.supplier_breakdown.length > 0 && (
+                                                    <View style={styles.breakdownContainer}>
+                                                        <Text style={styles.breakdownTitle}>
+                                                            {t('checkout.storewiseShipping', 'Storewise Shipping:')}
                                                         </Text>
-                                                    )}
-
-                                                    {/* Unavailability Warning Badge */}
-                                                    {isUnavailable && (
-                                                        <View style={styles.unavailableBadge}>
-                                                            <Ionicons name="warning-outline" size={12} color="#DC2626" />
-                                                            <Text style={styles.unavailableText}>
-                                                                Shipping unavailable for some suppliers
-                                                            </Text>
-                                                        </View>
-                                                    )}
-
-                                                    {/* Store-wise Shipping Breakdown */}
-                                                    {rate.supplier_breakdown && rate.supplier_breakdown.length > 0 && (
-                                                        <View style={styles.breakdownContainer}>
-                                                            <Text style={styles.breakdownTitle}>
-                                                                {t('checkout.storewiseShipping', 'Storewise Shipping:')}
-                                                            </Text>
-                                                            {rate.supplier_breakdown.map((breakdown, idx) => (
-                                                                breakdown.unavailable ? (
-                                                                    <View key={idx} style={styles.breakdownItemUnavailable}>
-                                                                        <Ionicons name="warning-outline" size={11} color="#DC2626" />
-                                                                        <Text style={styles.breakdownUnavailableText}>
-                                                                            Shipping not available from {breakdown.store_name}
+                                                        {rate.supplier_breakdown.map((breakdown, idx) => (
+                                                            breakdown.unavailable ? (
+                                                                <View key={idx} style={styles.breakdownItemUnavailable}>
+                                                                    <Ionicons name="warning-outline" size={11} color="#DC2626" />
+                                                                    <Text style={styles.breakdownUnavailableText}>
+                                                                        Shipping not available from {breakdown.store_name}
+                                                                    </Text>
+                                                                </View>
+                                                            ) : (
+                                                                <View key={idx} style={styles.breakdownItem}>
+                                                                    <View style={styles.breakdownInfo}>
+                                                                        <Text style={styles.breakdownStoreName}>
+                                                                            {breakdown.store_name}
                                                                         </Text>
-                                                                    </View>
-                                                                ) : (
-                                                                    <View key={idx} style={styles.breakdownItem}>
-                                                                        <View style={styles.breakdownInfo}>
-                                                                            <Text style={styles.breakdownStoreName}>
-                                                                                {breakdown.store_name}
+                                                                        {breakdown.days && (
+                                                                            <Text style={styles.breakdownDays}>
+                                                                                {t('checkout.estDelivery', 'Est. Delivery')}: {
+                                                                                    (() => {
+                                                                                        const additionalDays = getAdditionalDaysForSupplier(breakdown.store_name);
+                                                                                        const baseDays = typeof breakdown.days === 'string'
+                                                                                            ? parseInt(breakdown.days, 10)
+                                                                                            : breakdown.days;
+                                                                                        const totalDays = isNaN(baseDays) ? additionalDays : baseDays + additionalDays;
+                                                                                        return formatters.getEstimatedDeliveryDate(totalDays);
+                                                                                    })()
+                                                                                }
                                                                             </Text>
-                                                                            {breakdown.days && (
-                                                                                <Text style={styles.breakdownDays}>
-                                                                                    {t('checkout.estDelivery', 'Est. Delivery')}: {
-                                                                                        (() => {
-                                                                                            const additionalDays = getAdditionalDaysForSupplier(breakdown.store_name);
-                                                                                            const baseDays = typeof breakdown.days === 'string'
-                                                                                                ? parseInt(breakdown.days, 10)
-                                                                                                : breakdown.days;
-                                                                                            const totalDays = isNaN(baseDays) ? additionalDays : baseDays + additionalDays;
-                                                                                            return formatters.getEstimatedDeliveryDate(totalDays);
-                                                                                        })()
-                                                                                    }
-                                                                                </Text>
-                                                                            )}
-                                                                        </View>
-                                                                        <Text style={styles.breakdownPrice}>
-                                                                            {breakdown.formatted_price}
-                                                                        </Text>
+                                                                        )}
                                                                     </View>
-                                                                )
-                                                            ))}
-                                                        </View>
-                                                    )}
-                                                </View>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </View>
-                            )}
-                        </Card>
-                    );
-                })}
+                                                                    <Text style={styles.breakdownPrice}>
+                                                                        {breakdown.formatted_price}
+                                                                    </Text>
+                                                                </View>
+                                                            )
+                                                        ))}
+                                                    </View>
+                                                )}
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </Card>
+                )}
             </ScrollView>
 
         </View>

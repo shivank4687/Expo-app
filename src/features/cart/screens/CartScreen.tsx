@@ -13,14 +13,18 @@ import {
     fetchCartThunk,
     removeCouponThunk,
     removeSelectedFromCartThunk,
-    moveSelectedToWishlistThunk
+    moveSelectedToWishlistThunk,
+    setCheckoutShippingData
 } from '@/store/slices/cartSlice';
+import { checkoutApi } from '@/services/api/checkout.api';
+import { fetchAddressesThunk } from '@/store/slices/addressSlice';
 import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { CartAddressBar } from '../components/CartAddressBar';
 import {
     ActivityIndicator,
     Alert,
@@ -44,8 +48,9 @@ export const CartScreen: React.FC = () => {
     const router = useRouter();
     const { showToast } = useToast();
     const { t } = useTranslation();
-    const { cart, isLoading, needsRefresh } = useAppSelector((state) => state.cart);
+    const { cart, isLoading, needsRefresh, selectedCartBillingAddress, selectedCartShippingAddress } = useAppSelector((state) => state.cart);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { addresses } = useAppSelector((state) => state.address);
     const [couponCode, setCouponCode] = useState('');
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [isRemovingCoupon, setIsRemovingCoupon] = useState(false);
@@ -57,7 +62,69 @@ export const CartScreen: React.FC = () => {
     const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
     const [isMovingToWishlist, setIsMovingToWishlist] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
+    const [unavailableSuppliers, setUnavailableSuppliers] = useState<string[]>([]);
+    const [isCheckingShipping, setIsCheckingShipping] = useState(false);
     const insets = useSafeAreaInsets();
+
+    const activeAddress = useMemo(() => {
+        const getFlatString = (val: any): string => {
+            if (typeof val === 'string') return val;
+            if (Array.isArray(val)) return getFlatString(val[0]);
+            return '';
+        };
+
+        if (selectedCartBillingAddress) {
+            return selectedCartBillingAddress;
+        }
+
+        const rawAddr = cart?.shipping_address || cart?.billing_address;
+        // console.log('[CartScreen] activeAddress check - rawAddr:', JSON.stringify(rawAddr));
+        if (rawAddr) {
+            const rawAddress = (rawAddr as any).address || rawAddr.address1 || '';
+            const addressLines = Array.isArray(rawAddress)
+                ? rawAddress
+                : (rawAddress ? String(rawAddress).split('\n') : []);
+
+            const address1 = getFlatString(addressLines[0]);
+
+            if (address1 && address1.trim() !== '') {
+                return {
+                    first_name: rawAddr.first_name,
+                    last_name: rawAddr.last_name,
+                    email: rawAddr.email || '',
+                    address1: address1,
+                    address2: getFlatString(addressLines[1] || rawAddr.address2),
+                    city: rawAddr.city,
+                    state: rawAddr.state,
+                    country: rawAddr.country,
+                    postcode: rawAddr.postcode,
+                    phone: rawAddr.phone,
+                };
+            }
+        }
+
+        if (isAuthenticated && addresses && addresses.length > 0) {
+            const defaultAddr = addresses.find((addr: any) => addr.is_default || addr.default_address);
+            if (defaultAddr) {
+                const addressLines = Array.isArray(defaultAddr.address)
+                    ? defaultAddr.address
+                    : (defaultAddr.address ? String(defaultAddr.address).split('\n') : []);
+                return {
+                    first_name: defaultAddr.first_name,
+                    last_name: defaultAddr.last_name,
+                    email: defaultAddr.email || '',
+                    address1: getFlatString(addressLines[0]),
+                    address2: getFlatString(addressLines[1] || defaultAddr.address2),
+                    city: defaultAddr.city,
+                    state: defaultAddr.state,
+                    country: defaultAddr.country,
+                    postcode: defaultAddr.postcode,
+                    phone: defaultAddr.phone,
+                };
+            }
+        }
+        return null;
+    }, [cart?.shipping_address, cart?.billing_address, addresses, isAuthenticated, selectedCartBillingAddress, selectedCartShippingAddress]);
 
     // Use refs to avoid stale closures in useFocusEffect without triggering re-runs on cart updates
     const needsRefreshRef = useRef(needsRefresh);
@@ -89,7 +156,10 @@ export const CartScreen: React.FC = () => {
             if (needsRefreshRef.current || !cartRef.current) {
                 dispatch(fetchCartThunk());
             }
-        }, [dispatch])
+            if (isAuthenticated) {
+                dispatch(fetchAddressesThunk());
+            }
+        }, [dispatch, isAuthenticated])
     );
 
     const onRefresh = async () => {
@@ -133,13 +203,95 @@ export const CartScreen: React.FC = () => {
         }
     };
 
-    const handleProceedToCheckout = () => {
+    const handleProceedToCheckout = async () => {
         if (!isAuthenticated) {
             // Show login/signup modal for guest users
             setShowAuthModal(true);
-        } else {
-            // Navigate to checkout screen
-            router.push('/checkout');
+            return;
+        }
+
+        if (!activeAddress) {
+            showToast({
+                message: t('checkout.selectAddressPrompt', 'Please select a delivery address first'),
+                type: 'error'
+            });
+            return;
+        }
+
+        setIsCheckingShipping(true);
+        try {
+            const getFlatString = (val: any): string => {
+                if (typeof val === 'string') return val;
+                if (Array.isArray(val)) return getFlatString(val[0]);
+                return '';
+            };
+
+            const transformAddress = (addr: any) => {
+                const { id, address1, address2, ...rest } = addr;
+                return {
+                    ...rest,
+                    address: [address1, address2].filter(Boolean),
+                };
+            };
+
+            const payload = {
+                billing: {
+                    ...transformAddress(activeAddress),
+                    use_for_shipping: true,
+                },
+            };
+
+            // console.log('[CartScreen] Validating shipping availability on checkout click...');
+            const response = await checkoutApi.saveAddress(payload);
+
+            const allSuppliers = Array.from(
+                new Set(cart?.items?.map(item => item.product?.supplier?.company_name).filter(Boolean))
+            ) as string[];
+
+            let unavailable: string[] = [];
+
+            if (!response.rates || response.rates.length === 0) {
+                unavailable = allSuppliers;
+            } else {
+                unavailable = allSuppliers.filter(supplierName => {
+                    return response.rates.every((carrier: any) => {
+                        const carrierRates = carrier.rates || [];
+                        if (carrierRates.length === 0) return true;
+
+                        return carrierRates.every((rate: any) => {
+                            const match = rate.supplier_breakdown?.find(
+                                (b: any) => (b.store_name || b.company_name)?.trim().toLowerCase() === supplierName.trim().toLowerCase()
+                            );
+                            return !match || match.unavailable === true;
+                        });
+                    });
+                });
+            }
+
+            setUnavailableSuppliers(unavailable);
+
+            if (unavailable.length > 0) {
+                showToast({
+                    message: t('cart.shippingUnavailableWarning', 'Some items in your cart cannot be shipped to your location.'),
+                    type: 'error',
+                    duration: 4000
+                });
+            } else {
+                // All suppliers have shipping available! Save to Redux and proceed
+                dispatch(setCheckoutShippingData({
+                    shippingMethods: response.rates,
+                    address: activeAddress
+                }));
+                router.push('/checkout');
+            }
+        } catch (error: any) {
+            console.error('[CartScreen] Checkout shipping validation error:', error);
+            showToast({
+                message: error.message || t('checkout.addressSaveFailed'),
+                type: 'error'
+            });
+        } finally {
+            setIsCheckingShipping(false);
         }
     };
 
@@ -281,6 +433,14 @@ export const CartScreen: React.FC = () => {
         cart.formatted_grand_total || formatters.formatPrice(cart.grand_total || cart.base_grand_total || 0);
     return (
         <View style={styles.container}>
+            {/* Cart Address Bar */}
+            <CartAddressBar
+                address={activeAddress}
+                onPressChange={() => router.push('/cart-address')}
+                onPressAdd={() => router.push('/cart-address')}
+                isAuthenticated={isAuthenticated}
+            />
+
             {/* Sticky Items Header Container */}
             <View style={styles.itemsHeaderContainerSticky}>
                 <View style={styles.titleWithCheckbox}>
@@ -340,6 +500,8 @@ export const CartScreen: React.FC = () => {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
             >
+
+
                 {/* Cart Items */}
                 <View style={styles.itemsSection}>
 
@@ -348,6 +510,7 @@ export const CartScreen: React.FC = () => {
                         onMinimumOrderStatus={setAllMinimumsMet}
                         selectedItemIds={selectedItemIds}
                         onToggleSelection={handleToggleSelection}
+                        unavailableSuppliers={unavailableSuppliers}
                     />
                 </View>
 
@@ -508,8 +671,8 @@ export const CartScreen: React.FC = () => {
                 onClose={() => setShowAuthModal(false)}
             />
 
-            {/* Faded background overlay when loading subsequent updates */}
-            {isLoading && cart && (
+            {/* Faded background overlay when loading subsequent updates or verifying shipping */}
+            {(isLoading || isCheckingShipping) && cart && (
                 <View style={styles.loadingOverlay}>
                     <ActivityIndicator size="large" color={theme.colors.primary[500]} />
                 </View>

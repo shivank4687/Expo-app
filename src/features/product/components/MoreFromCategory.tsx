@@ -25,7 +25,7 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
 
     useEffect(() => {
         const fetchRelated = async () => {
-            console.log('🔍 MoreFromCategory: categoryId resolved as', categoryId, 'Product categories:', product.categories);
+            // console.log('🔍 MoreFromCategory: categoryId resolved as', categoryId, 'Product categories:', product.categories);
 
             try {
                 // Fetch up to 5 so we can filter out the current product and still have 4
@@ -36,7 +36,7 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
                     : await productsApi.getProducts(options);
 
                 const filtered = response.data.filter(p => p.id !== product.id).slice(0, 4);
-                console.log(`📦 Loaded ${filtered.length} related products`);
+                // console.log(`📦 Loaded ${filtered.length} related products`);
                 setRelatedProducts(filtered);
             } catch (error) {
                 console.error('Failed to load related products:', error);

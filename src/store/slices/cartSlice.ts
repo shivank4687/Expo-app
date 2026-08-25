@@ -23,6 +23,11 @@ interface CartState {
     isMovingToWishlist: boolean;
     movingToWishlistItemId: number | null;
     needsRefresh: boolean;
+    selectedCartBillingAddress: any | null;
+    selectedCartShippingAddress: any | null;
+    selectedCartSameAsBilling: boolean;
+    checkoutShippingMethods: any | null;
+    checkoutAddress: any | null;
 }
 
 const initialState: CartState = {
@@ -36,6 +41,11 @@ const initialState: CartState = {
     isMovingToWishlist: false,
     movingToWishlistItemId: null,
     needsRefresh: false,
+    selectedCartBillingAddress: null,
+    selectedCartShippingAddress: null,
+    selectedCartSameAsBilling: true,
+    checkoutShippingMethods: null,
+    checkoutAddress: null,
 };
 
 /**
@@ -231,6 +241,20 @@ const cartSlice = createSlice({
             state.error = null;
             state.lastAddedProductId = null;
             state.needsRefresh = false;
+            state.selectedCartBillingAddress = null;
+            state.selectedCartShippingAddress = null;
+            state.selectedCartSameAsBilling = true;
+            state.checkoutShippingMethods = null;
+            state.checkoutAddress = null;
+        },
+        setSelectedCartAddresses: (state, action: PayloadAction<{ billingAddress: any | null, shippingAddress: any | null, sameAsBilling: boolean }>) => {
+            state.selectedCartBillingAddress = action.payload.billingAddress;
+            state.selectedCartShippingAddress = action.payload.shippingAddress;
+            state.selectedCartSameAsBilling = action.payload.sameAsBilling;
+        },
+        setCheckoutShippingData: (state, action: PayloadAction<{ shippingMethods: any | null, address: any | null }>) => {
+            state.checkoutShippingMethods = action.payload.shippingMethods;
+            state.checkoutAddress = action.payload.address;
         },
     },
     extraReducers: (builder) => {
@@ -406,6 +430,11 @@ const cartSlice = createSlice({
             state.error = null;
             state.lastAddedProductId = null;
             state.needsRefresh = false;
+            state.selectedCartBillingAddress = null;
+            state.selectedCartShippingAddress = null;
+            state.selectedCartSameAsBilling = true;
+            state.checkoutShippingMethods = null;
+            state.checkoutAddress = null;
 
             // Clear and regenerate guest cart token for next guest session
             try {
@@ -418,6 +447,6 @@ const cartSlice = createSlice({
     },
 });
 
-export const { clearCartError, clearLastAddedProduct, resetCart } = cartSlice.actions;
+export const { clearCartError, clearLastAddedProduct, resetCart, setSelectedCartAddresses, setCheckoutShippingData } = cartSlice.actions;
 export default cartSlice.reducer;
 

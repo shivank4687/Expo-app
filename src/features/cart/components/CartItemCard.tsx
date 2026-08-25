@@ -44,8 +44,8 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
 
     const productInfo = item.child?.product || item.product;
 
-    const imageUrl = productInfo?.thumbnail || 
-                     (productInfo?.images && productInfo.images[0]?.url);
+    const imageUrl = productInfo?.thumbnail ||
+        (productInfo?.images && productInfo.images[0]?.url);
     const subtotal = item.price * item.quantity;
 
     const handleProductPress = () => {
@@ -152,7 +152,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                 {isRemovingThis ? (
                     <ActivityIndicator size="small" color={theme.colors.error.main} />
                 ) : (
-                    <Ionicons name="close" size={16} color={theme.colors.error.main} />
+                    <Ionicons name="close" size={12} color={theme.colors.error.main} />
                 )}
             </TouchableOpacity>
 
@@ -207,12 +207,12 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                                         {item.name}
                                     </Text>
                                     {(() => {
-                                        const attributes = item.additional?.attributes 
-                                            ? (Array.isArray(item.additional.attributes) 
-                                                ? item.additional.attributes 
-                                                : Object.values(item.additional.attributes)) 
+                                        const attributes = item.additional?.attributes
+                                            ? (Array.isArray(item.additional.attributes)
+                                                ? item.additional.attributes
+                                                : Object.values(item.additional.attributes))
                                             : [];
-                                        
+
                                         if (attributes.length === 0) return null;
 
                                         return (
@@ -232,7 +232,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
                                     {formatters.formatPrice(item.price, currencySymbol)}
                                 </Text>
                             </View>
-                            
+
                             {/* Warning / Availability Indicators */}
                             {(() => {
                                 const isMadeToOrder = productInfo.made_to_order;
@@ -317,7 +317,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
 
                         {/* Quantity Controls + Subtotal */}
                         <View style={styles.qtyAndSubtotal}>
-                             <QuantitySelector
+                            <QuantitySelector
                                 quantity={item.quantity}
                                 onChangeQuantity={handleQuantityChange}
                                 isLoading={isUpdating}
@@ -343,19 +343,18 @@ const styles = StyleSheet.create({
     card: {
         marginBottom: theme.spacing.md,
         padding: 0,
-        overflow: 'hidden',
         backgroundColor: theme.colors.background.default,
         borderWidth: 1,
         borderColor: theme.colors.border.card_light,
     },
     deleteButton: {
         position: 'absolute',
-        top: 6,
-        left: 4,
+        top: -6,
+        right: -4,
         zIndex: 20,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
         backgroundColor: '#FEF2F2',
         borderWidth: 1,
         borderColor: '#FCA5A5',

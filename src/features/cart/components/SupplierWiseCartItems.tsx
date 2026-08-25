@@ -13,13 +13,15 @@ interface SupplierWiseCartItemsProps {
     onMinimumOrderStatus?: (allMet: boolean) => void;
     selectedItemIds: number[];
     onToggleSelection: (id: number) => void;
+    unavailableSuppliers?: string[];
 }
 
 export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
     items,
     onMinimumOrderStatus,
     selectedItemIds,
-    onToggleSelection
+    onToggleSelection,
+    unavailableSuppliers
 }) => {
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const { user } = useAppSelector((state) => state.auth);
@@ -80,8 +82,10 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
                 //     shouldRenderCard: (minimumAmount > 0 && isWholesale) || (freeShippingEnable && freeShippingThreshold > 0)
                 // });
 
+                const isUnavailable = unavailableSuppliers?.includes(storeName);
+
                 return (
-                    <View key={storeName} style={styles.storeGroup}>
+                    <View key={storeName} style={[styles.storeGroup, isUnavailable && styles.storeGroupError]}>
                         <View style={styles.storeHeader}>
                             <View style={styles.storeTitleContainer}>
                                 <Text style={styles.storeTitle}>
@@ -115,6 +119,15 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
                                 freeShippingThreshold={freeShippingThreshold}
                                 currencySymbol={currencySymbol}
                             />
+                        )}
+
+                        {isUnavailable && (
+                            <View style={styles.shippingErrorContainer}>
+                                <Ionicons name="alert-circle" size={18} color={theme.colors.error.main} style={{ marginRight: 6 }} />
+                                <Text style={styles.shippingErrorText}>
+                                    Shipping is not available for this supplier to your address.
+                                </Text>
+                            </View>
                         )}
                     </View>
                 );
@@ -190,5 +203,24 @@ const styles = StyleSheet.create({
         height: 6,
         borderRadius: 3,
         backgroundColor: '#F59E0B', // amber-500
+    },
+    storeGroupError: {
+        borderColor: theme.colors.error.main,
+        borderWidth: 1.5,
+        backgroundColor: '#FEF2F2',
+    },
+    shippingErrorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEE2E2',
+        borderRadius: theme.borderRadius.sm,
+        padding: theme.spacing.sm,
+        marginTop: theme.spacing.sm,
+    },
+    shippingErrorText: {
+        flex: 1,
+        color: theme.colors.error.main,
+        fontSize: 13,
+        fontWeight: '500',
     },
 });

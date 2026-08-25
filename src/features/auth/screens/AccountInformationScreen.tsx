@@ -102,7 +102,6 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
     const [confirmPassword, setConfirmPassword] = useState('');
     const [cropImageUri, setCropImageUri] = useState<string | null>(null);
 
-    // Error state
     const [errors, setErrors] = useState({
         firstName: '',
         lastName: '',
@@ -113,6 +112,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
+        dateOfBirth: '',
     });
 
     // Initialize form with user data
@@ -211,7 +211,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
         setErrors(prev => ({ ...prev, image: '' }));
     };
 
-    if (isLoading) {
+    if (isLoading && !user) {
         return (
             <View style={styles.container}>
                 <Stack.Screen options={{ headerShown: false }} />
@@ -238,6 +238,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
             currentPassword: '',
             newPassword: '',
             confirmPassword: '',
+            dateOfBirth: '',
         };
 
         let isValid = true;
@@ -288,6 +289,19 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                 isValid = false;
             } else if (newPassword !== confirmPassword) {
                 newErrors.confirmPassword = t('account.passwordMismatch', 'Passwords do not match');
+                isValid = false;
+            }
+        }
+
+        if (dateOfBirth) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const dob = new Date(dateOfBirth);
+            dob.setHours(0, 0, 0, 0);
+
+            if (dob >= today) {
+                newErrors.dateOfBirth = t('account.dobCannotBeTodayOrFuture', 'Date of birth must be in the past');
                 isValid = false;
             }
         }
@@ -399,6 +413,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                 image: errorMessage.includes('image') ? errorMessage : prev.image,
                 currentPassword: errorMessage.includes('password') && errorMessage.includes('current') ? errorMessage : prev.currentPassword,
                 newPassword: errorMessage.includes('password') && errorMessage.includes('new') ? errorMessage : prev.newPassword,
+                dateOfBirth: (errorMessage.includes('birth') || errorMessage.includes('dob') || errorMessage.includes('date')) ? errorMessage : prev.dateOfBirth,
             }));
         } finally {
             setIsSaving(false);
@@ -536,9 +551,13 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                         <DatePickerInput
                             label={t('account.dateOfBirth')}
                             value={dateOfBirth}
-                            onChange={setDateOfBirth}
+                            onChange={(date) => {
+                                setDateOfBirth(date);
+                                setErrors(prev => ({ ...prev, dateOfBirth: '' }));
+                            }}
                             placeholder={t('account.selectDateOfBirth')}
                             maximumDate={new Date()}
+                            error={errors.dateOfBirth}
                         />
 
 
@@ -665,6 +684,11 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                 onCancel={() => setCropImageUri(null)}
                 onSave={handleCropSave}
             />
+            {(isSaving || isUpdating) && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                </View>
+            )}
         </View>
     );
 };
@@ -711,6 +735,7 @@ const styles = StyleSheet.create<{
     saveButton: ViewStyle;
     saveButtonDisabled: ViewStyle;
     saveButtonText: TextStyle;
+    loadingOverlay: ViewStyle;
 }>({
     container: {
         flex: 1,
@@ -968,5 +993,12 @@ const styles = StyleSheet.create<{
         color: theme.colors.white,
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.bold,
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
     },
 });

@@ -10,7 +10,7 @@ import { Button } from '@/shared/components/Button';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useToast } from '@/shared/components/Toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchCartThunk } from '@/store/slices/cartSlice';
+import { fetchCartThunk, setCheckoutShippingData } from '@/store/slices/cartSlice';
 import { theme } from '@/theme';
 import { formatters } from '@/shared/utils/formatters';
 import { useRouter } from 'expo-router';
@@ -55,23 +55,49 @@ export const CheckoutScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
-    const { cart, isLoading } = useAppSelector((state) => state.cart);
+    const { cart, isLoading, selectedCartBillingAddress, selectedCartShippingAddress, selectedCartSameAsBilling, checkoutShippingMethods, checkoutAddress } = useAppSelector((state) => state.cart);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const insets = useSafeAreaInsets();
 
-    const [currentStep, setCurrentStep] = useState<CheckoutStep>('address');
-    const [completedSteps, setCompletedSteps] = useState<CheckoutStep[]>([]);
+    const hasPreverifiedData = Boolean(checkoutAddress && checkoutShippingMethods && checkoutShippingMethods.length > 0);
+
+    const transformPreverifiedAddress = (addr: any) => {
+        if (!addr) return null;
+        return addr as CheckoutAddress;
+    };
+
+    const transformPreverifiedRates = (rates: any) => {
+        if (!rates) return null;
+        const methods: Record<string, any> = {};
+        rates.forEach((carrierData: any, index: number) => {
+            const carrierKey = `carrier_${index}`;
+            methods[carrierKey] = {
+                carrier_title: carrierData.carrier_title,
+                rates: carrierData.rates || []
+            };
+        });
+        return methods;
+    };
+
+    const [currentStep, setCurrentStep] = useState<CheckoutStep>(hasPreverifiedData ? 'shipping' : 'address');
+    const [completedSteps, setCompletedSteps] = useState<CheckoutStep[]>(hasPreverifiedData ? ['address'] : []);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isDefaultAddressLoading, setIsDefaultAddressLoading] = useState(true);
+    const [isDefaultAddressLoading, setIsDefaultAddressLoading] = useState(!hasPreverifiedData);
     const [hasLoadedCartOnce, setHasLoadedCartOnce] = useState(false);
 
     // Address state
-    const [billingAddress, setBillingAddress] = useState<CheckoutAddress | null>(null);
-    const [shippingAddress, setShippingAddress] = useState<CheckoutAddress | null>(null);
+    const [billingAddress, setBillingAddress] = useState<CheckoutAddress | null>(
+        hasPreverifiedData ? transformPreverifiedAddress(checkoutAddress) : null
+    );
+    const [shippingAddress, setShippingAddress] = useState<CheckoutAddress | null>(
+        hasPreverifiedData ? transformPreverifiedAddress(checkoutAddress) : null
+    );
     const [sameAsBilling, setSameAsBilling] = useState(true);
 
     // Shipping state
-    const [shippingMethods, setShippingMethods] = useState<Record<string, ShippingMethod> | null>(null);
+    const [shippingMethods, setShippingMethods] = useState<Record<string, ShippingMethod> | null>(
+        hasPreverifiedData ? transformPreverifiedRates(checkoutShippingMethods) : null
+    );
     const [selectedShippingMethod, setSelectedShippingMethod] = useState<string | null>(null);
 
     // Payment state
@@ -198,10 +224,12 @@ export const CheckoutScreen: React.FC = () => {
     }, [currentStep]);
 
     const loadCheckoutData = async () => {
-        setIsDefaultAddressLoading(true);
+        if (!checkoutShippingMethods) {
+            setIsDefaultAddressLoading(true);
+        }
         try {
             // Load cart
-            await dispatch(fetchCartThunk()).unwrap();
+            const currentCart = await dispatch(fetchCartThunk()).unwrap();
 
             // Load customer addresses
             const addresses = await addressApi.getAddresses();
@@ -209,8 +237,57 @@ export const CheckoutScreen: React.FC = () => {
             // Find default address
             const defaultAddress = addresses.find((addr: any) => addr.is_default || addr.default_address);
 
-            if (defaultAddress) {
-                // Convert to CheckoutAddress format
+            const getFlatString = (val: any): string => {
+                if (typeof val === 'string') return val;
+                if (Array.isArray(val)) return getFlatString(val[0]);
+                return '';
+            };
+
+            const formatCartAddress = (addr: any): CheckoutAddress => {
+                const rawAddress = addr.address || addr.address1 || '';
+                const addressLines = Array.isArray(rawAddress)
+                    ? rawAddress
+                    : (rawAddress ? String(rawAddress).split('\n') : []);
+
+                return {
+                    id: addr.id,
+                    first_name: addr.first_name,
+                    last_name: addr.last_name,
+                    email: addr.email || '',
+                    address1: getFlatString(addressLines[0]),
+                    address2: getFlatString(addressLines[1] || addr.address2),
+                    city: addr.city,
+                    state: addr.state,
+                    country: addr.country,
+                    postcode: addr.postcode,
+                    phone: addr.phone,
+                };
+            };
+
+            const cartBilling = currentCart?.billing_address;
+            const checkoutBilling = cartBilling ? formatCartAddress(cartBilling) : null;
+
+            if (checkoutAddress && checkoutShippingMethods && checkoutShippingMethods.length > 0) {
+                // Pre-verified data was already initialized in useState on mount.
+                // We just silent-fetch cart/addresses to ensure local session state is updated,
+                // and then clear the Redux trigger.
+                dispatch(setCheckoutShippingData({ shippingMethods: null, address: null }));
+            } else if (selectedCartBillingAddress) {
+                setBillingAddress(selectedCartBillingAddress);
+                setShippingAddress(selectedCartShippingAddress || selectedCartBillingAddress);
+                setSameAsBilling(selectedCartSameAsBilling);
+            } else if (checkoutBilling && checkoutBilling.address1 && checkoutBilling.address1.trim() !== '') {
+                const cartShipping = currentCart?.shipping_address || cartBilling;
+                const checkoutShipping = formatCartAddress(cartShipping);
+
+                setBillingAddress(checkoutBilling);
+                setShippingAddress(checkoutShipping);
+                setSameAsBilling(!currentCart?.shipping_address || (
+                    checkoutBilling.address1 === checkoutShipping.address1 &&
+                    checkoutBilling.city === checkoutShipping.city
+                ));
+            } else if (defaultAddress) {
+                // Convert defaultAddress to CheckoutAddress format
                 const addressLines = Array.isArray(defaultAddress.address)
                     ? defaultAddress.address
                     : (defaultAddress.address ? String(defaultAddress.address).split('\n') : []);
@@ -220,8 +297,8 @@ export const CheckoutScreen: React.FC = () => {
                     first_name: defaultAddress.first_name,
                     last_name: defaultAddress.last_name,
                     email: defaultAddress.email || '',
-                    address1: addressLines[0] || '',
-                    address2: addressLines[1] || '',
+                    address1: getFlatString(addressLines[0]),
+                    address2: getFlatString(addressLines[1] || defaultAddress.address2),
                     city: defaultAddress.city,
                     state: defaultAddress.state,
                     country: defaultAddress.country,
@@ -230,8 +307,8 @@ export const CheckoutScreen: React.FC = () => {
                 };
 
                 setBillingAddress(checkoutAddress);
-                // Also set as shipping by default
                 setShippingAddress(checkoutAddress);
+                setSameAsBilling(true);
             }
         } catch (error) {
             console.error('Error loading checkout data:', error);

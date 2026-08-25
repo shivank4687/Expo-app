@@ -39,7 +39,7 @@ export const ProductSpecificationCard: React.FC<ProductSpecificationCardProps> =
 
         return total || 0;
     }, [cart?.items, supplier?.id]);
-    console.log(supplier)
+    // console.log(supplier)
     const minimumAmount = supplier?.minimum_order_amount ?? 0;
     const freeShippingThreshold = supplier?.free_shipping_threshold ?? 0;
     const freeShippingEnable = supplier?.free_shipping_enable ?? false;
