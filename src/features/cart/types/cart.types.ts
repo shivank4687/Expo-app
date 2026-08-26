@@ -53,6 +53,8 @@ export interface CartItem {
             minimum_order_amount?: number;
             free_shipping_enable?: boolean;
             free_shipping_threshold?: number;
+            b2c_free_shipping_enable?: boolean;
+            b2c_free_shipping_threshold?: number;
             holiday_start_date?: string;
             holiday_end_date?: string;
         };

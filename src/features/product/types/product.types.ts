@@ -73,6 +73,8 @@ export interface SupplierInfo {
     minimum_order_amount?: number;
     free_shipping_enable?: boolean;
     free_shipping_threshold?: number;
+    b2c_free_shipping_enable?: boolean;
+    b2c_free_shipping_threshold?: number;
     standard_delivery_days?: number | null;
     preparation_time_days?: number | null;
     wholesale_price_multiplier?: number | null;

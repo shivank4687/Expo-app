@@ -69,8 +69,12 @@ export const SupplierWiseCartItems: React.FC<SupplierWiseCartItemsProps> = ({
             {Object.entries(groupedItems).map(([storeName, storeItems]) => {
                 const supplierObj = storeItems[0]?.product?.supplier;
                 const minimumAmount = Number(supplierObj?.minimum_order_amount) || 0;
-                const freeShippingEnable = Boolean(supplierObj?.free_shipping_enable);
-                const freeShippingThreshold = Number(supplierObj?.free_shipping_threshold) || 0;
+                const freeShippingEnable = isWholesale
+                    ? Boolean(supplierObj?.free_shipping_enable)
+                    : Boolean(supplierObj?.b2c_free_shipping_enable);
+                const freeShippingThreshold = isWholesale
+                    ? (Number(supplierObj?.free_shipping_threshold) || 0)
+                    : (Number(supplierObj?.b2c_free_shipping_threshold) || 0);
                 const storeTotal = storeItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
 
                 // console.log(`🛒 [SupplierWiseCartItems] Store "${storeName}":`, {

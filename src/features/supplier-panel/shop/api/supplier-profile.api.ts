@@ -51,6 +51,8 @@ export interface SupplierProfile {
     discount_special_max_amount?: number | null;
     discount_special_start_date?: string | null;
     discount_special_end_date?: string | null;
+    b2c_free_shipping_enabled?: boolean;
+    b2c_free_shipping_threshold?: number | null;
 }
 
 export interface SupplierProfileUpdateData {
@@ -102,6 +104,8 @@ export interface SupplierProfileUpdateData {
     discount_special_max_amount?: number | null;
     discount_special_start_date?: string | null;
     discount_special_end_date?: string | null;
+    b2c_free_shipping_enabled?: boolean;
+    b2c_free_shipping_threshold?: number | null;
 }
 
 /**

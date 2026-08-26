@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 interface VatTaxesCardStyles {
@@ -90,6 +91,22 @@ const isVatProfileComplete = (
     );
 };
 
+const mapLegacyBusinessType = (type: string | null): string | null => {
+    if (!type) return null;
+    switch (type) {
+        case 'artisan':
+        case 'independent_professional':
+            return 'artisan_independent';
+        case 'local_shop':
+            return 'retail_shop_online';
+        case 'company':
+        case 'business':
+            return 'wholesaler_distributor';
+        default:
+            return type;
+    }
+};
+
 export default function VatTaxesCard({
     expanded,
     onToggle,
@@ -97,6 +114,7 @@ export default function VatTaxesCard({
     onReady,
     styles,
 }: VatTaxesCardProps) {
+    const { t } = useTranslation();
     const [rfc, setRfc] = useState('');
     const [selectedRegime, setSelectedRegime] = useState<string | null>(null);
     const [vatMode, setVatMode] = useState<string | null>(null);
@@ -121,7 +139,14 @@ export default function VatTaxesCard({
         onStatusChange?.(isSaved ? true : false)
     }, [isSaved]);
     useEffect(() => {
-        if ((selectedBusinessOption === 'company' || selectedBusinessOption === 'business') && vatMode !== '1') {
+        const isCompanyOrBusiness =
+            selectedBusinessOption === 'company' ||
+            selectedBusinessOption === 'business' ||
+            selectedBusinessOption === 'wholesaler_distributor' ||
+            selectedBusinessOption === 'manufacturer_factory' ||
+            selectedBusinessOption === 'importer_exporter';
+
+        if (isCompanyOrBusiness && vatMode !== '1') {
             setVatMode('1');
         }
     }, [selectedBusinessOption, vatMode]);
@@ -169,7 +194,7 @@ export default function VatTaxesCard({
                     return;
                 }
 
-                const businessType = data.business_type ?? null;
+                const businessType = mapLegacyBusinessType(data.business_type ?? null);
                 const mode = data.tax_mode ? '1' : '0';
                 setSelectedBusinessOption(businessType);
                 setVatMode(mode);
@@ -299,24 +324,24 @@ export default function VatTaxesCard({
 
     const businessOptions: DropdownOption[] = [
         {
-            value: 'artisan',
-            label: 'Artisan',
+            value: 'artisan_independent',
+            label: t('supplierBusinessOptions.artisan_independent', 'Artisan / Independent'),
         },
         {
-            value: 'local_shop',
-            label: 'Local shop',
+            value: 'retail_shop_online',
+            label: t('supplierBusinessOptions.retail_shop_online', 'Retail Shop / Online Seller'),
         },
         {
-            value: 'independent_professional',
-            label: 'Independent professional',
+            value: 'wholesaler_distributor',
+            label: t('supplierBusinessOptions.wholesaler_distributor', 'Wholesaler / Distributor'),
         },
         {
-            value: 'company',
-            label: 'Company',
+            value: 'manufacturer_factory',
+            label: t('supplierBusinessOptions.manufacturer_factory', 'Manufacturer / Factory'),
         },
         {
-            value: 'business',
-            label: 'Business',
+            value: 'importer_exporter',
+            label: t('supplierBusinessOptions.importer_exporter', 'Importer / Exporter'),
         },
     ];
 
@@ -383,7 +408,13 @@ export default function VatTaxesCard({
                                     onSelect={setVatMode}
                                     placeholder="Select"
                                     style={{ container: { flex: 1 } }}
-                                    disabled={selectedBusinessOption === 'company' || selectedBusinessOption === 'business'}
+                                    disabled={
+                                        selectedBusinessOption === 'company' ||
+                                        selectedBusinessOption === 'business' ||
+                                        selectedBusinessOption === 'wholesaler_distributor' ||
+                                        selectedBusinessOption === 'manufacturer_factory' ||
+                                        selectedBusinessOption === 'importer_exporter'
+                                    }
                                 />
                             </View>
 

@@ -270,6 +270,38 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         </View>
                     </View>
                 )}
+
+                {data?.special_price_from_wholesale && (
+                    <View style={[styles.fieldContainer, { marginTop: 8 }]}>
+                        <View style={styles.rowSpaceBetween}>
+                            <Text style={styles.label}>B2C Free shipping</Text>
+                            <ToggleSlider
+                                isActive={!!data?.b2c_free_shipping_enabled}
+                                onToggle={() => onChange('b2c_free_shipping_enabled', !data?.b2c_free_shipping_enabled)}
+                            />
+                        </View>
+                        <Text style={styles.description}>Enable free shipping for B2C individual orders above a certain amount</Text>
+                    </View>
+                )}
+
+                {data?.special_price_from_wholesale && data?.b2c_free_shipping_enabled && (
+                    <View style={[styles.fieldContainer, { marginTop: 8 }]}>
+                        <Text style={styles.label}>B2C Free shipping starting at</Text>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter B2C free shipping threshold"
+                                placeholderTextColor="#666666"
+                                keyboardType="numeric"
+                                value={data?.b2c_free_shipping_threshold?.toString() || ''}
+                                onChangeText={(value) => onChange('b2c_free_shipping_threshold', value ? parseFloat(value) : null)}
+                                textContentType="none"
+                                autoComplete="off"
+                            />
+                        </View>
+                        <Text style={styles.description}>B2C Free shipping applies when cart total reaches this amount</Text>
+                    </View>
+                )}
             </View>
 
             {/* Returns policy */}

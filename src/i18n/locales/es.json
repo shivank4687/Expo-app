@@ -790,6 +790,13 @@
     },
     "saveButton": "Guardar cambios"
   },
+  "supplierBusinessOptions": {
+    "artisan_independent": "Artesano / Independiente",
+    "retail_shop_online": "Tienda minorista / Vendedor en línea",
+    "wholesaler_distributor": "Mayorista / Distribuidor",
+    "manufacturer_factory": "Fabricante / Fábrica",
+    "importer_exporter": "Importador / Exportador"
+  },
   "tabs": {
     "home": "Inicio",
     "categories": "Categorías",

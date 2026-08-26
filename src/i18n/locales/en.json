@@ -791,6 +791,13 @@
     },
     "saveButton": "Save Changes"
   },
+  "supplierBusinessOptions": {
+    "artisan_independent": "Artisan / Independent",
+    "retail_shop_online": "Retail Shop / Online Seller",
+    "wholesaler_distributor": "Wholesaler / Distributor",
+    "manufacturer_factory": "Manufacturer / Factory",
+    "importer_exporter": "Importer / Exporter"
+  },
   "tabs": {
     "home": "Home",
     "categories": "Categories",
