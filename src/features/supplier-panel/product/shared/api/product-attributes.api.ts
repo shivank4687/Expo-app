@@ -31,6 +31,7 @@ export interface ProductAttribute {
     validation: string | null;
     is_required: boolean;
     is_unique: boolean;
+    is_configurable: boolean;
     value_per_locale: boolean;
     value_per_channel: boolean;
     options?: AttributeOption[];
@@ -140,6 +141,25 @@ export const productAttributesApi = {
             return response.data;
         } catch (error) {
             console.error('Error creating attribute option:', error);
+            throw error;
+        }
+    },
+    /**
+     * Create a new configurable attribute (e.g. "Fabric Type").
+     * The backend will auto-generate the code and attach it to the default attribute family.
+     * @param adminName - The display name for the new attribute
+     * @returns Promise<ProductAttribute>
+     */
+    async createAttribute(adminName: string): Promise<ProductAttribute> {
+        try {
+            const response = await restApiClient.post<{ data: ProductAttribute }>(
+                `${API_ENDPOINTS.SUPPLIER_PRODUCT_ATTRIBUTES}`,
+                { admin_name: adminName }
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error('Error creating attribute:', error);
             throw error;
         }
     },

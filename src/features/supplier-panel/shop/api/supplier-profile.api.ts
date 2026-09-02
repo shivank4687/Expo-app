@@ -25,6 +25,7 @@ export interface SupplierProfile {
     logo: string | null;
     banner: string | null;
     profile: string | null;
+    gallery: string[];
     twitter?: string;
     facebook?: string;
     youtube?: string;
@@ -106,6 +107,7 @@ export interface SupplierProfileUpdateData {
     discount_special_end_date?: string | null;
     b2c_free_shipping_enabled?: boolean;
     b2c_free_shipping_threshold?: number | null;
+    gallery?: string[]; // Array of URIs: local file:// URIs for new uploads, https:// for existing remote items
 }
 
 /**
@@ -129,10 +131,13 @@ export const updateSupplierProfile = async (
         return !!uri && (uri.startsWith('file://') || uri.startsWith('content://'));
     };
 
+    const hasGalleryChange = Array.isArray(data.gallery);
+
     const hasImageUpload =
         isLocalFileUri(data.banner) ||
         isLocalFileUri(data.logo) ||
-        isLocalFileUri(data.profile);
+        isLocalFileUri(data.profile) ||
+        (hasGalleryChange && (data.gallery ?? []).some(isLocalFileUri));
 
     const hasImageDelete =
         data.banner === null ||
@@ -148,7 +153,7 @@ export const updateSupplierProfile = async (
 
     // Prefer JSON payload when images are unchanged.
     // This avoids multipart issues seen in some Android release builds.
-    if (!hasImageUpload && !hasImageDelete) {
+    if (!hasImageUpload && !hasImageDelete && !hasGalleryChange) {
         const payload: Record<string, any> = {};
 
         Object.keys(data).forEach((key) => {
@@ -177,8 +182,8 @@ export const updateSupplierProfile = async (
     Object.keys(data).forEach((key) => {
         const value = data[key as keyof SupplierProfileUpdateData];
 
-        // Skip image fields - we'll handle them separately
-        if (key === 'logo' || key === 'banner' || key === 'profile') {
+        // Skip image fields and gallery - we'll handle them separately
+        if (key === 'logo' || key === 'banner' || key === 'profile' || key === 'gallery') {
             return;
         }
 
@@ -257,6 +262,45 @@ export const updateSupplierProfile = async (
         } else if (data.profile === null) {
             formData.append('delete_profile', '1');
         }
+    }
+
+    // Handle gallery
+    if (hasGalleryChange && Array.isArray(data.gallery)) {
+        const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
+        const isVideoUri = (uri: string) => {
+            const ext = uri.split('.').pop()?.toLowerCase() ?? '';
+            return videoExtensions.includes(ext);
+        };
+
+        const remoteUrls: string[] = [];
+        const localUris: string[] = [];
+
+        data.gallery.forEach((uri) => {
+            if (isLocalFileUri(uri)) {
+                localUris.push(uri);
+            } else if (uri) {
+                remoteUrls.push(uri);
+            }
+        });
+
+        // Tell backend which existing files to retain
+        formData.append('keep_gallery_images', JSON.stringify(remoteUrls));
+
+        // Upload new local files
+        localUris.forEach((uri, index) => {
+            const filename = uri.split('/').pop() || `gallery_${index}`;
+            const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
+            const isVideo = isVideoUri(uri);
+            const mimeType = isVideo ? `video/${ext === 'mov' ? 'quicktime' : ext}` : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+            const file = {
+                uri: formatFileUri(uri),
+                type: mimeType,
+                name: filename,
+            } as any;
+
+            formData.append('gallery[]', file);
+        });
     }
 
     // For PUT request via FormData, use POST with _method override

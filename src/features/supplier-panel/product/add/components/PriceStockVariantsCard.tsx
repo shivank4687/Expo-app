@@ -79,6 +79,8 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     const [madeToOrderEnabled, setMadeToOrderEnabled] = useState(false);
     const [isAddingOption, setIsAddingOption] = useState(false);
     const [showOptionModal, setShowOptionModal] = useState(false);
+    const [showNewAttributeModal, setShowNewAttributeModal] = useState(false);
+    const [isCreatingAttribute, setIsCreatingAttribute] = useState(false);
     const [targetAttributeId, setTargetAttributeId] = useState<string | null>(null);
     const [applyToAll, setApplyToAll] = useState(false);
 
@@ -116,10 +118,13 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         ],
     });
 
-    // Filter relevant attributes for variants (select/multiselect types)
-    // Strictly filtering for Color and Size as per user request to match web app
+    // Filter variant-eligible attributes using Bagisto's own is_configurable flag.
+    // This exactly mirrors what the web admin does:
+    //   ->where('attributes.is_configurable', 1)->where('attributes.type', 'select')
+    // Toggle "Use as Configurable Attribute" in Admin → Catalog → Attributes to
+    // control which attributes appear here. No code change needed for new attributes.
     const validAttributes = attributes.filter(a =>
-        ['color', 'size'].includes(a.code)
+        a.is_configurable === true && a.type === 'select'
     );
 
     // Unit options from attributes
@@ -547,6 +552,34 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
         }
     };
 
+    const handleCreateAttribute = async (attributeName: string) => {
+        setIsCreatingAttribute(true);
+        try {
+            const newAttr = await productAttributesApi.createAttribute(attributeName);
+
+            if (onAttributesRefresh) {
+                await onAttributesRefresh();
+            }
+
+            // Auto-select the newly created attribute in the Variant Group dropdown
+            setSelectedVariantAttributes(prev => [...prev, newAttr.id.toString()]);
+
+            showToast({
+                message: `Attribute "${attributeName}" created successfully!`,
+                type: 'success',
+            });
+        } catch (error) {
+            console.error('Error creating attribute:', error);
+            showToast({
+                message: 'Failed to create attribute. Please try again.',
+                type: 'error',
+            });
+            throw error;
+        } finally {
+            setIsCreatingAttribute(false);
+        }
+    };
+
     const toggleVariantSingleAttr = (attrId: string, optionId: string) => {
         // Check if variant exists
         const exists = variants.find(v => v.attributes[attrId] === optionId);
@@ -857,7 +890,15 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             {/* Variant Group Section */}
             <View style={styles.section}>
                 <View style={styles.inputGroup}>
-                    <Text style={styles.sectionTitle}>Variant Group</Text>
+                    <View style={styles.sectionTitleRow}>
+                        <Text style={styles.sectionTitle}>Variant Group</Text>
+                        <TouchableOpacity
+                            style={styles.addChipButton}
+                            onPress={() => setShowNewAttributeModal(true)}
+                        >
+                            <Ionicons name="add" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                    </View>
                     <Text style={styles.tipText}>Choose or create your group.</Text>
                     <Dropdown
                         placeholder="Choose attributes (e.g. Color, Size)..."
@@ -924,7 +965,18 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                             const attr = attributes.find(a => a.id.toString() === attrId);
                             return (
                                 <View key={attrId} style={styles.inputGroup}>
-                                    <Text style={styles.label}>{attr?.admin_name}</Text>
+                                    <View style={styles.sectionTitleRow}>
+                                        <Text style={styles.label}>{attr?.admin_name}</Text>
+                                        <TouchableOpacity
+                                            style={styles.addChipButton}
+                                            onPress={() => {
+                                                setTargetAttributeId(attrId);
+                                                setShowOptionModal(true);
+                                            }}
+                                        >
+                                            <Ionicons name="add" size={20} color="#FFFFFF" />
+                                        </TouchableOpacity>
+                                    </View>
                                     <Dropdown
                                         placeholder={`Select ${attr?.admin_name}...`}
                                         options={(attr?.options || []).map(o => ({ label: o.admin_name, value: o.id.toString() }))}
@@ -1336,6 +1388,17 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 submitButtonText="Add Option"
                 isLoading={isAddingOption}
             />
+
+            {/* New Attribute Creation Modal */}
+            <InputModal
+                visible={showNewAttributeModal}
+                onClose={() => setShowNewAttributeModal(false)}
+                onSubmit={handleCreateAttribute}
+                title="Create New Attribute"
+                placeholder="e.g. Fabric Type, Pattern, Finish..."
+                submitButtonText="Create Attribute"
+                isLoading={isCreatingAttribute}
+            />
         </View >
     );
 });
@@ -1367,6 +1430,12 @@ const styles = StyleSheet.create({
     section: {
         flexDirection: 'column',
         gap: 8,
+        width: '100%',
+    },
+    sectionTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         width: '100%',
     },
     sectionTitle: {

@@ -1,81 +1,156 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity, Alert, Platform } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    Alert,
+    Platform,
+    Dimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from '@/shared/components/Toast/ToastContext';
 import { ImageCropModal } from '@/shared/components';
 import { requestMediaLibraryPermission, pickSingleImage, getActualFileSize } from '@/shared/utils/imageUtils';
+import * as ImagePicker from 'expo-image-picker';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const GALLERY_COLS = 4;
+const GALLERY_SLOT_SIZE = Math.floor((SCREEN_WIDTH - 48 - (GALLERY_COLS - 1) * 8) / GALLERY_COLS);
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
+const MAX_GALLERY = 8;
+const MAX_VIDEOS = 2;
+
+const isVideoUri = (uri: string): boolean => {
+    const ext = uri.split('.').pop()?.toLowerCase() ?? '';
+    return VIDEO_EXTENSIONS.includes(ext);
+};
 
 interface ShopMediaCardProps {
     data: {
         banner?: string | null;
+        gallery?: string[];
     };
-    onChange: (field: string, value: string | null) => void;
+    onChange: (field: string, value: any) => void;
 }
 
 export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) => {
     const { showToast } = useToast();
-    const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+    const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5 MB
     const [cropImageUri, setCropImageUri] = useState<string | null>(null);
+
+    const gallery: string[] = data.gallery ?? [];
+    const videoCount = gallery.filter(isVideoUri).length;
+
+    // ── Banner ───────────────────────────────────────────────────────────────
 
     const pickBanner = async () => {
         try {
             const hasPermission = await requestMediaLibraryPermission();
-
             if (!hasPermission) {
-                Alert.alert('Permission Denied', 'Please allow access to your media library to upload images.');
+                Alert.alert('Permission Denied', 'Please allow access to your media library.');
                 return;
             }
 
-            const isAndroid = Platform.OS === 'android';
             const asset = await pickSingleImage([16, 9]);
-
             if (asset) {
-                if (isAndroid) {
+                if (Platform.OS === 'android') {
                     setCropImageUri(asset.uri);
                 } else {
-                    const fileSize = asset.fileSize || 0;
-                    if (fileSize > MAX_IMAGE_SIZE) {
-                        showToast({
-                            message: 'Image size exceeds 1.5MB limit.',
-                            type: 'warning',
-                        });
+                    if ((asset.fileSize ?? 0) > MAX_IMAGE_SIZE) {
+                        showToast({ message: 'Image size exceeds 1.5 MB limit.', type: 'warning' });
                         return;
                     }
                     onChange('banner', asset.uri);
                 }
             }
         } catch (error) {
-            console.error('Error picking banner:', error);
             Alert.alert('Error', 'Failed to pick banner. Please try again.');
         }
     };
 
     const removeBanner = () => {
-        Alert.alert(
-            'Remove Banner',
-            'Are you sure you want to remove this banner?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Remove',
-                    style: 'destructive',
-                    onPress: () => onChange('banner', null)
+        Alert.alert('Remove Banner', 'Are you sure you want to remove this banner?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Remove', style: 'destructive', onPress: () => onChange('banner', null) },
+        ]);
+    };
+
+    // ── Gallery ──────────────────────────────────────────────────────────────
+
+    const pickGalleryMedia = async () => {
+        if (gallery.length >= MAX_GALLERY) {
+            showToast({ message: `Gallery is full (max ${MAX_GALLERY} items).`, type: 'warning' });
+            return;
+        }
+
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Please allow access to your media library.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images', 'videos'],
+                allowsMultipleSelection: false,
+                quality: 0.85,
+                videoMaxDuration: 20,
+            });
+
+            if (result.canceled || !result.assets || result.assets.length === 0) return;
+
+            const asset = result.assets[0];
+            const uri = asset.uri;
+            const isVideo = asset.type === 'video' || isVideoUri(uri);
+
+            if (isVideo && videoCount >= MAX_VIDEOS) {
+                showToast({
+                    message: `Maximum ${MAX_VIDEOS} videos allowed in gallery.`,
+                    type: 'warning',
+                });
+                return;
+            }
+
+            // File size check for images (videos skip — they can be larger)
+            if (!isVideo) {
+                const size = asset.fileSize ?? 0;
+                if (size > MAX_IMAGE_SIZE && size > 0) {
+                    showToast({ message: 'Image size exceeds 1.5 MB limit.', type: 'warning' });
+                    return;
                 }
-            ]
-        );
+            }
+
+            const updated = [...gallery, uri];
+            onChange('gallery', updated);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to pick media. Please try again.');
+        }
+    };
+
+    const removeGalleryItem = (index: number) => {
+        Alert.alert('Remove Media', 'Remove this item from the gallery?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Remove',
+                style: 'destructive',
+                onPress: () => {
+                    const updated = gallery.filter((_, i) => i !== index);
+                    onChange('gallery', updated);
+                },
+            },
+        ]);
     };
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Photos, Banner, and Videos</Text>
 
-            {/* Main Banner section */}
+            {/* ── Main Banner ─────────────────────────────────────────────── */}
             <View style={styles.sectionContainer}>
                 <View style={styles.headerRow}>
                     <Text style={styles.label}>Main Banner</Text>
-                    {/* <View style={styles.badge}>
-                        <Text style={styles.badgeText}>Edit (app)</Text>
-                    </View> */}
                 </View>
 
                 <TouchableOpacity
@@ -102,39 +177,64 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                 </TouchableOpacity>
 
                 <Text style={styles.description}>
-                    Recommended: Horizontal photo (workshop, stand, artisan at work).
+                    Recommended: Horizontal photo (workshop, stand, artisan at work). 16:9 ratio.
                 </Text>
             </View>
 
-            {/* Gallery section */}
-            {/* <View style={styles.sectionContainer}>
+            {/* ── Gallery ─────────────────────────────────────────────────── */}
+            <View style={styles.sectionContainer}>
                 <View style={styles.headerRow}>
-                    <Text style={styles.label}>Gallery (photos + videos)</Text>
+                    <Text style={styles.label}>Gallery</Text>
                     <View style={styles.badge}>
-                        <Text style={styles.badgeText}>Retouch (2 max)</Text>
+                        <Text style={styles.badgeText}>
+                            {gallery.length}/{MAX_GALLERY}
+                        </Text>
                     </View>
                 </View>
-                <View style={styles.inputContainer}>
-                    <Ionicons name="attach" size={16} color="#666666" />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter here..."
-                        placeholderTextColor="#666666"
-                    />
-                </View>
+
                 <Text style={styles.description}>
-                    Max. 8 images (photos + videos). Video 20s max (to show process).
+                    Up to {MAX_GALLERY} items (images + videos). Max {MAX_VIDEOS} videos, 20 s each.
                 </Text>
 
-               
                 <View style={styles.photoGrid}>
-                    {[1, 2, 3, 4, 5].map((item) => (
-                        <View key={item} style={styles.photoSlot}>
-                            <Ionicons name="add" size={24} color="#666666" />
-                        </View>
-                    ))}
+                    {gallery.map((uri, index) => {
+                        const isVideo = isVideoUri(uri);
+                        return (
+                            <View key={`gallery-${index}-${uri.slice(-8)}`} style={styles.photoSlot}>
+                                <Image
+                                    source={{ uri }}
+                                    style={styles.photoThumb}
+                                    resizeMode="cover"
+                                />
+                                {isVideo && (
+                                    <View style={styles.videoOverlay}>
+                                        <Ionicons name="play-circle" size={22} color="#FFFFFF" />
+                                    </View>
+                                )}
+                                <TouchableOpacity
+                                    style={styles.photoRemoveBtn}
+                                    onPress={() => removeGalleryItem(index)}
+                                    hitSlop={{ top: 4, left: 4, bottom: 4, right: 4 }}
+                                >
+                                    <Ionicons name="close-circle" size={18} color="#FFFFFF" />
+                                </TouchableOpacity>
+                            </View>
+                        );
+                    })}
+
+                    {gallery.length < MAX_GALLERY && (
+                        <TouchableOpacity
+                            style={[styles.photoSlot, styles.addSlot]}
+                            onPress={pickGalleryMedia}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="add" size={28} color="#666666" />
+                        </TouchableOpacity>
+                    )}
                 </View>
-            </View> */}
+            </View>
+
+            {/* ── Banner crop modal ────────────────────────────────────────── */}
             <ImageCropModal
                 visible={cropImageUri !== null}
                 imageUri={cropImageUri || ''}
@@ -144,13 +244,9 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
                 onCancel={() => setCropImageUri(null)}
                 onSave={async (croppedUri) => {
                     setCropImageUri(null);
-                    // Perform size check on the cropped image
                     const size = await getActualFileSize(croppedUri);
                     if (size > MAX_IMAGE_SIZE) {
-                        showToast({
-                            message: 'Image size exceeds 1.5MB limit.',
-                            type: 'warning',
-                        });
+                        showToast({ message: 'Image size exceeds 1.5 MB limit.', type: 'warning' });
                         return;
                     }
                     onChange('banner', croppedUri);
@@ -162,7 +258,6 @@ export const ShopMediaCard: React.FC<ShopMediaCardProps> = ({ data, onChange }) 
 
 const styles = StyleSheet.create({
     container: {
-        display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
         padding: 0,
@@ -170,23 +265,19 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     title: {
-        width: "100%",
-        height: 24,
+        width: '100%',
         fontFamily: 'Inter',
-        fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 20,
         lineHeight: 24,
         color: '#000000',
     },
     sectionContainer: {
-        display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
         padding: 0,
         gap: 8,
-        width: "100%",
-        position: 'relative',
+        width: '100%',
     },
     headerRow: {
         flexDirection: 'row',
@@ -196,7 +287,6 @@ const styles = StyleSheet.create({
     },
     label: {
         fontFamily: 'Inter',
-        fontStyle: 'normal',
         fontWeight: '500',
         fontSize: 16,
         lineHeight: 19,
@@ -217,48 +307,24 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#000000',
     },
-    inputContainer: {
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        gap: 10,
-        width: "100%",
-        height: 40,
-        backgroundColor: '#EEEEEF',
-        borderRadius: 8,
-    },
-    input: {
-        flex: 1,
-        height: 16,
-        fontFamily: 'Inter',
-        fontStyle: 'normal',
-        fontWeight: '400',
-        fontSize: 16,
-        lineHeight: 16,
-        color: '#666666',
-        padding: 0,
-    },
     description: {
-        width: "100%",
+        width: '100%',
         fontFamily: 'Inter',
-        fontStyle: 'normal',
         fontWeight: '400',
         fontSize: 14,
         lineHeight: 20,
         color: '#666666',
     },
+    // Banner
     bannerPreviewContainer: {
-        width: "100%",
+        width: '100%',
         height: 180,
         backgroundColor: '#EEEEEF',
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
-        marginVertical: 8,
+        marginVertical: 4,
     },
     bannerImage: {
         width: '100%',
@@ -289,19 +355,45 @@ const styles = StyleSheet.create({
     removeButton: {
         padding: 2,
     },
+    // Gallery grid
     photoGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        width: "100%",
-        marginTop: 8,
+        width: '100%',
+        marginTop: 4,
     },
     photoSlot: {
-        width: 59.4,
-        height: 60,
-        backgroundColor: '#EEEEEF',
+        width: GALLERY_SLOT_SIZE,
+        height: GALLERY_SLOT_SIZE,
         borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: '#EEEEEF',
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative',
+    },
+    photoThumb: {
+        width: '100%',
+        height: '100%',
+    },
+    videoOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.25)',
+    },
+    photoRemoveBtn: {
+        position: 'absolute',
+        top: 3,
+        right: 3,
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        borderRadius: 10,
+    },
+    addSlot: {
+        borderStyle: 'dashed',
+        borderWidth: 1.5,
+        borderColor: '#AAAAAA',
+        backgroundColor: '#F8F8F8',
     },
 });
