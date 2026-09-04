@@ -17,6 +17,8 @@ export interface PriceStockVariantsCardProps {
     productName: string;
     attributes?: ProductAttribute[];
     onAttributesRefresh?: () => Promise<void>;
+    /** When true, the Variant Group dropdown is locked (edit mode). */
+    isEditMode?: boolean;
 }
 
 export interface PriceStockVariantsCardRef {
@@ -37,6 +39,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     productName,
     attributes = [],
     onAttributesRefresh,
+    isEditMode = false,
 }, ref) => {
     const { supplier } = useAppSelector((state) => state.supplierAuth);
     const shopName = supplier?.company_name || '';
@@ -63,6 +66,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     // Generated Variants
     // Structure: { id: string, attributes: { [attrId]: optionId }, price: string, stock: string, ... }
     const [variants, setVariants] = useState<any[]>([]);
+    const [deletedVariants, setDeletedVariants] = useState<any[]>([]);
     const [mainVariantId, setMainVariantId] = useState<string | null>(null);
 
     // Master Product Dimensions (locally managed for configurable products)
@@ -401,6 +405,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             setDiscountType('percentage');
             setSelectedVariantAttributes([]);
             setVariants([]);
+            setDeletedVariants([]);
             setSkuExists(false);
             clearError('sku');
 
@@ -644,26 +649,46 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             return option?.admin_name || '';
         }).filter(Boolean).join(' - ');
 
-        const newVariant = {
-            id: Date.now().toString(),
-            name: autoName,
-            attributes: { ...tempSelection },
-            sku: '',
-            price: '',
-            stock: '',
-            weight: '',
-            length: '',
-            width: '',
-            height: '',
-            images: [],
-        };
+        // Check if we previously deleted this exact same variant
+        const revivedIndex = deletedVariants.findIndex(v =>
+            selectedVariantAttributes.every(attrId => v.attributes[attrId] === tempSelection[attrId])
+        );
+
+        let newVariant: any;
+        if (revivedIndex !== -1) {
+            // Revive the deleted variant
+            newVariant = { ...deletedVariants[revivedIndex], name: autoName };
+            setDeletedVariants(prev => prev.filter((_, i) => i !== revivedIndex));
+        } else {
+            // Create a completely new variant
+            newVariant = {
+                id: Date.now().toString(),
+                name: autoName,
+                attributes: { ...tempSelection },
+                sku: '',
+                price: '',
+                stock: '',
+                weight: '',
+                length: '',
+                width: '',
+                height: '',
+                images: [],
+            };
+        }
 
         setVariants(prev => [...prev, newVariant]);
         if (!mainVariantId) setMainVariantId(newVariant.id);
     };
 
     const removeVariant = (id: string) => {
-        setVariants(prev => prev.filter(v => v.id !== id));
+        setVariants(prev => {
+            const variantToRemove = prev.find(v => v.id === id);
+            // If it's a real DB variant (not a timestamp ID), save it in deletedVariants
+            if (variantToRemove && isEditMode && variantToRemove.id && variantToRemove.id.length < 13) {
+                setDeletedVariants(d => [...d, variantToRemove]);
+            }
+            return prev.filter(v => v.id !== id);
+        });
         if (mainVariantId === id) setMainVariantId(null);
     };
 
@@ -892,20 +917,27 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 <View style={styles.inputGroup}>
                     <View style={styles.sectionTitleRow}>
                         <Text style={styles.sectionTitle}>Variant Group</Text>
-                        <TouchableOpacity
-                            style={styles.addChipButton}
-                            onPress={() => setShowNewAttributeModal(true)}
-                        >
-                            <Ionicons name="add" size={24} color="#FFFFFF" />
-                        </TouchableOpacity>
+                        {!isEditMode && (
+                            <TouchableOpacity
+                                style={styles.addChipButton}
+                                onPress={() => setShowNewAttributeModal(true)}
+                            >
+                                <Ionicons name="add" size={24} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        )}
                     </View>
-                    <Text style={styles.tipText}>Choose or create your group.</Text>
+                    <Text style={styles.tipText}>
+                        {isEditMode
+                            ? 'Variant group cannot be changed after product creation.'
+                            : 'Choose or create your group.'}
+                    </Text>
                     <Dropdown
                         placeholder="Choose attributes (e.g. Color, Size)..."
                         options={validAttributes.map(a => ({ label: a.admin_name, value: a.id.toString() }))}
                         value={selectedVariantAttributes}
-                        onSelect={setSelectedVariantAttributes}
+                        onSelect={isEditMode ? () => { } : setSelectedVariantAttributes}
                         multiple
+                        disabled={isEditMode}
                     />
                 </View>
             </View>

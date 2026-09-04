@@ -80,6 +80,8 @@ export const API_ENDPOINTS = {
     // B2B Marketplace - Supplier Shop
     SUPPLIER_PROFILE: '/supplier/:url',
     SUPPLIER_PRODUCTS: '/supplier/:url/products',
+    SUPPLIER_TOP_PRODUCTS: '/supplier/:url/top-products',
+    SUPPLIERS_TOP_SELLERS: '/suppliers/top-sellers',
 
     // B2B Marketplace - RFQ
     RFQ_STORE: '/supplier/rfq',

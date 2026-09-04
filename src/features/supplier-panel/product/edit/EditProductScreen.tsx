@@ -130,6 +130,7 @@ export default function EditProductScreen() {
                 onNameChange={setProductName}
                 onAttributesRefresh={refreshAttributes}
                 onAIGenerateClick={() => setShowAIModal(true)}
+                isEditMode={true}
             />
         );
     };

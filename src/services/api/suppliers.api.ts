@@ -8,6 +8,14 @@ import { PaginatedResponse } from '@/types/global.types';
  * B2B Marketplace Suppliers API Service
  */
 
+export interface TopSeller {
+    id: number;
+    url: string;
+    company_name: string;
+    logo_url: string | null;
+    total_products: number;
+}
+
 export interface SendMessagePayload {
     supplier_id: number;
     message: string;
@@ -163,6 +171,27 @@ export const suppliersApi = {
             per_page: response.meta.per_page,
             total: response.meta.total,
         };
+    },
+
+    /**
+     * Get top-selling supplier products
+     * Public endpoint - no authentication required
+     */
+    async getSupplierTopProducts(url: string): Promise<Product[]> {
+        const endpoint = API_ENDPOINTS.SUPPLIER_TOP_PRODUCTS.replace(':url', url);
+        const response = await restApiClient.get<{ data: Product[] }>(endpoint);
+        return response.data;
+    },
+
+    /**
+     * Get top-selling vendors/suppliers for the HomeScreen carousel.
+     * Public endpoint - no authentication required.
+     */
+    async getTopSellers(): Promise<TopSeller[]> {
+        const response = await restApiClient.get<{ data: TopSeller[] }>(
+            API_ENDPOINTS.SUPPLIERS_TOP_SELLERS
+        );
+        return response.data;
     },
 
     /**

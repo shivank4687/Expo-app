@@ -27,6 +27,7 @@ import { Accordion } from '@/shared/components/Accordion';
 import { MoreCategories } from '../components/MoreCategories';
 import { MoreFromCategory } from '../components/MoreFromCategory';
 import { MoreFromOtherSuppliers } from '../components/MoreFromOtherSuppliers';
+import { TopFromShop } from '../components/TopFromShop';
 import { SoldBy } from '../components/SoldBy';
 import { ProductTotals } from '../components/ProductTotals';
 import { PricingGroup } from '../components/PricingGroup';
@@ -693,6 +694,9 @@ export const ProductDetailScreen: React.FC = () => {
 
                         {/* More from Other Suppliers */}
                         <MoreFromOtherSuppliers product={product} />
+
+                        {/* Top from Shop */}
+                        <TopFromShop product={product} />
 
                         {/* More Categories (Child Categories Carousel) */}
                         <MoreCategories product={product} />

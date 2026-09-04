@@ -493,6 +493,19 @@ export const productsApi = {
 
         appendToFormData(data, '');
 
+        // FormData cannot represent empty objects — appendToFormData silently drops
+        // variants:{} because Object.keys({}).forEach() doesn't iterate anything.
+        // When all variants were deleted, append a sentinel so the backend knows
+        // "variants was intentionally sent as empty" vs "variants key was absent".
+        if (
+            Object.prototype.hasOwnProperty.call(data, 'variants') &&
+            typeof data.variants === 'object' &&
+            !Array.isArray(data.variants) &&
+            Object.keys(data.variants || {}).length === 0
+        ) {
+            formData.append('variants_cleared', '1');
+        }
+
         // Use POST with _method=PUT via multipartFetch
         const response = await multipartFetch<{ data: any, message: string }>(
             url,

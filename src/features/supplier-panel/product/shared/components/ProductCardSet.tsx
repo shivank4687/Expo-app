@@ -19,6 +19,8 @@ interface ProductCardSetProps {
     onAttributesRefresh: () => Promise<void>;
     onNameChange?: (name: string) => void;
     onAIGenerateClick?: () => void;
+    /** Lock the Variant Group dropdown when editing an existing product. */
+    isEditMode?: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ const ProductCardSet: React.FC<ProductCardSetProps> = ({
     onAttributesRefresh,
     onNameChange,
     onAIGenerateClick,
+    isEditMode = false,
 }) => {
     const keyPrefix = resetKey !== undefined ? `${resetKey}-` : '';
 
@@ -63,12 +66,13 @@ const ProductCardSet: React.FC<ProductCardSetProps> = ({
                     attributes={attributes}
                 />
             ) : (
-                <PriceStockVariantsCard
+            <PriceStockVariantsCard
                     ref={refs.priceStockVariantsCardRef}
                     key={`${keyPrefix}price-stock-variants`}
                     productName={productName}
                     attributes={attributes}
                     onAttributesRefresh={onAttributesRefresh}
+                    isEditMode={isEditMode}
                 />
             )}
 

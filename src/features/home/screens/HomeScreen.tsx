@@ -22,6 +22,8 @@ import { DiscountSection } from '../components/DiscountSection';
 import { CategoryGridSection } from '../components/CategoryGridSection';
 import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
 import { RecentlyVisitedCategoriesSection } from '../components/RecentlyVisitedCategoriesSection';
+import { TopVendorsSection } from '../components/TopVendorsSection';
+import { suppliersApi, TopSeller } from '@/services/api/suppliers.api';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -42,6 +44,8 @@ export const HomeScreen: React.FC = () => {
     const [discountedProducts, setDiscountedProducts] = useState<Product[]>([]);
     const [newProducts, setNewProducts] = useState<Product[]>([]);
     const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+    const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
+    const [isLoadingVendors, setIsLoadingVendors] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -59,7 +63,7 @@ export const HomeScreen: React.FC = () => {
             // Dismiss global loading spinner as soon as layout/carousel is loaded
             setIsLoading(false);
 
-            // 2. Fetch product grids concurrently in the background
+            // 2. Fetch product grids + top sellers concurrently in the background
             Promise.all([
                 productsApi.getDiscountedProducts(8).catch(err => {
                     console.error('[HomeScreen] Failed to load discounted products:', err);
@@ -73,10 +77,16 @@ export const HomeScreen: React.FC = () => {
                     console.error('[HomeScreen] Failed to load featured products:', err);
                     return [];
                 }),
-            ]).then(([discounted, newArr, featured]) => {
+                suppliersApi.getTopSellers().catch(err => {
+                    console.error('[HomeScreen] Failed to load top sellers:', err);
+                    return [];
+                }),
+            ]).then(([discounted, newArr, featured, sellers]) => {
                 setDiscountedProducts(discounted);
                 setNewProducts(newArr);
                 setFeaturedProducts(featured);
+                setTopSellers(sellers as TopSeller[]);
+                setIsLoadingVendors(false);
             }).finally(() => {
                 setIsRefreshing(false);
             });
@@ -180,6 +190,10 @@ export const HomeScreen: React.FC = () => {
                             customization={customization}
                         />
                     ))}
+
+                    {/* Top Sellers / Vendors */}
+                    <TopVendorsSection vendors={topSellers} isLoading={isLoadingVendors} />
+
                     <RecentlyViewedSection />
                     <RecentlyVisitedCategoriesSection />
                     {carousel_customization.map((customization) => (
