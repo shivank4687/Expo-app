@@ -11,7 +11,7 @@ import { supplierLoginThunk } from '@/store/slices/supplierAuthSlice';
 import { socialLoginThunk } from '@/store/slices/authSlice';
 import { GoogleSignin, statusCodes } from '@/services/googleAuth';
 import { supplierTheme, theme } from '@/theme';
-
+import { useAuthScreenGuard } from '@/hooks/useRouteGuards';
 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
@@ -30,6 +30,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppSelector } from '@/store/hooks';
 
 export const LoginScreen: React.FC = () => {
+    useAuthScreenGuard();
+
     const { t } = useTranslation();
     const router = useRouter();
     const dispatch = useAppDispatch();
@@ -149,19 +151,6 @@ export const LoginScreen: React.FC = () => {
                     type: 'success',
                     duration: 3000,
                 });
-
-                // Navigate to supplier dashboard or add-phone
-                setTimeout(() => {
-                    if (router.canGoBack()) {
-                        router.dismissAll();
-                    }
-
-                    if (!result.supplier?.phone) {
-                        router.replace('/add-phone');
-                    } else {
-                        router.replace('/(supplier-drawer)/(supplier-tabs)');
-                    }
-                }, 500);
             } else {
                 // Customer login
                 const result = await dispatch(loginThunk(loginPayload)).unwrap();
@@ -185,24 +174,6 @@ export const LoginScreen: React.FC = () => {
                     type: 'success',
                     duration: 3000,
                 });
-
-                // Navigate to customer home or add-phone
-                setTimeout(() => {
-                    if (router.canGoBack()) {
-                        router.dismissAll();
-                    }
-
-                    if (!result.user?.phone) {
-                        router.replace('/add-phone');
-                    } else {
-                        // Only redirect to cart for customer type
-                        if (params.redirect === 'cart') {
-                            router.replace('/(drawer)/(tabs)/cart');
-                        } else {
-                            router.replace('/(drawer)/(tabs)');
-                        }
-                    }
-                }, 500);
             }
         } catch (err: any) {
             showToast({

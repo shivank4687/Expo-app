@@ -96,11 +96,25 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
     };
 
     const handleSubmitOrigin = async (originName: string) => {
+        const trimmedName = originName.trim();
+        const currentOrigins = originOptions.length > 0 ? originOptions : MANUFACTURING_ORIGINS;
+        const optionExists = currentOrigins.some(
+            o => (typeof o === 'string' ? o : o.admin_name).toLowerCase() === trimmedName.toLowerCase()
+        );
+
+        if (optionExists) {
+            showToast({
+                message: `Origin "${trimmedName}" already exists.`,
+                type: 'warning',
+            });
+            return;
+        }
+
         setIsAddingOrigin(true);
         try {
             const newOption = await productAttributesApi.createAttributeOption(
                 'manufacturing_origin',
-                originName
+                trimmedName
             );
 
             if (onAttributesRefresh) {
@@ -110,7 +124,7 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
             setSelectedOrigins(prev => [...prev, newOption.id.toString()]);
 
             showToast({
-                message: `Origin "${originName}" has been added!`,
+                message: `Origin "${trimmedName}" has been added!`,
                 type: 'success',
             });
         } catch (error) {
@@ -126,11 +140,25 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
     };
 
     const handleSubmitFeature = async (featureName: string) => {
+        const trimmedName = featureName.trim();
+        const currentFeatures = featureOptions.length > 0 ? featureOptions : FEATURES;
+        const optionExists = currentFeatures.some(
+            f => (typeof f === 'string' ? f : f.admin_name).toLowerCase() === trimmedName.toLowerCase()
+        );
+
+        if (optionExists) {
+            showToast({
+                message: `Feature "${trimmedName}" already exists.`,
+                type: 'warning',
+            });
+            return;
+        }
+
         setIsAddingFeature(true);
         try {
             const newOption = await productAttributesApi.createAttributeOption(
                 'manufacturing_value',
-                featureName
+                trimmedName
             );
 
             if (onAttributesRefresh) {
@@ -140,7 +168,7 @@ const DetailsCard = forwardRef<DetailsCardRef, DetailsCardProps>(({ attributes, 
             setSelectedFeatures(prev => [...prev, newOption.id.toString()]);
 
             showToast({
-                message: `Feature "${featureName}" has been added!`,
+                message: `Feature "${trimmedName}" has been added!`,
                 type: 'success',
             });
         } catch (error) {

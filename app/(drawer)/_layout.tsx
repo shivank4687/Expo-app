@@ -4,8 +4,11 @@ import { ShopHeader } from "@/shared/components/ShopHeader";
 import { theme } from "@/theme";
 import { StatusBar } from "expo-status-bar";
 import { OfflineGate } from "@/shared/components/OfflineGate";
+import { useCustomerGuard } from "@/hooks/useRouteGuards";
 
 export default function DrawerLayout() {
+  useCustomerGuard();
+
   return (
     <>
       <StatusBar style="light" />

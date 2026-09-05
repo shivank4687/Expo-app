@@ -26,6 +26,7 @@ import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
 import { GoogleIcon } from '@/assets/icons/GoogleIcon';
 import { CustomerGroup, getPublicCustomerGroups, CUSTOMER_SUBTYPES } from '@/features/account/api/customer-tax-profile.api';
+import { useAuthScreenGuard } from '@/hooks/useRouteGuards';
 
 // ─── Inline Customer Type Dropdown ────────────────────────────────────────────
 // Mirrors the InlineDrop component from CustomerTypeTaxScreen
@@ -128,6 +129,8 @@ const dropStyles = StyleSheet.create({
 
 
 export const SignupScreen: React.FC = () => {
+    useAuthScreenGuard();
+
     const { t } = useTranslation();
     const router = useRouter();
     const params = useLocalSearchParams<{ redirect?: string }>();
@@ -619,24 +622,6 @@ export const SignupScreen: React.FC = () => {
                 type: 'success',
                 duration: 3000,
             });
-
-            // Navigate to home or add-phone after successful signup
-            setTimeout(() => {
-                if (router.canGoBack()) {
-                    router.dismissAll();
-                }
-
-                if (result.user && !result.user.phone) {
-                    router.replace('/add-phone');
-                } else {
-                    // Only redirect to cart for customer type
-                    if (selectedUserType === 'customer' && params.redirect === 'cart') {
-                        router.replace('/(drawer)/(tabs)/cart');
-                    } else {
-                        router.replace('/(drawer)/(tabs)');
-                    }
-                }
-            }, 500);
         } catch (err: any) {
             showToast({
                 message: err || t('auth.unableToCreateAccount'),

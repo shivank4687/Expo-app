@@ -25,21 +25,24 @@ export const WishlistScreen = () => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const { items, isLoading, isRemoving, removingProductId, isMovingToCart, movingToCartProductId } = useAppSelector((state) => state.wishlist);
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
 
     useEffect(() => {
         // Fetch wishlist when component mounts
+        if (!isAuthenticated) return;
         console.log('[WishlistScreen] Component mounted, fetching wishlist...');
         dispatch(fetchWishlistThunk());
-    }, [dispatch]);
+    }, [dispatch, isAuthenticated]);
 
     // Refresh wishlist when screen comes into focus (e.g., after adding from product screen or moving from cart)
     useFocusEffect(
         useCallback(() => {
+            if (!isAuthenticated) return;
             console.log('[WishlistScreen] Screen focused, refreshing wishlist...');
             dispatch(fetchWishlistThunk());
-        }, [dispatch])
+        }, [dispatch, isAuthenticated])
     );
 
     // Log whenever items change

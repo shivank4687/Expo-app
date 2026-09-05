@@ -521,14 +521,27 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     const handleAddVariantOption = async (optionName: string) => {
         if (!targetAttributeId) return;
 
+        const attr = attributes.find(a => a.id.toString() === targetAttributeId);
+        if (!attr) return;
+
+        const trimmedName = optionName.trim();
+        const optionExists = attr.options?.some(
+            o => o.admin_name.toLowerCase() === trimmedName.toLowerCase()
+        );
+
+        if (optionExists) {
+            showToast({
+                message: `An option named "${trimmedName}" already exists in this attribute.`,
+                type: 'warning',
+            });
+            return;
+        }
+
         setIsAddingOption(true);
         try {
-            const attr = attributes.find(a => a.id.toString() === targetAttributeId);
-            if (!attr) throw new Error('Attribute not found');
-
             const newOption = await productAttributesApi.createAttributeOption(
                 attr.code,
-                optionName
+                trimmedName
             );
 
             if (onAttributesRefresh) {
@@ -541,7 +554,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             }
 
             showToast({
-                message: `Option "${optionName}" added successfully!`,
+                message: `Option "${trimmedName}" added successfully!`,
                 type: 'success',
             });
 
@@ -558,9 +571,22 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     };
 
     const handleCreateAttribute = async (attributeName: string) => {
+        const trimmedName = attributeName.trim();
+        const nameExists = attributes.some(
+            a => a.admin_name.toLowerCase() === trimmedName.toLowerCase()
+        );
+
+        if (nameExists) {
+            showToast({
+                message: `An attribute named "${trimmedName}" already exists.`,
+                type: 'warning',
+            });
+            return;
+        }
+
         setIsCreatingAttribute(true);
         try {
-            const newAttr = await productAttributesApi.createAttribute(attributeName);
+            const newAttr = await productAttributesApi.createAttribute(trimmedName);
 
             if (onAttributesRefresh) {
                 await onAttributesRefresh();
@@ -570,7 +596,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
             setSelectedVariantAttributes(prev => [...prev, newAttr.id.toString()]);
 
             showToast({
-                message: `Attribute "${attributeName}" created successfully!`,
+                message: `Attribute "${trimmedName}" created successfully!`,
                 type: 'success',
             });
         } catch (error) {

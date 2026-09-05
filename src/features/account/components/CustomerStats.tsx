@@ -12,8 +12,9 @@ import { getCustomerProfile, CUSTOMER_SUBTYPES } from '../api/customer-tax-profi
 
 export const CustomerStats = () => {
     const { t } = useTranslation();
-    const { user } = useRequireAuth();
     const dispatch = useAppDispatch();
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
+    const { user } = useRequireAuth();
     const { data: stats, isLoading } = useAppSelector((state) => state.customerStats);
     const { selectedCurrency } = useAppSelector((state) => state.core);
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
@@ -39,6 +40,8 @@ export const CustomerStats = () => {
 
     useFocusEffect(
         React.useCallback(() => {
+            if (!isAuthenticated) return;
+
             dispatch(fetchCustomerStatsThunk());
             // Fetch buyer_type from profile if not yet in Redux
             if (!user?.buyer_type) {
@@ -50,7 +53,7 @@ export const CustomerStats = () => {
                     })
                     .catch(() => { /* non-critical */ });
             }
-        }, [dispatch, user?.buyer_type])
+        }, [dispatch, user?.buyer_type, isAuthenticated])
     );
 
     return (

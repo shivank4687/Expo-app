@@ -21,8 +21,11 @@ import { Country } from '@/services/api/core.api';
 import { authApi } from '@/services/api/auth.api';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { setSelectedUserType } from '@/store/slices/authSlice';
+import { useAuthScreenGuard } from '@/hooks/useRouteGuards';
 
 export const ForgotPasswordScreen: React.FC = () => {
+    useAuthScreenGuard();
+
     const { t } = useTranslation();
     const router = useRouter();
     const { showToast } = useToast();

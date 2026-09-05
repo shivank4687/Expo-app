@@ -365,11 +365,27 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
     };
 
     const handleSubmitMaterial = async (materialName: string) => {
+        const trimmedName = materialName.trim();
+        const materialAttribute = attributes.find(a => a.code === 'material_type');
+        const currentMaterials = materialAttribute ? (materialAttribute.options || []) : DEFAULT_MATERIAL_TYPES;
+        
+        const optionExists = currentMaterials.some(
+            m => (typeof m === 'string' ? m : m.admin_name).toLowerCase() === trimmedName.toLowerCase()
+        );
+
+        if (optionExists) {
+            showToast({
+                message: `Material "${trimmedName}" already exists.`,
+                type: 'warning',
+            });
+            return;
+        }
+
         setIsAddingMaterial(true);
         try {
             const newOption = await productAttributesApi.createAttributeOption(
                 'material_type',
-                materialName
+                trimmedName
             );
 
             // Auto-select the newly created material
@@ -382,7 +398,7 @@ const EssentialCard = forwardRef<EssentialCardRef, EssentialCardProps>(({ attrib
 
             // Show success toast
             showToast({
-                message: `Material "${materialName}" has been added!`,
+                message: `Material "${trimmedName}" has been added!`,
                 type: 'success',
             });
         } catch (error) {

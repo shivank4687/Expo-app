@@ -23,7 +23,7 @@ interface OrdersScreenProps {
 
 export const OrdersScreen: React.FC<OrdersScreenProps> = ({ standalone = true }) => {
     const { t } = useTranslation();
-    const { isLoading: isAuthLoading } = useRequireAuth();
+    const { isAuthenticated, isLoading: isAuthLoading } = useAppSelector((state) => state.auth);
     const { showToast } = useToast();
     const { status } = useLocalSearchParams<{ status?: string }>();
     const router = useRouter();
@@ -164,7 +164,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ standalone = true })
      */
     useFocusEffect(
         useCallback(() => {
-            if (!isAuthLoading) {
+            if (!isAuthLoading && isAuthenticated) {
                 // To make it feel "new", reset state to show full-screen loader every time
                 setIsInitialLoad(true);
                 isInitialLoadRef.current = true;
@@ -172,7 +172,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({ standalone = true })
                 
                 loadOrders(1, false, false);
             }
-        }, [isAuthLoading, loadOrders])
+        }, [isAuthLoading, isAuthenticated, loadOrders])
     );
 
     /**

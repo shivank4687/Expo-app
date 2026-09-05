@@ -34,6 +34,7 @@ import { MessageSupplierModal } from '@/features/product/components/MessageSuppl
 import { ProductFilterBar } from '@/shared/components/ProductFilterBar';
 import { SortModal } from '@/shared/components/SortModal';
 import { FilterModal } from '@/shared/components/FilterModal';
+import { TopHeader } from '@/shared/components/TopHeader';
 import { cartApi } from '@/services/api/cart.api';
 import { Cart } from '@/features/cart/types/cart.types';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
@@ -47,7 +48,7 @@ export const SupplierShopScreen: React.FC = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
-    const { url } = useLocalSearchParams<{ url: string }>();
+    const { url, name } = useLocalSearchParams<{ url: string; name?: string }>();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
     const { cart: reduxCart } = useAppSelector((state) => state.cart);
 
@@ -1240,22 +1241,18 @@ export const SupplierShopScreen: React.FC = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle} numberOfLines={1}>
-                    {supplier?.company_name || t('supplier.shop', 'Supplier Shop')}
-                </Text>
-                <View style={styles.headerRight}>
-                    {supplier && (
+        <View style={styles.safeArea}>
+            <TopHeader
+                title={supplier?.company_name || name || t('supplier.shop', 'Supplier Shop')}
+                onBack={() => router.back()}
+                rightContent={
+                    supplier ? (
                         <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
                             <Ionicons name="share-outline" size={24} color={theme.colors.text.primary} />
                         </TouchableOpacity>
-                    )}
-                </View>
-            </View>
+                    ) : undefined
+                }
+            />
             {renderContent()}
 
             {/* Write Review Modal */}
@@ -1348,7 +1345,7 @@ export const SupplierShopScreen: React.FC = () => {
                     />
                 </>
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 

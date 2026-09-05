@@ -63,8 +63,7 @@ export const TopVendorsSection: React.FC<TopVendorsSectionProps> = ({ vendors, i
         <View style={styles.container}>
             <DetailCard
                 title="Top Sellers"
-                badgeText="See All"
-                onBadgePress={() => router.push('/suppliers' as any)}
+                showBadge={false}
                 noPadding={true}
             >
                 <ScrollView
@@ -80,7 +79,7 @@ export const TopVendorsSection: React.FC<TopVendorsSectionProps> = ({ vendors, i
                             <TouchableOpacity
                                 key={vendor.id}
                                 style={styles.vendorItem}
-                                onPress={() => router.push(`/supplier/${vendor.url}` as any)}
+                                onPress={() => router.push(`/supplier/${vendor.url}?name=${encodeURIComponent(vendor.company_name || '')}` as any)}
                                 activeOpacity={0.75}
                             >
                                 {vendor.logo_url ? (

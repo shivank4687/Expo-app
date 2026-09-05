@@ -15,6 +15,7 @@ import { validation } from '@/shared/utils/validation';
 import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { authApi } from '@/services/api/auth.api';
+import { useAuthScreenGuard } from '@/hooks/useRouteGuards';
 
 interface ResetPasswordParams {
     verificationToken: string;
@@ -22,6 +23,8 @@ interface ResetPasswordParams {
 }
 
 export const ResetPasswordScreen: React.FC = () => {
+    useAuthScreenGuard();
+
     const { t } = useTranslation();
     const router = useRouter();
     const params = useLocalSearchParams();

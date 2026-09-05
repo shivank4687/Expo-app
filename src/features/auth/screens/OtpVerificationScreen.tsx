@@ -18,6 +18,7 @@ import { Button } from '@/shared/components/Button';
 import { supplierTheme, theme } from '@/theme';
 import { useToast } from '@/shared/components/Toast';
 import { authApi } from '@/services/api/auth.api';
+import { useAuthScreenGuard } from '@/hooks/useRouteGuards';
 
 interface OtpVerificationParams {
     verificationToken: string;
@@ -28,6 +29,8 @@ interface OtpVerificationParams {
 }
 
 export const OtpVerificationScreen: React.FC = () => {
+    useAuthScreenGuard();
+
     const { t } = useTranslation();
     const router = useRouter();
     const params = useLocalSearchParams<OtpVerificationParams>();
@@ -116,7 +119,7 @@ export const OtpVerificationScreen: React.FC = () => {
                 duration: 3000,
             });
 
-            // Navigate after successful verification
+            // Navigate after successful verification for supplier signup
             setTimeout(() => {
                 if (verificationType === 'supplier') {
                     const isApproved = (result as any).isApproved;
@@ -138,21 +141,6 @@ export const OtpVerificationScreen: React.FC = () => {
                             pathname: '/login',
                             params: { type: 'supplier' }
                         });
-                    }
-                } else {
-                    if (router.canGoBack()) {
-                        router.dismissAll();
-                    }
-                    
-                    if (params.userType === 'supplier') {
-                        router.replace('/(supplier-drawer)/(supplier-tabs)');
-                    } else {
-                        // Only redirect to cart for customer type
-                        if (params.redirect === 'cart') {
-                            router.replace('/(drawer)/(tabs)/cart');
-                        } else {
-                            router.replace('/(drawer)/(tabs)');
-                        }
                     }
                 }
             }, 500);

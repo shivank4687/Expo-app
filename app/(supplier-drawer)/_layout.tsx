@@ -5,8 +5,11 @@ import { Drawer } from "expo-router/drawer";
 import { StatusBar } from "expo-status-bar";
 import { OfflineGate } from "@/shared/components/OfflineGate";
 import { useOfflineSync } from "@/features/supplier-panel/product/shared/hooks/useOfflineSync";
+import { useSupplierGuard } from "@/hooks/useRouteGuards";
 
 export default function SupplierDrawerLayout() {
+  useSupplierGuard();
+
   // Start background offline sync listener for the entire supplier session
   useOfflineSync();
 

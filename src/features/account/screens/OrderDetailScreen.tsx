@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
 import {
     ActivityIndicator,
@@ -60,6 +60,7 @@ export const OrderDetailScreen: React.FC = () => {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { showToast } = useToast();
     const dispatch = useAppDispatch();
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
 
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -117,10 +118,11 @@ export const OrderDetailScreen: React.FC = () => {
 
     useFocusEffect(
         useCallback(() => {
+            if (!isAuthenticated) return;
             // Reload order when screen comes into focus
             loadOrder(false);
             setActiveTab('details');
-        }, [loadOrder])
+        }, [loadOrder, isAuthenticated])
     );
 
     const handleRefresh = useCallback(() => {
