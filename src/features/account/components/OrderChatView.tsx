@@ -44,9 +44,6 @@ export const OrderChatView = ({ orderId }: OrderChatViewProps) => {
         const activeSupplierData = suppliers.find(s => s.id === activeSupplierId);
         const supplierOrderId = activeSupplierData?.supplier_order_id || orderId;
 
-        // Connect to Socket.IO with customer authentication
-        const socketToken = `customer_${customerId}`;
-        socketService.connect(socketToken, 'customer');
 
         // Join room using the B2B marketplace order ID to match the supplier panel exactly
         socketService.joinRoom(`order:${supplierOrderId}:${activeSupplierId}`);

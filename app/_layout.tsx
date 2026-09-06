@@ -20,6 +20,7 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { useTranslation } from "react-i18next";
 import { supplierTheme, theme } from "@/theme";
+import { SocketProvider } from "@/shared/providers/SocketProvider";
 
 // Track if app has been initialized (outside component to persist across all instances)
 let appInitialized = false;
@@ -118,7 +119,8 @@ function AppContent() {
 
   return (
     <ToastProvider>
-      <LocaleSync />
+      <SocketProvider>
+        <LocaleSync />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
@@ -321,6 +323,7 @@ function AppContent() {
       </Stack>
 
       <ToastContainer />
+      </SocketProvider>
     </ToastProvider>
   );
 }

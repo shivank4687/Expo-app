@@ -30,15 +30,22 @@ const RATING_ICON_SIZE = 14;
  * user pick options, see the updated image/price, and add to cart — all
  * without navigating to the ProductDetailScreen.
  */
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, cardVariant = 'elevated' }) => {
+export const ProductCard = React.memo<ProductCardProps>(({ product, onPress, cardVariant = 'elevated' }) => {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const { showToast } = useToast();
     const { t } = useTranslation();
-    const { isAddingToCart, lastAddedProductId } = useAppSelector((state) => state.cart);
-    const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
-    const { isAuthenticated } = useAppSelector((state) => state.auth);
-    const { selectedCurrency } = useAppSelector((state) => state.core);
+    
+    const isAddingThisProduct = useAppSelector((state) => 
+        state.cart.isAddingToCart && state.cart.lastAddedProductId === product.id
+    );
+    
+    const isInWishlist = useAppSelector((state) => 
+        state.wishlist.items.some((item) => item.product.id === product.id)
+    );
+    
+    const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+    const selectedCurrency = useAppSelector((state) => state.core.selectedCurrency);
 
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
     const [quantity, setQuantity] = useState('1');
@@ -46,7 +53,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
 
     const currencySymbol = selectedCurrency?.symbol || selectedCurrency?.code || '$';
     const isConfigurable = product.type === 'configurable';
-    const isAddingThisProduct = isAddingToCart && lastAddedProductId === product.id;
 
     // ─── Variant hook (only meaningful for configurable products) ────────────
     const variantState = useProductVariants(product.id, product.variants);
@@ -60,9 +66,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
     } = variantState;
 
     // ─── Wishlist ────────────────────────────────────────────────────────────
-    const isInWishlist = useMemo(() => {
-        return wishlistItems.some((item) => item.product.id === product.id);
-    }, [wishlistItems, product.id]);
+    // isInWishlist is now handled efficiently by useAppSelector above
 
     // ─── Derived display values ───────────────────────────────────────────────
     const productData = useMemo(() => {
@@ -479,7 +483,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, card
             </Card>
         </TouchableOpacity>
     );
-};
+}, (prevProps, nextProps) => {
+    return (
+        prevProps.product.id === nextProps.product.id &&
+        prevProps.cardVariant === nextProps.cardVariant
+    );
+});
 
 const styles = StyleSheet.create({
     card: {

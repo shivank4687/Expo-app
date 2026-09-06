@@ -1,6 +1,4 @@
 import { APP_NAME } from '@/config/constants';
-import socketService from '@/services/socket.service';
-import { useToast } from '@/shared/components/Toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCartThunk } from '@/store/slices/cartSlice';
 import { fetchUnreadCountThunk } from '@/store/slices/notificationSlice';
@@ -8,34 +6,35 @@ import { theme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
 interface ShopHeaderProps {
     title?: string;
     showSearch?: boolean;
 }
 
-export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true }) => {
+export const ShopHeader = React.memo<ShopHeaderProps>(({ title, showSearch = true }) => {
     const navigation = useNavigation();
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { showToast } = useToast();
-    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-    const { cart } = useAppSelector((state) => state.cart);
-    const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
-    const { totalUnread } = useAppSelector((state) => state.notifications);
-    const { categories } = useAppSelector((state) => state.category);
+    
+    const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+    const hasCart = useAppSelector((state) => !!state.cart.cart);
+    const wishlistItemsCount = useAppSelector((state) => state.wishlist.items?.length || 0);
+    const totalUnread = useAppSelector((state) => state.notifications.totalUnread);
+    const categories = useAppSelector((state) => state.category.categories);
 
     // Animation state for rotating placeholder
     const [placeholderIndex, setPlaceholderIndex] = React.useState(0);
     const fadeAnim = React.useRef(new Animated.Value(1)).current;
     const translateYAnim = React.useRef(new Animated.Value(0)).current;
 
-    const defaultPlaceholders = ['Electronics', 'Fashion', 'Home', 'Beauty', 'Groceries', 'Accessories'];
-    const placeholders = categories && categories.length > 0
-        ? categories.slice(0, 10).map(c => c.name)
-        : defaultPlaceholders;
+    const defaultPlaceholders = useMemo(() => ['Electronics', 'Fashion', 'Home', 'Beauty', 'Groceries', 'Accessories'], []);
+    const placeholders = useMemo(() => {
+        return categories && categories.length > 0
+            ? categories.slice(0, 10).map(c => c.name)
+            : defaultPlaceholders;
+    }, [categories, defaultPlaceholders]);
 
     useEffect(() => {
         if (!showSearch || placeholders.length <= 1) return;
@@ -80,7 +79,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
     // Refetch when authentication changes
     useEffect(() => {
         // Only fetch cart on header mount if not already loaded in Redux
-        if (!cart) {
+        if (!hasCart) {
             dispatch(fetchCartThunk());
         }
 
@@ -88,37 +87,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
         if (isAuthenticated) {
             dispatch(fetchUnreadCountThunk());
         }
-    }, [isAuthenticated, dispatch, cart]);
-
-    // Listen for real-time notification updates
-    useEffect(() => {
-        if (isAuthenticated && user?.id) {
-            const token = `customer_${user.id}`;
-            socketService.connect(token, 'customer');
-            socketService.subscribeToNotifications();
-
-            const handleNotification = (data: any) => {
-                console.log('[ShopHeader] New notification received, refreshing count', data);
-                dispatch(fetchUnreadCountThunk());
-
-                if (data) {
-                    showToast({
-                        message: data.message || 'New notification received',
-                        type: 'info',
-                        title: data.title || 'Notification',
-                    });
-                }
-            };
-
-            socketService.onNewNotification(handleNotification);
-
-            return () => {
-                socketService.offNewNotification(handleNotification);
-            };
-        }
-    }, [isAuthenticated, user?.id, dispatch]);
-
-    const wishlistItemsCount = wishlistItems?.length || 0;
+    }, [isAuthenticated, dispatch, hasCart]);
 
     const openDrawer = () => {
         navigation.dispatch(DrawerActions.openDrawer());
@@ -225,7 +194,7 @@ export const ShopHeader: React.FC<ShopHeaderProps> = ({ title, showSearch = true
             </View>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: {

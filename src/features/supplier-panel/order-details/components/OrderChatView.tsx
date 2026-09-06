@@ -39,8 +39,6 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
             socketService.joinRoom(room);
         };
 
-        // Connect (no-op if already connected with same token)
-        socketService.connect(socketToken, 'supplier');
 
         // If already connected, join immediately; otherwise wait for connect event
         if (socketService.isConnected()) {

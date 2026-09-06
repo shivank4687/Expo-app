@@ -128,25 +128,7 @@ export const QuoteResponseDetailScreen: React.FC = () => {
         loadQuoteDetail();
     }, [loadQuoteDetail]);
 
-    // Socket.IO connection
-    useEffect(() => {
-        console.log('[QuoteResponseDetail] Socket.IO connection effect triggered', {
-            hasAuthUser: !!authUser,
-            authUserId: authUser?.id
-        });
 
-        if (authUser?.id) {
-            const token = `customer_${authUser.id}`;
-            socketService.connect(token, 'customer');
-            console.log('✅ Socket.IO connected for customer:', authUser.id);
-        } else {
-            console.warn('⚠️ Socket.IO not connected - authUser not available');
-        }
-
-        return () => {
-            console.log('[QuoteResponseDetail] Socket.IO cleanup');
-        };
-    }, [authUser?.id]);
 
     // Join/leave RFQ room based on active tab
     useEffect(() => {

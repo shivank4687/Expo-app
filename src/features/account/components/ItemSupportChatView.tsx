@@ -141,8 +141,6 @@ export const ItemSupportChatView = ({ orderId, itemId, productName }: ItemSuppor
     useEffect(() => {
         if (!customerId || !itemId) return;
 
-        const socketToken = `customer_${customerId}`;
-        socketService.connect(socketToken, 'customer');
 
         const roomName = `support:item:${itemId}`;
         socketService.joinRoom(roomName);

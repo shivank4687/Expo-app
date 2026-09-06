@@ -63,8 +63,6 @@ export function useRFQMessages(
     useEffect(() => {
         if (!supplierQuoteId || !customerQuoteId) return;
 
-        const socketToken = supplierData?.id ? `supplier_${supplierData.id}` : undefined;
-        socketService.connect(socketToken, 'supplier');
 
         // Room name the server uses: rfq:{parentQuoteId}:{customerQuoteId}
         socketService.joinRFQRoom(parentQuoteId!, customerQuoteId!);
