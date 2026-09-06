@@ -60,7 +60,7 @@ export const TopFromShop: React.FC<TopFromShopProps> = ({ product }) => {
                 badgeText="View Shop"
                 onBadgePress={() => {
                     if (supplierUrl) {
-                        router.push(`/supplier/${supplierUrl}`);
+                        router.push(`/supplier/${supplierUrl}?name=${encodeURIComponent(supplierName)}`);
                     }
                 }}
             >
