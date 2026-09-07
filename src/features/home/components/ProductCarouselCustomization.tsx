@@ -34,6 +34,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
     const router = useRouter();
     const { t } = useTranslation();
     const { selectedLocale } = useAppSelector((state) => state.core);
+    const { user } = useAppSelector((state) => state.auth);
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -54,8 +55,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
         } finally {
             setIsLoading(false);
         }
-    }, [options.filters]);
-    //selectedLocale?.code,
+    }, [options.filters, selectedLocale?.code, user?.customer_group_id]);
 
     useEffect(() => {
         loadProducts();

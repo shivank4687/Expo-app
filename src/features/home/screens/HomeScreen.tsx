@@ -55,11 +55,11 @@ export const HomeScreen: React.FC = () => {
 
         try {
             setError(null);
-            
+
             // 1. Fetch critical layout & theme customization first
             const customizationsData = await themeApi.getCustomizations();
             setCustomizations(customizationsData);
-            
+
             // Dismiss global loading spinner as soon as layout/carousel is loaded
             setIsLoading(false);
 
@@ -141,6 +141,18 @@ export const HomeScreen: React.FC = () => {
         );
     };
 
+    const image_carousel_customization = useMemo(() => customizations.filter(
+        c => ['image_carousel'].includes(c.type)
+    ), [customizations]);
+
+    const carousel_customization = useMemo(() => customizations.filter(
+        c => ['category_carousel', 'product_carousel'].includes(c.type)
+    ), [customizations]);
+
+    const servicesCustomization = useMemo(() => customizations.find(
+        c => c.type === 'services_content' as any
+    ), [customizations]);
+
     if (isLoading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -156,18 +168,6 @@ export const HomeScreen: React.FC = () => {
             </View>
         );
     }
-
-    const image_carousel_customization = useMemo(() => customizations.filter(
-        c => ['image_carousel'].includes(c.type)
-    ), [customizations]);
-
-    const carousel_customization = useMemo(() => customizations.filter(
-        c => ['category_carousel', 'product_carousel'].includes(c.type)
-    ), [customizations]);
-
-    const servicesCustomization = useMemo(() => customizations.find(
-        c => c.type === 'services_content' as any
-    ), [customizations]);
 
     return (
         <View style={styles.container}>
@@ -191,11 +191,12 @@ export const HomeScreen: React.FC = () => {
                         />
                     ))}
 
-                    {/* Top Sellers / Vendors */}
-                    <TopVendorsSection vendors={topSellers} isLoading={isLoadingVendors} />
+
 
                     <RecentlyViewedSection />
                     <RecentlyVisitedCategoriesSection />
+                    {/* Top Sellers / Vendors */}
+                    <TopVendorsSection vendors={topSellers} isLoading={isLoadingVendors} />
                     {carousel_customization.map((customization) => (
                         <ThemeCustomization
                             key={customization.id}

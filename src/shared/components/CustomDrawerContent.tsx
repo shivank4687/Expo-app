@@ -38,6 +38,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     // }, [selectedLocale?.code, dispatch]);
 
     const handleLoginPress = () => {
+        props.navigation.closeDrawer();
         router.push('/login');
     };
 
@@ -64,6 +65,7 @@ export const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     };
 
     const navigateTo = (path: string) => {
+        props.navigation.closeDrawer();
         router.push(path as any);
     };
 

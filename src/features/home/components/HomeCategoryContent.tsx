@@ -22,6 +22,17 @@ interface HomeCategoryContentProps {
 
 const PRODUCTS_PER_PAGE = 12;
 
+const findCategoryById = (cats: Category[], targetId: number): Category | null => {
+    for (const cat of cats) {
+        if (cat.id === targetId) return cat;
+        if (cat.children && cat.children.length > 0) {
+            const found = findCategoryById(cat.children, targetId);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
 export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ categoryId }) => {
     const router = useRouter();
     const { t } = useTranslation();
@@ -48,16 +59,7 @@ export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ catego
     const [isSortModalVisible, setIsSortModalVisible] = useState(false);
     const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
-    const findCategoryById = (cats: Category[], targetId: number): Category | null => {
-        for (const cat of cats) {
-            if (cat.id === targetId) return cat;
-            if (cat.children && cat.children.length > 0) {
-                const found = findCategoryById(cat.children, targetId);
-                if (found) return found;
-            }
-        }
-        return null;
-    };
+
 
     const loadCategoryData = useCallback(async (isRefresh = false) => {
         try {

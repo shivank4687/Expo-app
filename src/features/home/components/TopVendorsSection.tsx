@@ -33,7 +33,7 @@ interface TopVendorsSectionProps {
     isLoading?: boolean;
 }
 
-export const TopVendorsSection: React.FC<TopVendorsSectionProps> = ({ vendors, isLoading }) => {
+export const TopVendorsSection = React.memo<TopVendorsSectionProps>(({ vendors, isLoading }) => {
     const router = useRouter();
 
     if (isLoading) {
@@ -103,7 +103,13 @@ export const TopVendorsSection: React.FC<TopVendorsSectionProps> = ({ vendors, i
             </DetailCard>
         </View>
     );
-};
+}, (prevProps, nextProps) => {
+    return (
+        prevProps.isLoading === nextProps.isLoading &&
+        prevProps.vendors?.length === nextProps.vendors?.length &&
+        prevProps.vendors?.[0]?.id === nextProps.vendors?.[0]?.id
+    );
+});
 
 const styles = StyleSheet.create({
     container: {

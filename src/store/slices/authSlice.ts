@@ -23,6 +23,7 @@ interface AuthState {
     token: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isInitialized: boolean;
     error: string | null;
     verificationToken: string | null;
     pendingRegistration: SignupRequest | null;
@@ -34,6 +35,7 @@ const initialState: AuthState = {
     token: null,
     isAuthenticated: false,
     isLoading: true,
+    isInitialized: false,
     error: null,
     verificationToken: null,
     pendingRegistration: null,
@@ -625,6 +627,7 @@ const authSlice = createSlice({
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
                 state.isLoading = false;
+                state.isInitialized = true;
                 // Set global token for API client
                 setGlobalToken(action.payload.token);
             })
@@ -633,6 +636,7 @@ const authSlice = createSlice({
                 state.token = null;
                 state.isAuthenticated = false;
                 state.isLoading = false;
+                state.isInitialized = true;
             });
 
         // Login

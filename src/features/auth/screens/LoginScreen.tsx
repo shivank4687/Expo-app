@@ -222,19 +222,20 @@ export const LoginScreen: React.FC = () => {
 
                 // Navigate after short delay
                 setTimeout(() => {
-                    if (router.canGoBack()) {
-                        router.dismissAll();
-                    }
-
                     if (!result.user?.phone) {
                         router.replace('/add-phone');
                         return;
                     }
 
                     if (selectedUserType === 'supplier') {
+                        if (router.canGoBack()) router.dismissAll();
                         router.replace('/(supplier-drawer)/(supplier-tabs)');
                     } else {
-                        router.replace('/(drawer)/(tabs)');
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace('/(drawer)/(tabs)');
+                        }
                     }
                 }, 500);
             }

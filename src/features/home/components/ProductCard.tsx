@@ -412,6 +412,21 @@ export const ProductCard = React.memo<ProductCardProps>(({ product, onPress, car
                                             )}
                                         </Text>
                                     )}
+
+                                    {!isAuthenticated && (
+                                        <TouchableOpacity
+                                            onPress={(e) => {
+                                                e.stopPropagation();
+                                                showToast({ message: t('product.loginToViewWholesale') || 'Login for wholesale pricing', type: 'info' });
+                                            }}
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                            style={styles.lockIconContainer}
+                                        >
+                                            <View style={styles.lockIconBackground}>
+                                                <Ionicons name="lock-closed" size={12} color={theme.colors.primary[600] || theme.colors.primary[500]} />
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             </View>
                         </View>
@@ -627,6 +642,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
+    },
+    lockIconContainer: {
+        marginLeft: theme.spacing.xs,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    lockIconBackground: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: theme.colors.primary[50] || '#eff6ff',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     rfqButtonOverlay: {
         position: 'absolute',

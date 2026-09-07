@@ -7,7 +7,7 @@ import { theme } from "@/theme";
 import { useTranslation } from "react-i18next";
 
 export default function TabLayout() {
-  const { isLoading, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isInitialized, isAuthenticated } = useAppSelector((state) => state.auth);
   const { t } = useTranslation();
 
   const customerTabs = [
@@ -26,7 +26,7 @@ export default function TabLayout() {
     (tab) => !["orders", "profile"].includes(tab.name) || isAuthenticated
   );
 
-  if (isLoading) {
+  if (!isInitialized) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={theme.colors.primary[500]} />

@@ -81,11 +81,16 @@ export const useAuthScreenGuard = () => {
                 router.replace('/(supplier-drawer)/(supplier-tabs)');
             } else if (isCustomerAuthenticated) {
                 console.log('➡️ Auth Guard: Customer already authenticated, redirecting to Shop');
-                if (router.canGoBack()) router.dismissAll();
                 if (params.redirect === 'cart') {
+                    // Navigate to cart
+                    if (router.canGoBack()) router.dismissAll();
                     router.replace('/(drawer)/(tabs)/cart');
                 } else {
-                    router.replace('/(drawer)/(tabs)');
+                    if (router.canGoBack()) {
+                        router.back();
+                    } else {
+                        router.replace('/(drawer)/(tabs)');
+                    }
                 }
             }
         }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, router, params.redirect])
