@@ -135,7 +135,12 @@ class SupplierPushNotificationService {
      */
     private handleNotificationNavigation(data: any): void {
         try {
-            switch (data?.type) {
+            // Guard against empty phantom notifications when bringing app to foreground
+            if (!data || !data.type) {
+                return;
+            }
+
+            switch (data.type) {
                 // Identity verification approved / rejected
                 case 'identity_verification':
                     router.push('/(supplier-drawer)/notifications' as any);
@@ -172,7 +177,7 @@ class SupplierPushNotificationService {
                     break;
 
                 default:
-                    console.log('[Supplier Push] Unknown type, going to notifications:', data?.type);
+                    console.log('[Supplier Push] Unknown type, going to notifications:', data.type);
                     router.push('/(supplier-drawer)/notifications' as any);
             }
         } catch (error) {

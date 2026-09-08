@@ -129,6 +129,11 @@ class ExpoPushNotificationService {
      */
     private handleNotificationNavigation(data: any): void {
         try {
+            // Guard against empty phantom notifications when bringing app to foreground
+            if (!data || !data.type) {
+                return;
+            }
+
             switch (data.type) {
                 case 'order_created':
                 case 'order_canceled':
