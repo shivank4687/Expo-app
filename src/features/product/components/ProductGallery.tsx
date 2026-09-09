@@ -117,7 +117,7 @@ const getWebViewSource = (url: string) => {
                 onseeking="document.getElementById('spinner').style.display='flex';"
                 onseeked="document.getElementById('spinner').style.display='none';"
             >
-                <source src="${url}" type="video/mp4">
+                <source src="${url}">
                 Your browser does not support the video tag.
             </video>
         </body>
