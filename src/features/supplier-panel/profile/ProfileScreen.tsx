@@ -106,8 +106,6 @@ export default function ProfileScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         await dispatch(supplierLogoutThunk());
-                        // Navigate to shop home screen after logout
-                        router.replace('/(drawer)/(tabs)');
                     },
                 },
             ],
