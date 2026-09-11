@@ -89,7 +89,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                         placeholderTextColor="#666666"
                         keyboardType="numeric"
                         value={data?.minimum_order_amount?.toString() || ''}
-                        onChangeText={(value) => onChange('minimum_order_amount', value ? parseFloat(value) : null)}
+                        onChangeText={(value) => onChange('minimum_order_amount', value || null)}
                         textContentType="none"
                         autoComplete="off"
                     />
@@ -120,7 +120,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                             placeholderTextColor="#666666"
                             keyboardType="numeric"
                             value={data?.free_shipping_threshold?.toString() || ''}
-                            onChangeText={(value) => onChange('free_shipping_threshold', value ? parseFloat(value) : null)}
+                            onChangeText={(value) => onChange('free_shipping_threshold', value || null)}
                             textContentType="none"
                             autoComplete="off"
                         />
@@ -263,7 +263,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                                 placeholderTextColor="#666666"
                                 keyboardType="numeric"
                                 value={data?.wholesale_price_multiplier?.toString() || ''}
-                                onChangeText={(value) => onChange('wholesale_price_multiplier', value ? parseFloat(value) : null)}
+                                onChangeText={(value) => onChange('wholesale_price_multiplier', value || null)}
                                 textContentType="none"
                                 autoComplete="off"
                             />
@@ -294,7 +294,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                                 placeholderTextColor="#666666"
                                 keyboardType="numeric"
                                 value={data?.b2c_free_shipping_threshold?.toString() || ''}
-                                onChangeText={(value) => onChange('b2c_free_shipping_threshold', value ? parseFloat(value) : null)}
+                                onChangeText={(value) => onChange('b2c_free_shipping_threshold', value || null)}
                                 textContentType="none"
                                 autoComplete="off"
                             />
@@ -479,7 +479,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                             placeholderTextColor="#666666"
                             keyboardType="numeric"
                             value={data?.discount_special_percentage?.toString() || ''}
-                            onChangeText={(value) => onChange('discount_special_percentage', value ? parseFloat(value) : null)}
+                            onChangeText={(value) => onChange('discount_special_percentage', value || null)}
                             textContentType="none"
                             autoComplete="off"
                         />
@@ -493,7 +493,7 @@ export const SalesShippingCard: React.FC<SalesShippingCardProps> = ({ data, onCh
                             placeholderTextColor="#666666"
                             keyboardType="numeric"
                             value={data?.discount_special_max_amount?.toString() || ''}
-                            onChangeText={(value) => onChange('discount_special_max_amount', value ? parseFloat(value) : null)}
+                            onChangeText={(value) => onChange('discount_special_max_amount', value || null)}
                             textContentType="none"
                             autoComplete="off"
                         />

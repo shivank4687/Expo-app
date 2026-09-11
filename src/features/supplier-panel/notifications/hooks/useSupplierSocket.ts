@@ -15,10 +15,15 @@ export const useSupplierSocket = ({
     onDisconnect,
 }: UseSupplierSocketOptions = {}) => {
     const { token: supplierToken, supplier: supplierData } = useAppSelector((state) => state.supplierAuth);
+    const isNetworkConnected = useAppSelector((state) => state.network.isConnected);
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
+        if (!isNetworkConnected) {
+            return;
+        }
+
         // Only connect if we have a supplier token and ID
         if (!supplierToken || !supplierData?.id) {
             return;
@@ -70,7 +75,7 @@ export const useSupplierSocket = ({
                 setIsConnected(false);
             }
         };
-    }, [supplierToken, supplierData?.id]); // Re-run if auth state changes
+    }, [supplierToken, supplierData?.id, isNetworkConnected]); // Re-run if auth or network state changes
 
     return {
         socket: socketRef.current,

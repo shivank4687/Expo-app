@@ -32,7 +32,7 @@ export const CategoryGridSection: React.FC<CategoryGridSectionProps> = ({ title,
                         <View key={product.id} style={styles.gridItem}>
                             <ProductCard
                                 product={product}
-                                onPress={() => router.push(`/product/${product.id}`)}
+                                onPress={() => router.push(`/product/${product.id}?name=${encodeURIComponent(product.name || '')}` as any)}
                             />
                         </View>
                     ))}

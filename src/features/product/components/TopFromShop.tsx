@@ -69,7 +69,7 @@ export const TopFromShop: React.FC<TopFromShopProps> = ({ product }) => {
                         <View key={item.id} style={styles.cardWrapper}>
                             <ProductCard
                                 product={item}
-                                onPress={() => router.push(`/product/${item.id}`)}
+                                onPress={() => router.push(`/product/${item.id}?name=${encodeURIComponent(item.name || '')}` as any)}
                             />
                         </View>
                     ))}

@@ -53,8 +53,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, isSelected, on
         // console.log('🎯 Cart item clicked - item.product_id:', item.product_id, 'item.product.id:', item.product?.id);
 
         if (productId) {
-            // console.log('✅ Navigating to product:', productId);
-            router.push(`/product/${productId}` as any);
+            router.push(`/product/${productId}?name=${encodeURIComponent(item.name || '')}` as any);
         } else {
             // console.log('❌ No product ID available. Item data:', JSON.stringify({
             //     id: item.id,

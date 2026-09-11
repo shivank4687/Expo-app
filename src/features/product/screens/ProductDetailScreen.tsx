@@ -54,7 +54,7 @@ export const ProductDetailScreen: React.FC = () => {
     const { showToast } = useToast();
     const { t } = useTranslation();
     const insets = useSafeAreaInsets();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, name } = useLocalSearchParams<{ id: string, name?: string }>();
 
     const [product, setProduct] = useState<Product | null>(null);
     const [configurableConfig, setConfigurableConfig] = useState<any>(null);
@@ -80,18 +80,18 @@ export const ProductDetailScreen: React.FC = () => {
     // Check if product is in wishlist
     const isInWishlist = useMemo(() => {
         if (!product) return false;
-        
+
         // If a variant is explicitly selected, check if that specific variant is in wishlist
         if (product.type === 'configurable' && selectedVariantId) {
             return wishlistItems.some((item) => item.product.id === selectedVariantId);
         }
-        
+
         // Otherwise, show filled heart if the master product OR any of its variants is in the wishlist
         if (product.type === 'configurable' && product.variants) {
             const variantIds = product.variants.map((v) => v.id);
             return wishlistItems.some((item) => item.product.id === product.id || variantIds.includes(item.product.id));
         }
-        
+
         return wishlistItems.some((item) => item.product.id === product.id);
     }, [wishlistItems, product, selectedVariantId]);
 
@@ -292,7 +292,7 @@ export const ProductDetailScreen: React.FC = () => {
     if (isLoading) {
         return (
             <View style={styles.container}>
-                <TopHeader title={t('product.productDetails')} onBack={() => router.back()} rightContent={cartRightContent} />
+                <TopHeader title={name || t('product.productDetails')} onBack={() => router.back()} rightContent={cartRightContent} />
                 <LoadingSpinner />
             </View>
         );
@@ -361,8 +361,8 @@ export const ProductDetailScreen: React.FC = () => {
             <TopHeader title={product.name} onBack={() => router.back()} rightContent={cartRightContent} />
 
             <View style={{ flex: 1 }}>
-                <KeyboardAwareScrollView 
-                    showsVerticalScrollIndicator={false} 
+                <KeyboardAwareScrollView
+                    showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     enableOnAndroid={true}
                     extraScrollHeight={20}

@@ -91,7 +91,12 @@ export function NotificationsScreen() {
         // notification.marketplace_order_id = b2b_marketplace_orders.id  ← what OrderController queries
         if (notification.order_id) {
             const navOrderId = (notification as any).marketplace_order_id ?? notification.order_id;
-            router.push(`/(supplier-drawer)/order-details?orderId=${navOrderId}&from=notifications` as any);
+            
+            if (notification.type === 'message' || notification.subtype === 'order_message') {
+                router.push(`/(supplier-drawer)/order-details?orderId=${navOrderId}&initialTab=messages&from=notifications` as any);
+            } else {
+                router.push(`/(supplier-drawer)/order-details?orderId=${navOrderId}&from=notifications` as any);
+            }
             return;
         }
 
@@ -182,6 +187,29 @@ export function NotificationsScreen() {
                 } as any);
             } else {
                 router.push('/(supplier-drawer)/(supplier-tabs)/rfq' as any);
+            }
+            return;
+        }
+
+        if (notifType === 'message') {
+            // Check if it's an order message or item support message
+            // action_url: .../orders/view/123#tab=messages or .../orders/view/123#tab=item-support
+            const orderMatch = notification.action_url?.match(/\/orders\/view\/(\d+)/);
+            if (orderMatch && orderMatch[1]) {
+                const navOrderId = orderMatch[1];
+                router.push(`/(supplier-drawer)/order-details?orderId=${navOrderId}&initialTab=messages&from=notifications` as any);
+                return;
+            }
+
+            // General support message fallback
+            const match = notification.action_url?.match(/\/messages\/view\/(\d+)/);
+            if (match && match[1]) {
+                router.push({
+                    pathname: '/(supplier-drawer)/chat/[threadId]',
+                    params: { threadId: match[1], customerName: 'Customer' }
+                } as any);
+            } else {
+                router.push('/(supplier-drawer)/(messaging)/messages' as any);
             }
             return;
         }

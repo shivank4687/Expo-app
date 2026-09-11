@@ -198,8 +198,18 @@ export const NotificationsScreen: React.FC = () => {
                     const orderMatches = path.match(/\/customer\/account\/orders\/view\/(\d+)/);
                     if (orderMatches) {
                         const [, orderId] = orderMatches;
-                        console.log('[NotificationsScreen] Navigating to order:', orderId);
-                        router.push(`/orders/${orderId}` as any);
+                        
+                        // Check for tab in hash (e.g. #tab=messages)
+                        let tabParam = '';
+                        if (url.hash) {
+                            const tabMatch = url.hash.match(/tab=(\w+)/);
+                            if (tabMatch && tabMatch[1] === 'messages') {
+                                tabParam = '?initialTab=messages';
+                            }
+                        }
+                        
+                        console.log('[NotificationsScreen] Navigating to order:', orderId, tabParam);
+                        router.push(`/orders/${orderId}${tabParam}` as any);
                         return;
                     }
                 }

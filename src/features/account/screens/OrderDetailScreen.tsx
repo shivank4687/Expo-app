@@ -57,7 +57,7 @@ const getStatusColor = (status: string): string => {
 export const OrderDetailScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, initialTab } = useLocalSearchParams<{ id: string, initialTab?: string }>();
     const { showToast } = useToast();
     const dispatch = useAppDispatch();
     const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -68,12 +68,22 @@ export const OrderDetailScreen: React.FC = () => {
     const [isCanceling, setIsCanceling] = useState(false);
     const [isReordering, setIsReordering] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'details' | 'messages'>('details');
+    const [activeTab, setActiveTab] = useState<'details' | 'messages'>(initialTab === 'messages' ? 'messages' : 'details');
 
     const tabs = React.useMemo<Tab[]>(() => [
         { id: 'details', label: t('orders.tabs.details', 'Details') },
         { id: 'messages', label: t('orders.tabs.messages', 'Messages') },
     ], [t]);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (initialTab === 'messages') {
+                setActiveTab('messages');
+            } else if (initialTab === 'details') {
+                setActiveTab('details');
+            }
+        }, [initialTab])
+    );
 
     const loadOrder = useCallback(async (showLoader = true) => {
         if (!id) {

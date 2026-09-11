@@ -153,8 +153,11 @@ export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ catego
         loadCategoryData(true);
     };
 
-    const handleProductPress = (productId: number) => {
-        router.push(`/product/${productId}`);
+    const handleProductPress = (productId: number, name: string) => {
+        router.push({
+            pathname: `/product/${productId}` as any,
+            params: { name }
+        });
     };
 
     const handleChildCategoryPress = (childId: number, childName: string) => {

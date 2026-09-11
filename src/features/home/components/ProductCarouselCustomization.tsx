@@ -61,8 +61,8 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
         loadProducts();
     }, [loadProducts]);
 
-    const handleProductPress = useCallback((productId: number) => {
-        router.push(`/product/${productId}`);
+    const handleProductPress = useCallback((product: Product) => {
+        router.push(`/product/${product.id}?name=${encodeURIComponent(product.name || '')}` as any);
     }, [router]);
 
     const handleViewAll = useCallback(() => {
@@ -129,7 +129,7 @@ export const ProductCarouselCustomization: React.FC<ProductCarouselCustomization
                     <View key={product.id} style={styles.productItem}>
                         <ProductCard
                             product={product}
-                            onPress={() => handleProductPress(product.id)}
+                            onPress={() => handleProductPress(product)}
                             cardVariant="flat"
                         />
                     </View>

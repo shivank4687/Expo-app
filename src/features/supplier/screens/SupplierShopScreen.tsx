@@ -447,8 +447,11 @@ export const SupplierShopScreen: React.FC = () => {
         }
     };
 
-    const handleProductPress = (productId: number) => {
-        router.push(`/product/${productId}`);
+    const handleProductPress = (productId: number, name: string) => {
+        router.push({
+            pathname: `/product/${productId}` as any,
+            params: { name }
+        });
     };
 
     const handleSortSelect = (value: string) => {
@@ -653,7 +656,7 @@ export const SupplierShopScreen: React.FC = () => {
                     <View style={styles.productItem}>
                         <ProductCard
                             product={item}
-                            onPress={() => handleProductPress(item.id)}
+                            onPress={() => handleProductPress(item.id, item.name)}
                         />
                     </View>
                 )}

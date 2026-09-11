@@ -48,7 +48,7 @@ export const DiscountSection: React.FC<DiscountSectionProps> = ({ products, onVi
                         <View key={item.id} style={styles.cardWrapper}>
                             <ProductCard
                                 product={item}
-                                onPress={() => router.push(`/product/${item.id}`)}
+                                onPress={() => router.push(`/product/${item.id}?name=${encodeURIComponent(item.name || '')}` as any)}
                             />
                         </View>
                     ))}

@@ -213,7 +213,7 @@ export const SearchScreen: React.FC = () => {
      * Navigate to product detail
      */
     const handleProductPress = useCallback((product: Product) => {
-        router.push(`/product/${product.id}`);
+        router.push(`/product/${product.id}?name=${encodeURIComponent(product.name || '')}` as any);
     }, [router]);
 
     const handleSortSelect = (value: string) => {

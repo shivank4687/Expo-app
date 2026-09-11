@@ -155,7 +155,7 @@ const NewOrderCard: React.FC<NewOrderCardProps> = ({ order, onPress, onAccept, o
                 </View>
 
                 {/* Action Buttons */}
-                <View style={styles.actionsRow}>
+                {/* <View style={styles.actionsRow}>
                     <TouchableOpacity
                         style={styles.actionButton}
                         onPress={handleAccept}
@@ -172,7 +172,7 @@ const NewOrderCard: React.FC<NewOrderCardProps> = ({ order, onPress, onAccept, o
                         <Ionicons name="create-outline" size={18} color="#0A292D" />
                         <Text style={styles.actionButtonText}>Modify</Text>
                     </TouchableOpacity>
-                </View>
+                </View> */}
             </View>
         </TouchableOpacity>
     );
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     statusPriceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        justifyContent: 'space-between',
     },
     statusIndicator: {
         flexDirection: 'row',
@@ -296,11 +296,10 @@ const styles = StyleSheet.create({
     },
     price: {
         fontFamily: 'Inter',
-        fontWeight: '500',
-        fontSize: 14,
-        lineHeight: 17,
-        color: '#000000',
-        flex: 1,
+        fontWeight: '700',
+        fontSize: 16,
+        lineHeight: 19,
+        color: '#006C5B',
     },
     actionsRow: {
         flexDirection: 'row',

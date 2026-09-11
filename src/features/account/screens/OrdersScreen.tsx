@@ -24,7 +24,7 @@ interface OrdersScreenProps {
 
 export const OrdersScreen: React.FC<OrdersScreenProps> = ({ standalone = true }) => {
     const { t } = useTranslation();
-    const { isAuthenticated, isLoading: isAuthLoading } = useAppSelector((state) => state.auth);
+    const { isAuthenticated, isLoading: isAuthLoading } = useRequireAuth();
     const { showToast } = useToast();
     const { status } = useLocalSearchParams<{ status?: string }>();
     const router = useRouter();

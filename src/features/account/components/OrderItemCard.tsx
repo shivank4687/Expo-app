@@ -61,7 +61,7 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item, onSupportPre
 
     const handleProductPress = () => {
         if (item.product_id) {
-            router.push(`/product/${item.product_id}`);
+            router.push(`/product/${item.product_id}?name=${encodeURIComponent(item.name || '')}` as any);
         }
     };
 

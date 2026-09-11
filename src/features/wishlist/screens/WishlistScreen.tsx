@@ -52,8 +52,8 @@ export const WishlistScreen = () => {
         console.log('[WishlistScreen] Is loading:', isLoading);
     }, [items, isLoading]);
 
-    const handleProductPress = (productId: number) => {
-        router.push(`/product/${productId}` as any);
+    const handleProductPress = (productId: number, productName: string) => {
+        router.push(`/product/${productId}?name=${encodeURIComponent(productName)}` as any);
     };
 
     const handleRemoveFromWishlist = (item: WishlistItem) => {
@@ -120,7 +120,7 @@ export const WishlistScreen = () => {
 
         return (
             <TouchableOpacity
-                onPress={() => handleProductPress(product.id)}
+                onPress={() => handleProductPress(item.product.id, item.product.name)}
                 activeOpacity={0.7}
                 style={styles.itemContainer}
             >

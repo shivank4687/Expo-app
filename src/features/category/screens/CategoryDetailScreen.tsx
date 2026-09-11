@@ -265,8 +265,11 @@ export const CategoryDetailScreen: React.FC = () => {
         console.log('Voice search pressed');
     };
 
-    const handleProductPress = (productId: number) => {
-        router.push(`/product/${productId}`);
+    const handleProductPress = (productId: number, name: string) => {
+        router.push({
+            pathname: `/product/${productId}` as any,
+            params: { name }
+        });
     };
 
     const handleChildCategoryPress = (categoryId: number, categoryName: string) => {

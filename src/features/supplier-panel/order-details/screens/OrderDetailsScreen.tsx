@@ -21,6 +21,8 @@ export default function OrderDetailsScreen() {
     const isFromDashboard = sourceParam === 'dashboard';
     const fromScreen = Array.isArray(params.from) ? params.from[0] : params.from;
 
+    const initialTabParam = Array.isArray(params.initialTab) ? params.initialTab[0] : params.initialTab;
+
     // Get order ID from route params
     const orderId = params.orderId ? parseInt(params.orderId as string) : 0;
     const tabs = useMemo<Tab[]>(() => [
@@ -46,12 +48,16 @@ export default function OrderDetailsScreen() {
         }
     };
 
-    // Drawer keeps this screen mounted; reset tab to default each time screen comes into focus
-    // so navigating away and back always starts on the Details tab.
+    // Drawer keeps this screen mounted; reset tab to default (or initialTab) each time screen comes into focus
+    // so navigating away and back acts appropriately.
     useFocusEffect(
         useCallback(() => {
-            setActiveTab('details');
-        }, [])
+            if (initialTabParam === 'messages' || initialTabParam === 'tracking') {
+                setActiveTab(initialTabParam as TabType);
+            } else {
+                setActiveTab('details');
+            }
+        }, [initialTabParam])
     );
 
     const [order, setOrder] = useState<OrderDetails | null>(null);

@@ -18,8 +18,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // Supplier Auth State
     const { isAuthenticated: isSupplierAuth, supplier } = useAppSelector((state) => state.supplierAuth);
 
+    // Network State
+    const isNetworkConnected = useAppSelector((state) => state.network.isConnected);
+
     // Manage Customer Socket Connection
     useEffect(() => {
+        if (!isNetworkConnected) {
+            socketService.disconnect();
+            return;
+        }
+
         if (isCustomerAuth && user?.id) {
             const token = `customer_${user.id}`;
             socketService.connect(token, 'customer');
@@ -45,10 +53,15 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                 socketService.disconnect();
             };
         }
-    }, [isCustomerAuth, user?.id, dispatch, showToast]);
+    }, [isCustomerAuth, user?.id, isNetworkConnected, dispatch, showToast]);
 
     // Manage Supplier Socket Connection
     useEffect(() => {
+        if (!isNetworkConnected) {
+            socketService.disconnect();
+            return;
+        }
+
         if (isSupplierAuth && supplier?.id) {
             const token = `supplier_${supplier.id}`;
             // If the socket service supports a supplier type connection
@@ -61,7 +74,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                 socketService.disconnect();
             };
         }
-    }, [isSupplierAuth, supplier?.id]);
+    }, [isSupplierAuth, supplier?.id, isNetworkConnected]);
 
     return <>{children}</>;
 };

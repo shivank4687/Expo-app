@@ -25,6 +25,8 @@ export const ProductListScreen: React.FC = () => {
         featured?: string;
         new?: string;
         on_sale?: string;
+        exclude_supplier_id?: string;
+        exclude_product_id?: string;
     }>();
     const router = useRouter();
     const { selectedLocale } = useAppSelector((state) => state.core);
@@ -72,7 +74,7 @@ export const ProductListScreen: React.FC = () => {
 
     useEffect(() => {
         loadProducts(1, true);
-    }, [params.id, params.featured, params.new, selectedLocale?.code, sortBy, filters, user?.customer_group_id]);
+    }, [params.id, params.featured, params.new, params.exclude_supplier_id, params.exclude_product_id, selectedLocale?.code, sortBy, filters, user?.customer_group_id]);
 
     const loadProducts = async (page: number, reset: boolean = false, isRefresh: boolean = false) => {
         // Prevent duplicate requests
@@ -102,6 +104,13 @@ export const ProductListScreen: React.FC = () => {
                 per_page: PRODUCTS_PER_PAGE,
                 locale: selectedLocale?.code,
             };
+
+            if (params.exclude_supplier_id) {
+                options.exclude_supplier_id = params.exclude_supplier_id;
+            }
+            if (params.exclude_product_id) {
+                options.exclude_product_id = params.exclude_product_id;
+            }
 
             // Add sort parameter
             if (sortBy) {
@@ -147,7 +156,7 @@ export const ProductListScreen: React.FC = () => {
                 response = await productsApi.getProducts(productFilters);
             }
 
-            const newProducts = response.data || [];
+            let newProducts = response.data || [];
 
             if (reset) {
                 setProducts(newProducts);
@@ -202,8 +211,11 @@ export const ProductListScreen: React.FC = () => {
         loadProducts(1, true, true);
     };
 
-    const handleProductPress = (productId: number) => {
-        router.push(`/product/${productId}`);
+    const handleProductPress = (productId: number, name: string) => {
+        router.push({
+            pathname: `/product/${productId}` as any,
+            params: { name }
+        });
     };
 
     const handleSortSelect = (value: string) => {
@@ -261,7 +273,7 @@ export const ProductListScreen: React.FC = () => {
                     <View style={styles.productItem}>
                         <ProductCard
                             product={item}
-                            onPress={() => handleProductPress(item.id)}
+                            onPress={() => handleProductPress(item.id, item.name)}
                         />
                     </View>
                 )}

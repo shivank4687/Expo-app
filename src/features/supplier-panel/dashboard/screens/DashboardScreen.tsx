@@ -247,7 +247,7 @@ export function DashboardScreen() {
                 </View>
 
                 {/* Info Card */}
-                <View style={styles.infoCardContainer}>
+                {/* <View style={styles.infoCardContainer}>
                     <View style={styles.infoImagePlaceholder}>
                         <Ionicons name="image-outline" size={40} color="#999999" />
                     </View>
@@ -259,7 +259,7 @@ export function DashboardScreen() {
                             Prioritize: pending orders and upload tracking on time to avoid penalties. Your payments are released automatically after delivery.
                         </Text>
                     </View>
-                </View>
+                </View> */}
 
                 {/* Metrics Grid */}
                 <View style={styles.metricsGrid}>

@@ -36,6 +36,12 @@ class SocketService {
             return;
         }
 
+        if (this.socket && !this.connected) {
+            console.log('Resuming disconnected Socket.IO connection');
+            this.socket.connect();
+            return;
+        }
+
         console.log(`Connecting to Socket.IO: ${this.serverUrl}`);
 
         this.socket = io(this.serverUrl, {

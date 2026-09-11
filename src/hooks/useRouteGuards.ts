@@ -115,8 +115,8 @@ export const useRequireCustomerAuth = () => {
                 if (router.canGoBack()) router.dismissAll();
                 router.replace('/(supplier-drawer)/(supplier-tabs)');
             } else if (!isCustomerAuthenticated) {
-                console.log('➡️ Require Customer Auth: Not authenticated, redirecting to Login');
-                router.replace('/login');
+                console.log('➡️ Require Customer Auth: Not authenticated, redirecting to Home');
+                router.replace('/');
             }
         }, [isCustomerAuthenticated, isSupplierAuthenticated, isCustomerLoading, isSupplierLoading, router])
     );
@@ -135,11 +135,8 @@ export const useRequireSupplierAuth = () => {
             if (isSupplierLoading) return;
 
             if (!isSupplierAuthenticated) {
-                console.log('➡️ Require Supplier Auth: Not authenticated as supplier, redirecting to Login');
-                router.replace({
-                    pathname: '/login',
-                    params: { type: 'supplier' }
-                });
+                console.log('➡️ Require Supplier Auth: Not authenticated as supplier, redirecting to Home');
+                router.replace('/');
             }
         }, [isSupplierAuthenticated, isSupplierLoading, router])
     );

@@ -48,7 +48,7 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
                     ? await productsApi.getProductsByCategory(categoryId, options)
                     : await productsApi.getProducts(options);
 
-                setRelatedProducts(response.data);
+                setRelatedProducts(response.data || []);
             } catch (error) {
                 console.error('Failed to load related supplier products:', error);
             } finally {
@@ -78,20 +78,28 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
     return (
         <View style={styles.container}>
             <DetailCard
-                title={`More from ${categoryName}`}
-                badgeText="View All"
+                title={t('product.moreFromOtherSuppliers', 'More from Other Suppliers')}
+                badgeText={t('common.viewAll', 'View All')}
                 onBadgePress={() => {
-                    if (categoryId) {
-                        router.push({
-                            pathname: '/product-list/all' as any,
-                            params: {
-                                id: categoryId.toString(),
-                                title: categoryName
-                            }
-                        });
-                    } else {
-                        router.push('/product-list/all' as any);
+                    const params: any = {
+                        title: t('product.otherSuppliers', 'Other Suppliers')
+                    };
+                    
+                    if (currentSupplierId) {
+                        params.exclude_supplier_id = currentSupplierId.toString();
                     }
+                    if (product.id) {
+                        params.exclude_product_id = product.id.toString();
+                    }
+
+                    const pathname = categoryId 
+                        ? `/product-list/${categoryId}` 
+                        : '/product-list/all';
+
+                    router.push({
+                        pathname: pathname as any,
+                        params
+                    });
                 }}
             >
                 <View style={styles.gridContainer}>
@@ -99,7 +107,7 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
                         <View key={item.id} style={styles.cardWrapper}>
                             <ProductCard
                                 product={item}
-                                onPress={() => router.push(`/product/${item.id}`)}
+                                onPress={() => router.push(`/product/${item.id}?name=${encodeURIComponent(item.name || '')}` as any)}
                             />
                         </View>
                     ))}

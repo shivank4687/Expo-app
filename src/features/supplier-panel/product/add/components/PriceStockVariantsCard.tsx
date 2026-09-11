@@ -42,6 +42,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
     isEditMode = false,
 }, ref) => {
     const { supplier } = useAppSelector((state) => state.supplierAuth);
+    const isConnected = useAppSelector((state) => state.network.isConnected);
     const shopName = supplier?.company_name || '';
 
     // Helper to get SKU prefix — strips spaces/special chars before slicing
@@ -943,7 +944,7 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                 <View style={styles.inputGroup}>
                     <View style={styles.sectionTitleRow}>
                         <Text style={styles.sectionTitle}>Variant Group</Text>
-                        {!isEditMode && (
+                        {!isEditMode && isConnected && (
                             <TouchableOpacity
                                 style={styles.addChipButton}
                                 onPress={() => setShowNewAttributeModal(true)}
@@ -1003,15 +1004,17 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                                     </TouchableOpacity>
                                 );
                             })}
-                            <TouchableOpacity
-                                style={styles.addChipButton}
-                                onPress={() => {
-                                    setTargetAttributeId(attrId);
-                                    setShowOptionModal(true);
-                                }}
-                            >
-                                <Ionicons name="add" size={24} color="#FFFFFF" />
-                            </TouchableOpacity>
+                            {isConnected && (
+                                <TouchableOpacity
+                                    style={styles.addChipButton}
+                                    onPress={() => {
+                                        setTargetAttributeId(attrId);
+                                        setShowOptionModal(true);
+                                    }}
+                                >
+                                    <Ionicons name="add" size={24} color="#FFFFFF" />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     );
                 })()}
@@ -1025,15 +1028,17 @@ const PriceStockVariantsCard = forwardRef<PriceStockVariantsCardRef, PriceStockV
                                 <View key={attrId} style={styles.inputGroup}>
                                     <View style={styles.sectionTitleRow}>
                                         <Text style={styles.label}>{attr?.admin_name}</Text>
-                                        <TouchableOpacity
-                                            style={styles.addChipButton}
-                                            onPress={() => {
-                                                setTargetAttributeId(attrId);
-                                                setShowOptionModal(true);
-                                            }}
-                                        >
-                                            <Ionicons name="add" size={20} color="#FFFFFF" />
-                                        </TouchableOpacity>
+                                        {isConnected && (
+                                            <TouchableOpacity
+                                                style={styles.addChipButton}
+                                                onPress={() => {
+                                                    setTargetAttributeId(attrId);
+                                                    setShowOptionModal(true);
+                                                }}
+                                            >
+                                                <Ionicons name="add" size={20} color="#FFFFFF" />
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
                                     <Dropdown
                                         placeholder={`Select ${attr?.admin_name}...`}
