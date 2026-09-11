@@ -101,11 +101,15 @@ export const CategoryProductGrid: React.FC<CategoryProductGridProps> = ({
                 ) : null
             }
             ListEmptyComponent={
-                !isLoading ? (
+                isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+                    </View>
+                ) : (
                     <View style={styles.emptyState}>
                         <Text style={styles.emptyText}>{t('category.noProducts', 'No products found in this category')}</Text>
                     </View>
-                ) : null
+                )
             }
         />
     );
@@ -158,6 +162,11 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.text.secondary,
+    },
+    loadingContainer: {
+        paddingVertical: theme.spacing.xl * 2,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     emptyState: {
         paddingVertical: theme.spacing.xl * 2,

@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     KeyboardAvoidingView,
+    Keyboard,
     Platform,
     Share,
 } from 'react-native';
@@ -44,6 +45,7 @@ import { toggleWishlistThunk, fetchWishlistThunk } from '@/store/slices/wishlist
 import { useToast } from '@/shared/components/Toast';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { addProduct } from '@/store/slices/recentlyViewedSlice';
 
 export const ProductDetailScreen: React.FC = () => {
@@ -66,6 +68,7 @@ export const ProductDetailScreen: React.FC = () => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
     const [isMessageModalVisible, setIsMessageModalVisible] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const { isAuthenticated, user } = useAppSelector((state) => state.auth);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
@@ -116,6 +119,25 @@ export const ProductDetailScreen: React.FC = () => {
             loadProduct();
         }
     }, [id]);
+
+    // Manually track keyboard height — KeyboardAvoidingView is unreliable
+    // on Android with edgeToEdgeEnabled:true in app.json
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardDidShow', (e) => {
+            if (Platform.OS === 'android') {
+                setKeyboardHeight(e.endCoordinates.height);
+            }
+        });
+        const hide = Keyboard.addListener('keyboardDidHide', () => {
+            if (Platform.OS === 'android') {
+                setKeyboardHeight(0);
+            }
+        });
+        return () => {
+            show.remove();
+            hide.remove();
+        };
+    }, []);
 
     const loadProduct = async () => {
         try {
@@ -317,12 +339,13 @@ export const ProductDetailScreen: React.FC = () => {
         <View style={styles.container}>
             <TopHeader title={product.name} onBack={() => router.back()} rightContent={cartRightContent} />
 
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
-            >
-                <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={{ flex: 1 }}>
+                <KeyboardAwareScrollView 
+                    showsVerticalScrollIndicator={false} 
+                    keyboardShouldPersistTaps="handled"
+                    enableOnAndroid={true}
+                    extraScrollHeight={20}
+                >
                     {/* Image Gallery */}
                     <ProductGallery
                         images={displayImages}
@@ -707,41 +730,47 @@ export const ProductDetailScreen: React.FC = () => {
                         </Text>
                     </View> */}
                     </View>
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
                 {/* Product Totals Card */}
                 {canAddToCart ? (
-                    <View style={{ paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }}>
-                        <ProductTotals
-                            price={formatters.formatPrice(getUnitPriceForQty(quantity) * quantity, currencySymbol)}
-                            deliveryText="Delivery 22 Dec - 24 Dec"
-                            quantity={quantity}
-                            onIncreaseQty={() => handleQuantityChange(1)}
-                            onDecreaseQty={() => handleQuantityChange(-1)}
-                            onQuantityChange={handleQuantityDirectInput}
-                            showRfq={!!product?.supplier?.id}
-                            rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
-                            onRfqPress={() => {
-                                if (isAuthenticated) {
-                                    router.push({
-                                        pathname: `/rfq/${product.supplier!.id}` as any,
-                                        params: {
-                                            productId: product.id.toString(),
-                                            productName: product.name,
-                                        }
-                                    });
-                                } else {
-                                    router.push('/login');
-                                }
-                            }}
-                            onAddToCart={handleAddToCart}
-                            addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
-                            isAddingToCart={isAddingToCart}
-                            showAddToCart={canAddToCart}
-                        />
-                    </View>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                        <View style={{
+                            paddingHorizontal: theme.spacing.md,
+                            paddingTop: theme.spacing.xs,
+                            paddingBottom: Math.max(insets.bottom, theme.spacing.lg) + keyboardHeight,
+                        }}>
+                            <ProductTotals
+                                price={formatters.formatPrice(getUnitPriceForQty(quantity) * quantity, currencySymbol)}
+                                deliveryText="Delivery 22 Dec - 24 Dec"
+                                quantity={quantity}
+                                onIncreaseQty={() => handleQuantityChange(1)}
+                                onDecreaseQty={() => handleQuantityChange(-1)}
+                                onQuantityChange={handleQuantityDirectInput}
+                                showRfq={!!product?.supplier?.id}
+                                rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
+                                onRfqPress={() => {
+                                    if (isAuthenticated) {
+                                        router.push({
+                                            pathname: `/rfq/${product.supplier!.id}` as any,
+                                            params: {
+                                                productId: product.id.toString(),
+                                                productName: product.name,
+                                            }
+                                        });
+                                    } else {
+                                        router.push('/login');
+                                    }
+                                }}
+                                onAddToCart={handleAddToCart}
+                                addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
+                                isAddingToCart={isAddingToCart}
+                                showAddToCart={canAddToCart}
+                            />
+                        </View>
+                    </KeyboardAvoidingView>
                 ) : null}
-            </KeyboardAvoidingView>
+            </View>
         </View>
     );
 };

@@ -10,7 +10,7 @@ import { SortModal } from '@/shared/components/SortModal';
 import { theme } from '@/theme';
 import { FilterState } from '@/types/filters.types';
 import { useAppSelector } from '@/store/hooks';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { CategoryProductGrid } from '@/features/category/components/CategoryProductGrid';
@@ -36,12 +36,22 @@ const findCategoryById = (cats: Category[], targetId: number): Category | null =
 export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ categoryId }) => {
     const router = useRouter();
     const { t } = useTranslation();
-    const [category, setCategory] = useState<Category | null>(null);
+    const { categories } = useAppSelector((state) => state.category);
+    
+    // Attempt to load category synchronously from Redux to prevent UI flash
+    const reduxCategory = useMemo(() => findCategoryById(categories, categoryId), [categories, categoryId]);
+
+    const [category, setCategory] = useState<Category | null>(reduxCategory);
+    
+    // Ensure category updates when switching tabs (which changes categoryId)
+    useEffect(() => {
+        if (reduxCategory) setCategory(reduxCategory);
+    }, [reduxCategory]);
+
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const { categories } = useAppSelector((state) => state.category);
     const { user } = useAppSelector((state) => state.auth);
 
     // Pagination state
@@ -164,7 +174,7 @@ export const HomeCategoryContent: React.FC<HomeCategoryContentProps> = ({ catego
         return count;
     };
 
-    if (isLoading) {
+    if (isLoading && !category) {
         return (
             <View style={styles.loadingContainer}>
                 <LoadingSpinner />

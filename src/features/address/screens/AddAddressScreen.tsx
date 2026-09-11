@@ -11,6 +11,8 @@ import {
     Platform,
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { addressApi } from '@/services/api/address.api';
 import { coreApi, State } from '@/services/api/core.api';
@@ -28,6 +30,7 @@ export const AddAddressScreen: React.FC = () => {
     const { showToast } = useToast();
     const { id } = useLocalSearchParams<{ id?: string }>();
     const isEditMode = !!id;
+    const insets = useSafeAreaInsets();
 
     const user = useAppSelector(state => state.auth.user);
     const lastSelectedCountry = useAppSelector(state => state.core.lastSelectedCountry);
@@ -315,15 +318,13 @@ export const AddAddressScreen: React.FC = () => {
                 backgroundColor={theme.colors.background.default}
             />
 
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
-            >
-                <ScrollView
+            <View style={{ flex: 1 }}>
+                <KeyboardAwareScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.contentContainer}
                     keyboardShouldPersistTaps="handled"
+                    enableOnAndroid={true}
+                    extraScrollHeight={20}
                 >
                     {/* First Name */}
                     <View style={styles.formGroup}>
@@ -547,10 +548,10 @@ export const AddAddressScreen: React.FC = () => {
 
                     {/* Bottom spacing */}
                     <View style={{ height: 20 }} />
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
                 {/* Save Button - lives inside KAV so it rises above the keyboard */}
-                <View style={styles.fixedButtonContainer}>
+                <View style={[styles.fixedButtonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
                     <TouchableOpacity
                         style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
                         onPress={handleSave}
@@ -569,7 +570,7 @@ export const AddAddressScreen: React.FC = () => {
                         )}
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
 
             {/* Country Picker Modal */}
             <PickerModal

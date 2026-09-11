@@ -8,6 +8,7 @@ import { fetchCustomerStatsThunk } from '@/store/slices/customerStatsSlice';
 import { updateBuyerType } from '@/store/slices/authSlice';
 import { useFocusEffect } from '@react-navigation/native';
 import { formatters } from '@/shared/utils/formatters';
+import { AvatarImage } from '@/shared/components/LazyImage';
 import { getCustomerProfile, CUSTOMER_SUBTYPES } from '../api/customer-tax-profile.api';
 
 export const CustomerStats = () => {
@@ -56,15 +57,31 @@ export const CustomerStats = () => {
         }, [dispatch, user?.buyer_type, isAuthenticated])
     );
 
+    const initials = React.useMemo(() => {
+        const firstName = user?.first_name || user?.name?.split(' ')[0] || '';
+        const lastName = user?.last_name || user?.name?.split(' ').slice(1).join(' ') || '';
+        const firstInitial = firstName.charAt(0).toUpperCase();
+        const lastInitial = lastName.charAt(0).toUpperCase();
+        return firstInitial + lastInitial;
+    }, [user]);
+
     return (
         <View style={styles.container}>
             {/* Top Row: Profile Info & Actions */}
             <View style={styles.topRow}>
                 {/* Profile Left Side */}
                 <View style={styles.profileSection}>
-                    <View style={styles.avatar}>
-                        <Ionicons name="person" size={24} color="#A3A194" />
-                    </View>
+                    {user?.avatar ? (
+                        <AvatarImage
+                            imageUrl={user.avatar}
+                            style={styles.avatar}
+                            size={48}
+                        />
+                    ) : (
+                        <View style={styles.avatar}>
+                            <Text style={styles.avatarInitials}>{initials}</Text>
+                        </View>
+                    )}
                     <View style={styles.infoContainer}>
                         <Text style={styles.nameText}>{user?.name || 'User'}</Text>
                         {buyerType && (
@@ -159,6 +176,13 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
+        overflow: 'hidden',
+    },
+    avatarInitials: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#00615E',
+        textTransform: 'uppercase',
     },
     infoContainer: {
         flexDirection: 'column',

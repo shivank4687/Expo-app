@@ -69,10 +69,10 @@ export const HomeScreen: React.FC = () => {
                     console.error('[HomeScreen] Failed to load discounted products:', err);
                     return [];
                 }),
-                productsApi.getNewProducts(8).catch(err => {
-                    console.error('[HomeScreen] Failed to load new products:', err);
-                    return [];
-                }),
+                // productsApi.getNewProducts(8).catch(err => {
+                //     console.error('[HomeScreen] Failed to load new products:', err);
+                //     return [];
+                // }),
                 productsApi.getFeaturedProducts(8).catch(err => {
                     console.error('[HomeScreen] Failed to load featured products:', err);
                     return [];
@@ -81,9 +81,9 @@ export const HomeScreen: React.FC = () => {
                     console.error('[HomeScreen] Failed to load top sellers:', err);
                     return [];
                 }),
-            ]).then(([discounted, newArr, featured, sellers]) => {
+            ]).then(([discounted, featured, sellers]) => {
                 setDiscountedProducts(discounted);
-                setNewProducts(newArr);
+                //setNewProducts(newArr);
                 setFeaturedProducts(featured);
                 setTopSellers(sellers as TopSeller[]);
                 setIsLoadingVendors(false);
@@ -209,11 +209,11 @@ export const HomeScreen: React.FC = () => {
                         onViewAll={() => router.push('/product-list/all?title=Daily Deals&on_sale=1')}
                     />
 
-                    <CategoryGridSection
+                    {/* <CategoryGridSection
                         title="New Arrivals"
                         products={newProducts}
                         onViewAll={() => router.push('/product-list/all?title=New Arrivals&new=1')}
-                    />
+                    /> */}
 
                     <CategoryGridSection
                         title="Featured Products"
@@ -230,7 +230,7 @@ export const HomeScreen: React.FC = () => {
                     )} */}
                 </ScrollView>
             ) : (
-                <HomeCategoryContent categoryId={activeTabId as number} />
+                <HomeCategoryContent key={activeTabId} categoryId={activeTabId as number} />
             )}
         </View>
     );

@@ -6,13 +6,13 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
-    KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
     Alert,
     Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -519,15 +519,14 @@ export const RFQScreen: React.FC = () => {
                 onBack={() => router.back()}
             />
 
-            <KeyboardAvoidingView
-                style={styles.keyboardContainer}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-            >
-
-                <ScrollView
+            <View style={styles.keyboardContainer}>
+                <KeyboardAwareScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    enableOnAndroid={true}
+                    extraScrollHeight={20}
+                >
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
@@ -904,7 +903,7 @@ export const RFQScreen: React.FC = () => {
                             )}
                         </View>
                     </View>
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
                 {/* Submit Button */}
                 <View style={[
@@ -924,7 +923,7 @@ export const RFQScreen: React.FC = () => {
                         size="medium"
                     />
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </View>
     );
 };

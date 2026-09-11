@@ -31,7 +31,6 @@ function AppContent() {
   const { isAuthenticated: isCustomerAuthenticated, isLoading: isCustomerLoading, user } = useAppSelector((state) => state.auth);
   const { isAuthenticated: isSupplierAuthenticated, isLoading: isSupplierLoading, supplier } = useAppSelector((state) => state.supplierAuth);
   const { selectedLocale } = useAppSelector((state) => state.core);
-  const hasRefreshedCategories = useRef(false);
 
   // Setup CUSTOMER push notification handlers on app start
   useEffect(() => {
@@ -71,15 +70,10 @@ function AppContent() {
   useEffect(() => {
     if (!selectedLocale?.code) return;
 
-    const shouldForceRefresh = !hasRefreshedCategories.current;
-    if (shouldForceRefresh) {
-      hasRefreshedCategories.current = true;
-    }
-
     dispatch(
       fetchCategories({
         locale: selectedLocale.code,
-        forceRefresh: shouldForceRefresh,
+        forceRefresh: false, // Let categorySlice TTL logic handle refresh
       })
     );
   }, [dispatch, selectedLocale?.code]);

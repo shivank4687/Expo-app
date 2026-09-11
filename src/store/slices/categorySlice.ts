@@ -6,6 +6,7 @@ interface CategoryState {
     isLoading: boolean;
     error: string | null;
     lastFetchedLocale: string | null; // Track which locale was fetched
+    lastFetchedAt: number | null; // TTL cache timestamp
 }
 
 const initialState: CategoryState = {
@@ -13,6 +14,7 @@ const initialState: CategoryState = {
     isLoading: false,
     error: null,
     lastFetchedLocale: null,
+    lastFetchedAt: null,
 };
 
 /**
@@ -26,18 +28,22 @@ export const fetchCategories = createAsyncThunk(
         try {
             const state = getState() as { category: CategoryState };
             
-           
+            const isSameLocale = state.category.lastFetchedLocale === locale;
+            const hasCategories = state.category.categories.length > 0;
+            const lastFetchedAt = state.category.lastFetchedAt;
+            // 24 hours TTL
+            const isCacheValid = lastFetchedAt && (Date.now() - lastFetchedAt < 24 * 60 * 60 * 1000);
             
-            // Skip if already loaded for this locale (unless force refresh)
-            if (!forceRefresh && state.category.lastFetchedLocale === locale && state.category.categories.length > 0) {
+            // Skip if already loaded for this locale and cache is valid (unless force refresh)
+            if (!forceRefresh && isSameLocale && hasCategories && isCacheValid) {
                 console.log('[Category Redux] Using cached categories for locale:', locale);
-                return { categories: state.category.categories, locale };
+                return { categories: state.category.categories, locale, timestamp: lastFetchedAt };
             }
 
             console.log('[Category Redux] Fetching categories for locale:', locale, forceRefresh ? '(force refresh)' : '');
             const response = await categoriesApi.getCategories();
             const categories = response.data;
-            return { categories, locale };
+            return { categories, locale, timestamp: Date.now() };
         } catch (error: any) {
             console.error('[Category Redux] Error fetching categories:', error);
             return rejectWithValue(error.message || 'Failed to fetch categories');
@@ -75,6 +81,9 @@ const categorySlice = createSlice({
                 state.isLoading = false;
                 state.categories = action.payload.categories;
                 state.lastFetchedLocale = action.payload.locale;
+                if (action.payload.timestamp) {
+                    state.lastFetchedAt = action.payload.timestamp;
+                }
             })
             .addCase(fetchCategories.rejected, (state, action) => {
                 state.isLoading = false;

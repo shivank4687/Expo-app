@@ -24,6 +24,7 @@ interface CoreState {
     isLoading: boolean;
     isLoadingCountries: boolean;
     error: string | null;
+    lastFetchedAt: number | null; // TTL cache timestamp
 }
 
 // Initial state
@@ -39,13 +40,34 @@ const initialState: CoreState = {
     isLoading: false,
     isLoadingCountries: false,
     error: null,
+    lastFetchedAt: null,
 };
 
 // Async thunks
 export const fetchCoreConfig = createAsyncThunk(
     'core/fetchConfig',
-    async (_, { rejectWithValue }) => {
+    async (_, { getState, rejectWithValue }) => {
         try {
+            const state = getState() as { core: CoreState };
+            const lastFetchedAt = state.core.lastFetchedAt;
+            const hasLocales = state.core.locales && state.core.locales.length > 0;
+            // 24 hour TTL
+            const isCacheValid = lastFetchedAt && (Date.now() - lastFetchedAt < 24 * 60 * 60 * 1000);
+
+            if (hasLocales && isCacheValid) {
+                console.log('✅ [Core Redux] Using valid cached core config');
+                return {
+                    locales: state.core.locales,
+                    currencies: state.core.currencies,
+                    channels: state.core.channels,
+                    selectedLocale: state.core.selectedLocale,
+                    selectedCurrency: state.core.selectedCurrency,
+                    selectedChannel: state.core.selectedChannel,
+                    lastSelectedCountry: state.core.lastSelectedCountry,
+                    timestamp: lastFetchedAt
+                };
+            }
+
             const config = await coreApi.getCoreConfig();
 
             // Load saved preferences from storage
@@ -83,6 +105,7 @@ export const fetchCoreConfig = createAsyncThunk(
                 selectedCurrency: selectedCurrency || null,
                 selectedChannel: config.defaultChannel || null,
                 lastSelectedCountry,
+                timestamp: Date.now(),
             };
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch core configuration');
@@ -189,6 +212,9 @@ const coreSlice = createSlice({
                 state.selectedCurrency = action.payload.selectedCurrency;
                 state.selectedChannel = action.payload.selectedChannel;
                 state.lastSelectedCountry = action.payload.lastSelectedCountry;
+                if ((action.payload as any).timestamp) {
+                    state.lastFetchedAt = (action.payload as any).timestamp;
+                }
 
                 // Sync with API client cache
                 if (action.payload.selectedLocale) {

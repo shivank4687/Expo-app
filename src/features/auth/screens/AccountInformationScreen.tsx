@@ -15,6 +15,7 @@ import { parseValidDate } from '@/shared/utils/dateUtils';
 import { TopHeader } from '@/shared/components/TopHeader';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { ImageCropModal } from '@/shared/components';
 import { requestMediaLibraryPermission, pickSingleImage, getActualFileSize } from '@/shared/utils/imageUtils';
 
@@ -435,16 +436,14 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
             {showHeader && <TopHeader title={t('account.accountInfo')} onBack={() => router.back()} />}
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-            >
-                <ScrollView
+            <View style={{ flex: 1 }}>
+                <KeyboardAwareScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
+                    enableOnAndroid={true}
+                    extraScrollHeight={20}
                 >
                     <View style={styles.header}>
                         <View style={styles.avatarContainer}>
@@ -649,7 +648,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
 
                     {/* Bottom spacing inside scroll */}
                     <View style={{ height: 20 }} />
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
                 {/* Save Button - lives inside KAV so it rises above the keyboard */}
                 <View style={[styles.fixedButtonContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
@@ -674,7 +673,7 @@ export const AccountInformationScreen: React.FC<{ showHeader?: boolean }> = ({ s
                         )}
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
             <ImageCropModal
                 visible={cropImageUri !== null}
                 imageUri={cropImageUri || ''}
