@@ -40,10 +40,6 @@ export const ProductCard = React.memo<ProductCardProps>(({ product, onPress, car
         state.cart.isAddingToCart && state.cart.lastAddedProductId === product.id
     );
     
-    const isInWishlist = useAppSelector((state) => 
-        state.wishlist.items.some((item) => item.product.id === product.id)
-    );
-    
     const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
     const selectedCurrency = useAppSelector((state) => state.core.selectedCurrency);
 
@@ -66,7 +62,18 @@ export const ProductCard = React.memo<ProductCardProps>(({ product, onPress, car
     } = variantState;
 
     // ─── Wishlist ────────────────────────────────────────────────────────────
-    // isInWishlist is now handled efficiently by useAppSelector above
+    const isInWishlist = useAppSelector((state) => {
+        // If a variant is explicitly selected, check if that specific variant is in wishlist
+        if (isConfigurable && isFullySelected && selectedVariantId) {
+            return state.wishlist.items.some((item) => item.product.id === selectedVariantId);
+        }
+        // Otherwise, show filled heart if the master product OR any of its variants is in the wishlist
+        if (isConfigurable && product.variants) {
+            const variantIds = product.variants.map((v) => v.id);
+            return state.wishlist.items.some((item) => item.product.id === product.id || variantIds.includes(item.product.id));
+        }
+        return state.wishlist.items.some((item) => item.product.id === product.id);
+    });
 
     // ─── Derived display values ───────────────────────────────────────────────
     const productData = useMemo(() => {
@@ -241,9 +248,21 @@ export const ProductCard = React.memo<ProductCardProps>(({ product, onPress, car
             return;
         }
 
+        if (isConfigurable && !isFullySelected) {
+            // If selector is closed, open it; if already open, prompt user
+            if (!isSelectorOpen) {
+                setIsSelectorOpen(true);
+                fetchConfig();
+            } else {
+                showToast({ message: t('product.selectProductOptionsToAddWishlist') || 'Please select options to add to wishlist', type: 'warning' });
+            }
+            return;
+        }
+
         setIsTogglingWishlist(true);
         try {
-            await dispatch(toggleWishlistThunk(product.id)).unwrap();
+            const wishlistProductId = (isConfigurable && selectedVariantId) ? selectedVariantId : product.id;
+            await dispatch(toggleWishlistThunk(wishlistProductId)).unwrap();
             await dispatch(fetchWishlistThunk()).unwrap();
         } catch (error: any) {
             showToast({ message: error || t('product.failedToUpdateWishlist'), type: 'error' });
@@ -497,11 +516,6 @@ export const ProductCard = React.memo<ProductCardProps>(({ product, onPress, car
                 </View>
             </Card>
         </TouchableOpacity>
-    );
-}, (prevProps, nextProps) => {
-    return (
-        prevProps.product.id === nextProps.product.id &&
-        prevProps.cardVariant === nextProps.cardVariant
     );
 });
 

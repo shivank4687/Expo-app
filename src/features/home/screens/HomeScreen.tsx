@@ -50,15 +50,19 @@ export const HomeScreen: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const loadData = useCallback(async () => {
+    const hasFetchedStaticRef = React.useRef(false);
+
+    const loadData = useCallback(async (isManualRefresh = false) => {
         if (!selectedLocale?.code) return;
 
         try {
             setError(null);
 
             // 1. Fetch critical layout & theme customization first
-            const customizationsData = await themeApi.getCustomizations();
-            setCustomizations(customizationsData);
+            if (isManualRefresh || !hasFetchedStaticRef.current) {
+                const customizationsData = await themeApi.getCustomizations();
+                setCustomizations(customizationsData);
+            }
 
             // Dismiss global loading spinner as soon as layout/carousel is loaded
             setIsLoading(false);
@@ -69,24 +73,22 @@ export const HomeScreen: React.FC = () => {
                     console.error('[HomeScreen] Failed to load discounted products:', err);
                     return [];
                 }),
-                // productsApi.getNewProducts(8).catch(err => {
-                //     console.error('[HomeScreen] Failed to load new products:', err);
-                //     return [];
-                // }),
                 productsApi.getFeaturedProducts(8).catch(err => {
                     console.error('[HomeScreen] Failed to load featured products:', err);
                     return [];
                 }),
-                suppliersApi.getTopSellers().catch(err => {
+                (isManualRefresh || !hasFetchedStaticRef.current) ? suppliersApi.getTopSellers().catch(err => {
                     console.error('[HomeScreen] Failed to load top sellers:', err);
                     return [];
-                }),
+                }) : Promise.resolve(null),
             ]).then(([discounted, featured, sellers]) => {
                 setDiscountedProducts(discounted);
-                //setNewProducts(newArr);
                 setFeaturedProducts(featured);
-                setTopSellers(sellers as TopSeller[]);
+                if (sellers !== null) {
+                    setTopSellers(sellers as TopSeller[]);
+                }
                 setIsLoadingVendors(false);
+                hasFetchedStaticRef.current = true;
             }).finally(() => {
                 setIsRefreshing(false);
             });
@@ -100,12 +102,12 @@ export const HomeScreen: React.FC = () => {
     }, [selectedLocale?.code]);
 
     useEffect(() => {
-        loadData();
-    }, [loadData, user?.customer_group_id]);
+        loadData(false);
+    }, [loadData, user?.id, user?.customer_group_id]);
 
     const handleRefresh = useCallback(() => {
         setIsRefreshing(true);
-        loadData();
+        loadData(true);
     }, [loadData]);
 
     const tabs = useMemo(() => [{ id: 'home', name: t('common.explore') }, ...categories], [categories, t]);

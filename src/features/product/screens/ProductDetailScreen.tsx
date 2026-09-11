@@ -80,8 +80,20 @@ export const ProductDetailScreen: React.FC = () => {
     // Check if product is in wishlist
     const isInWishlist = useMemo(() => {
         if (!product) return false;
+        
+        // If a variant is explicitly selected, check if that specific variant is in wishlist
+        if (product.type === 'configurable' && selectedVariantId) {
+            return wishlistItems.some((item) => item.product.id === selectedVariantId);
+        }
+        
+        // Otherwise, show filled heart if the master product OR any of its variants is in the wishlist
+        if (product.type === 'configurable' && product.variants) {
+            const variantIds = product.variants.map((v) => v.id);
+            return wishlistItems.some((item) => item.product.id === product.id || variantIds.includes(item.product.id));
+        }
+        
         return wishlistItems.some((item) => item.product.id === product.id);
-    }, [wishlistItems, product]);
+    }, [wishlistItems, product, selectedVariantId]);
 
     const selectedVariant = useMemo(() => {
         if (product?.type !== 'configurable' || !selectedVariantId || !product?.variants) return null;
@@ -176,10 +188,19 @@ export const ProductDetailScreen: React.FC = () => {
             return;
         }
 
+        if (product.type === 'configurable' && !selectedVariantId) {
+            showToast({
+                message: t('product.selectProductOptionsToAddWishlist') || 'Please select options to add to wishlist',
+                type: 'warning',
+            });
+            return;
+        }
+
         setIsTogglingWishlist(true);
 
         try {
-            await dispatch(toggleWishlistThunk(product.id)).unwrap();
+            const wishlistProductId = (product.type === 'configurable' && selectedVariantId) ? selectedVariantId : product.id;
+            await dispatch(toggleWishlistThunk(wishlistProductId)).unwrap();
             await dispatch(fetchWishlistThunk()).unwrap();
 
             const message = isInWishlist
