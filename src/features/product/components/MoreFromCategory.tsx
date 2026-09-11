@@ -69,7 +69,7 @@ export const MoreFromCategory: React.FC<MoreFromCategoryProps> = ({ product }) =
                     if (categoryId) {
                         router.push(`/category/${categoryId}?name=${encodeURIComponent(categoryName)}`);
                     } else {
-                        router.push('/products' as any);
+                        router.push('/product-list/all');
                     }
                 }}
             >

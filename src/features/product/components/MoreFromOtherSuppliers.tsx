@@ -83,14 +83,14 @@ export const MoreFromOtherSuppliers: React.FC<MoreFromOtherSuppliersProps> = ({ 
                 onBadgePress={() => {
                     if (categoryId) {
                         router.push({
-                            pathname: '/products' as any,
+                            pathname: '/product-list/all' as any,
                             params: {
                                 id: categoryId.toString(),
                                 title: categoryName
                             }
                         });
                     } else {
-                        router.push('/products' as any);
+                        router.push('/product-list/all' as any);
                     }
                 }}
             >
