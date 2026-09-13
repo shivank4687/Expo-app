@@ -76,18 +76,19 @@ export const ShopHeader = React.memo<ShopHeaderProps>(({ title, showSearch = tru
         return () => clearInterval(interval);
     }, [placeholders.length, fadeAnim, translateYAnim, showSearch]);
 
-    // Refetch when authentication changes
+    // Fetch cart on mount if not already loaded in Redux
     useEffect(() => {
-        // Only fetch cart on header mount if not already loaded in Redux
         if (!hasCart) {
             dispatch(fetchCartThunk());
         }
+    }, [hasCart, dispatch]);
 
-        // Fetch notification count for authenticated users
+    // Refetch notification count when authentication changes
+    useEffect(() => {
         if (isAuthenticated) {
             dispatch(fetchUnreadCountThunk());
         }
-    }, [isAuthenticated, dispatch, hasCart]);
+    }, [isAuthenticated, dispatch]);
 
     const openDrawer = () => {
         navigation.dispatch(DrawerActions.openDrawer());
