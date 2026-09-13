@@ -3,15 +3,15 @@ import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { TopHeader } from '@/shared/components/TopHeader';
 import { theme } from '@/theme';
-import { ItemSupportChatView } from '../components/ItemSupportChatView';
+import { SupplierItemSupportChatView } from '../components/SupplierItemSupportChatView';
 
-export const ItemSupportChatScreen: React.FC = () => {
+export const SupplierItemSupportChatScreen: React.FC = () => {
     const router = useRouter();
     const params = useLocalSearchParams<{
         itemId: string;
         orderId: string;
-        productName: string;
-        orderIncrement: string;
+        productName?: string;
+        orderIncrement?: string;
         itemImage?: string;
     }>();
 
@@ -33,7 +33,7 @@ export const ItemSupportChatScreen: React.FC = () => {
                 onBack={() => router.back()}
                 backgroundColor={theme.colors.background.default}
             />
-            <ItemSupportChatView
+            <SupplierItemSupportChatView
                 orderId={orderId}
                 itemId={itemId}
                 productName={productName}

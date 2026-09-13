@@ -10,9 +10,10 @@ const DEFAULT_IMAGE = 'https://via.placeholder.com/100';
 interface OrderInfoCardProps {
     order: OrderDetailsResponse['data'];
     onRefundPress?: () => void;
+    onItemSupportPress?: (item: any, itemImage?: string) => void;
 }
 
-export const OrderInfoCard = ({ order, onRefundPress }: OrderInfoCardProps) => {
+export const OrderInfoCard = ({ order, onRefundPress, onItemSupportPress }: OrderInfoCardProps) => {
     const {
         increment_id,
         created_at,
@@ -68,49 +69,56 @@ export const OrderInfoCard = ({ order, onRefundPress }: OrderInfoCardProps) => {
                 </View>
             </View>
 
-            {/* Items List */}
-            {/* <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Order Items ({items?.length || 0})</Text>
-            </View> */}
-
             <View style={styles.itemsContainer}>
                 {items && items.map((item, index) => (
-                    <View key={item.id || index} style={styles.itemRow}>
-                        <View style={styles.imageContainer}>
-                            <Image
-                                source={{ uri: item.product_image || DEFAULT_IMAGE }}
-                                style={styles.productImage}
-                            />
-                        </View>
-                        <View style={styles.itemDetails}>
-                            <Text style={styles.productName}>{item.product_name}</Text>
-                            <Text style={styles.itemSku}>SKU - {item.product_sku}</Text>
-
-                            <View style={styles.priceRow}>
-                                <Text style={styles.itemPriceInfo}>
-                                    {formatCurrency(item.price)} Per Unit x {item.qty_ordered} Quantity
-                                </Text>
+                    <View key={item.id || index} style={styles.itemRowWrapper}>
+                        <View style={styles.itemRow}>
+                            <View style={styles.imageContainer}>
+                                <Image
+                                    source={{ uri: item.product_image || DEFAULT_IMAGE }}
+                                    style={styles.productImage}
+                                />
                             </View>
+                            <View style={styles.itemDetails}>
+                                <Text style={styles.productName}>{item.product_name}</Text>
+                                <Text style={styles.itemSku}>SKU - {item.product_sku}</Text>
 
-                            <View style={styles.itemBreakdown}>
-                                <View style={styles.breakdownRow}>
-                                    <Text style={styles.breakdownLabel}>Ordered ({item.qty_ordered})</Text>
-                                    <Text style={styles.breakdownValue}>{formatCurrency(item.total)}</Text>
+                                <View style={styles.priceRow}>
+                                    <Text style={styles.itemPriceInfo}>
+                                        {formatCurrency(item.price)} Per Unit x {item.qty_ordered} Quantity
+                                    </Text>
                                 </View>
-                                {/* <View style={styles.breakdownRow}>
-                                    <Text style={styles.breakdownLabel}>Price</Text>
-                                    <Text style={styles.breakdownValue}>{formatCurrency(item.price)}</Text>
-                                </View> */}
-                                <View style={styles.breakdownRow}>
-                                    <Text style={styles.breakdownLabel}>{Number(item.tax_percent).toFixed(4)}% Tax</Text>
-                                    <Text style={styles.breakdownValue}>{formatCurrency(item.tax_amount)}</Text>
-                                </View>
-                                <View style={styles.breakdownRow}>
-                                    <Text style={styles.breakdownLabel}>Sub Total</Text>
-                                    <Text style={styles.breakdownValue}>{formatCurrency(item.total + item.tax_amount)}</Text>
+
+                                <View style={styles.itemBreakdown}>
+                                    <View style={styles.breakdownRow}>
+                                        <Text style={styles.breakdownLabel}>Ordered ({item.qty_ordered})</Text>
+                                        <Text style={styles.breakdownValue}>{formatCurrency(item.total)}</Text>
+                                    </View>
+                                    <View style={styles.breakdownRow}>
+                                        <Text style={styles.breakdownLabel}>{Number(item.tax_percent).toFixed(4)}% Tax</Text>
+                                        <Text style={styles.breakdownValue}>{formatCurrency(item.tax_amount)}</Text>
+                                    </View>
+                                    <View style={styles.breakdownRow}>
+                                        <Text style={styles.breakdownLabel}>Sub Total</Text>
+                                        <Text style={styles.breakdownValue}>{formatCurrency(item.total + item.tax_amount)}</Text>
+                                    </View>
                                 </View>
                             </View>
                         </View>
+
+                        {item.has_support_chat && onItemSupportPress && (
+                            <TouchableOpacity
+                                style={styles.supportButton}
+                                onPress={() => onItemSupportPress(item, item.product_image || DEFAULT_IMAGE)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.supportContent}>
+                                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={COLORS.primary} />
+                                    <Text style={styles.supportButtonText}>Customer support chat</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 ))}
             </View>
@@ -185,8 +193,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E9E3D3',
         borderRadius: 8,
-        padding: 12,
-        gap: 16,
+        padding: 8,
+        gap: 8,
     },
     headerSection: {
         flexDirection: 'row',
@@ -207,14 +215,15 @@ const styles = StyleSheet.create({
     },
     itemsContainer: {
         flexDirection: 'column',
-        gap: 16,
-        paddingBottom: 12,
+        gap: 12,
+        paddingBottom: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#F3F4F6',
     },
     itemRow: {
         flexDirection: 'row',
         gap: 12,
+        padding: 8,
         alignItems: 'flex-start',
     },
     imageContainer: {
@@ -384,5 +393,32 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontSize: 12,
         color: '#00615E',
+    },
+    itemRowWrapper: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        overflow: 'hidden',
+    },
+    supportButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        backgroundColor: '#F0F9FA',
+    },
+    supportContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    supportButtonText: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
+        fontSize: 14,
+        color: COLORS.primary,
     },
 });

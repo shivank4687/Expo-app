@@ -238,7 +238,19 @@ export default function OrderDetailsScreen() {
             });
         };
 
-        return <OrderDetailsTab order={order ?? undefined} onVoucherRegenerated={handleVoucherRegenerated} onRefundPress={handleRefundPress} />;
+        const handleItemSupportPress = (item: any, itemImage?: string) => {
+            router.push({
+                pathname: '/(supplier-drawer)/supplier-item-support/[itemId]',
+                params: { 
+                    itemId: item.order_item_id, 
+                    orderId: order?.order_id,
+                    productName: item.product_name,
+                    ...(itemImage ? { itemImage } : {}),
+                }
+            });
+        };
+
+        return <OrderDetailsTab order={order ?? undefined} onVoucherRegenerated={handleVoucherRegenerated} onRefundPress={handleRefundPress} onItemSupportPress={handleItemSupportPress} />;
     };
 
     return (

@@ -8,6 +8,7 @@ import {
     Platform,
     TouchableOpacity,
     Animated,
+    Image,
 } from 'react-native';
 import { ordersApi, ItemSupportMessage } from '@/services/api/orders.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
@@ -23,6 +24,7 @@ interface ItemSupportChatViewProps {
     orderId: number;
     itemId: number;
     productName: string;
+    itemImage?: string;
 }
 
 interface QuickAction {
@@ -102,7 +104,7 @@ function getStatusConfig(status: string | null): { label: string; color: string;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const ItemSupportChatView = ({ orderId, itemId, productName }: ItemSupportChatViewProps) => {
+export const ItemSupportChatView = ({ orderId, itemId, productName, itemImage }: ItemSupportChatViewProps) => {
     const [messages, setMessages] = useState<ItemSupportMessage[]>([]);
     const [conversationId, setConversationId] = useState<number | null>(null);
     const [orderStatus, setOrderStatus] = useState<string | null>(null);
@@ -314,8 +316,12 @@ export const ItemSupportChatView = ({ orderId, itemId, productName }: ItemSuppor
             {/* ── Item header ──────────────────────────────────────────────── */}
             <View style={styles.itemHeader}>
                 <View style={styles.itemHeaderLeft}>
-                    <View style={styles.itemIconWrap}>
-                        <Ionicons name="cube-outline" size={14} color={theme.colors.primary[500]} />
+                    <View style={[styles.itemIconWrap, itemImage ? styles.itemImageWrap : {}]}>
+                        {itemImage ? (
+                            <Image source={{ uri: itemImage }} style={styles.itemImage} />
+                        ) : (
+                            <Ionicons name="cube-outline" size={14} color={theme.colors.primary[500]} />
+                        )}
                     </View>
                     <Text style={styles.itemName} numberOfLines={1}>
                         {productName}
@@ -559,6 +565,17 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary[50],
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    itemImageWrap: {
+        backgroundColor: theme.colors.gray[100],
+        borderWidth: 1,
+        borderColor: theme.colors.gray[200],
+        overflow: 'hidden',
+    },
+    itemImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
     itemName: {
         fontSize: theme.typography.fontSize.sm,

@@ -9,11 +9,12 @@ interface OrderDetailsTabProps {
     order?: OrderDetailsResponse['data'];
     onVoucherRegenerated?: (newPaymentData: any) => void;
     onRefundPress?: () => void;
+    onItemSupportPress?: (item: any) => void;
 }
 
 import { PaymentInfoCard } from './PaymentInfoCard';
 
-export const OrderDetailsTab = ({ order, onVoucherRegenerated, onRefundPress }: OrderDetailsTabProps) => {
+export const OrderDetailsTab = ({ order, onVoucherRegenerated, onRefundPress, onItemSupportPress }: OrderDetailsTabProps) => {
     if (!order) {
         return (
             <View style={styles.container}>
@@ -24,7 +25,7 @@ export const OrderDetailsTab = ({ order, onVoucherRegenerated, onRefundPress }: 
 
     return (
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-            <OrderInfoCard order={order} onRefundPress={onRefundPress} />
+            <OrderInfoCard order={order} onRefundPress={onRefundPress} onItemSupportPress={onItemSupportPress} />
             <CustomerInfoCard order={order} />
             <ShippingInfoCard order={order} />
             <PaymentInfoCard order={order} onVoucherRegenerated={onVoucherRegenerated} />

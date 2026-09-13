@@ -96,6 +96,7 @@ export interface OrderItem {
     discount_amount: number;
     base_discount_amount?: number;
     additional?: any;
+    has_support_chat?: boolean;
 }
 
 export interface OrderShipment {
@@ -142,6 +143,23 @@ export interface OrderDetailsResponse {
     data: OrderDetails;
 }
 
+// ─── Support Chat Types ────────────────────────────────────────────────────────
+
+export interface ItemSupportMessage {
+    id: number;
+    message: string;
+    sender_type: 'customer' | 'supplier' | 'ai';
+    sender_name: string;
+    is_read: boolean;
+    created_at: string;
+}
+
+export interface ItemSupportConversationResponse {
+    conversation_id: number;
+    status: string;
+    messages: ItemSupportMessage[];
+}
+
 /**
  * Get orders list with optional filter
  * @param filter - 'pending' | 'shipped' | 'issues'
@@ -176,5 +194,36 @@ export const downloadInvoicePdf = async (invoiceId: number): Promise<Blob> => {
     const response = await api.get<Blob>(`/supplier-app/orders/invoices/${invoiceId}/download`, {
         responseType: 'blob',
     });
+    return response;
+};
+
+/**
+ * Get the support conversation for an order item
+ */
+export const getSupplierItemSupportConversation = async (orderId: number, itemId: number): Promise<{ data: ItemSupportConversationResponse }> => {
+    const response = await api.get<{ data: ItemSupportConversationResponse }>(
+        `/supplier-app/orders/${orderId}/items/${itemId}/support`
+    );
+    return response;
+};
+
+/**
+ * Send message to item support chat as a supplier
+ */
+export const sendSupplierItemSupportMessage = async (orderId: number, itemId: number, message: string): Promise<any> => {
+    const response = await api.post(
+        `/supplier-app/orders/${orderId}/items/${itemId}/support/messages`,
+        { message }
+    );
+    return response;
+};
+
+/**
+ * Mark item support messages as read for supplier
+ */
+export const markSupplierItemSupportRead = async (orderId: number, itemId: number, conversationId: number): Promise<any> => {
+    const response = await api.post(
+        `/supplier-app/orders/${orderId}/items/${itemId}/support/mark-read/${conversationId}`
+    );
     return response;
 };

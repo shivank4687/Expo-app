@@ -192,12 +192,50 @@ export function NotificationsScreen() {
         }
 
         if (notifType === 'message') {
-            // Check if it's an order message or item support message
-            // action_url: .../orders/view/123#tab=messages or .../orders/view/123#tab=item-support
+            // Check for item support message
+            if (subtype === 'item_support_new_message') {
+                try {
+                    let orderItemId = null;
+                    let orderId = null;
+                    if (notification.data) {
+                        const parsedData = typeof notification.data === 'string' 
+                            ? JSON.parse(notification.data) 
+                            : notification.data;
+                        orderItemId = parsedData?.order_item_id;
+                    }
+                    
+                    const orderMatch = notification.action_url?.match(/\/orders\/view\/(\d+)/);
+                    if (orderMatch && orderMatch[1]) {
+                        orderId = orderMatch[1];
+                    }
+
+                    if (orderItemId && orderId) {
+                        router.push({
+                            pathname: '/(supplier-drawer)/supplier-item-support/[itemId]',
+                            params: { itemId: orderItemId.toString(), orderId: orderId.toString() }
+                        } as any);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse item support notification data', e);
+                }
+            }
+
+            // Check if it's an order message
+            // action_url: .../orders/view/123#tab=messages
             const orderMatch = notification.action_url?.match(/\/orders\/view\/(\d+)/);
             if (orderMatch && orderMatch[1]) {
                 const navOrderId = orderMatch[1];
-                router.push(`/(supplier-drawer)/order-details?orderId=${navOrderId}&initialTab=messages&from=notifications` as any);
+                
+                let initialTab = 'messages';
+                if (notification.action_url?.includes('#tab=')) {
+                    const tabMatch = notification.action_url.match(/#tab=([^&]+)/);
+                    if (tabMatch && tabMatch[1]) {
+                        initialTab = tabMatch[1];
+                    }
+                }
+                
+                router.push(`/(supplier-drawer)/order-details?orderId=${navOrderId}&initialTab=${initialTab}&from=notifications` as any);
                 return;
             }
 

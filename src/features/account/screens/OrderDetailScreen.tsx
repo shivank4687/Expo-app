@@ -203,7 +203,7 @@ export const OrderDetailScreen: React.FC = () => {
         }
     }, [order, t, showToast, router, dispatch]);
 
-    const handleItemSupport = useCallback((item: any) => {
+    const handleItemSupport = useCallback((item: any, itemImage?: string) => {
         if (!order) return;
         router.push({
             pathname: '/support/item/[itemId]',
@@ -212,6 +212,7 @@ export const OrderDetailScreen: React.FC = () => {
                 orderId: order.id.toString(),
                 productName: item.name,
                 orderIncrement: order.increment_id,
+                ...(itemImage ? { itemImage } : {}),
             },
         });
     }, [order, router]);

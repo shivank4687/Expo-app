@@ -175,65 +175,69 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.container}>
             {renderTabBar()}
 
-            {activeTabId === 'home' ? (
-                <ScrollView
-                    style={styles.flex1}
-                    contentContainerStyle={styles.contentContainer}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-                    }
-                >
+            <View style={styles.flex1}>
+                <View style={[styles.flex1, activeTabId !== 'home' && { display: 'none' }]}>
+                    <ScrollView
+                        style={styles.flex1}
+                        contentContainerStyle={styles.contentContainer}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+                        }
+                    >
 
 
-                    {image_carousel_customization.map((customization) => (
-                        <ThemeCustomization
-                            key={customization.id}
-                            customization={customization}
+                        {image_carousel_customization.map((customization) => (
+                            <ThemeCustomization
+                                key={customization.id}
+                                customization={customization}
+                            />
+                        ))}
+
+
+
+                        <RecentlyViewedSection />
+                        <RecentlyVisitedCategoriesSection />
+                        {/* Top Sellers / Vendors */}
+                        <TopVendorsSection vendors={topSellers} isLoading={isLoadingVendors} />
+                        {carousel_customization.map((customization) => (
+                            <ThemeCustomization
+                                key={customization.id}
+                                customization={customization}
+                            />
+                        ))}
+                        {/* Featured Sections */}
+                        <DiscountSection
+                            products={discountedProducts}
+                            onViewAll={() => router.push('/product-list/all?title=Daily Deals&on_sale=1')}
                         />
-                    ))}
 
+                        {/* <CategoryGridSection
+                            title="New Arrivals"
+                            products={newProducts}
+                            onViewAll={() => router.push('/product-list/all?title=New Arrivals&new=1')}
+                        /> */}
 
-
-                    <RecentlyViewedSection />
-                    <RecentlyVisitedCategoriesSection />
-                    {/* Top Sellers / Vendors */}
-                    <TopVendorsSection vendors={topSellers} isLoading={isLoadingVendors} />
-                    {carousel_customization.map((customization) => (
-                        <ThemeCustomization
-                            key={customization.id}
-                            customization={customization}
+                        <CategoryGridSection
+                            title="Featured Products"
+                            products={featuredProducts}
+                            onViewAll={() => router.push('/product-list/all?title=Featured Products&featured=1')}
                         />
-                    ))}
-                    {/* Featured Sections */}
-                    <DiscountSection
-                        products={discountedProducts}
-                        onViewAll={() => router.push('/product-list/all?title=Daily Deals&on_sale=1')}
-                    />
+                        {/* <NewsletterSubscription /> */}
 
-                    {/* <CategoryGridSection
-                        title="New Arrivals"
-                        products={newProducts}
-                        onViewAll={() => router.push('/product-list/all?title=New Arrivals&new=1')}
-                    /> */}
+                        {/* {servicesCustomization && (
+                            <ThemeCustomization
+                                key={servicesCustomization.id}
+                                customization={servicesCustomization}
+                            />
+                        )} */}
+                    </ScrollView>
+                </View>
 
-                    <CategoryGridSection
-                        title="Featured Products"
-                        products={featuredProducts}
-                        onViewAll={() => router.push('/product-list/all?title=Featured Products&featured=1')}
-                    />
-                    {/* <NewsletterSubscription /> */}
-
-                    {/* {servicesCustomization && (
-                        <ThemeCustomization
-                            key={servicesCustomization.id}
-                            customization={servicesCustomization}
-                        />
-                    )} */}
-                </ScrollView>
-            ) : (
-                <HomeCategoryContent key={activeTabId} categoryId={activeTabId as number} />
-            )}
+                {activeTabId !== 'home' && (
+                    <HomeCategoryContent key={activeTabId} categoryId={activeTabId as number} />
+                )}
+            </View>
         </View>
     );
 };

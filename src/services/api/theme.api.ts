@@ -21,7 +21,7 @@ export const themeApi = {
             if (cachedData) {
                 const { data, timestamp } = JSON.parse(cachedData);
                 const isExpired = Date.now() - timestamp > CACHE_TTL;
-                
+
                 // Return cached data immediately, update in background
                 if (!isExpired) {
                     // Fire background fetch to keep cache warm (Stale-While-Revalidate)
@@ -44,17 +44,17 @@ export const themeApi = {
         const response = await restApiClient.get<ThemeCustomizationsResponse>(
             API_ENDPOINTS.THEME_CUSTOMIZATIONS
         );
-        
+
         // Sort by sort_order to maintain the order defined in admin
         const customizations = response.data || [];
         const sorted = customizations.sort((a, b) => a.sort_order - b.sort_order);
-        
+
         // Update cache quietly
         AsyncStorage.setItem(THEME_CACHE_KEY, JSON.stringify({
             data: sorted,
             timestamp: Date.now()
         })).catch(e => console.log('Error saving theme cache:', e));
-        
+
         return sorted;
     },
 
@@ -65,7 +65,7 @@ export const themeApi = {
         const response = await restApiClient.get<{ data: ThemeCustomization }>(
             `${API_ENDPOINTS.THEME_CUSTOMIZATIONS}/${id}`
         );
-        
+
         return response.data;
     },
 };

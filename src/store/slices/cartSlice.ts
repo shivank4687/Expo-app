@@ -55,11 +55,11 @@ const initialState: CartState = {
 // Fetch cart
 export const fetchCartThunk = createAsyncThunk(
     'cart/fetchCart',
-    async (_, { rejectWithValue, getState }) => {
+    async (options: { forceAuth?: boolean; token?: string | null } | void, { rejectWithValue, getState }) => {
         try {
             const state = getState() as any;
-            const isAuthenticated = state.auth.isAuthenticated;
-            const hasToken = state.auth.token;
+            const isAuthenticated = options?.forceAuth ?? state.auth.isAuthenticated;
+            const hasToken = options?.token ?? state.auth.token;
 
             console.log('Fetching cart - isAuthenticated:', isAuthenticated, 'hasToken:', !!hasToken);
 

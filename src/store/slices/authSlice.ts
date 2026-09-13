@@ -166,7 +166,7 @@ export const loginThunk = createAsyncThunk(
             }
 
             // Sync/Fetch authenticated cart
-            await dispatch(fetchCartThunk());
+            await dispatch(fetchCartThunk({ forceAuth: true, token }));
 
             return { requiresOtp: false, user, token };
         } catch (error: any) {
@@ -256,7 +256,7 @@ export const socialLoginThunk = createAsyncThunk(
                 } catch (err) {
                     console.error('Failed to clear guest cart token:', err);
                 }
-                await dispatch(fetchCartThunk());
+                await dispatch(fetchCartThunk({ forceAuth: true, token }));
             }
 
             return { user, token };
@@ -337,7 +337,7 @@ export const signupThunk = createAsyncThunk(
             }
 
             // Sync/Fetch authenticated cart
-            await dispatch(fetchCartThunk());
+            await dispatch(fetchCartThunk({ forceAuth: true, token }));
 
             return { user, token, requiresOtp: false };
         } catch (error: any) {
@@ -405,7 +405,7 @@ export const verifyOtpThunk = createAsyncThunk(
                 }
 
                 // Sync/Fetch authenticated cart
-                await dispatch(fetchCartThunk());
+                await dispatch(fetchCartThunk({ forceAuth: true, token }));
             }
 
             return {

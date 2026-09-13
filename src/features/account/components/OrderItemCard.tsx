@@ -15,7 +15,7 @@ import { productsApi } from '@/services/api/products.api';
 
 interface OrderItemCardProps {
     item: OrderItem;
-    onSupportPress?: (item: OrderItem) => void;
+    onSupportPress?: (item: OrderItem, itemImage?: string) => void;
 }
 
 export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item, onSupportPress }) => {
@@ -153,7 +153,7 @@ export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item, onSupportPre
             {onSupportPress && (
                 <TouchableOpacity
                     style={styles.supportButton}
-                    onPress={() => onSupportPress(item)}
+                    onPress={() => onSupportPress(item, imageUrl || undefined)}
                     activeOpacity={0.7}
                 >
                     <View style={styles.supportContent}>
