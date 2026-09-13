@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.background.default,
     },
     tabsWrapper: {
-        paddingHorizontal: theme.spacing.md,
+        paddingHorizontal: theme.spacing.sm,
         paddingBottom: theme.spacing.sm,
         backgroundColor: theme.colors.background.default,
     },
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.background.default,
     },
     content: {
-        paddingVertical: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
     },
     loadingContainer: {
         flex: 1,
@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
     headerCard: {
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
-        marginHorizontal: theme.spacing.md,
-        marginBottom: theme.spacing.md,
+        marginHorizontal: theme.spacing.xs,
+        marginBottom: theme.spacing.xs,
         padding: theme.spacing.lg,
         borderWidth: 1,
         borderColor: theme.colors.gray[200],
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.xs,
     },
     headerLeft: {
         flex: 1,
@@ -573,8 +573,8 @@ const styles = StyleSheet.create({
     actionButtons: {
         flexDirection: 'row',
         gap: theme.spacing.sm,
-        marginTop: theme.spacing.md,
-        paddingTop: theme.spacing.md,
+        marginTop: theme.spacing.sm,
+        paddingTop: theme.spacing.sm,
         borderTopWidth: 1,
         borderTopColor: theme.colors.gray[200],
     },
@@ -584,8 +584,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: theme.spacing.xs,
-        paddingVertical: theme.spacing.md,
-        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.sm,
         borderRadius: theme.borderRadius.md,
     },
     reorderButton: {
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
         color: theme.colors.error.main,
     },
     section: {
-        marginBottom: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
     },
     sectionTitle: {
         fontSize: theme.typography.fontSize.lg,
@@ -617,8 +617,8 @@ const styles = StyleSheet.create({
     methodsCard: {
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
-        marginHorizontal: theme.spacing.md,
-        marginVertical: theme.spacing.sm,
+        marginHorizontal: theme.spacing.xs,
+        marginVertical: theme.spacing.xs,
         padding: theme.spacing.lg,
         borderWidth: 1,
         borderColor: theme.colors.gray[200],

@@ -6,9 +6,9 @@ import {
     FlatList,
     TouchableOpacity,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/features/supplier-panel/styles';
@@ -101,11 +101,7 @@ export const ChatScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <KeyboardAvoidingView
-                style={styles.keyboardAvoid}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-            >
+            <View style={styles.keyboardAvoid}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerContent}>
@@ -152,10 +148,10 @@ export const ChatScreen: React.FC = () => {
                 </View>
 
                 {/* Message Input */}
-                <View style={styles.inputContainer}>
+                <StickyBottomContainer minBottomPadding={Platform.OS === 'ios' ? 32 : 16} style={styles.inputContainer}>
                     <MessageInput onSend={handleSendMessage} disabled={isSending} />
-                </View>
-            </KeyboardAvoidingView>
+                </StickyBottomContainer>
+            </View>
         </View>
     );
 };
@@ -223,11 +219,10 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
     inputContainer: {
-        padding: 16,
-        paddingBottom: 32,
-        backgroundColor: COLORS.white,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        padding: 2,
+        backgroundColor: COLORS.background,
+        // borderTopWidth: 1,
+        // borderTopColor: COLORS.border,
     },
     loadingContainer: {
         flex: 1,

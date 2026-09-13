@@ -6,10 +6,10 @@ import {
     FlatList,
     TextInput,
     TouchableOpacity,
-    KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
 } from 'react-native';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -189,11 +189,7 @@ export const ChatMessagesScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <KeyboardAvoidingView
-                style={styles.keyboardContainer}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-            >
+            <View style={styles.keyboardContainer}>
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -222,7 +218,7 @@ export const ChatMessagesScreen: React.FC = () => {
                 />
 
                 {/* Input Area */}
-                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
+                <StickyBottomContainer minBottomPadding={theme.spacing.md} style={styles.inputContainer}>
                     <TextInput
                         style={styles.textInput}
                         placeholder="Type a message..."
@@ -250,8 +246,8 @@ export const ChatMessagesScreen: React.FC = () => {
                             />
                         )}
                     </TouchableOpacity>
-                </View>
-            </KeyboardAvoidingView>
+                </StickyBottomContainer>
+            </View>
         </SafeAreaView>
     );
 };
@@ -339,9 +335,9 @@ const styles = StyleSheet.create({
         paddingTop: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,
         backgroundColor: theme.colors.background.default,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.border.main,
-        ...theme.shadows.lg,
+        // borderTopWidth: 1,
+        // borderTopColor: theme.colors.border.main,
+        // ...theme.shadows.lg,
     },
     textInput: {
         flex: 1,

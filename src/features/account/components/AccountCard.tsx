@@ -105,8 +105,8 @@ const styles = StyleSheet.create({
         borderColor: '#E9E3D3',
         borderRadius: 8,
         padding: 8,
-        marginHorizontal: 16,
-        marginTop: 16,
+        marginHorizontal: 8,
+        marginTop: 8,
         marginBottom: 24, // Optional, since it's the last element give it some bottom breathing room
         display: 'flex',
         flexDirection: 'column',

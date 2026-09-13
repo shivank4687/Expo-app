@@ -6,8 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     ActivityIndicator,
-    KeyboardAvoidingView,
-    Keyboard,
     Platform,
     Share,
 } from 'react-native';
@@ -21,6 +19,7 @@ import { ConfigurableOptions } from '../components/ConfigurableOptions';
 import { ProductReviews } from '../components/ProductReviews';
 import { MessageSupplierModal } from '../components/MessageSupplierModal';
 import { Button } from '@/shared/components/Button';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorMessage } from '@/shared/components/ErrorMessage';
 import { HTMLContent } from '@/shared/components/HTMLContent';
@@ -68,7 +67,6 @@ export const ProductDetailScreen: React.FC = () => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
     const [isMessageModalVisible, setIsMessageModalVisible] = useState(false);
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const { isAuthenticated, user } = useAppSelector((state) => state.auth);
     const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
@@ -132,24 +130,7 @@ export const ProductDetailScreen: React.FC = () => {
         }
     }, [id]);
 
-    // Manually track keyboard height — KeyboardAvoidingView is unreliable
-    // on Android with edgeToEdgeEnabled:true in app.json
-    useEffect(() => {
-        const show = Keyboard.addListener('keyboardDidShow', (e) => {
-            if (Platform.OS === 'android') {
-                setKeyboardHeight(e.endCoordinates.height);
-            }
-        });
-        const hide = Keyboard.addListener('keyboardDidHide', () => {
-            if (Platform.OS === 'android') {
-                setKeyboardHeight(0);
-            }
-        });
-        return () => {
-            show.remove();
-            hide.remove();
-        };
-    }, []);
+
 
     const loadProduct = async () => {
         try {
@@ -755,12 +736,13 @@ export const ProductDetailScreen: React.FC = () => {
 
                 {/* Product Totals Card */}
                 {canAddToCart ? (
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                        <View style={{
+                    <StickyBottomContainer
+                        minBottomPadding={theme.spacing.lg}
+                        style={{
                             paddingHorizontal: theme.spacing.md,
                             paddingTop: theme.spacing.xs,
-                            paddingBottom: Math.max(insets.bottom, theme.spacing.lg) + keyboardHeight,
-                        }}>
+                        }}
+                    >
                             <ProductTotals
                                 price={formatters.formatPrice(getUnitPriceForQty(quantity) * quantity, currencySymbol)}
                                 deliveryText="Delivery 22 Dec - 24 Dec"
@@ -788,8 +770,7 @@ export const ProductDetailScreen: React.FC = () => {
                                 isAddingToCart={isAddingToCart}
                                 showAddToCart={canAddToCart}
                             />
-                        </View>
-                    </KeyboardAvoidingView>
+                    </StickyBottomContainer>
                 ) : null}
             </View>
         </View>

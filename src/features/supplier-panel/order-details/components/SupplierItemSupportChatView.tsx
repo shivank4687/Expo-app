@@ -7,15 +7,17 @@ import {
     Text,
     Animated,
     Image,
+    Platform,
 } from 'react-native';
-import { 
-    getSupplierItemSupportConversation, 
-    sendSupplierItemSupportMessage, 
-    markSupplierItemSupportRead, 
-    ItemSupportMessage 
+import {
+    getSupplierItemSupportConversation,
+    sendSupplierItemSupportMessage,
+    markSupplierItemSupportRead,
+    ItemSupportMessage
 } from '../../orders/api/orders.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
 import { AnimatedTypingDots } from '@/shared/components/AnimatedTypingDots';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
@@ -284,13 +286,13 @@ export const SupplierItemSupportChatView = ({ orderId, itemId, productName, item
                 )}
             </ScrollView>
 
-            <View style={styles.inputWrapper}>
+            <StickyBottomContainer minBottomPadding={Platform.OS === 'ios' ? 24 : 16} style={styles.inputWrapper}>
                 <ChatMessageInput
                     onSend={handleSendMessage}
                     placeholder="Type your reply..."
                     disabled={sending}
                 />
-            </View>
+            </StickyBottomContainer>
         </View>
     );
 };
@@ -387,8 +389,8 @@ const styles = StyleSheet.create({
     },
     inputWrapper: {
         backgroundColor: '#FFFFFF',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
+        // borderTopWidth: 1,
+        // borderTopColor: '#E5E7EB',
     },
     emptyState: {
         paddingVertical: 32,

@@ -1037,7 +1037,7 @@ const styles = StyleSheet.create({
     },
     smallInputField: {
         flex: 0,
-        width: 110,
+        width: 140,
     },
     warningBox: {
         width: '100%',

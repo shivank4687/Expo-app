@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
-        marginHorizontal: theme.spacing.md,
+        marginHorizontal: theme.spacing.xs,
         marginVertical: theme.spacing.xs,
         padding: theme.spacing.md,
         borderWidth: 1,

@@ -22,8 +22,8 @@ export const ShortcutsCard = () => {
             </View>
 
             {/* Shortcuts Row */}
-            <ScrollView 
-                horizontal 
+            <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.shortcutsScrollContent}
                 style={styles.shortcutsScroll}
@@ -63,8 +63,8 @@ const styles = StyleSheet.create({
         borderColor: '#E9E3D3',
         borderRadius: 8,
         padding: 8,
-        marginHorizontal: 16,
-        marginTop: 16,
+        marginHorizontal: 8,
+        marginTop: 8,
         display: 'flex',
         flexDirection: 'column',
         gap: 12,

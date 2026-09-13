@@ -17,8 +17,8 @@ export const OrderShortcutsCard = () => {
                     <Text style={styles.subtitle}>{t('dashboardCards.orders.subtitle')}</Text>
                 </View>
                 {/* All Orders */}
-                <TouchableOpacity 
-                    style={styles.actionChip} 
+                <TouchableOpacity
+                    style={styles.actionChip}
                     onPress={() => router.push('/orders-list')}
                 >
                     <Text style={styles.actionText}>{t('dashboardCards.orders.all')}</Text>
@@ -26,15 +26,15 @@ export const OrderShortcutsCard = () => {
             </View>
 
             {/* Shortcuts Row */}
-            <ScrollView 
-                horizontal 
+            <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.shortcutsScrollContent}
                 style={styles.shortcutsScroll}
             >
                 {/* To Pay */}
-                <TouchableOpacity 
-                    style={styles.shortcutBlock} 
+                <TouchableOpacity
+                    style={styles.shortcutBlock}
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'pending' } })}
                 >
                     <DollarToPayIcon width={24} height={24} color="#00615E" />
@@ -42,8 +42,8 @@ export const OrderShortcutsCard = () => {
                 </TouchableOpacity>
 
                 {/* Processing */}
-                <TouchableOpacity 
-                    style={styles.shortcutBlock} 
+                <TouchableOpacity
+                    style={styles.shortcutBlock}
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'processing' } })}
                 >
                     <OrderProcessingIcon width={24} height={24} color="#00615E" />
@@ -51,8 +51,8 @@ export const OrderShortcutsCard = () => {
                 </TouchableOpacity>
 
                 {/* Shipped */}
-                <TouchableOpacity 
-                    style={styles.shortcutBlock} 
+                <TouchableOpacity
+                    style={styles.shortcutBlock}
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'shipped' } })}
                 >
                     <ShippingTruckIcon width={24} height={24} color="#00615E" />
@@ -60,8 +60,8 @@ export const OrderShortcutsCard = () => {
                 </TouchableOpacity>
 
                 {/* Delivered */}
-                <TouchableOpacity 
-                    style={styles.shortcutBlock} 
+                <TouchableOpacity
+                    style={styles.shortcutBlock}
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'completed' } })}
                 >
                     <DeliveredIcon width={24} height={24} color="#00615E" />
@@ -69,8 +69,8 @@ export const OrderShortcutsCard = () => {
                 </TouchableOpacity>
 
                 {/* Returns */}
-                <TouchableOpacity 
-                    style={styles.shortcutBlock} 
+                <TouchableOpacity
+                    style={styles.shortcutBlock}
                     onPress={() => router.push({ pathname: '/orders-list', params: { status: 'canceled' } })}
                 >
                     <ReturnOrderIcon width={24} height={24} color="#00615E" />
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
         borderColor: '#E9E3D3',
         borderRadius: 8,
         padding: 8,
-        marginHorizontal: 16,
-        marginTop: 16,
+        marginHorizontal: 8,
+        marginTop: 8,
         display: 'flex',
         flexDirection: 'column',
         gap: 12,

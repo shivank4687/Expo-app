@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCountriesThunk } from '@/store/slices/coreSlice';
@@ -31,6 +33,7 @@ import {
     CustomerGroup,
     CUSTOMER_SUBTYPES,
 } from '../api/customer-tax-profile.api';
+import { theme } from '@/theme';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -273,6 +276,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     const countries = useAppSelector((state) => state.core.countries);
     const isLoadingCountries = useAppSelector((state) => state.core.isLoadingCountries);
@@ -494,10 +498,12 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                 </View>
             ) : (
                 // overflow:visible is required so absolute menus escape the ScrollView
-                <ScrollView
+                <KeyboardAwareScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
+                    enableOnAndroid={true}
+                    extraScrollHeight={20}
                 >
                     {/* ── Customer Group Card ─────────────────────────────── */}
                     {/* overflow:visible so the dropdown menu escapes the card */}
@@ -690,7 +696,11 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                             )}
                         </View>
                     )}
+                </KeyboardAwareScrollView>
+            )}
 
+            {!loading && (
+                <View style={[styles.fixedButtonContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
                     {/* ── Save Button ─────────────────────────────────────── */}
                     <TouchableOpacity
                         style={[styles.saveBtn, (saving || loading) && { opacity: 0.6 }]}
@@ -707,7 +717,7 @@ export const CustomerTypeTaxScreen: React.FC = () => {
                             </>
                         )}
                     </TouchableOpacity>
-                </ScrollView>
+                </View>
             )}
 
             <PickerModal
@@ -726,8 +736,8 @@ export const CustomerTypeTaxScreen: React.FC = () => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-    screenContainer: { flex: 1, backgroundColor: '#F5F3EE' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    screenContainer: { flex: 1, backgroundColor: theme.colors.background.default, },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.default },
     scrollView: { flex: 1 },
     scrollContent: { padding: 16, paddingBottom: 40, gap: 16 },
 
@@ -773,13 +783,24 @@ const styles = StyleSheet.create({
 
     saveBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 8, backgroundColor: '#00615E', borderRadius: 10, paddingVertical: 14, marginTop: 4,
+        gap: 8, backgroundColor: '#00615E', borderRadius: 10, paddingVertical: 14,
         ...Platform.select({
             ios: { shadowColor: '#00615E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8 },
             android: { elevation: 4 },
         }),
     },
     saveBtnText: { fontFamily: 'Inter', fontWeight: '700', fontSize: 15, color: '#FFFFFF' },
+    fixedButtonContainer: {
+        backgroundColor: '#F5F3EE',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#E9E3D3',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+            android: { elevation: 5 },
+        }),
+    },
 });
 
 export default CustomerTypeTaxScreen;

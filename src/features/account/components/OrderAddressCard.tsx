@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: theme.colors.background.default,
         borderRadius: theme.borderRadius.md,
-        marginHorizontal: theme.spacing.md,
-        marginVertical: theme.spacing.sm,
+        marginHorizontal: theme.spacing.xs,
+        marginVertical: theme.spacing.xs,
         padding: theme.spacing.lg,
         borderWidth: 1,
         borderColor: theme.colors.gray[200],

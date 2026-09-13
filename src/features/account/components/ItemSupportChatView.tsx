@@ -13,6 +13,7 @@ import {
 import { ordersApi, ItemSupportMessage } from '@/services/api/orders.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
 import { AnimatedTypingDots } from '@/shared/components/AnimatedTypingDots';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 import { theme } from '@/theme';
@@ -482,14 +483,14 @@ export const ItemSupportChatView = ({ orderId, itemId, productName, itemImage }:
             )}
 
             {/* ── Message input ─────────────────────────────────────────────── */}
-            <View style={styles.inputContainer}>
+            <StickyBottomContainer minBottomPadding={Platform.OS === 'ios' ? 24 : 16} style={styles.inputContainer}>
                 <ChatMessageInput
                     onSend={handleSendMessage}
                     disabled={sending || loading}
                     placeholder="Ask anything about your item…"
                     hideAttachment
                 />
-            </View>
+            </StickyBottomContainer>
         </View>
     );
 };
@@ -844,7 +845,6 @@ const styles = StyleSheet.create({
     // ── Input bar
     inputContainer: {
         padding: theme.spacing.sm,
-        paddingBottom: Platform.OS === 'ios' ? 24 : 16,
         borderTopWidth: 1,
         borderTopColor: theme.colors.border.card_light,
         backgroundColor: theme.colors.background.default,

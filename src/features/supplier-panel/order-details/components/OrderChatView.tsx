@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Text, Platform } from 'react-native';
 import { getOrderMessages, sendOrderMessage, OrderMessage } from '../api/order-messages.api';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import socketService from '@/services/socket.service';
 import { useAppSelector } from '@/store/hooks';
 
@@ -148,11 +149,7 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
     }
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior="padding"
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 120}
-        >
+        <View style={styles.container}>
             {/* Messages List */}
             <ScrollView
                 ref={scrollViewRef}
@@ -180,10 +177,10 @@ export default function OrderChatView({ supplierOrderId, supplierId }: OrderChat
             </ScrollView>
 
             {/* Message Input */}
-            <View style={styles.inputContainer}>
+            <StickyBottomContainer minBottomPadding={Platform.OS === 'ios' ? 24 : 16} style={styles.inputContainer}>
                 <ChatMessageInput onSend={handleSendMessage} disabled={sending} />
-            </View>
-        </KeyboardAvoidingView>
+            </StickyBottomContainer>
+        </View>
     );
 }
 
@@ -235,6 +232,5 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         paddingTop: 8,
-        paddingBottom: Platform.OS === 'android' ? 36 : 24, // Add padding to avoid touching bottom edge
     },
 });

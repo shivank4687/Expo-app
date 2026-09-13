@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
         borderColor: '#E9E3D3',
         borderRadius: 8,
         padding: 8,
-        marginHorizontal: 16,
-        marginTop: 16,
+        marginHorizontal: 8,
+        marginTop: 8,
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
@@ -273,16 +273,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E9E3D3',
         borderRadius: 8,
-        padding: 8,
+        padding: 10,
         flexDirection: 'column',
         gap: 4,
-        minWidth: 168,
+        minWidth: 150,
     },
     statNumber: {
         fontFamily: Platform.OS === 'ios' ? 'Inter' : 'sans-serif',
         fontWeight: '700',
         fontSize: 16,
         color: '#000000',
+
         lineHeight: 19.2,
     },
     statLabel: {
@@ -291,6 +292,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#0A292D',
         lineHeight: 16.8,
+
     },
     bottomNote: {
         fontFamily: Platform.OS === 'ios' ? 'Inter' : 'sans-serif',

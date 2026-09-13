@@ -1,5 +1,5 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { TopHeader } from '@/shared/components/TopHeader';
 import { theme } from '@/theme';
@@ -22,11 +22,7 @@ export const ItemSupportChatScreen: React.FC = () => {
     const itemImage = params.itemImage;
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={0}
-        >
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
             <TopHeader
                 title={orderIncrement ? `Order #${orderIncrement}` : 'Item Support'}
@@ -39,7 +35,7 @@ export const ItemSupportChatScreen: React.FC = () => {
                 productName={productName}
                 itemImage={itemImage}
             />
-        </KeyboardAvoidingView>
+        </View>
     );
 };
 
