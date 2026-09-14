@@ -743,33 +743,33 @@ export const ProductDetailScreen: React.FC = () => {
                             paddingTop: theme.spacing.xs,
                         }}
                     >
-                            <ProductTotals
-                                price={formatters.formatPrice(getUnitPriceForQty(quantity) * quantity, currencySymbol)}
-                                deliveryText="Delivery 22 Dec - 24 Dec"
-                                quantity={quantity}
-                                onIncreaseQty={() => handleQuantityChange(1)}
-                                onDecreaseQty={() => handleQuantityChange(-1)}
-                                onQuantityChange={handleQuantityDirectInput}
-                                showRfq={!!product?.supplier?.id}
-                                rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
-                                onRfqPress={() => {
-                                    if (isAuthenticated) {
-                                        router.push({
-                                            pathname: `/rfq/${product.supplier!.id}` as any,
-                                            params: {
-                                                productId: product.id.toString(),
-                                                productName: product.name,
-                                            }
-                                        });
-                                    } else {
-                                        router.push('/login');
-                                    }
-                                }}
-                                onAddToCart={handleAddToCart}
-                                addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
-                                isAddingToCart={isAddingToCart}
-                                showAddToCart={canAddToCart}
-                            />
+                        <ProductTotals
+                            price={formatters.formatPrice(getUnitPriceForQty(quantity) * quantity, currencySymbol)}
+                            deliveryText="Delivery 22 Dec - 24 Dec"
+                            quantity={quantity}
+                            onIncreaseQty={() => handleQuantityChange(1)}
+                            onDecreaseQty={() => handleQuantityChange(-1)}
+                            onQuantityChange={handleQuantityDirectInput}
+                            showRfq={!!product?.supplier?.id}
+                            rfqText={isAuthenticated ? t('product.requestForQuote') : t('product.loginForRFQ')}
+                            onRfqPress={() => {
+                                if (isAuthenticated) {
+                                    router.push({
+                                        pathname: `/rfq/${product.supplier!.id}` as any,
+                                        params: {
+                                            productId: product.id.toString(),
+                                            productName: product.name,
+                                        }
+                                    });
+                                } else {
+                                    router.push('/login');
+                                }
+                            }}
+                            onAddToCart={handleAddToCart}
+                            addToCartText={isAddingToCart ? t('product.adding') : t('product.addToCart')}
+                            isAddingToCart={isAddingToCart}
+                            showAddToCart={canAddToCart}
+                        />
                     </StickyBottomContainer>
                 ) : null}
             </View>

@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     inputWrapper: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.colors.background.default,
         // borderTopWidth: 1,
         // borderTopColor: '#E5E7EB',
     },

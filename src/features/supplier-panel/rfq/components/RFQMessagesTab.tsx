@@ -5,9 +5,9 @@ import {
     StyleSheet,
     ScrollView,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import { ChatMessageBubble, ChatMessageInput } from '@/shared/components/chatbox';
 import { RFQMessage } from '../api/rfq.api';
 
@@ -45,11 +45,7 @@ export default function RFQMessagesTab({
     }
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior="padding"
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 130 : 100}
-        >
+        <View style={styles.container}>
             <ScrollView
                 ref={scrollRef}
                 style={styles.messagesScroll}
@@ -75,10 +71,10 @@ export default function RFQMessagesTab({
                     })
                 )}
             </ScrollView>
-            <View style={styles.inputContainer}>
+            <StickyBottomContainer minBottomPadding={Platform.OS === 'ios' ? 24 : 16} style={styles.inputContainer}>
                 <ChatMessageInput onSend={onSend} disabled={sending} hideAttachment={true} />
-            </View>
-        </KeyboardAvoidingView>
+            </StickyBottomContainer>
+        </View>
     );
 }
 
@@ -95,8 +91,6 @@ const styles = StyleSheet.create({
     },
     emptyText: { textAlign: 'center', color: '#999', marginTop: 32, fontSize: 14 },
     inputContainer: {
-        padding: 16,
         paddingTop: 8,
-        paddingBottom: 24,
     },
 });

@@ -9,10 +9,10 @@ import {
     RefreshControl,
     TextInput,
     FlatList,
-    KeyboardAvoidingView,
     Platform,
     Alert,
 } from 'react-native';
+import { StickyBottomContainer } from '@/shared/components/StickyBottomContainer';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -548,11 +548,7 @@ export const QuoteResponseDetailScreen: React.FC = () => {
         if (!quoteDetail) return null;
 
         return (
-            <KeyboardAvoidingView
-                style={styles.messagesTabContainer}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-            >
+            <View style={styles.messagesTabContainer}>
                 <FlatList
                     ref={flatListRef}
                     data={messages}
@@ -580,7 +576,7 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                     </View>
                 )}
 
-                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
+                <StickyBottomContainer minBottomPadding={theme.spacing.md} style={styles.inputContainer}>
                     <TextInput
                         style={styles.textInput}
                         placeholder={t('quotes.typeMessage', 'Type a message...')}
@@ -630,8 +626,8 @@ export const QuoteResponseDetailScreen: React.FC = () => {
                             <Ionicons name="send" size={20} color={theme.colors.white} />
                         )}
                     </TouchableOpacity>
-                </View>
-            </KeyboardAvoidingView>
+                </StickyBottomContainer>
+            </View>
         );
     };
 
